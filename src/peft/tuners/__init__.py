@@ -49,6 +49,8 @@ from .shira import ShiraConfig, ShiraModel
 from .trainable_tokens import TrainableTokensConfig, TrainableTokensModel
 from .vblora import VBLoRAConfig, VBLoRAModel
 from .vera import VeraConfig, VeraModel
+from .uilinlora import UILinLoRAConfig, UILinLoRAModel
+from .uiortholora import UIOrthoLoRAConfig, UIOrthoLoRAModel
 from .xlora import XLoraConfig, XLoraModel
 
 
@@ -109,6 +111,10 @@ __all__ = [
     "ShiraModel",
     "TrainableTokensConfig",
     "TrainableTokensModel",
+    "UILinLoRAConfig",
+    "UILinLoRAModel",
+    "UIOrthoLoRAConfig",
+    "UIOrthoLoRAModel",
     "VBLoRAConfig",
     "VBLoRAModel",
     "VeraConfig",

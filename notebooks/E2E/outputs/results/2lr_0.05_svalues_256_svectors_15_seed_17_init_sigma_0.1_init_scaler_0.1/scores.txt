@@ -1,0 +1,8 @@
+SCORES:
+==============
+BLEU: 0.6846
+NIST: 8.6808
+METEOR: 0.4651
+ROUGE_L: 0.7129
+CIDEr: 2.4674
+

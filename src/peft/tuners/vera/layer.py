@@ -77,6 +77,8 @@ class VeraLayer(BaseTunerLayer):
         inference_mode: bool = False,
         **kwargs,
     ):
+        print("adapter_name: ", adapter_name)
+
         if r <= 0:
             raise ValueError(f"`r` should be a positive integer value but the value passed is {r}")
         self.r[adapter_name] = r
