@@ -20,8 +20,6 @@ import datetime
 from tqdm import tqdm
 
 
-
-
 def get_prompt_template_and_parser():
     prompt_template = PromptTemplate(
         input_variables=["question"],
@@ -136,7 +134,7 @@ def evaluate_self_consistency(
         truncation=True
     ).to(model.device)
 
-    with torch.inference_mode():                    # ➊ no grads
+    with torch.inference_mode():
         outputs = model.generate(
             **inputs,
             do_sample=True,
@@ -241,16 +239,11 @@ def main():
     tokenizer, model = get_tokenizer_and_model(model_id)
     prompt_template, parser = get_prompt_template_and_parser()
 
-    for batch in tqdm(stream_triviaqa_rc(split, batch_size=150), desc="Evaluating batches"):
+    for batch in tqdm(stream_triviaqa_rc(split, batch_size=30), desc="Evaluating batches"):
         questions, ground_truths = prepare_sc_inputs(batch)
         sc_scores = evaluate_self_consistency(questions, ground_truths, prompt_template, parser, model, tokenizer, n_gen, debug)
-        # sc_scores = simple_test_scores(questions, ground_truths)
-
         # Write the sc scores to the json file (batch processing)
         write_sc_scores_to_jsonl_batch(batch, sc_scores, output_file_path, model_id.split('/')[-1])
-        
-       # print(sc_scores)
-
 
 
 

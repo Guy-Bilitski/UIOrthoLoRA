@@ -498,15 +498,6 @@ def main():
     args.lora_rank = 4
     args.vera_rank = 1024
     args.rand_lora_rank = 128
-
-    # TODO: (Hezi) Write a function that reads the jsonl file with the original model's sc scores,
-    # randomly select a subset for training and mark them as: for training/eval/not for both.
-    # Note: It should be *2* columns per row - not one as we originally thought. becuase we have data the is not for eval!
-    # You should get as an input the ratio of data used for training (in addition to the 80-20 train test split)
-
-    # training_dataset = get_training_dataset(args.training_ratio) TODO: Hezi - just a flat list of all training samples; return Dataset format (from datasets import Dataset)
-    # training_dataset = get_training_dataset_mock() # TODO: Comment out when Hezi does his part
-    # update_validation_split(args.results_path, random_seed=args.seed)
     ft_model_id = args.model_path.split('/')[-1]
 
     # === Train the model on the training dataset and save it ===
@@ -563,7 +554,7 @@ def main():
     model.eval()  # Set model to evaluation mode
     prompt_template, parser = get_prompt_template_and_parser()
 
-    for batch in tqdm(stream_jsonl_batches(args.results_path, batch_size=150), desc="Evaluating batches"):
+    for batch in tqdm(stream_jsonl_batches(args.results_path, batch_size=30), desc="Evaluating batches"):
         questions, ground_truths = prepare_sc_inputs(batch)
         sc_scores = evaluate_self_consistency(questions, ground_truths, prompt_template, parser, model, tokenizer, args.sc_number)
 
