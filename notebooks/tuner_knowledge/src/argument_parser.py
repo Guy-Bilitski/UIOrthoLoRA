@@ -7,7 +7,7 @@ def parse_arguments():
                         help="Hugging Face model ID (e.g., meta-llama/Llama-3.2-3B)")
     
     parser.add_argument("--peft_type", type=str, required=True,
-                        choices=["lora", "vera", "randlora", "nola"],
+                        choices=["lora", "vera", "randlora", "uiortholora"],
                         help="Type of PEFT method")
     
     parser.add_argument("--output_path", type=str, required=True,
@@ -41,6 +41,21 @@ def parse_arguments():
 
     parser.add_argument("--model_path", type=str, default=None,
                         help="Path to the pre-trained model (if different from model_id)")
+
+    parser.add_argument("--lora_rank", type=int,
+                        help="Rank for LoRA")
+
+    parser.add_argument("--vera_rank", type=int,
+                        help="Rank for VERA")
+
+    parser.add_argument("--rand_lora_rank", type=int,
+                        help="Rank for RandLORA")
+
+    parser.add_argument("--svalues", type=int,
+                        help="Number of singular values to adapt for UIOrthoLORA")
+
+    parser.add_argument("--svectors", type=int,
+                        help="Number of singular vectors to adapt for UIOrthoLORA")
 
     args = parser.parse_args()
     

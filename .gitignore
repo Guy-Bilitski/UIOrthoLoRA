@@ -178,4 +178,6 @@ completed
 **/uilora-mistral-test/
 **/models/
 
-notebooks/tuner_knowledge/src/results/meta-llama_Llama-3.2-3B_scores.jsonl
+notebooks/tuner_knowledge/src/results
+notebooks/tuner_knowledge/src/models
+notebooks/tuner_knowledge/src/backup

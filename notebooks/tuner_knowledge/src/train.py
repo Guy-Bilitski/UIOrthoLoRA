@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append(os.path.expanduser("/home/guy.bilitski/tuner_knowledge"))
+sys.path.append(os.path.expanduser("/home/guy.bilitski/UIOrthoLoRA/notebooks/tuner_knowledge"))
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import torch
@@ -8,7 +8,7 @@ import json
 import random
 from pathlib import Path
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import LoraConfig, get_peft_model, VeraConfig, PeftConfig, PeftModel, RandLoraConfig
+from peft import LoraConfig, get_peft_model, VeraConfig, PeftConfig, PeftModel, RandLoraConfig, UIOrthoLoRAConfig
 import torch
 from src.shared_prompt import SYSTEM_PROMPT
 from transformers import DataCollatorForSeq2Seq
@@ -394,6 +394,13 @@ def get_tokenizer(model_id):
     tokenizer.padding_side = "left"
     return tokenizer
 
+def set_contiguous(model):
+    for m in model.modules():
+        if hasattr(m, "parametrizations") and "weight" in m.parametrizations:
+            base = m.parametrizations.weight[0].base
+            if not base.is_contiguous():
+                base.data = base.data.contiguous()
+
 def build_peft_config(args):
     if args.peft_type == "lora":
         return _build_lora_config(args.lora_rank, args.alpha, args.dropout)
@@ -401,6 +408,8 @@ def build_peft_config(args):
         return _build_vera_config(args.vera_rank, args.alpha, args.dropout)
     elif args.peft_type == "randlora":
         return _build_randlora_config(args.rand_lora_rank, args.alpha, args.dropout)
+    elif args.peft_type == "uiortholora":
+        return _build_uiortholora_config(args.svalues, args.svectors, args.alpha, args.dropout)
     else:
         raise ValueError(f"Unknown PEFT type: {args.peft_type}")
 
@@ -428,6 +437,18 @@ def _build_randlora_config(rank, alpha, dropout):
         r=rank,
         randlora_alpha=alpha,
         randlora_dropout=dropout,
+        target_modules=["q_proj", "v_proj"],
+    )
+
+def _build_uiortholora_config(svalues, svectors, alpha, dropout):
+    return UIOrthoLoRAConfig(
+        num_svalues_to_adapt=svalues,
+        num_svectors_to_adapt=svectors,
+        uiortholora_alpha=alpha,
+        uiortholora_dropout=dropout,
+        fan_in_fan_out=False,
+        initial_scaler=0.1,
+        initial_sigma=0.1,
         target_modules=["q_proj", "v_proj"],
     )
 
@@ -495,9 +516,6 @@ def get_data_collator(tokenizer, model_id):
 
 def main():
     args = parse_arguments()
-    args.lora_rank = 4
-    args.vera_rank = 1024
-    args.rand_lora_rank = 128
     ft_model_id = args.model_path.split('/')[-1]
 
     # === Train the model on the training dataset and save it ===
@@ -523,6 +541,7 @@ def main():
         print(f"=== Using PEFT type: {args.peft_type} ===")
         trainer = get_trainer(model, tokenized_dataset, data_collator, args)
         trainer.train()
+        set_contiguous(model)
 
         # # Save the fine-tuned model
         print(f"Saving model to {args.output_path}")
@@ -563,11 +582,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-

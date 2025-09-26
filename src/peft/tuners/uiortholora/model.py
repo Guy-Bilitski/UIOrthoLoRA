@@ -280,7 +280,7 @@ class UIOrthoLoRAModel(BaseTuner):
     # ------------------------------------------------------------------
     # Multi‑adapter management
     # ------------------------------------------------------------------
-    def set_adapter(self, adapter_name: str):
+    def set_adapter(self, adapter_name: str, **kwargs): # kwargs added because the addition of inference_mode. This should be examined further. 
         for m in self.model.modules():
             if isinstance(m, UIOrthoLoRALayer):
                 m.set_adapter(adapter_name)

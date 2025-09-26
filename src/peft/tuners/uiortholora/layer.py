@@ -29,6 +29,7 @@ class UIOrthoLoRALayer(BaseTunerLayer):
     other_param_names = ("uiortholora_alpha", "uiortholora_dropout", "rank", "scaling_factor", "enforce_sv_positive")
 
     def __init__(self, base_layer: nn.Module, **kwargs):
+        super().__init__()
         self.base_layer = base_layer
          # ---- handle Linear vs Conv1D ----------------------------------
         if isinstance(base_layer, Conv1D):
@@ -51,9 +52,6 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         self.num_svalues_to_adapt = kwargs.pop("num_svalues_to_adapt")
         self.num_svectors_to_adapt = kwargs.pop("num_svectors_to_adapt")
 
-    @property
-    def merged(self) -> bool:
-        return bool(self.merged_adapters)
 
     def update_layer(
         self,
@@ -74,23 +72,30 @@ class UIOrthoLoRALayer(BaseTunerLayer):
 
         rank = min(self.in_features, self.out_features)
         # rank_to_preserve = rank - self.num_svectors_to_adapt
-        major_component_size = rank - self.num_svalues_to_adapt
-        medium_component_size = rank - self.num_svectors_to_adapt
+        self.major_component_size = rank - self.num_svalues_to_adapt
+        self.medium_component_size = rank - self.num_svectors_to_adapt
 
         # Compute SVD and slice the smallest singular vectors
-        with torch.no_grad():
-            U, S, Vt = torch.linalg.svd(base_w.float(), full_matrices=False)
-        print(f"Calculated SVD!")
+        if not self.buffers_loaded(adapter_name):
+            with torch.no_grad():
+                U, S, Vt = torch.linalg.svd(base_w.float(), full_matrices=False)
+            print(f"Calculated SVD!")
+
+        # Major component between svalues and svectors
+        print(f"keeping major: {self.major_component_size}")
+        self.register_buffer(f"{adapter_name}_U1", U[:, :self.major_component_size].detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_S1", torch.ones(self.major_component_size, dtype=torch.float).detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_Vt1", Vt[:self.major_component_size, :].detach(), persistent=True)
 
         # Medium component between svalues and svectors
-        self.register_buffer(f"{adapter_name}_U2", U[:, major_component_size:medium_component_size].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_S2", S[major_component_size:medium_component_size].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_Vt2", Vt[major_component_size:medium_component_size, :].detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_U2", U[:, self.major_component_size:self.medium_component_size].detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_S2", S[self.major_component_size:self.medium_component_size].detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_Vt2", Vt[self.major_component_size:self.medium_component_size, :].detach(), persistent=True)
 
         # Small component
-        self.register_buffer(f"{adapter_name}_U3", U[:, medium_component_size:].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_S3", S[medium_component_size:].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_Vt3", Vt[medium_component_size:, :].detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_U3", U[:, self.medium_component_size:].detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_S3", S[self.medium_component_size:].detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_Vt3", Vt[self.medium_component_size:, :].detach(), persistent=True)
 
         self.uiortholora_sigma[adapter_name] = nn.Parameter(torch.full((self.num_svalues_to_adapt,), initial_sigma, dtype=torch.float))
 
@@ -125,6 +130,11 @@ class UIOrthoLoRALayer(BaseTunerLayer):
 
         # Activate the adapter
         self.set_adapter(self.active_adapters)
+
+    def buffers_loaded(self, adapter: str) -> bool:
+        # just check one of the core buffers
+        return hasattr(self, f"{adapter}_U1") and isinstance(getattr(self, f"{adapter}_U1"), torch.Tensor)
+
 
 
     def get_base_layer(self) -> nn.Module:
@@ -210,9 +220,11 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
                 The list of adapter names that should be merged. If None, all active adapters will be merged. Defaults
                 to `None`.
         """
+        print("merging adapters")
         adapter_names = check_adapters_to_merge(self, adapter_names)
         if not adapter_names:
             # no adapter to merge
+            print("no adapter to merge")
             return
 
         for active_adapter in adapter_names:
@@ -232,6 +244,7 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
 
                     base_layer.weight.data = orig_weights
                 else:
+                    print("GEtting delta weight")
                     base_layer.weight.data += self.get_delta_weight(active_adapter)
                 self.merged_adapters.append(active_adapter)
 
@@ -245,19 +258,20 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
             if active_adapter in self.uiortholora_sigma.keys():
                 self.get_base_layer().weight.data -= self.get_delta_weight(active_adapter)
 
-    def _calc_tuner_internal(self, adapter: str, trainable=True):
+    def _calc_tuner_internal(self, adapter: str):
+        U1 = getattr(self, f"{adapter}_U1")
+        Vt1 = getattr(self, f"{adapter}_Vt1")
+        S1 = getattr(self, f"{adapter}_S1")
         U2 = getattr(self, f"{adapter}_U2")
         Vt2 = getattr(self, f"{adapter}_Vt2")
         U3 = getattr(self, f"{adapter}_U3")
         Vt3 = getattr(self, f"{adapter}_Vt3")
 
-        if trainable:
-            S2 = getattr(self, f"{adapter}_S2")
-            S3 = getattr(self, f"{adapter}_S3")
         
-        else:
-            S2 = self.uiortholora_sigma[adapter][self.major_component_size:self.medium_component_size] # if self.num_svalues_to_adapt > 0 else getattr(self, f"{adapter}_S2")
-            S3 = self.uiortholora_sigma[adapter][self.medium_component_size:] # if self.num_svalues_to_adapt > 0 else getattr(self, f"{adapter}_S3")
+        sigma = self.uiortholora_sigma[adapter]
+        s2_size = self.medium_component_size - self.major_component_size
+        S2 = sigma[:s2_size] if s2_size > 0 else torch.tensor([], device=sigma.device)
+        S3 = sigma[s2_size:] if len(sigma) > s2_size else torch.tensor([], device=sigma.device)
 
 
         if self.num_svectors_to_adapt > 0:
@@ -267,9 +281,9 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
             new_U3 = U3
             new_Vt3 = Vt3
 
-        U_cat  = torch.cat([U2, new_U3],  dim=1)          # (out, r)
-        S_cat  = torch.cat([S2, S3])                  # (r,)
-        Vt_cat = torch.cat([Vt2, new_Vt3], dim=0)         # (r, in)
+        U_cat  = torch.cat([U1, U2, new_U3],  dim=1)
+        S_cat  = torch.cat([S1, S2, S3])
+        Vt_cat = torch.cat([Vt1, Vt2, new_Vt3], dim=0)
 
         return U_cat, S_cat, Vt_cat
     
@@ -287,31 +301,20 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
         for name in self.active_adapters:
             if name not in self.uiortholora_sigma:
                 continue
+            D = self.uiortholora_D[name]
+            E = self.uiortholora_E[name]
 
-            D = self.uiortholora_D[name]   # (in,)
-            E = self.uiortholora_E[name]   # (out,)
+            x_scaled = self.uiortholora_dropout[name](x) * D
 
-            # per-token scale on the input
-            x_scaled = self.uiortholora_dropout[name](x) * D  # (..., in)
-
-            # U:(out,r), S:(r,), Vt:(r,in)
             U, S, Vt = self._calc_tuner_internal(name)
+            mid = torch.matmul(x_scaled, Vt.transpose(-2, -1))
 
-            # mid = x_scaled @ V, where V = Vt.T  -> (..., r)
-            V = Vt.transpose(0, 1)                     # (in, r)
-            mid = torch.matmul(x_scaled, V)            # (..., r)
+            #multiply S from left with mid
+            mid = mid * S
 
-            # scale by S along last dim
-            if mid.dim() == 2:                         # (B, r)
-                mid = mid * S
-            else:                                      # (B, T, r)
-                mid = mid * S.view(*([1] * (mid.dim() - 1)), -1)
+            y = torch.matmul(mid, U.transpose(-2, -1))
 
-            # y = mid @ U.T -> (..., out)
-            y = torch.matmul(mid, U.transpose(0, 1))   # (..., out)
-
-            # row scale by E and accumulate
-            out = out + y * E                          # broadcast on last dim
+            out = out + y * E
 
         return out
 
