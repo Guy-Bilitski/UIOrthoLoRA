@@ -92,12 +92,12 @@ class UIOrthoLoRALayer(BaseTunerLayer):
 
         # Medium component between svalues and svectors
         self.register_buffer(f"{adapter_name}_U2", U[:, self.major_component_size:self.medium_component_size].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_S2", S[self.major_component_size:self.medium_component_size].detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_S2", S[self.major_component_size:self.medium_component_size].to(self.dtype).detach(), persistent=True)
         self.register_buffer(f"{adapter_name}_Vt2", Vt[self.major_component_size:self.medium_component_size, :].detach(), persistent=True)
 
         # Small component
         self.register_buffer(f"{adapter_name}_U3", U[:, self.medium_component_size:].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_S3", S[self.medium_component_size:].detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_S3", S[self.medium_component_size:].to(self.dtype).detach(), persistent=True)
         self.register_buffer(f"{adapter_name}_Vt3", Vt[self.medium_component_size:, :].detach(), persistent=True)
 
         self.uiortholora_sigma[adapter_name] = nn.Parameter(torch.full((self.num_svalues_to_adapt,), initial_sigma, dtype=self.dtype))
@@ -112,10 +112,10 @@ class UIOrthoLoRALayer(BaseTunerLayer):
 
         else:
             left_orthogonal = torch.nn.utils.parametrizations.orthogonal(
-                nn.Linear(self.num_svectors_to_adapt, self.num_svectors_to_adapt, bias=False, dtype=self.dtype)
+                nn.Linear(self.num_svectors_to_adapt, self.num_svectors_to_adapt, bias=False)
             )
             right_orthogonal = torch.nn.utils.parametrizations.orthogonal(
-                nn.Linear(self.num_svectors_to_adapt, self.num_svectors_to_adapt, bias=False, dtype=self.dtype)
+                nn.Linear(self.num_svectors_to_adapt, self.num_svectors_to_adapt, bias=False)
             )
         
         self.uiortholora_left_unitary[adapter_name] = left_orthogonal
@@ -258,13 +258,15 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
         
         sigma = self.uiortholora_sigma[adapter]
         s2_size = self.medium_component_size - self.major_component_size
-        S2 = sigma[:s2_size] if s2_size > 0 else torch.tensor([], device=sigma.device)
-        S3 = sigma[s2_size:] if len(sigma) > s2_size else torch.tensor([], device=sigma.device)
-
+        S2 = sigma[:s2_size] if s2_size > 0 else torch.tensor([], device=self.device, dtype=self.dtype)
+        S3 = sigma[s2_size:] if len(sigma) > s2_size else torch.tensor([], device=self.device, dtype=self.dtype)
 
         if self.num_svectors_to_adapt > 0:
-            new_U3 = U3 @ self.uiortholora_left_unitary[adapter].weight
-            new_Vt3 = (Vt3.T @ self.uiortholora_right_unitary[adapter].weight).T
+            left_orthogonal = self.uiortholora_left_unitary[adapter].weight.to(self.dtype)
+            right_orthogonal = self.uiortholora_right_unitary[adapter].weight.to(self.dtype)
+            
+            new_U3 = U3 @ left_orthogonal
+            new_Vt3 = (Vt3.T @ right_orthogonal).T
         else:
             new_U3 = U3
             new_Vt3 = Vt3
@@ -289,16 +291,18 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
         for name in self.active_adapters:
             if name not in self.uiortholora_sigma:
                 continue
-            D = self.uiortholora_D[name]
-            E = self.uiortholora_E[name]
+            D = self.uiortholora_D[name].to(self.dtype)
+            E = self.uiortholora_E[name].to(self.dtype)
 
             x_scaled = self.uiortholora_dropout[name](x) * D
+            x_scaled = x_scaled.to(self.dtype)
 
             U, S, Vt = self._calc_tuner_internal(name)
             mid = torch.matmul(x_scaled, Vt.transpose(-2, -1))
 
             #multiply S from left with mid
             mid = mid * S
+            mid = mid.to(self.dtype)
 
             y = torch.matmul(mid, U.transpose(-2, -1))
 
