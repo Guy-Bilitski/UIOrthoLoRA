@@ -33,10 +33,9 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         self.base_layer = base_layer
          # ---- handle Linear vs Conv1D ----------------------------------
         if isinstance(base_layer, Conv1D):
-            # Conv1D stores weight with shape (in_dim, out_dim)
             self.in_features  = base_layer.weight.shape[0]
             self.out_features = base_layer.weight.shape[1]
-        else:                              # nn.Linear / 8-bit / 4-bit
+        else:
             self.in_features  = base_layer.in_features
             self.out_features = base_layer.out_features
 
@@ -51,6 +50,7 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         self.kwargs = kwargs
         self.num_svalues_to_adapt = kwargs.pop("num_svalues_to_adapt")
         self.num_svectors_to_adapt = kwargs.pop("num_svectors_to_adapt")
+        self.dtype = self.base_layer.weight.dtype
 
 
     def update_layer(
@@ -79,12 +79,15 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         if not self.buffers_loaded(adapter_name):
             with torch.no_grad():
                 U, S, Vt = torch.linalg.svd(base_w.float(), full_matrices=False)
+                U = U.to(dtype=self.dtype)
+                Vt = Vt.to(dtype=self.dtype)
+                S = S.to(dtype=self.dtype)
             print(f"Calculated SVD!")
 
         # Major component between svalues and svectors
         print(f"keeping major: {self.major_component_size}")
         self.register_buffer(f"{adapter_name}_U1", U[:, :self.major_component_size].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_S1", torch.ones(self.major_component_size, dtype=torch.float).detach(), persistent=True)
+        self.register_buffer(f"{adapter_name}_S1", torch.ones(self.major_component_size, dtype=self.dtype).detach(), persistent=True)
         self.register_buffer(f"{adapter_name}_Vt1", Vt[:self.major_component_size, :].detach(), persistent=True)
 
         # Medium component between svalues and svectors
@@ -97,11 +100,11 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         self.register_buffer(f"{adapter_name}_S3", S[self.medium_component_size:].detach(), persistent=True)
         self.register_buffer(f"{adapter_name}_Vt3", Vt[self.medium_component_size:, :].detach(), persistent=True)
 
-        self.uiortholora_sigma[adapter_name] = nn.Parameter(torch.full((self.num_svalues_to_adapt,), initial_sigma, dtype=torch.float))
+        self.uiortholora_sigma[adapter_name] = nn.Parameter(torch.full((self.num_svalues_to_adapt,), initial_sigma, dtype=self.dtype))
 
         # Initialize D and E with provided scaler or default of 1
-        self.uiortholora_D[adapter_name] = nn.Parameter(torch.full((self.in_features,), initial_scaler, dtype=torch.float))
-        self.uiortholora_E[adapter_name] = nn.Parameter(torch.full((self.out_features,), initial_scaler, dtype=torch.float))
+        self.uiortholora_D[adapter_name] = nn.Parameter(torch.full((self.in_features,), initial_scaler, dtype=self.dtype))
+        self.uiortholora_E[adapter_name] = nn.Parameter(torch.full((self.out_features,), initial_scaler, dtype=self.dtype))
 
         if self.num_svectors_to_adapt == 0:
             left_orthogonal = IdentityWithTranspose()
@@ -109,10 +112,10 @@ class UIOrthoLoRALayer(BaseTunerLayer):
 
         else:
             left_orthogonal = torch.nn.utils.parametrizations.orthogonal(
-                nn.Linear(self.num_svectors_to_adapt, self.num_svectors_to_adapt, bias=False)
+                nn.Linear(self.num_svectors_to_adapt, self.num_svectors_to_adapt, bias=False, dtype=self.dtype)
             )
             right_orthogonal = torch.nn.utils.parametrizations.orthogonal(
-                nn.Linear(self.num_svectors_to_adapt, self.num_svectors_to_adapt, bias=False)
+                nn.Linear(self.num_svectors_to_adapt, self.num_svectors_to_adapt, bias=False, dtype=self.dtype)
             )
         
         self.uiortholora_left_unitary[adapter_name] = left_orthogonal
@@ -208,23 +211,8 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
 
 
     def merge(self, *, safe_merge: bool = False, adapter_names: Optional[List[str]] = None):
-        """
-        Merge the active adapter weights into the base weights
-
-        Args:
-            safe_merge (`bool`, *optional*):
-                If True, the merge operation will be performed in a copy of the original weights and check for NaNs
-                before merging the weights. This is useful if you want to check if the merge operation will produce
-                NaNs. Defaults to `False`.
-            adapter_names (`List[str]`, *optional*):
-                The list of adapter names that should be merged. If None, all active adapters will be merged. Defaults
-                to `None`.
-        """
-        print("merging adapters")
         adapter_names = check_adapters_to_merge(self, adapter_names)
         if not adapter_names:
-            # no adapter to merge
-            print("no adapter to merge")
             return
 
         for active_adapter in adapter_names:
