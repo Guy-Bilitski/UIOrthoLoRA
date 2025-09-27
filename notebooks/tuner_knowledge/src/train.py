@@ -222,103 +222,6 @@ def tokenize_fn(example, tokenizer):
         "labels": labels,
     }
 
-
-def update_validation_split(input_path, random_seed=42):
-    """
-    Update a JSONL file with evaluation results (EFFICIENT VERSION):
-    1. Filter lines where base_eval score == 0
-    2. From filtered lines, randomly select 20% and set is_validation=true
-    3. Update the file in place using memory-efficient streaming
-    
-    Parameters
-    ----------
-    input_path : str | Path
-        Path to the JSONL file with evaluation results to update
-    random_seed : int | None
-        Random seed for reproducible results. If None, uses current time.
-    """
-    input_path = Path(input_path)
-    temp_path = input_path.with_suffix(input_path.suffix + '.tmp')
-    
-    # Set random seed for reproducibility
-    if random_seed is not None:
-        random.seed(random_seed)
-    
-    # PASS 1: Identify zero-score line numbers (memory efficient)
-    zero_score_line_numbers = []
-    total_lines = 0
-    
-    with input_path.open("r", encoding="utf-8") as f:
-        for line_num, line in enumerate(f):
-            line = line.strip()
-            if line:  # Skip empty lines
-                try:
-                    # Only parse the fields we need for filtering
-                    data = json.loads(line)
-                    base_score = data.get("base_eval", {}).get("score", None)
-                    if base_score == 0 or base_score == 0.0:
-                        zero_score_line_numbers.append(line_num)
-                    total_lines += 1
-                except json.JSONDecodeError:
-                    total_lines += 1
-                    continue
-    
-    # Randomly select 20% of zero-score lines for validation
-    validation_line_numbers = set()
-    if zero_score_line_numbers:
-        # Use round() instead of int() for better percentage accuracy
-        num_validation = max(1, round(len(zero_score_line_numbers) * 0.2))
-        selected_indices = random.sample(range(len(zero_score_line_numbers)), num_validation)
-        validation_line_numbers = {zero_score_line_numbers[i] for i in selected_indices}
-    
-    # PASS 2: Stream through file and update only necessary lines
-    lines_processed = 0
-    validation_updates = 0
-    train_updates = 0
-    
-    with input_path.open("r", encoding="utf-8") as input_file, \
-         temp_path.open("w", encoding="utf-8") as output_file:
-        
-        for line_num, line in enumerate(input_file):
-            line = line.strip()
-            if not line:  # Skip empty lines
-                output_file.write("\n")
-                continue
-                
-            try:
-                data = json.loads(line)
-                
-                # Check if this line needs updating
-                if line_num in zero_score_line_numbers:
-                    if line_num in validation_line_numbers:
-                        data["is_validation"] = True
-                        validation_updates += 1
-                    else:
-                        data["is_validation"] = False
-                        train_updates += 1
-                
-                # Write the (possibly updated) line
-                json.dump(data, output_file, ensure_ascii=False)
-                output_file.write("\n")
-                lines_processed += 1
-                
-                # Progress indicator for large files
-                if lines_processed % 10000 == 0:
-                    print(f"  Processed {lines_processed:,} lines...")
-                    
-            except json.JSONDecodeError:
-                # Keep invalid lines as-is
-                output_file.write(line + "\n")
-                continue
-    
-    # Replace original file with updated version
-    temp_path.replace(input_path)
-    
-    # Final summary
-    print(f"Lines with score 0 (model eval): {len(zero_score_line_numbers)}")
-    print(f"Lines with is_validation=true: {validation_updates}")
-
-
 def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_model_id):
     """
     Update self-consistency scores for fine-tuned models in an existing JSONL file.    
@@ -512,6 +415,72 @@ def get_data_collator(tokenizer, model_id):
         label_pad_token_id=-100
     )
 
+import torch
+from tqdm import tqdm
+
+def process_with_dynamic_batch_size(
+    jsonl_path,
+    initial_batch_size=30,
+    min_batch_size=1,
+    prompt_template=None,
+    parser=None,
+    model=None,
+    tokenizer=None,
+    args=None,
+    ft_model_id=None,
+):
+    """
+    Processes a JSONL file in batches, dynamically reducing the batch size by
+    chunking if a CUDA OutOfMemoryError is encountered.
+    """
+    # The outer loop streams large batches from the file
+    for batch in tqdm(
+        stream_jsonl_batches(jsonl_path, batch_size=initial_batch_size),
+        desc="Evaluating batches"
+    ):
+        current_chunk_size = initial_batch_size
+        success = False  # Flag to indicate if the batch was processed successfully
+
+        # This loop retries the entire batch with a smaller chunk size upon OOM error
+        while current_chunk_size >= min_batch_size and not success:
+            try:
+                batch_sc_scores = []
+                # Process the large batch in smaller chunks
+                for i in range(0, len(batch), current_chunk_size):
+                    sub_batch = batch[i : i + current_chunk_size]
+
+                    # Perform evaluation on the smaller chunk
+                    questions, ground_truths = prepare_sc_inputs(sub_batch)
+                    sc_scores = evaluate_self_consistency(
+                        questions,
+                        ground_truths,
+                        prompt_template,
+                        parser,
+                        model,
+                        tokenizer,
+                        args.sc_number
+                    )
+                    batch_sc_scores.extend(sc_scores)
+                    print(f"\n* Processed chunk of size {len(sub_batch)}", flush=True)
+                    # Clear cache after processing each chunk to free memory
+                    torch.cuda.empty_cache()
+
+                # If all chunks are processed, write the collected results for the entire batch
+                write_sc_score_FT_to_jsonl_batch(batch, batch_sc_scores, jsonl_path, ft_model_id)
+                print(f"** Successfully processed batch of size {len(batch)} with chunk size {current_chunk_size}", flush=True)
+                success = True  # Mark the entire batch as successfully processed
+
+            except torch.cuda.OutOfMemoryError:
+                torch.cuda.empty_cache()  # Free up memory before retrying
+                new_chunk_size = current_chunk_size // 2
+                if new_chunk_size < min_batch_size:
+                    break # Avoids retrying with a size smaller than the minimum
+                print(f"! OOM with chunk size {current_chunk_size}, retrying with {new_chunk_size}", flush=True)
+                current_chunk_size = new_chunk_size
+
+        # If the batch could not be processed even with the minimum chunk size
+        if not success:
+            raise RuntimeError(f"!!! Cannot process batch even with minimum chunk size of {min_batch_size}.")
 
 
 def main():
@@ -571,13 +540,20 @@ def main():
 
 
     model.eval()  # Set model to evaluation mode
+    torch.compile(model)
     prompt_template, parser = get_prompt_template_and_parser()
 
-    for batch in tqdm(stream_jsonl_batches(args.results_path, batch_size=30), desc="Evaluating batches"):
-        questions, ground_truths = prepare_sc_inputs(batch)
-        sc_scores = evaluate_self_consistency(questions, ground_truths, prompt_template, parser, model, tokenizer, args.sc_number)
-
-        write_sc_score_FT_to_jsonl_batch(batch, sc_scores, args.results_path, ft_model_id)
+    process_with_dynamic_batch_size(
+        args.results_path,
+        initial_batch_size=80,
+        min_batch_size=1,
+        prompt_template=prompt_template,
+        parser=parser,
+        model=model,
+        tokenizer=tokenizer,
+        args=args,
+        ft_model_id=ft_model_id
+    )
         
 
 if __name__ == "__main__":
