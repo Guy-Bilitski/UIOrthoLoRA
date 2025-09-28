@@ -1,6 +1,7 @@
 import os
 import sys
 sys.path.append(os.path.expanduser("/home/guy.bilitski/UIOrthoLoRA/notebooks/tuner_knowledge"))
+sys.path.append(os.path.expanduser("/home/guyb/projects/UIOrthoLoRA/notebooks/tuner_knowledge"))
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import torch
@@ -545,7 +546,7 @@ def main():
 
     process_with_dynamic_batch_size(
         args.results_path,
-        initial_batch_size=80,
+        initial_batch_size=70,
         min_batch_size=1,
         prompt_template=prompt_template,
         parser=parser,

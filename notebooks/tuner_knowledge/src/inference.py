@@ -175,20 +175,6 @@ def evaluate_self_consistency(
     return batch_sc_score_triviaqa(parsed_per_q, ground_truths)
 
 
-def simple_test_scores(questions, ground_truths):
-    """
-    Simple test function that returns fixed scores [0.2, 0.4] for testing purposes.
-    
-    Args:
-        questions: List of questions (not used, just for compatibility)
-        ground_truths: List of ground truths (not used, just for compatibility)
-    
-    Returns:
-        List[float]: Fixed scores [0.2, 0.4]
-    """
-    return [0.2, 0.4]
-
-
 def write_sc_scores_to_jsonl_batch(batch_data, sc_scores, output_file_path, model_name="llama-3.2-3b"):
     """
     Write self-consistency scores to a JSONL file in batch mode.
@@ -216,7 +202,6 @@ def write_sc_scores_to_jsonl_batch(batch_data, sc_scores, output_file_path, mode
                 "model_id": model_name,
                 "score": score
             }
-            # ft_evals will be added in the future
         }
         batch_results.append(result_entry)
     
