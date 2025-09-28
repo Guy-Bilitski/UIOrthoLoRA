@@ -1,0 +1,2 @@
+model,n_trained,accuracy,psc,nsc,psc_count,nsc_count
+meta-llama_Llama-3.2-3B_uiortholora_tr500_uiortholora_s256_v64,500,0.1424,4192.4,1885.4,7202,3402
