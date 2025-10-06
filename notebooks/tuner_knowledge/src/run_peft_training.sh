@@ -7,11 +7,12 @@ RESULTS_PATH="results/llama/meta-llama_Llama-3.2-3B_scores.jsonl"
 ALPHA=1
 DROPOUT=0.0
 NUM_EPOCHS=5
-LEARNING_RATE=1e-3
+LEARNING_RATE=1e-4
 SEED=42
 SC_NUMBER=5
 INCLUDE_TRAINING=true
-RANK=8
+LORA_RANK=3
+RANDLORA_RANK=512
 SVALUES=256
 SVECS=64
 
@@ -25,8 +26,8 @@ fi
 
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
-PEFT_TYPES="uiortholora"
-TRAINING_NUMBERS="100"
+PEFT_TYPES="lora randlora"
+TRAINING_NUMBERS="100 500 1000 2000"
 
 for PEFT_TYPE in $PEFT_TYPES; do
     for TRAINING_NUMBER in $TRAINING_NUMBERS; do
@@ -36,14 +37,14 @@ for PEFT_TYPE in $PEFT_TYPES; do
             PEFT_ARGS="--svalues $SVALUES --svectors $SVECS"
             OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_uiortholora_s${SVALUES}_v${SVECS}"
         elif [ "$PEFT_TYPE" = "lora" ]; then
-            PEFT_ARGS="--lora_rank $RANK"
-            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_lora_r${RANK}"
+            PEFT_ARGS="--lora_rank $LORA_RANK"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_lora_r${LORA_RANK}"
         elif [ "$PEFT_TYPE" = "vera" ]; then
             PEFT_ARGS="--vera_rank $RANK"
             OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_vera_r${RANK}"
         elif [ "$PEFT_TYPE" = "randlora" ]; then
-            PEFT_ARGS="--rand_lora_rank $RANK"
-            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_randlora_r${RANK}"
+            PEFT_ARGS="--rand_lora_rank $RANDLORA_RANK"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_randlora_r${RANDLORA_RANK}"
         else
             PEFT_ARGS=""
         fi
