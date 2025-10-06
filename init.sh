@@ -3,6 +3,8 @@
 
 # fail on error
 set -e
+export CONDA_ENV="intlx"
+
 
 # go to project source dir
 cd "./notebooks/tuner_knowledge/src" || exit 1
@@ -17,6 +19,6 @@ fi
 # source conda base setup
 source "$(conda info --base)/etc/profile.d/conda.sh"
 
-conda activate guyb_env
+conda activate "$CONDA_ENV"
 
-echo "Environment 'guyb_env' activated and working directory set to $(pwd)"
+echo "Environment '$CONDA_ENV' activated and working directory set to $(pwd)"

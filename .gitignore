@@ -182,3 +182,7 @@ notebooks/tuner_knowledge/src/results
 notebooks/tuner_knowledge/src/models
 notebooks/tuner_knowledge/src/backup
 notebooks/tuner_knowledge/*.jsonl
+
+**/init.sh
+notebooks/knowledge-packing/lora_r1a1
+notebooks/knowledge-packing/dataset/

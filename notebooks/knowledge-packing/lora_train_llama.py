@@ -273,7 +273,7 @@ def main(path, unknown, high_known, rank, paraphrase, seed):
     flag_str = 'Paraphrase' if parahprase_flag else 'HighKnown'
     args = TrainingArguments(
         run_name=f"llama3_1_8b_instr_lora{lora_rank}_bs32_trained_on_{unknown_rate}Unknown_{high_known_rate}Rephrase",
-        output_dir=f"../lora_r1a1/{flag_str}/lora{lora_rank}_onlyproj_bs{BS}_LR{LR}_seed{seed}_trained_on_{unknown_rate}Unknown_{high_known_rate}{flag_str}",
+        output_dir=f"./lora_r1a1/{flag_str}/lora{lora_rank}_onlyproj_bs{BS}_LR{LR}_seed{seed}_trained_on_{unknown_rate}Unknown_{high_known_rate}{flag_str}",
         per_device_train_batch_size=BS,
         per_device_eval_batch_size=128,
         eval_strategy="no",
@@ -303,6 +303,8 @@ def main(path, unknown, high_known, rank, paraphrase, seed):
     dataset.save_to_disk(
         os.path.join(trainer.args.output_dir, "dataset_to_train.dataset")
     )
+
+    print("Done")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some variables.")
