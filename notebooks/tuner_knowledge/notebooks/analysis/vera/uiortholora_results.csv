@@ -1,0 +1,5 @@
+model,n_trained,accuracy,psc,nsc,psc_count,nsc_count
+meta-llama_Llama-3.2-3B_vera_tr100_vera_r1024,300,0.017333333333333333,138.2,144.59999999999997,212,213
+meta-llama_Llama-3.2-3B_vera_tr500_vera_r1024,500,0.020800000000000006,325.19999999999993,89.0,472,133
+meta-llama_Llama-3.2-3B_vera_tr1000_vera_r1024,1000,0.0504,729.0,93.4,989,134
+meta-llama_Llama-3.2-3B_vera_tr2000_vera_r1024,2000,0.1032,1572.6000000000001,238.2,1965,317

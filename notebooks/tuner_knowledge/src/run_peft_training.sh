@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
-export CUDA_VISIBLE_DEVICES=3
+# export CUDA_VISIBLE_DEVICES=3
 
 MODEL_ID="meta-llama/Llama-3.2-3B"
-RESULTS_PATH="results/llama/meta-llama_Llama-3.2-3B_scores.jsonl"
-ALPHA=1
+RESULTS_PATH="results/llama/meta-llama_Llama-3.2-3B_scores_merged.jsonl"
+ALPHA=8
 DROPOUT=0.0
 NUM_EPOCHS=5
 LEARNING_RATE=1e-4

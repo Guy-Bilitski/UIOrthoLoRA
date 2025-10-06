@@ -1,3 +1,5 @@
 model,n_trained,accuracy,psc,nsc,psc_count,nsc_count
-meta-llama_Llama-3.2-3B_uiortholora_tr100_uiortholora_s256_v64,200,0.045,2024.4,738.0000000000001,4549,1886
-meta-llama_Llama-3.2-3B_uiortholora_tr500_uiortholora_s256_v64,500,0.1424,4192.4,1885.4,7202,3402
+meta-llama_Llama-3.2-3B_uiortholora_tr100_uiortholora_s256_v64,100,0.04800000000000001,477.0,108.39999999999999,681,158
+meta-llama_Llama-3.2-3B_uiortholora_tr500_uiortholora_s256_v64,500,0.1424,2014.7999999999997,849.0,2420,1027
+meta-llama_Llama-3.2-3B_uiortholora_tr1000_uiortholora_s256_v64,1000,0.19080000000000003,2425.8,3502.8,2833,3868
+meta-llama_Llama-3.2-3B_uiortholora_tr2000_uiortholora_s256_v64,2000,0.22360000000000002,2781.6000000000004,3865.2,3215,4195
