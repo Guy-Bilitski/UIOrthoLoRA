@@ -546,7 +546,7 @@ def main():
 
     process_with_dynamic_batch_size(
         args.results_path,
-        initial_batch_size=70,
+        initial_batch_size=500,
         min_batch_size=1,
         prompt_template=prompt_template,
         parser=parser,

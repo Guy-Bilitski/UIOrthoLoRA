@@ -6,12 +6,13 @@ MODEL_ID="meta-llama/Llama-3.2-3B"
 RESULTS_PATH="results/llama/meta-llama_Llama-3.2-3B_scores_merged.jsonl"
 ALPHA=8
 DROPOUT=0.0
-NUM_EPOCHS=5
+NUM_EPOCHS=10
 LEARNING_RATE=1e-4
 SEED=42
 SC_NUMBER=5
 INCLUDE_TRAINING=true
 LORA_RANK=3
+VERA_RANK=3
 RANDLORA_RANK=512
 SVALUES=256
 SVECS=64
@@ -26,8 +27,8 @@ fi
 
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
-PEFT_TYPES="lora uiortholora"
-TRAINING_NUMBERS="3000 4000"
+PEFT_TYPES="vera randlora"
+TRAINING_NUMBERS="3000 4000 5000"
 
 for PEFT_TYPE in $PEFT_TYPES; do
     for TRAINING_NUMBER in $TRAINING_NUMBERS; do
@@ -40,7 +41,7 @@ for PEFT_TYPE in $PEFT_TYPES; do
             PEFT_ARGS="--lora_rank $LORA_RANK"
             OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_lora_r${LORA_RANK}"
         elif [ "$PEFT_TYPE" = "vera" ]; then
-            PEFT_ARGS="--vera_rank $RANK"
+            PEFT_ARGS="--vera_rank $VERA_RANK"
             OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_vera_r${RANK}"
         elif [ "$PEFT_TYPE" = "randlora" ]; then
             PEFT_ARGS="--rand_lora_rank $RANDLORA_RANK"

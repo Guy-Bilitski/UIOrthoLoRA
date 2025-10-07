@@ -224,7 +224,7 @@ def main():
     tokenizer, model = get_tokenizer_and_model(model_id)
     prompt_template, parser = get_prompt_template_and_parser()
 
-    for batch in tqdm(stream_triviaqa_rc(split, batch_size=30), desc="Evaluating batches"):
+    for batch in tqdm(stream_triviaqa_rc(split, batch_size=250), desc="Evaluating batches"):
         questions, ground_truths = prepare_sc_inputs(batch)
         sc_scores = evaluate_self_consistency(questions, ground_truths, prompt_template, parser, model, tokenizer, n_gen, debug)
         # Write the sc scores to the json file (batch processing)
