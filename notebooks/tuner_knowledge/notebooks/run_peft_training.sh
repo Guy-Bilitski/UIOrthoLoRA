@@ -1,0 +1,80 @@
+#!/bin/bash
+set -e
+# export CUDA_VISIBLE_DEVICES=3
+
+MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
+RESULTS_PATH="results/meta-llama_Llama-3.1-8B-Instruct_scores.jsonl"
+ALPHA=32
+DROPOUT=0.0
+NUM_EPOCHS=10
+SEED=42
+SC_NUMBER=10
+INCLUDE_TRAINING=true
+LORA_RANK=3
+VERA_RANK=3
+RANDLORA_RANK=512
+SVALUES=256
+SVECS=64
+
+
+
+if [ "$INCLUDE_TRAINING" = true ]; then
+    INCLUDE_TRAINING_FLAG="--include_training"
+else
+    INCLUDE_TRAINING_FLAG=""
+fi
+
+MODEL_SAFE_NAME="${MODEL_ID//\//_}"
+
+PEFT_TYPES="uiortholora lora vera randlora"
+TRAINING_NUMBERS="100 500 1000 2000 3000 4000 5000"
+LEARNING_RATES="1e-3 1e-4 1e-5"
+
+for PEFT_TYPE in $PEFT_TYPES; do
+	for LEARNING_RATE in $LEARNING_RATES; do
+		for TRAINING_NUMBER in $TRAINING_NUMBERS; do
+
+        # Conditional args
+        if [ "$PEFT_TYPE" = "uiortholora" ]; then
+            PEFT_ARGS="--svalues $SVALUES --svectors $SVECS"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_uiortholora_s${SVALUES}_v${SVECS}_lr${LEARNING_RATE}"
+        elif [ "$PEFT_TYPE" = "lora" ]; then
+            PEFT_ARGS="--lora_rank $LORA_RANK"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_lora_r${LORA_RANK}_lr${LEARNING_RATE}"
+        elif [ "$PEFT_TYPE" = "vera" ]; then
+            PEFT_ARGS="--vera_rank $VERA_RANK"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_vera_r${RANK_RANK}_lr${LEARNING_RATE}"
+        elif [ "$PEFT_TYPE" = "randlora" ]; then
+            PEFT_ARGS="--rand_lora_rank $RANDLORA_RANK"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_randlora_r${RANDLORA_RANK}_lr${LEARNING_RATE}"
+        else
+            PEFT_ARGS=""
+        fi
+
+        # MODEL_PATH dynamically matches the number of training samples
+        MODEL_PATH="$OUTPUT_PATH"
+
+        echo "=== Running: PEFT_TYPE=$PEFT_TYPE, TRAINING_NUMBER=$TRAINING_NUMBER ==="
+        echo "Output path: $OUTPUT_PATH"
+        echo "Model path:  $MODEL_PATH"
+
+        mkdir -p "$(dirname "$OUTPUT_PATH")"
+
+        python3 train.py \
+            --model_id "$MODEL_ID" \
+            --peft_type "$PEFT_TYPE" \
+            --alpha "$ALPHA" \
+            --dropout "$DROPOUT" \
+            --training_number "$TRAINING_NUMBER" \
+            --output_path "$OUTPUT_PATH" \
+            --num_epochs "$NUM_EPOCHS" \
+            --learning_rate "$LEARNING_RATE" \
+            --seed "$SEED" \
+            --results_path "$RESULTS_PATH" \
+            --sc_number "$SC_NUMBER" \
+            $INCLUDE_TRAINING_FLAG \
+            --model_path "$MODEL_PATH" \
+            $PEFT_ARGS
+    	done
+    done
+done

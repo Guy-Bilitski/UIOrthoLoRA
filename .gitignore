@@ -186,3 +186,5 @@ notebooks/tuner_knowledge/*.jsonl
 **/init.sh
 notebooks/knowledge-packing/lora_r1a1
 notebooks/knowledge-packing/dataset/
+
+notebooks/tuner_knowledge/notebooks/results
