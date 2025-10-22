@@ -42,7 +42,7 @@ for PEFT_TYPE in $PEFT_TYPES; do
             OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_lora_r${LORA_RANK}"
         elif [ "$PEFT_TYPE" = "vera" ]; then
             PEFT_ARGS="--vera_rank $VERA_RANK"
-            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_vera_r${RANK}"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_vera_r${VERA_RANK}"
         elif [ "$PEFT_TYPE" = "randlora" ]; then
             PEFT_ARGS="--rand_lora_rank $RANDLORA_RANK"
             OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_randlora_r${RANDLORA_RANK}"
