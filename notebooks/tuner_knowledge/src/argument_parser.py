@@ -39,6 +39,9 @@ def parse_arguments():
     
     parser.add_argument("--include_training", default=False, action='store_true')
 
+    parser.add_argument("--run_qa_inference", default=False, action='store_true',
+                        help="Run Q&A inference evaluation after training")
+
     parser.add_argument("--model_path", type=str, default=None,
                         help="Path to the pre-trained model (if different from model_id)")
 

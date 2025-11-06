@@ -124,7 +124,9 @@ def main(lora_path, base_model_path):
     examples_unk2 = train_dataset_dict["test"]
     
     UNK_HN_dataset_90k = pd.DataFrame(examples_unk2)[['question','answer']]
-    UNK_HN_dataset_90k['answer'] = UNK_HN_dataset_90k['answer'].apply( lambda a: a[0] if isinstance(a, list) else a)
+    # Note: The training script already cleaned the answer format via clean_out_ans()
+    # so answer is already a dict with 'normalized_aliases', not a list
+    # No need to do: lambda a: a[0]
     UNK_HN_dataset_90k_dataset = Dataset.from_pandas(UNK_HN_dataset_90k)
 
     primed_dataset = UNK_HN_dataset_90k_dataset.map(primer_system_user, batched=True,
@@ -189,6 +191,12 @@ def main(lora_path, base_model_path):
     small_dataset = small_dataset.map(quasi_accuracy_triviaqa, batched=True,
                                         batch_size=128
                                         )
+    
+    # NOTE: The notebook expects ungrouped data and will do its own groupby
+    # So we save small_dataset directly, not the grouped version
+    train_dataset = small_dataset
+    
+    # Still compute statistics for the summary (using grouped data)
     def accuracy_check(list_of):
         if all(list_of['p_greed']):
             return 'HighlyKnown'
@@ -200,19 +208,8 @@ def main(lora_path, base_model_path):
             return 'Unknown'
         
     test_df = pd.DataFrame(small_dataset)
-    test_df = test_df.groupby('question').agg(list).reset_index(drop=False)
-    test_df['Category'] = test_df.apply(lambda a: accuracy_check(a), axis=1)
-
-    from itertools import compress
-
-    def filter_ans(layer_of):
-        good_one = list(compress(layer_of['primed_question'], layer_of['p_greed'] ))[0]
-        bad_one = list(compress(layer_of['primed_question'], [not i for i in layer_of['p_greed']] ))[0]
-        return [bad_one, good_one]
-
-    arr = test_df[test_df['Category'] == 'MaybeKnown'].apply(filter_ans ,axis=1)
-
-    train_dataset = Dataset.from_pandas(test_df)
+    test_df_grouped = test_df.groupby('question').agg(list).reset_index(drop=False)
+    test_df_grouped['Category'] = test_df_grouped.apply(lambda a: accuracy_check(a), axis=1)
 
     # DIFFERENCE: Save to VALID_DATASET and include all splits
     dataset_dict = DatasetDict({
@@ -229,11 +226,12 @@ def main(lora_path, base_model_path):
     print("\n" + "="*50)
     print("EVALUATION COMPLETE")
     print("="*50)
-    print(f"Total examples: {len(train_dataset)}")
-    print(f"\nCategory breakdown:")
+    print(f"Total examples (ungrouped): {len(train_dataset)}")
+    print(f"Unique questions: {len(test_df_grouped)}")
+    print(f"\nCategory breakdown (grouped by question):")
     for cat in ['HighlyKnown', 'MaybeKnown', 'WeaklyKnown', 'Unknown']:
-        count = (test_df['Category'] == cat).sum()
-        print(f"  {cat}: {count} ({count/len(test_df)*100:.1f}%)")
+        count = (test_df_grouped['Category'] == cat).sum()
+        print(f"  {cat}: {count} ({count/len(test_df_grouped)*100:.1f}%)")
     print(f"\nOutput saved to: {output_path}")
     print("\nYou can now run the analysis notebook!")
 

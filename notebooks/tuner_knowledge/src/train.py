@@ -542,19 +542,27 @@ def main():
 
     model.eval()  # Set model to evaluation mode
     torch.compile(model)
-    prompt_template, parser = get_prompt_template_and_parser()
+    
+    # Only run Q&A inference if the flag is set
+    if args.run_qa_inference:
+        prompt_template, parser = get_prompt_template_and_parser()
 
-    process_with_dynamic_batch_size(
-        args.results_path,
-        initial_batch_size=500,
-        min_batch_size=1,
-        prompt_template=prompt_template,
-        parser=parser,
-        model=model,
-        tokenizer=tokenizer,
-        args=args,
-        ft_model_id=ft_model_id
-    )
+        process_with_dynamic_batch_size(
+            args.results_path,
+            initial_batch_size=500,
+            min_batch_size=1,
+            prompt_template=prompt_template,
+            parser=parser,
+            model=model,
+            tokenizer=tokenizer,
+            args=args,
+            ft_model_id=ft_model_id
+        )
+    else:
+        print()
+        print(" =========================================== ")
+        print("Skipping Q&A inference evaluation (--run_qa_inference not set)")
+        print(" =========================================== ")
         
 
 if __name__ == "__main__":
