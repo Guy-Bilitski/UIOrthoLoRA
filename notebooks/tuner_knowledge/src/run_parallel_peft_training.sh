@@ -8,11 +8,18 @@ NUM_EPOCHS=10
 SEED=42
 SC_NUMBER=10
 INCLUDE_TRAINING=true
+RUN_QA_INFERENCE=false
 LORA_RANK=3
 VERA_RANK=3
 RANDLORA_RANK=512
 SVALUES=256
 SVECS=64
+
+# MMLU Evaluation settings
+RUN_MMLU_EVAL=true
+MMLU_NUM_FEWSHOT=5
+MMLU_LIMIT=10  # Set to empty string or remove --limit flag to run all
+DELETE_MODEL_AFTER_EVAL=true
 
 # GPU mapping per adapter
 declare -A GPU_MAP=(
@@ -34,8 +41,12 @@ mkdir -p results logs models
 
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
-TRAINING_NUMBERS="100 500 1000 2000 3000 4000 5000"
-LEARNING_RATES="1e-3 1e-4 1e-5"
+# TRAINING_NUMBERS="100 500 1000 2000 3000 4000 5000"
+# LEARNING_RATES="1e-3 1e-4 1e-5"
+
+PEFT_TYPES="lora"
+TRAINING_NUMBERS="1"
+LEARNING_RATES="1e-3"
 
 if [ "$INCLUDE_TRAINING" = true ]; then
     INCLUDE_TRAINING_FLAG="--include_training"
@@ -44,7 +55,7 @@ else
 fi
 
 # Launch one process per adapter
-for PEFT_TYPE in uiortholora lora vera randlora; do
+for PEFT_TYPE in $PEFT_TYPES; do
 (
     export CUDA_VISIBLE_DEVICES="${GPU_MAP[$PEFT_TYPE]}"
     RESULTS_PATH="${RESULT_MAP[$PEFT_TYPE]}"
@@ -85,8 +96,51 @@ for PEFT_TYPE in uiortholora lora vera randlora; do
                 --results_path "$RESULTS_PATH" \
                 --sc_number "$SC_NUMBER" \
                 $INCLUDE_TRAINING_FLAG \
+                $RUN_QA_INFERENCE_FLAG \
                 --model_path "$OUTPUT_PATH" \
                 $PEFT_ARGS >>"$LOGFILE" 2>&1
+
+            # Run MMLU evaluation if enabled
+            if [ "$RUN_MMLU_EVAL" = true ] && [ "$INCLUDE_TRAINING" = true ]; then
+                echo ""
+                echo "=========================================="
+                echo "Running MMLU Evaluation"
+                echo "=========================================="
+                
+                MMLU_OUTPUT_PATH="results/mmlu/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}.json"
+                mkdir -p "$(dirname "$MMLU_OUTPUT_PATH")"
+                
+                # Build the lm_eval command
+                MMLU_CMD="lm_eval --model hf --model_args pretrained=$OUTPUT_PATH --tasks mmlu --num_fewshot $MMLU_NUM_FEWSHOT --batch_size auto --output_path $MMLU_OUTPUT_PATH"
+                
+                # Add limit if specified
+                if [ -n "$MMLU_LIMIT" ]; then
+                    MMLU_CMD="$MMLU_CMD --limit $MMLU_LIMIT"
+                fi
+                
+                echo "Running: $MMLU_CMD"
+                MMLU_START_TIME=$(date +%s)
+                eval $MMLU_CMD
+                MMLU_END_TIME=$(date +%s)
+                MMLU_DURATION=$((MMLU_END_TIME - MMLU_START_TIME))
+                
+                if [ $? -eq 0 ]; then
+                    echo "✓ MMLU evaluation completed successfully"
+                    echo "Results saved to: $MMLU_OUTPUT_PATH"
+                    echo "MMLU evaluation took: ${MMLU_DURATION} seconds"
+                else
+                    echo "✗ MMLU evaluation failed"
+                    echo "MMLU evaluation took: ${MMLU_DURATION} seconds"
+                fi
+                
+                # Delete model after evaluation if enabled
+                if [ "$DELETE_MODEL_AFTER_EVAL" = true ]; then
+                    echo ""
+                    echo "Deleting model: $OUTPUT_PATH"
+                    rm -rf "$OUTPUT_PATH"
+                    echo "✓ Model deleted"
+                fi
+            fi
         done
     done
 
