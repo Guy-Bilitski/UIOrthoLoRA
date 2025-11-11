@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -e
 
 MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
@@ -41,17 +42,21 @@ mkdir -p results logs models
 
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
-# TRAINING_NUMBERS="100 500 1000 2000 3000 4000 5000"
-# LEARNING_RATES="1e-3 1e-4 1e-5"
-
 PEFT_TYPES="lora"
 TRAINING_NUMBERS="1"
 LEARNING_RATES="1e-3"
 
+# Set flags based on config
 if [ "$INCLUDE_TRAINING" = true ]; then
     INCLUDE_TRAINING_FLAG="--include_training"
 else
     INCLUDE_TRAINING_FLAG=""
+fi
+
+if [ "$RUN_QA_INFERENCE" = true ]; then
+    RUN_QA_INFERENCE_FLAG="--run_qa_inference"
+else
+    RUN_QA_INFERENCE_FLAG=""
 fi
 
 # Launch one process per adapter
@@ -61,7 +66,7 @@ for PEFT_TYPE in $PEFT_TYPES; do
     RESULTS_PATH="${RESULT_MAP[$PEFT_TYPE]}"
     LOGFILE="logs/${PEFT_TYPE}_$(date +%Y%m%d_%H%M%S).log"
 
-    echo "=== [$PEFT_TYPE] Using GPU ${GPU_MAP[$PEFT_TYPE]}, logging to $LOGFILE ==="
+    echo "=== [$PEFT_TYPE] Using GPU ${GPU_MAP[$PEFT_TYPE]}, logging to $LOGFILE ===" | tee -a "$LOGFILE"
 
     for LEARNING_RATE in $LEARNING_RATES; do
         for TRAINING_NUMBER in $TRAINING_NUMBERS; do
@@ -82,7 +87,9 @@ for PEFT_TYPE in $PEFT_TYPES; do
 
             mkdir -p "$(dirname "$OUTPUT_PATH")"
 
-            echo "[${PEFT_TYPE}] Train=${TRAINING_NUMBER}, LR=${LEARNING_RATE}"
+            echo "[${PEFT_TYPE}] Train=${TRAINING_NUMBER}, LR=${LEARNING_RATE}" | tee -a "$LOGFILE"
+            
+            # Run training
             python3 train.py \
                 --model_id "$MODEL_ID" \
                 --peft_type "$PEFT_TYPE" \
@@ -98,16 +105,25 @@ for PEFT_TYPE in $PEFT_TYPES; do
                 $INCLUDE_TRAINING_FLAG \
                 $RUN_QA_INFERENCE_FLAG \
                 --model_path "$OUTPUT_PATH" \
-                $PEFT_ARGS >>"$LOGFILE" 2>&1
+                $PEFT_ARGS 2>&1 | tee -a "$LOGFILE"
+
+            TRAIN_EXIT_CODE=${PIPESTATUS[0]}
+            
+            if [ $TRAIN_EXIT_CODE -ne 0 ]; then
+                echo "✗ Training failed with exit code $TRAIN_EXIT_CODE" | tee -a "$LOGFILE"
+                continue
+            fi
+
+            echo "✓ Training completed successfully" | tee -a "$LOGFILE"
 
             # Run MMLU evaluation if enabled
-            if [ "$RUN_MMLU_EVAL" = true ] && [ "$INCLUDE_TRAINING" = true ]; then
-                echo ""
-                echo "=========================================="
-                echo "Running MMLU Evaluation"
-                echo "=========================================="
+            if [ "$RUN_MMLU_EVAL" = true ]; then
+                echo "" | tee -a "$LOGFILE"
+                echo "==========================================" | tee -a "$LOGFILE"
+                echo "Running MMLU Evaluation" | tee -a "$LOGFILE"
+                echo "==========================================" | tee -a "$LOGFILE"
                 
-                MMLU_OUTPUT_PATH="results/mmlu/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}.json"
+                MMLU_OUTPUT_PATH="results/mmlu/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_lr${LEARNING_RATE}"
                 mkdir -p "$(dirname "$MMLU_OUTPUT_PATH")"
                 
                 # Build the lm_eval command
@@ -118,35 +134,40 @@ for PEFT_TYPE in $PEFT_TYPES; do
                     MMLU_CMD="$MMLU_CMD --limit $MMLU_LIMIT"
                 fi
                 
-                echo "Running: $MMLU_CMD"
+                echo "Running: $MMLU_CMD" | tee -a "$LOGFILE"
                 MMLU_START_TIME=$(date +%s)
-                eval $MMLU_CMD
+                
+                eval $MMLU_CMD 2>&1 | tee -a "$LOGFILE"
+                MMLU_EXIT_CODE=${PIPESTATUS[0]}
+                
                 MMLU_END_TIME=$(date +%s)
                 MMLU_DURATION=$((MMLU_END_TIME - MMLU_START_TIME))
                 
-                if [ $? -eq 0 ]; then
-                    echo "✓ MMLU evaluation completed successfully"
-                    echo "Results saved to: $MMLU_OUTPUT_PATH"
-                    echo "MMLU evaluation took: ${MMLU_DURATION} seconds"
+                if [ $MMLU_EXIT_CODE -eq 0 ]; then
+                    echo "✓ MMLU evaluation completed successfully" | tee -a "$LOGFILE"
+                    echo "Results saved to: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
+                    echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
                 else
-                    echo "✗ MMLU evaluation failed"
-                    echo "MMLU evaluation took: ${MMLU_DURATION} seconds"
+                    echo "✗ MMLU evaluation failed with exit code $MMLU_EXIT_CODE" | tee -a "$LOGFILE"
+                    echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
                 fi
                 
                 # Delete model after evaluation if enabled
                 if [ "$DELETE_MODEL_AFTER_EVAL" = true ]; then
-                    echo ""
-                    echo "Deleting model: $OUTPUT_PATH"
+                    echo "" | tee -a "$LOGFILE"
+                    echo "Deleting model: $OUTPUT_PATH" | tee -a "$LOGFILE"
                     rm -rf "$OUTPUT_PATH"
-                    echo "✓ Model deleted"
+                    echo "✓ Model deleted" | tee -a "$LOGFILE"
                 fi
+            else
+                echo "MMLU evaluation disabled (RUN_MMLU_EVAL=false)" | tee -a "$LOGFILE"
             fi
         done
     done
 
-    echo "=== [$PEFT_TYPE] Finished. Logs saved to $LOGFILE ===") &
+    echo "=== [$PEFT_TYPE] Finished. Logs saved to $LOGFILE ===" | tee -a "$LOGFILE"
+) &
 done
 
 wait
 echo "✅ All adapters completed. Check logs/ for detailed output."
-

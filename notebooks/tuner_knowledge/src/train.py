@@ -11,11 +11,11 @@ from pathlib import Path
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, get_peft_model, VeraConfig, PeftConfig, PeftModel, RandLoraConfig, UIOrthoLoRAConfig
 import torch
-from src.shared_prompt import SYSTEM_PROMPT
+from shared_prompt import SYSTEM_PROMPT
 from transformers import DataCollatorForSeq2Seq
 from transformers import TrainingArguments, Trainer
 from triviaQA_load import take_first_n, stream_triviaqa_rc
-from src.argument_parser import parse_arguments
+from argument_parser import parse_arguments
 from datasets import Dataset
 from inference import evaluate_self_consistency, prepare_sc_inputs, get_prompt_template_and_parser
 import math
