@@ -114,7 +114,7 @@ def get_tokenizer_and_model(model_id):
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
-    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda", torch_dtype=torch.float16)
+    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda", dtype=torch.bfloat16)
     model.eval()
     model = torch.compile(model)
     return tokenizer, model
@@ -178,17 +178,17 @@ def evaluate_self_consistency(
 def write_sc_scores_to_jsonl_batch(batch_data, sc_scores, output_file_path, model_name="llama-3.2-3b"):
     """
     Write self-consistency scores to a JSONL file in batch mode.
-    
+
     Args:
         batch_data (List[dict]): Original batch data from TriviaQA
         sc_scores (List[float]): Self-consistency scores for each question in the batch
         output_file_path (str): Path to the output JSONL file
         model_name (str): Name of the model used for evaluation
     """
-    
+
     # Create output directory if it doesn't exist
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
-    
+
     # Prepare the data to write
     batch_results = []
     for i, (example, score) in enumerate(zip(batch_data, sc_scores)):
@@ -204,27 +204,27 @@ def write_sc_scores_to_jsonl_batch(batch_data, sc_scores, output_file_path, mode
             }
         }
         batch_results.append(result_entry)
-    
+
     # Write batch to file (append mode)
     with open(output_file_path, "a", encoding="utf-8") as outfile:
         for result in batch_results:
             outfile.write(json.dumps(result) + "\n")
-    
+
 
 def main():
     debug=False
-    n_gen=5
+    n_gen=10
     split="train"
-    model_id = "meta-llama/Llama-3.2-3B"
-    
+    model_id = "google/gemma-3-12b-it"
+
     # Add output file path
     output_file_path = f"results/{model_id.replace('/', '_')}_scores.jsonl"
-    
+
     # Comment out model loading for testing
     tokenizer, model = get_tokenizer_and_model(model_id)
     prompt_template, parser = get_prompt_template_and_parser()
 
-    for batch in tqdm(stream_triviaqa_rc(split, batch_size=250), desc="Evaluating batches"):
+    for batch in tqdm(stream_triviaqa_rc(split, batch_size=50), desc="Evaluating batches"):
         questions, ground_truths = prepare_sc_inputs(batch)
         sc_scores = evaluate_self_consistency(questions, ground_truths, prompt_template, parser, model, tokenizer, n_gen, debug)
         # Write the sc scores to the json file (batch processing)

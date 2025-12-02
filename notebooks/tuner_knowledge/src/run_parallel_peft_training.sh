@@ -1,25 +1,62 @@
+
 #!/bin/bash
 
 set -e
 
-MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
+### block to control the ps tree
+
+
+#!/bin/bash
+set -e
+
+# Create a unique run ID for this execution
+RUN_ID=$(date +%Y%m%d_%H%M%S)
+RUN_DIR="run_state"
+mkdir -p "$RUN_DIR"
+
+# Record the main script PID and process group
+MAIN_PID=$$
+MAIN_PGID=$(ps -o pgid= $MAIN_PID | tr -d ' ')
+
+# Save run state
+echo "$MAIN_PGID" > "$RUN_DIR/pgid_$RUN_ID"
+echo "$RUN_ID" > "$RUN_DIR/latest"
+
+# Create cleanup script for this run
+cat << EOF > cleanup_run_$RUN_ID.sh
+#!/bin/bash
+echo "Cleaning run $RUN_ID"
+echo "Killing process group: $MAIN_PGID"
+kill -9 -$MAIN_PGID 2>/dev/null || true
+echo "Deleting logs/"
+rm -rf logs
+EOF
+
+chmod +x cleanup_run_$RUN_ID.sh
+echo "Cleanup created: cleanup_run_$RUN_ID.sh"
+### Finished blocked
+
+#MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
+MODEL_ID="google/gemma-3-12b-it"
 ALPHA=32
 DROPOUT=0.0
 NUM_EPOCHS=10
 SEED=42
 SC_NUMBER=10
 INCLUDE_TRAINING=true
-RUN_QA_INFERENCE=false
+#RUN_QA_INFERENCE=false
+RUN_QA_INFERENCE=true
 LORA_RANK=3
-VERA_RANK=3
+VERA_RANK=1024
 RANDLORA_RANK=512
 SVALUES=256
 SVECS=64
 
 # MMLU Evaluation settings
-RUN_MMLU_EVAL=true
+#RUN_MMLU_EVAL=true
+RUN_MMLU_EVAL=false
 MMLU_NUM_FEWSHOT=5
-MMLU_LIMIT=10  # Set to empty string or remove --limit flag to run all
+MMLU_LIMIT=  # Set to empty string or remove --limit flag to run all
 DELETE_MODEL_AFTER_EVAL=true
 
 # GPU mapping per adapter
@@ -30,21 +67,33 @@ declare -A GPU_MAP=(
     [randlora]=3
 )
 
+#WORK_DIR="results/llama-8b/workdir"
+WORK_DIR="results/gemma-12b/workdir"
+
+#WORK_FILE="meta-llama_Llama-3.1-8B-Instruct_scores"
+WORK_FILE="google_gemma-3-12b-it_scores"
+
 # Result JSONL per adapter
 declare -A RESULT_MAP=(
-    [uiortholora]="results/meta-llama_Llama-3.1-8B-Instruct_scores-uiortholora.jsonl"
-    [lora]="results/meta-llama_Llama-3.1-8B-Instruct_scores-lora.jsonl"
-    [vera]="results/meta-llama_Llama-3.1-8B-Instruct_scores-vera.jsonl"
-    [randlora]="results/meta-llama_Llama-3.1-8B-Instruct_scores-randlora.jsonl"
+    [uiortholora]="$WORK_DIR/$WORK_FILE-uiortholora.jsonl"
+    [lora]="$WORK_DIR/$WORK_FILE-lora.jsonl"
+    [vera]="$WORK_DIR/$WORK_FILE-vera.jsonl"
+    [randlora]="$WORK_DIR/$WORK_FILE-randlora.jsonl"
 )
 
 mkdir -p results logs models
 
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
-PEFT_TYPES="lora"
-TRAINING_NUMBERS="1"
-LEARNING_RATES="1e-3"
+PEFT_TYPES="lora uiortholora vera randlora"
+TRAINING_NUMBERS="100 500 1000 2000 3000 4000 5000"
+LEARNING_RATES="1e-3 1e-4 1e-5"
+
+
+#PEFT_TYPES="randlora"
+#TRAINING_NUMBERS="100"
+#LEARNING_RATES="1e-3"
+
 
 # Set flags based on config
 if [ "$INCLUDE_TRAINING" = true ]; then
@@ -88,7 +137,7 @@ for PEFT_TYPE in $PEFT_TYPES; do
             mkdir -p "$(dirname "$OUTPUT_PATH")"
 
             echo "[${PEFT_TYPE}] Train=${TRAINING_NUMBER}, LR=${LEARNING_RATE}" | tee -a "$LOGFILE"
-            
+
             # Run training
             python3 train.py \
                 --model_id "$MODEL_ID" \
@@ -108,7 +157,7 @@ for PEFT_TYPE in $PEFT_TYPES; do
                 $PEFT_ARGS 2>&1 | tee -a "$LOGFILE"
 
             TRAIN_EXIT_CODE=${PIPESTATUS[0]}
-            
+
             if [ $TRAIN_EXIT_CODE -ne 0 ]; then
                 echo "✗ Training failed with exit code $TRAIN_EXIT_CODE" | tee -a "$LOGFILE"
                 continue
@@ -122,27 +171,27 @@ for PEFT_TYPE in $PEFT_TYPES; do
                 echo "==========================================" | tee -a "$LOGFILE"
                 echo "Running MMLU Evaluation" | tee -a "$LOGFILE"
                 echo "==========================================" | tee -a "$LOGFILE"
-                
+
                 MMLU_OUTPUT_PATH="results/mmlu/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_lr${LEARNING_RATE}"
                 mkdir -p "$(dirname "$MMLU_OUTPUT_PATH")"
-                
+
                 # Build the lm_eval command
-                MMLU_CMD="lm_eval --model hf --model_args pretrained=$OUTPUT_PATH --tasks mmlu --num_fewshot $MMLU_NUM_FEWSHOT --batch_size auto --output_path $MMLU_OUTPUT_PATH"
-                
+                MMLU_CMD="lm_eval --model hf --model_args pretrained=$MODEL_ID,peft=$OUTPUT_PATH --tasks mmlu --num_fewshot $MMLU_NUM_FEWSHOT --batch_size auto --output_path $MMLU_OUTPUT_PATH"
+
                 # Add limit if specified
                 if [ -n "$MMLU_LIMIT" ]; then
                     MMLU_CMD="$MMLU_CMD --limit $MMLU_LIMIT"
                 fi
-                
+
                 echo "Running: $MMLU_CMD" | tee -a "$LOGFILE"
                 MMLU_START_TIME=$(date +%s)
-                
+
                 eval $MMLU_CMD 2>&1 | tee -a "$LOGFILE"
                 MMLU_EXIT_CODE=${PIPESTATUS[0]}
-                
+
                 MMLU_END_TIME=$(date +%s)
                 MMLU_DURATION=$((MMLU_END_TIME - MMLU_START_TIME))
-                
+
                 if [ $MMLU_EXIT_CODE -eq 0 ]; then
                     echo "✓ MMLU evaluation completed successfully" | tee -a "$LOGFILE"
                     echo "Results saved to: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
@@ -151,7 +200,7 @@ for PEFT_TYPE in $PEFT_TYPES; do
                     echo "✗ MMLU evaluation failed with exit code $MMLU_EXIT_CODE" | tee -a "$LOGFILE"
                     echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
                 fi
-                
+
                 # Delete model after evaluation if enabled
                 if [ "$DELETE_MODEL_AFTER_EVAL" = true ]; then
                     echo "" | tee -a "$LOGFILE"
