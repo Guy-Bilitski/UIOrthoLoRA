@@ -2,15 +2,14 @@ import os
 import sys
 sys.path.append(os.path.expanduser("/home/guy.bilitski/UIOrthoLoRA/notebooks/tuner_knowledge"))
 sys.path.append(os.path.expanduser("/home/guyb/projects/UIOrthoLoRA/notebooks/tuner_knowledge"))
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import torch
 import json
 import random
+from dataclasses import dataclass
 from pathlib import Path
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 from peft import LoraConfig, get_peft_model, VeraConfig, PeftConfig, PeftModel, RandLoraConfig, UIOrthoLoRAConfig
-import torch
 from shared_prompt import SYSTEM_PROMPT
 from transformers import DataCollatorForSeq2Seq
 from transformers import TrainingArguments, Trainer
@@ -18,35 +17,88 @@ from triviaQA_load import take_first_n, stream_triviaqa_rc
 from argument_parser import parse_arguments
 from datasets import Dataset
 from inference import evaluate_self_consistency, prepare_sc_inputs, get_prompt_template_and_parser
-import math
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Iterable
 from tqdm import tqdm
+from itertools import islice
 
 FT_MODEL_ID_DEFAULT = "ft-A"
 
-import json
-from typing import List, Dict, Iterable
-from itertools import islice
 
-def stream_jsonl_batches_memory_efficient(
-    path: str,
-    batch_size: int = 32,
-    limit: int = None
-) -> Iterable[List[Dict]]:
+def is_gemma3_model(model_id: str) -> bool:
+    """Check if the model is a Gemma3 model that requires token_type_ids."""
+    try:
+        config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+        model_type = getattr(config, 'model_type', '').lower()
+        return 'gemma3' in model_type
+    except Exception:
+        # Fallback to string matching
+        return 'gemma-3' in model_id.lower() or 'gemma3' in model_id.lower()
+
+
+def count_file_rows_and_duplicates(path: str) -> tuple:
+    """Returns (total_rows, unique_ids, duplicate_count)"""
     with open(path, "r", encoding="utf-8") as f:
-        iterator = (json.loads(line) for line in f if line.strip())
-        count = 0
+        ids = []
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    row = json.loads(line)
+                    ids.append(row.get("id"))
+                except json.JSONDecodeError:
+                    pass
+    
+    total = len(ids)
+    unique = len(set(ids))
+    duplicates = total - unique
+    return total, unique, duplicates
 
-        while True:
-            if limit and count >= limit:
-                break
 
-            batch = list(islice(iterator, batch_size))
-            if not batch:
-                break
+def deduplicate_jsonl_file(path: str) -> int:
+    """
+    Remove duplicate rows from JSONL file, keeping the last occurrence of each ID.
+    Returns the number of duplicates removed.
+    """
+    rows = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    rows.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    
+    original_count = len(rows)
+    
+    # Keep last occurrence of each ID (later entries may have more data)
+    seen_ids = {}
+    for i, row in enumerate(rows):
+        row_id = row.get("id")
+        seen_ids[row_id] = i
+    
+    # Build deduplicated list preserving original order
+    unique_indices = sorted(seen_ids.values())
+    deduped_rows = [rows[i] for i in unique_indices]
+    
+    removed_count = original_count - len(deduped_rows)
+    
+    if removed_count > 0:
+        print(f"[DEDUP] Removing {removed_count} duplicates from {path}")
+        with open(path, "w", encoding="utf-8") as f:
+            for row in deduped_rows:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        print(f"[DEDUP] File now has {len(deduped_rows)} rows")
+    
+    return removed_count
 
-            yield batch
-            count += len(batch)
+
+def log_file_state(path: str, context: str):
+    """Simple one-line file state logging"""
+    total, unique, dups = count_file_rows_and_duplicates(path)
+    status = "✓" if dups == 0 else f"⚠️ {dups} DUPLICATES"
+    print(f"[FILE STATE] {context}: rows={total}, unique_ids={unique} {status}", flush=True)
+
 
 def stream_jsonl_batches(
     path: str,
@@ -54,7 +106,6 @@ def stream_jsonl_batches(
     limit: int = None
 ) -> Iterable[List[Dict]]:
     with open(path, "r", encoding="utf-8") as f:
-        # Read all lines and parse valid JSON objects
         rows = []
         for i, line in enumerate(f):
             line = line.strip()
@@ -68,11 +119,10 @@ def stream_jsonl_batches(
             if limit and len(rows) >= limit:
                 break
 
-    # Yield in batches
-    total = len(rows)
-    for i in range(0, total, batch_size):
+    print(f"[STREAM] Loaded {len(rows)} rows, will yield in batches of {batch_size}")
+    
+    for i in range(0, len(rows), batch_size):
         yield rows[i:i + batch_size]
-
 
 
 def _score_is_zero(score: Any) -> bool:
@@ -81,22 +131,15 @@ def _score_is_zero(score: Any) -> bool:
     except (TypeError, ValueError):
         return False
 
+
 def _is_target_row(row: Dict[str, Any]) -> bool:
-    """
-    Target rows are those with:
-      - is_validation == False
-      - base_eval.score == 0 (accepts 0, 0.0, or "0")
-    """
     if row.get("is_validation", False):
         return False
     base = row.get("base_eval", {})
     return _score_is_zero(base.get("score", None))
 
+
 def _is_eligible(row: Dict[str, Any], ft_model_id: str) -> bool:
-    """
-    Eligible rows are target rows that are NOT already marked train==True for the given ft model.
-    Missing 'train' counts as False.
-    """
     if not _is_target_row(row):
         return False
     train = (
@@ -106,10 +149,8 @@ def _is_eligible(row: Dict[str, Any], ft_model_id: str) -> bool:
     )
     return not bool(train)
 
+
 def _ensure_ft_entry(row: Dict[str, Any], ft_model_id: str) -> None:
-    """
-    Ensure row has ft_evals[ft_model_id] dict.
-    """
     ft_evals = row.get("ft_evals")
     if not isinstance(ft_evals, dict):
         ft_evals = {}
@@ -117,41 +158,37 @@ def _ensure_ft_entry(row: Dict[str, Any], ft_model_id: str) -> None:
     if ft_model_id not in ft_evals or not isinstance(ft_evals[ft_model_id], dict):
         ft_evals[ft_model_id] = {}
 
+
 def mark_and_return_number_to_train_inplace(
     jsonl_path: str,
-    number_to_train: float,
+    number_to_train: int,
     ft_model_id: str = FT_MODEL_ID_DEFAULT,
     seed: Optional[int] = 42,
     initialize_missing_flag: bool = True
-) -> List[Dict[str, Any]]:
-    """
-    - Reads a single JSONL file.
-    - Optionally initializes missing ft_evals[ft_model_id].train=False for *target* rows.
-    - Computes eligible rows (target & not already train==True).
-    - Randomly selects N% of eligible rows (ceil; clamped to [0, len(eligible)]).
-    - Marks those rows train=True for ft_model_id.
-    - Rewrites the SAME file (no temp file).
-    - Returns the FULL selected rows (list of dicts).
+) -> Dataset:
+    
+    print(f"\n[MARK] Starting mark_and_return_number_to_train_inplace")
+    print(f"[MARK] ft_model_id={ft_model_id}, number_to_train={number_to_train}")
+    
+    log_file_state(jsonl_path, "before marking")
 
-    percent: 0..100 (values <0 treated as 0, >100 treated as 100).
-    """
-    # clamp number_to_train
     if number_to_train is None:
-        raise ValueError("number_to_train is required (0..100)")
+        raise ValueError("number_to_train is required")
 
     if seed is not None:
         random.seed(seed)
 
-    # 1) Load all rows
-    rows: List[Dict[str, Any]] = []
+    # Load all rows
+    rows = []
     with open(jsonl_path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if not line:
-                continue
-            rows.append(json.loads(line))
+            if line:
+                rows.append(json.loads(line))
 
-    # 2) Optionally initialize missing train flag as False for target rows
+    print(f"[MARK] Loaded {len(rows)} rows")
+
+    # Initialize missing train flags
     if initialize_missing_flag:
         for row in rows:
             if _is_target_row(row):
@@ -159,36 +196,31 @@ def mark_and_return_number_to_train_inplace(
                 if "train" not in row["ft_evals"][ft_model_id]:
                     row["ft_evals"][ft_model_id]["train"] = False
 
-    # 3) Find eligible indices (target & not already train==True)
+    # Find eligible indices
     eligible_idx = [i for i, r in enumerate(rows) if _is_eligible(r, ft_model_id)]
+    print(f"[MARK] Eligible candidates: {len(eligible_idx)}, sampling: {number_to_train}")
 
-    num_eligible = len(eligible_idx)
-    print(f"Total eligible training candidates remaining: {num_eligible}")
-    print(f"Attempting to sample: {number_to_train}")
+    batch_idx = random.sample(eligible_idx, min(number_to_train, len(eligible_idx)))
 
-    batch_idx = random.sample(eligible_idx, number_to_train)
-
-    # 5) Mark selected rows as train=True and collect full rows for return
-    selected_rows: List[Dict[str, Any]] = []
+    # Mark selected rows
+    selected_rows = []
     for i in batch_idx:
         row = rows[i]
         _ensure_ft_entry(row, ft_model_id)
         row["ft_evals"][ft_model_id]["train"] = True
         selected_rows.append(row)
 
-    # 6) Rewrite the SAME file
+    # Write back
+    print(f"[MARK] Writing {len(rows)} rows back to file")
     with open(jsonl_path, "w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    formatted_examples = [
-        format_prompt(example)
-        for example in selected_rows
-    ]
+    log_file_state(jsonl_path, "after marking")
 
-
-    # 7) Return the selected rows
+    formatted_examples = [format_prompt(example) for example in selected_rows]
     return Dataset.from_list(formatted_examples)
+
 
 def format_prompt(example):
     answer = example["answer"]["normalized_value"]
@@ -200,59 +232,61 @@ def format_prompt(example):
         "label": answer
     }
 
-def tokenize_fn(example, tokenizer):
+
+def tokenize_fn(example, tokenizer, add_token_type_ids=False):
+    """
+    Tokenize example for causal LM training.
+    
+    Args:
+        example: Dict with 'text' and 'input' keys
+        tokenizer: HuggingFace tokenizer
+        add_token_type_ids: If True, add token_type_ids (required for Gemma3)
+    """
     full_text = example["text"]
     prompt_text = example["input"]
 
-    # Tokenize
     full_tokens = tokenizer(full_text, truncation=True)
     prompt_tokens = tokenizer(prompt_text, truncation=True)
 
     input_ids = full_tokens["input_ids"]
     attention_mask = full_tokens["attention_mask"]
 
-    # Build labels
     labels = input_ids.copy()
     prompt_len = len(prompt_tokens["input_ids"])
     labels[:prompt_len] = [-100] * min(prompt_len, len(labels))
 
-    # 🔑 Pad labels to match input length (required!)
     while len(labels) < len(input_ids):
         labels.append(-100)
 
-    return {
+    result = {
         "input_ids": input_ids,
         "attention_mask": attention_mask,
         "labels": labels,
     }
+    
+    # Add token_type_ids for Gemma3 (all zeros for causal LM)
+    if add_token_type_ids:
+        result["token_type_ids"] = [0] * len(input_ids)
+    
+    return result
+
 
 def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_model_id):
-    """
-    Update self-consistency scores for fine-tuned models in an existing JSONL file.
-    Args:
-        batch_data (List[dict]): Original batch data from TriviaQA containing question_id, question, answer
-        sc_scores (List[float]): Self-consistency scores for each question in the batch
-        jsonl_file_path (str): Path to the existing JSONL file to update
-        ft_model_id (str): Fine-tuned model ID (e.g., "ft-A", "ft-B")
-    """
-
+    """Update self-consistency scores in the JSONL file."""
+    
     if len(batch_data) != len(sc_scores):
         raise ValueError(f"Mismatch: {len(batch_data)} examples but {len(sc_scores)} scores")
 
-    # Create a mapping from question_id to new score for quick lookup
+    # Build id->score mapping
     id_to_score = {}
     for example, score in zip(batch_data, sc_scores):
         question_id = example.get("id")
         if question_id is None:
-            raise ValueError(f"Missing 'id' in batch_data example: {example}")
+            raise ValueError(f"Missing 'id' in batch_data example")
         id_to_score[question_id] = score
 
-    # Read all entries from the JSONL file
+    # Read file
     jsonl_path = Path(jsonl_file_path)
-    if not jsonl_path.exists():
-        raise FileNotFoundError(f"JSONL file not found: {jsonl_file_path}")
-
-    # Load all rows into memory
     rows = []
     with open(jsonl_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -261,38 +295,45 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
                 try:
                     rows.append(json.loads(line))
                 except json.JSONDecodeError:
-                    print(f"Warning: Skipping invalid JSON line: {line}")
                     continue
 
-    # Update the relevant rows
+    # Update rows
     updated_count = 0
     for row in rows:
         row_id = row.get("id")
         if row_id in id_to_score:
-            # Ensure ft_evals structure exists
             _ensure_ft_entry(row, ft_model_id)
-
-            # Update the score (preserve existing train flag if it exists)
             row["ft_evals"][ft_model_id]["score"] = id_to_score[row_id]
             updated_count += 1
 
-    # Write all rows back to the file
+    # If mismatch, we have duplicates - dedupe and retry
+    if updated_count != len(id_to_score):
+        print(f"[WRITE] Mismatch: updated {updated_count}, expected {len(id_to_score)}. Deduplicating...")
+        deduplicate_jsonl_file(jsonl_file_path)
+        
+        # Reload and retry
+        rows = []
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    rows.append(json.loads(line))
+        
+        updated_count = 0
+        for row in rows:
+            row_id = row.get("id")
+            if row_id in id_to_score:
+                _ensure_ft_entry(row, ft_model_id)
+                row["ft_evals"][ft_model_id]["score"] = id_to_score[row_id]
+                updated_count += 1
+
+    # Write back
     with open(jsonl_path, "w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    # Report any missing IDs - this ensures all batch data gets processed
-    jsonl_ids = {row.get("id") for row in rows}
-    missing_ids = set(id_to_score.keys()) - jsonl_ids
-    if missing_ids:
-        print(f"Error: Could not find entries for {len(missing_ids)} IDs: {missing_ids}")
-        print(f"Batch IDs looking for: {list(id_to_score.keys())[:5]}...")  # Show first 5 for debugging
-        print(f"JSONL IDs available: {list(jsonl_ids)[:5]}...")  # Show first 5 for debugging
-        raise ValueError(f"Missing entries in JSONL for batch IDs: {missing_ids}")
-
-    # Verify all batch entries were processed
     if updated_count != len(id_to_score):
-        raise ValueError(f"Expected to update {len(id_to_score)} entries but only updated {updated_count}")
+        raise ValueError(f"Expected to update {len(id_to_score)} entries but updated {updated_count}")
 
 
 def get_tokenizer(model_id):
@@ -301,6 +342,7 @@ def get_tokenizer(model_id):
     tokenizer.padding_side = "left"
     return tokenizer
 
+
 def set_contiguous(model):
     for m in model.modules():
         if hasattr(m, "parametrizations") and "weight" in m.parametrizations:
@@ -308,56 +350,46 @@ def set_contiguous(model):
             if not base.is_contiguous():
                 base.data = base.data.contiguous()
 
+
 def build_peft_config(args):
     if args.peft_type == "lora":
-        return _build_lora_config(args.lora_rank, args.alpha, args.dropout)
+        return LoraConfig(
+            r=args.lora_rank,
+            lora_alpha=args.alpha,
+            lora_dropout=args.dropout,
+            bias="none",
+            target_modules=["q_proj", "v_proj"],
+            task_type="CAUSAL_LM"
+        )
     elif args.peft_type == "vera":
-        return _build_vera_config(args.vera_rank, args.alpha, args.dropout)
+        return VeraConfig(
+            task_type="CAUSAL_LM",
+            r=args.vera_rank,
+            vera_dropout=args.dropout,
+            target_modules=["q_proj", "v_proj"],
+        )
     elif args.peft_type == "randlora":
-        return _build_randlora_config(args.rand_lora_rank, args.alpha, args.dropout)
+        return RandLoraConfig(
+            task_type="CAUSAL_LM",
+            r=args.rand_lora_rank,
+            randlora_alpha=args.alpha,
+            randlora_dropout=args.dropout,
+            target_modules=["q_proj", "v_proj"],
+        )
     elif args.peft_type == "uiortholora":
-        return _build_uiortholora_config(args.svalues, args.svectors, args.alpha, args.dropout)
+        return UIOrthoLoRAConfig(
+            num_svalues_to_adapt=args.svalues,
+            num_svectors_to_adapt=args.svectors,
+            uiortholora_alpha=args.alpha,
+            uiortholora_dropout=args.dropout,
+            fan_in_fan_out=False,
+            initial_scaler=0.1,
+            initial_sigma=0.1,
+            target_modules=["q_proj", "v_proj"],
+        )
     else:
         raise ValueError(f"Unknown PEFT type: {args.peft_type}")
 
-def _build_lora_config(r, lora_alpha, lora_dropout):
-    return LoraConfig(
-        r=r,
-        lora_alpha=lora_alpha,
-        lora_dropout=lora_dropout,
-        bias="none",
-        target_modules=["q_proj", "v_proj"],
-        task_type="CAUSAL_LM"
-    )
-
-def _build_vera_config(rank, alpha, dropout):
-    return VeraConfig(
-        task_type="CAUSAL_LM",
-        r=rank,
-        vera_dropout=dropout,
-        target_modules=["q_proj", "v_proj"],
-    )
-
-def _build_randlora_config(rank, alpha, dropout):
-    return RandLoraConfig(
-        task_type="CAUSAL_LM",
-        r=rank,
-        randlora_alpha=alpha,
-        randlora_dropout=dropout,
-        target_modules=["q_proj", "v_proj"],
-    )
-
-def _build_uiortholora_config(svalues, svectors, alpha, dropout):
-    return UIOrthoLoRAConfig(
-        num_svalues_to_adapt=svalues,
-        num_svectors_to_adapt=svectors,
-        uiortholora_alpha=alpha,
-        uiortholora_dropout=dropout,
-        fan_in_fan_out=False,
-        initial_scaler=0.1,
-        initial_sigma=0.1,
-        target_modules=["q_proj", "v_proj"],
-    )
 
 def load_peft_model(model_id, peft_config):
     base_model = AutoModelForCausalLM.from_pretrained(
@@ -365,7 +397,6 @@ def load_peft_model(model_id, peft_config):
         dtype=torch.bfloat16,
         device_map="cuda",
     )
-
     model = get_peft_model(base_model, peft_config)
     model.print_trainable_parameters()
     return model
@@ -382,12 +413,11 @@ def get_trainer(model, tokenized_dataset, data_collator, args):
         logging_steps=10,
         save_strategy="no",
         lr_scheduler_type="cosine",
-        warmup_ratio=0.05,
+        warmup_steps=0.05,
         max_grad_norm=1.0,
         optim="adamw_torch",
         report_to="none"
     )
-
     return Trainer(
         model=model,
         args=training_args,
@@ -395,32 +425,99 @@ def get_trainer(model, tokenized_dataset, data_collator, args):
         data_collator=data_collator,
     )
 
-def get_training_dataset_mock(batch_num=1000, batch_size=10):
-    dataset=stream_triviaqa_rc(batch_size=batch_size, split="train")
-    raw_ds = take_first_n(dataset, batch_num)
-    formatted_examples = [
-        format_prompt(example)
-        for batch in raw_ds
-        for example in batch
-    ]
-    return Dataset.from_list(formatted_examples)
 
-def tokenize_dataset(dataset, tokenizer):
+def tokenize_dataset(dataset, tokenizer, add_token_type_ids=False):
+    """
+    Tokenize dataset with optional token_type_ids support.
+    
+    Args:
+        dataset: HuggingFace Dataset
+        tokenizer: HuggingFace tokenizer
+        add_token_type_ids: If True, add token_type_ids (required for Gemma3)
+    """
     return dataset.map(
-        lambda x: tokenize_fn(x, tokenizer),
+        lambda x: tokenize_fn(x, tokenizer, add_token_type_ids=add_token_type_ids),
         remove_columns=["label", "text", "input"]
     )
 
-def get_data_collator(tokenizer, model_id):
-    return DataCollatorForSeq2Seq(
-        tokenizer=tokenizer,
-        model=model_id,
-        padding=True,
-        label_pad_token_id=-100
-    )
 
-import torch
-from tqdm import tqdm
+@dataclass
+class DataCollatorWithTokenTypeIds:
+    """
+    Custom data collator that handles token_type_ids for Gemma3 models.
+    Falls back to standard behavior for other models.
+    """
+    tokenizer: Any
+    label_pad_token_id: int = -100
+    add_token_type_ids: bool = False
+
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+        # Separate labels from features
+        labels = None
+        if "labels" in features[0]:
+            labels = [f.pop("labels") for f in features]
+        
+        # Separate token_type_ids if present
+        token_type_ids = None
+        if "token_type_ids" in features[0]:
+            token_type_ids = [f.pop("token_type_ids") for f in features]
+        
+        # Pad the rest using tokenizer
+        batch = self.tokenizer.pad(
+            features,
+            padding=True,
+            return_tensors="pt",
+        )
+        
+        # Handle labels separately with proper padding
+        if labels is not None:
+            max_len = batch["input_ids"].shape[1]
+            padded_labels = []
+            for label in labels:
+                padding_len = max_len - len(label)
+                # Pad on the left since padding_side="left"
+                padded_labels.append([self.label_pad_token_id] * padding_len + label)
+            batch["labels"] = torch.tensor(padded_labels)
+        
+        # Handle token_type_ids with proper padding
+        if token_type_ids is not None:
+            max_len = batch["input_ids"].shape[1]
+            padded_token_type_ids = []
+            for tti in token_type_ids:
+                padding_len = max_len - len(tti)
+                # Pad on the left with 0s
+                padded_token_type_ids.append([0] * padding_len + tti)
+            batch["token_type_ids"] = torch.tensor(padded_token_type_ids)
+        elif self.add_token_type_ids:
+            # Create token_type_ids if required but not in features
+            batch["token_type_ids"] = torch.zeros_like(batch["input_ids"])
+        
+        return batch
+
+
+def get_data_collator(tokenizer, model_id, add_token_type_ids=False):
+    """
+    Get appropriate data collator based on model type.
+    
+    Args:
+        tokenizer: HuggingFace tokenizer
+        model_id: Model identifier string
+        add_token_type_ids: If True, use custom collator with token_type_ids support
+    """
+    if add_token_type_ids:
+        return DataCollatorWithTokenTypeIds(
+            tokenizer=tokenizer,
+            label_pad_token_id=-100,
+            add_token_type_ids=True
+        )
+    else:
+        return DataCollatorForSeq2Seq(
+            tokenizer=tokenizer,
+            model=model_id,
+            padding=True,
+            label_pad_token_id=-100
+        )
+
 
 def process_with_dynamic_batch_size(
     jsonl_path,
@@ -433,27 +530,23 @@ def process_with_dynamic_batch_size(
     args=None,
     ft_model_id=None,
 ):
-    """
-    Processes a JSONL file in batches, dynamically reducing the batch size by
-    chunking if a CUDA OutOfMemoryError is encountered.
-    """
-    # The outer loop streams large batches from the file
+    print(f"\n[PROCESS] Starting evaluation")
+    log_file_state(jsonl_path, "at start of evaluation")
+    
+    batch_num = 0
     for batch in tqdm(
         stream_jsonl_batches(jsonl_path, batch_size=initial_batch_size),
         desc="Evaluating batches"
     ):
+        batch_num += 1
         current_chunk_size = initial_batch_size
-        success = False  # Flag to indicate if the batch was processed successfully
+        success = False
 
-        # This loop retries the entire batch with a smaller chunk size upon OOM error
         while current_chunk_size >= min_batch_size and not success:
             try:
                 batch_sc_scores = []
-                # Process the large batch in smaller chunks
                 for i in range(0, len(batch), current_chunk_size):
                     sub_batch = batch[i : i + current_chunk_size]
-
-                    # Perform evaluation on the smaller chunk
                     questions, ground_truths = prepare_sc_inputs(sub_batch)
                     sc_scores = evaluate_self_consistency(
                         questions,
@@ -466,57 +559,75 @@ def process_with_dynamic_batch_size(
                     )
                     batch_sc_scores.extend(sc_scores)
                     print(f"\n* Processed chunk of size {len(sub_batch)}", flush=True)
-                    # Clear cache after processing each chunk to free memory
                     torch.cuda.empty_cache()
 
-                # If all chunks are processed, write the collected results for the entire batch
+                print(f"[BATCH {batch_num}] Writing {len(batch)} items with {len(batch_sc_scores)} scores")
                 write_sc_score_FT_to_jsonl_batch(batch, batch_sc_scores, jsonl_path, ft_model_id)
-                print(f"** Successfully processed batch of size {len(batch)} with chunk size {current_chunk_size}", flush=True)
-                success = True  # Mark the entire batch as successfully processed
+                print(f"** Successfully processed batch {batch_num}", flush=True)
+                success = True
 
             except torch.cuda.OutOfMemoryError:
-                torch.cuda.empty_cache()  # Free up memory before retrying
+                torch.cuda.empty_cache()
                 new_chunk_size = current_chunk_size // 2
                 if new_chunk_size < min_batch_size:
-                    break # Avoids retrying with a size smaller than the minimum
+                    break
                 print(f"! OOM with chunk size {current_chunk_size}, retrying with {new_chunk_size}", flush=True)
                 current_chunk_size = new_chunk_size
 
-        # If the batch could not be processed even with the minimum chunk size
         if not success:
-            raise RuntimeError(f"!!! Cannot process batch even with minimum chunk size of {min_batch_size}.")
+            raise RuntimeError(f"Cannot process batch even with minimum chunk size of {min_batch_size}.")
+
+    log_file_state(jsonl_path, "at end of evaluation")
 
 
 def main():
     args = parse_arguments()
     ft_model_id = args.model_path.split('/')[-1]
 
-    # === Train the model on the training dataset and save it ===
+    print(f"\n{'='*60}")
+    print(f"[MAIN] Starting")
+    print(f"[MAIN] peft_type={args.peft_type}, ft_model_id={ft_model_id}")
+    print(f"[MAIN] training_number={args.training_number}")
+    print(f"{'='*60}\n")
 
-    # Get model type and tokenizer
+    log_file_state(args.results_path, "initial")
+
     model_id = args.model_id
+    
+    # Check if model requires token_type_ids (e.g., Gemma3)
+    requires_token_type_ids = is_gemma3_model(model_id)
+    if requires_token_type_ids:
+        print(f"[MAIN] Detected Gemma3 model - will include token_type_ids")
 
     if args.include_training:
-        training_dataset = mark_and_return_number_to_train_inplace(args.results_path,
-                                                        args.training_number, ft_model_id=ft_model_id, seed=args.seed, initialize_missing_flag=True)
+        training_dataset = mark_and_return_number_to_train_inplace(
+            args.results_path,
+            args.training_number,
+            ft_model_id=ft_model_id,
+            seed=args.seed,
+            initialize_missing_flag=True
+        )
         tokenizer = get_tokenizer(model_id)
+        tokenized_dataset = tokenize_dataset(
+            training_dataset, 
+            tokenizer, 
+            add_token_type_ids=requires_token_type_ids
+        )
+        data_collator = get_data_collator(
+            tokenizer, 
+            model_id, 
+            add_token_type_ids=requires_token_type_ids
+        )
 
-        # Prepare the dataset
-        tokenized_dataset = tokenize_dataset(training_dataset, tokenizer)
-        data_collator = get_data_collator(tokenizer, model_id)
-
-        # Build PEFT config and load the model
         peft_config = build_peft_config(args)
         model = load_peft_model(model_id, peft_config)
 
-        # Train the model
         print("Starting training...")
         print(f"=== Using PEFT type: {args.peft_type} ===")
         trainer = get_trainer(model, tokenized_dataset, data_collator, args)
         trainer.train()
         set_contiguous(model)
 
-        # # Save the fine-tuned model
         print(f"Saving model to {args.output_path}")
         os.makedirs(args.output_path, exist_ok=True)
         trainer.save_model(args.output_path)
@@ -528,28 +639,20 @@ def main():
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "left"
 
-        # 2. Load PEFT config
         peft_model_path = args.model_path
         config = PeftConfig.from_pretrained(peft_model_path)
-
-        # 3. Load base model (must match what was used during fine-tuning)
         base_model = AutoModelForCausalLM.from_pretrained(
             config.base_model_name_or_path,
             device_map="cuda",
             dtype=torch.bfloat16
         )
-
-        # 4. Attach the adapter
         model = PeftModel.from_pretrained(base_model, peft_model_path)
 
-
-    model.eval()  # Set model to evaluation mode
+    model.eval()
     torch.compile(model)
 
-    # Only run Q&A inference if the flag is set
     if args.run_qa_inference:
         prompt_template, parser = get_prompt_template_and_parser()
-
         process_with_dynamic_batch_size(
             args.results_path,
             initial_batch_size=500,
@@ -562,10 +665,10 @@ def main():
             ft_model_id=ft_model_id
         )
     else:
-        print()
-        print(" =========================================== ")
-        print("Skipping Q&A inference evaluation (--run_qa_inference not set)")
-        print(" =========================================== ")
+        print("\nSkipping Q&A inference evaluation (--run_qa_inference not set)")
+
+    log_file_state(args.results_path, "final")
+    print(f"\n[MAIN] Completed")
 
 
 if __name__ == "__main__":

@@ -1,43 +1,45 @@
-
 #!/bin/bash
 
 set -e
 
-### block to control the ps tree
+###############################################################################
+# Run identification and cleanup helper
+###############################################################################
 
+RUN_ID="$(date +%Y%m%d_%H%M%S)"
+RUN_STATE_DIR="run_state"
+mkdir -p "$RUN_STATE_DIR"
 
+MAIN_PID="$$"
+MAIN_PGID="$(ps -o pgid= "$MAIN_PID" | tr -d " ")"
+
+echo "$MAIN_PGID" > "${RUN_STATE_DIR}/pgid_${RUN_ID}"
+echo "$RUN_ID" > "${RUN_STATE_DIR}/latest"
+
+BASE_LOG_DIR="logs"
+LOG_ROOT="${BASE_LOG_DIR}/run_${RUN_ID}"
+mkdir -p "$LOG_ROOT"
+
+# Per run cleanup script (only kills this run and removes only this run logs)
+cat << EOF > "cleanup_run_${RUN_ID}.sh"
 #!/bin/bash
-set -e
-
-# Create a unique run ID for this execution
-RUN_ID=$(date +%Y%m%d_%H%M%S)
-RUN_DIR="run_state"
-mkdir -p "$RUN_DIR"
-
-# Record the main script PID and process group
-MAIN_PID=$$
-MAIN_PGID=$(ps -o pgid= $MAIN_PID | tr -d ' ')
-
-# Save run state
-echo "$MAIN_PGID" > "$RUN_DIR/pgid_$RUN_ID"
-echo "$RUN_ID" > "$RUN_DIR/latest"
-
-# Create cleanup script for this run
-cat << EOF > cleanup_run_$RUN_ID.sh
-#!/bin/bash
-echo "Cleaning run $RUN_ID"
-echo "Killing process group: $MAIN_PGID"
-kill -9 -$MAIN_PGID 2>/dev/null || true
-echo "Deleting logs/"
-rm -rf logs
+set -euo pipefail
+echo "Cleaning run ${RUN_ID}"
+echo "Killing process group: ${MAIN_PGID}"
+kill -9 -${MAIN_PGID} 2>/dev/null || true
+echo "Removing logs for this run: ${LOG_ROOT}"
+rm -rf "${LOG_ROOT}"
 EOF
 
-chmod +x cleanup_run_$RUN_ID.sh
-echo "Cleanup created: cleanup_run_$RUN_ID.sh"
+chmod +x "cleanup_run_${RUN_ID}.sh"
+echo "Cleanup created: cleanup_run_${RUN_ID}.sh"
+echo "Logs for this run will be stored under: ${LOG_ROOT}"
+
 ### Finished blocked
 
 #MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
 MODEL_ID="google/gemma-3-12b-it"
+#MODEL_ID="mistralai/Ministral-3-14B-Instruct-2512"
 ALPHA=32
 DROPOUT=0.0
 NUM_EPOCHS=10
@@ -46,7 +48,7 @@ SC_NUMBER=10
 INCLUDE_TRAINING=true
 #RUN_QA_INFERENCE=false
 RUN_QA_INFERENCE=true
-LORA_RANK=3
+LORA_RANK=4
 VERA_RANK=1024
 RANDLORA_RANK=512
 SVALUES=256
@@ -54,8 +56,8 @@ SVECS=64
 
 # MMLU Evaluation settings
 #RUN_MMLU_EVAL=true
-RUN_MMLU_EVAL=false
-MMLU_NUM_FEWSHOT=5
+RUN_MMLU_EVAL=true
+MMLU_NUM_FEWSHOT=0
 MMLU_LIMIT=  # Set to empty string or remove --limit flag to run all
 DELETE_MODEL_AFTER_EVAL=true
 
@@ -69,9 +71,11 @@ declare -A GPU_MAP=(
 
 #WORK_DIR="results/llama-8b/workdir"
 WORK_DIR="results/gemma-12b/workdir"
+#WORK_DIR="results/mistral-14b/workdir"
 
 #WORK_FILE="meta-llama_Llama-3.1-8B-Instruct_scores"
 WORK_FILE="google_gemma-3-12b-it_scores"
+#WORK_FILE="Ministral-3-14B-Instruct-2512"
 
 # Result JSONL per adapter
 declare -A RESULT_MAP=(
@@ -88,11 +92,6 @@ MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 PEFT_TYPES="lora uiortholora vera randlora"
 TRAINING_NUMBERS="100 500 1000 2000 3000 4000 5000"
 LEARNING_RATES="1e-3 1e-4 1e-5"
-
-
-#PEFT_TYPES="randlora"
-#TRAINING_NUMBERS="100"
-#LEARNING_RATES="1e-3"
 
 
 # Set flags based on config
