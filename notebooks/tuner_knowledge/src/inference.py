@@ -1,9 +1,8 @@
-
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 from triviaQA_load import stream_triviaqa_rc
-from transformers import Mistral3ForConditionalGeneration, MistralCommonBackend, FineGrainedFP8Config, AutoProcessor
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from langchain.prompts import PromptTemplate
 import torch
@@ -112,98 +111,54 @@ def batch_sc_score_triviaqa(
     return scores
 
 def get_tokenizer_and_model(model_id):
-    if 'mistral' in model_id:
-        processor = AutoProcessor.from_pretrained(model_id)
-        processor.tokenizer.pad_token = processor.tokenizer.eos_token
-        processor.tokenizer.padding_side = "left"
-
-        model = Mistral3ForConditionalGeneration.from_pretrained(
-            model_id,
-            device_map="cuda",
-            torch_dtype=torch.bfloat16,
-            trust_remote_code=True
-        )
-        model.eval()
-        return processor, model
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
-        tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.padding_side = "left"
-        model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda", dtype=torch.bfloat16, trust_remote_code=True)
-        model.eval()
-        model = torch.compile(model)
-        return tokenizer, model
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
+    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda", dtype=torch.bfloat16)
+    model.eval()
+    model = torch.compile(model)
+    return tokenizer, model
 
 
 def evaluate_self_consistency(
         questions, ground_truths,
         prompt_template, parser,
-        model, tokenizer, n_gen=5, debug=False, model_id=""):
+        model, tokenizer, n_gen=5, debug=False):
 
     prompts = [prompt_template.format(question=q) for q in questions]
 
-    # Check if this is a Mistral3 model (tokenizer is actually a processor)
-    is_mistral3 = 'mistral' in model_id.lower()
+    inputs = tokenizer(
+        prompts,
+        return_tensors="pt",
+        padding=True,
+        truncation=True
+    ).to(model.device)
 
-    if is_mistral3:
-        # For Mistral3, tokenizer is actually an AutoProcessor
-        processor = tokenizer
-        inputs = processor(
-            text=prompts,
-            return_tensors="pt",
-            padding=True,
-            truncation=True
-        ).to(model.device)
-
-        with torch.inference_mode():
-            outputs = model.generate(
-                **inputs,
-                do_sample=True,
-                temperature=0.3,
-                top_p=0.9,
-                max_new_tokens=10,
-                num_return_sequences=n_gen,
-                pad_token_id=processor.tokenizer.eos_token_id,
-            )
-
-        decoded = processor.batch_decode(outputs, skip_special_tokens=True)
-
-    else:
-        # Standard causal LM path
-        inputs = tokenizer(
-            prompts,
-            return_tensors="pt",
-            padding=True,
-            truncation=True
-        ).to(model.device)
-
-        with torch.inference_mode():
-            outputs = model.generate(
-                **inputs,
-                do_sample=True,
-                temperature=0.3,
-                top_p=0.9,
-                max_new_tokens=10,
-                num_return_sequences=n_gen,
-                pad_token_id=tokenizer.eos_token_id,
-            )
-
-        decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+    with torch.inference_mode():
+        outputs = model.generate(
+            **inputs,
+            do_sample=True,
+            temperature=0.3,
+            top_p=0.9,
+            max_new_tokens=10,
+            num_return_sequences=n_gen,
+            pad_token_id=tokenizer.eos_token_id,
+        )
 
     if debug:
         print("🔵 Questions:", questions)
         print()
-        print("🔵 Ground truths:", ground_truths)
-        print()
-        print("🔵 Sample decoded outputs:", decoded[:n_gen])
+        print("🔵 ground truth:", ground_truths)
         print()
 
-    # Group into [batch, n_gen]
+    decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+
+    # group into [batch, n_gen]
     preds_per_q = [
         decoded[i * n_gen:(i + 1) * n_gen] for i in range(len(questions))
     ]
 
-    # Parse answers (fallback to raw text)
+    # parse answers (fallback to raw text)
     parsed_per_q = []
     for seqs in preds_per_q:
         group = []
@@ -260,7 +215,7 @@ def main():
     debug=False
     n_gen=10
     split="train"
-    model_id = "mistralai/Ministral-3-14B-Instruct-2512"
+    model_id = "meta-llama/Llama-3.2-3B"
 
     # Add output file path
     output_file_path = f"results/{model_id.replace('/', '_')}_scores.jsonl"
@@ -271,7 +226,7 @@ def main():
 
     for batch in tqdm(stream_triviaqa_rc(split, batch_size=50), desc="Evaluating batches"):
         questions, ground_truths = prepare_sc_inputs(batch)
-        sc_scores = evaluate_self_consistency(questions, ground_truths, prompt_template, parser, model, tokenizer, n_gen, debug, model_id=model_id)
+        sc_scores = evaluate_self_consistency(questions, ground_truths, prompt_template, parser, model, tokenizer, n_gen, debug)
         # Write the sc scores to the json file (batch processing)
         write_sc_scores_to_jsonl_batch(batch, sc_scores, output_file_path, model_id.split('/')[-1])
 
