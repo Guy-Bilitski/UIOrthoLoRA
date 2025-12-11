@@ -14,9 +14,7 @@ mkdir -p "$BASE_OUT_DIR"
 mkdir -p "logs"
 
 echo "=== Experiment Start: Gemma-3-12B Vanilla ==="
-echo "VeRA GPU: $GPU_VERA | UIOrthoLoRA GPU: $GPU_ORTHO"
 
-# Function to run Training AND Inference pipeline
 run_pipeline() {
     local PEFT_TYPE=$1
     local GPU_ID=$2
@@ -31,7 +29,6 @@ run_pipeline() {
     
     # 1. TRAIN
     echo "[${PEFT_TYPE}] Training..." | tee -a "$LOG_FILE"
-    # Note: CUDA_VISIBLE_DEVICES handles the "1 GPU" isolation
     CUDA_VISIBLE_DEVICES=$GPU_ID python3 train.py \
         --model_id "$MODEL_ID" \
         --output_dir "$OUTPUT_DIR" \
@@ -46,15 +43,15 @@ run_pipeline() {
     echo "[${PEFT_TYPE}] ✅ Training Complete." | tee -a "$LOG_FILE"
 
     # 2. INFERENCE (MT-Bench)
-    # We point fastchat to the ADAPTER directory.
-    # It will auto-load the base model defined in adapter_config.json
     echo "[${PEFT_TYPE}] Running MT-Bench Inference..." | tee -a "$LOG_FILE"
     
-    # We pass the base model explicitly to be safe with Gemma 3
+    # --conv-template alpaca: FORCES FastChat to use the format we trained on.
+    # --model-base: Explicitly points to the base model path/ID.
     CUDA_VISIBLE_DEVICES=$GPU_ID python3 -m fastchat.llm_judge.gen_model_answer \
         --model-path "$OUTPUT_DIR" \
         --model-base "$MODEL_ID" \
         --model-id "$ADAPTER_NAME" \
+        --conv-template alpaca \
         --num-gpus-total 1 >> "$LOG_FILE" 2>&1
 
     if [ $? -ne 0 ]; then
@@ -64,14 +61,14 @@ run_pipeline() {
     echo "[${PEFT_TYPE}] ✅ Inference Complete. Answers saved." | tee -a "$LOG_FILE"
 }
 
-# --- Launch Jobs in Parallel ---
+# --- Launch Parallel Jobs ---
 
-# Job 1: VeRA (Strict Table 9: Rank 1024, LR 4e-3)
+# Job 1: VeRA (Strict Table 9 Specs: Rank 1024, LR 4e-3)
 (
     run_pipeline "vera" "$GPU_VERA" "4e-3" "--rank 1024"
 ) &
 
-# Job 2: UIOrthoLoRA (Using 1e-4 as typical baseline, or match 4e-3 if desired)
+# Job 2: UIOrthoLoRA (Standard LoRA LR: 1e-4)
 (
     run_pipeline "uiortholora" "$GPU_ORTHO" "1e-4" "--svalues 256 --svectors 64"
 ) &
