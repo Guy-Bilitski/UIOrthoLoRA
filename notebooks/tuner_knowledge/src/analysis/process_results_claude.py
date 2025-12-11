@@ -322,7 +322,8 @@ def main():
     # Look for JSONL files in current directory and common locations
     search_paths = [
         # "../results/gemma-12b/workdir/*.jsonl",
-        "../results/llama-8b/workdir/*.jsonl",
+        # "../results/llama-8b/workdir/*.jsonl",
+        "../results/llama-3b/workdir/*.jsonl"
     ]
     
     jsonl_files = []
