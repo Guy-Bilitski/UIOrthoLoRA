@@ -21,12 +21,12 @@ run_pipeline() {
     local LR=$3
     local EXTRA_ARGS=$4
     local LOG_FILE="logs/${PEFT_TYPE}_run.log"
-    
+
     local ADAPTER_NAME="gemma-3-12b-${PEFT_TYPE}"
     local OUTPUT_DIR="${BASE_OUT_DIR}/${ADAPTER_NAME}"
 
     echo "[${PEFT_TYPE}] Starting Pipeline on GPU ${GPU_ID}..." > "$LOG_FILE"
-    
+
     # 1. TRAIN
     echo "[${PEFT_TYPE}] Training..." | tee -a "$LOG_FILE"
     CUDA_VISIBLE_DEVICES=$GPU_ID python3 train.py \
@@ -44,7 +44,7 @@ run_pipeline() {
 
     # 2. INFERENCE (MT-Bench)
     echo "[${PEFT_TYPE}] Running MT-Bench Inference..." | tee -a "$LOG_FILE"
-    
+
     # --conv-template alpaca: FORCES FastChat to use the format we trained on.
     # --model-base: Explicitly points to the base model path/ID.
     CUDA_VISIBLE_DEVICES=$GPU_ID python3 -m fastchat.llm_judge.gen_model_answer \

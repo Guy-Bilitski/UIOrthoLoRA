@@ -21,6 +21,9 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+# Threshold for counting negative/positive shifts
+SHIFT_THRESHOLD = 0.2
+
 
 def _sanitize(name: str) -> str:
     """Make a string safe for use as a column name."""
@@ -193,7 +196,7 @@ def assign_knowledge_groups(sc):
         return "PK"
 
 
-def compute_metrics_for_adapter(df: pd.DataFrame, ft_model_name: str, model_to_cols: dict) -> dict:
+def compute_metrics_for_adapter(df: pd.DataFrame, ft_model_name: str, model_to_cols: dict, threshold: float = 0.2) -> dict:
     """
     Compute accuracy and negative shift count for a single adapter.
     
@@ -201,6 +204,7 @@ def compute_metrics_for_adapter(df: pd.DataFrame, ft_model_name: str, model_to_c
         df: DataFrame with all data
         ft_model_name: raw FT model name
         model_to_cols: dict mapping model name to (score_col, train_col)
+        threshold: threshold for counting shifts (default 0.2)
     
     Returns:
         dict with metrics
@@ -242,13 +246,13 @@ def compute_metrics_for_adapter(df: pd.DataFrame, ft_model_name: str, model_to_c
     )
     filtered = eval_df[~eval_df["trained"] & mask]
     
-    # Negative shift: samples where shift < -0.2
-    neg_df = filtered[filtered["sc_shift"] < -0.2]
+    # Negative shift: samples where shift < -threshold
+    neg_df = filtered[filtered["sc_shift"] < -threshold]
     negative_shift_count = len(neg_df)
     negative_shift_score = neg_df["sc_shift"].abs().sum()
     
     # Positive shift for completeness
-    pos_df = filtered[filtered["sc_shift"] > 0.2]
+    pos_df = filtered[filtered["sc_shift"] > threshold]
     positive_shift_count = len(pos_df)
     positive_shift_score = pos_df["sc_shift"].abs().sum()
     
@@ -262,9 +266,13 @@ def compute_metrics_for_adapter(df: pd.DataFrame, ft_model_name: str, model_to_c
     }
 
 
-def process_jsonl_file(json_path: str) -> list:
+def process_jsonl_file(json_path: str, threshold: float = 0.2) -> list:
     """
     Process a single JSONL file and return list of result dicts.
+    
+    Args:
+        json_path: path to JSONL file
+        threshold: threshold for counting shifts
     """
     print(f"Processing: {json_path}")
     
@@ -287,7 +295,7 @@ def process_jsonl_file(json_path: str) -> list:
         
         # Compute metrics
         try:
-            metrics = compute_metrics_for_adapter(df, ft_model_name, model_to_cols)
+            metrics = compute_metrics_for_adapter(df, ft_model_name, model_to_cols, threshold)
         except Exception as e:
             print(f"  Error computing metrics for {ft_model_name}: {e}")
             continue
@@ -319,10 +327,13 @@ def main():
     """
     Main function to process all JSONL files and save results to CSV.
     """
+    # Define thresholds to process
+    thresholds = [0.2, 0.4, 0.6, 0.8]
+    
     # Look for JSONL files in current directory and common locations
     search_paths = [
-        # "../results/gemma-12b/workdir/*.jsonl",
-        # "../results/llama-8b/workdir/*.jsonl",
+        "../results/gemma-12b/workdir/*.jsonl",
+        "../results/llama-8b/workdir/*.jsonl",
         "../results/llama-3b/workdir/*.jsonl"
     ]
     
@@ -343,59 +354,74 @@ def main():
         print(f"  - {f}")
     print()
     
-    # Process all files
-    all_results = []
-    for json_path in jsonl_files:
-        results = process_jsonl_file(json_path)
-        all_results.extend(results)
+    # Process for each threshold
+    for threshold in thresholds:
+        print(f"\n{'='*70}")
+        print(f"Processing with threshold: {threshold}")
+        print(f"{'='*70}")
+        
+        # Process all files with current threshold
+        all_results = []
+        for json_path in jsonl_files:
+            results = process_jsonl_file(json_path, threshold)
+            all_results.extend(results)
+        
+        if not all_results:
+            print(f"No results extracted for threshold {threshold}.")
+            continue
+        
+        # Create DataFrame
+        results_df = pd.DataFrame(all_results)
+        
+        # Reorder columns for readability
+        column_order = [
+            'source_file',
+            'base_model',
+            'adapter_type',
+            'lr',
+            'rank',
+            'tr_from_name',
+            'tr_actual',
+            'accuracy',
+            'negative_shift_count',
+            'negative_shift_score',
+            'positive_shift_count',
+            'positive_shift_score',
+            'raw_adapter_name',
+        ]
+        
+        # Only include columns that exist
+        column_order = [c for c in column_order if c in results_df.columns]
+        results_df = results_df[column_order]
+        
+        # Sort by adapter_type, then by tr_actual
+        results_df = results_df.sort_values(['adapter_type', 'tr_actual', 'lr'])
+        
+        # Create threshold-specific output directory
+        threshold_dir = Path("adapters_results") / f"threshold_{threshold}"
+        threshold_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Group by base model and save separate CSV for each
+        unique_models = results_df['base_model'].dropna().unique()
+        
+        print(f"\nSaving results for {len(unique_models)} models:")
+        for model_name in unique_models:
+            model_df = results_df[results_df['base_model'] == model_name].copy()
+            
+            # Save to CSV
+            output_path = threshold_dir / f"adapter_results_{model_name}.csv"
+            model_df.to_csv(output_path, index=False)
+            
+            print(f"  - {model_name}: {len(model_df)} adapters -> {output_path}")
+            print(f"    Summary: avg accuracy={model_df['accuracy'].mean():.3f}, "
+                  f"avg neg_shift={model_df['negative_shift_count'].mean():.1f}")
+        
+        print(f"\nOverall summary for threshold {threshold}:")
+        print(results_df.groupby('adapter_type')[['tr_actual', 'accuracy', 'negative_shift_count']].mean().round(3))
     
-    if not all_results:
-        print("No results extracted from any file.")
-        return
-    
-    # Create DataFrame and save to CSV
-    results_df = pd.DataFrame(all_results)
-    
-    # Reorder columns for readability
-    column_order = [
-        'source_file',
-        'base_model',
-        'adapter_type',
-        'lr',
-        'rank',
-        'tr_from_name',
-        'tr_actual',
-        'accuracy',
-        'negative_shift_count',
-        'negative_shift_score',
-        'positive_shift_count',
-        'positive_shift_score',
-        'raw_adapter_name',
-    ]
-    
-    # Only include columns that exist
-    column_order = [c for c in column_order if c in results_df.columns]
-    results_df = results_df[column_order]
-    
-    # Sort by adapter_type, then by tr_actual
-    results_df = results_df.sort_values(['adapter_type', 'tr_actual', 'lr'])
-    
-    # Save to CSV
-    output_path = "adapter_results.csv"
-    results_df.to_csv(output_path, index=False)
-    
-    print(f"\n{'='*60}")
-    print(f"Results saved to: {output_path}")
-    print(f"Total adapters processed: {len(results_df)}")
-    print(f"\nSummary by adapter type:")
-    print(results_df.groupby('adapter_type')[['tr_actual', 'accuracy', 'negative_shift_count']].mean().round(3))
-    print(f"\n{'='*60}")
-    
-    # Also print the full results table
-    print("\nFull Results:")
-    print(results_df.to_string(index=False))
-    
-    return results_df
+    print(f"\n{'='*70}")
+    print(f"Processing complete! Results saved in adapters_results/")
+    print(f"{'='*70}")
 
 
 if __name__ == "__main__":

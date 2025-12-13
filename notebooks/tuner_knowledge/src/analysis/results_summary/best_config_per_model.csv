@@ -1,0 +1,4 @@
+model,model_full,adapter,lr,avg_mmlu_acc,std_mmlu_acc,num_experiments,mmlu_humanities_acc_mean,mmlu_other_acc_mean,mmlu_social_sciences_acc_mean,mmlu_stem_acc_mean
+gemma-12b,Gemma-3-12B,uiortholora,1e-5,0.7153,0.0002,7,0.6396,0.7679,0.8201,0.6741
+llama-3b,Llama-3.2-3B,uiortholora,1e-3,0.6253,0.0019,7,0.6157,0.682,0.6895,0.5213
+llama-8b,Llama-3.1-8B,uiortholora,1e-5,0.6843,0.0007,7,0.651,0.7427,0.7751,0.5876
