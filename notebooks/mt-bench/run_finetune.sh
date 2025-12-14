@@ -2,80 +2,110 @@
 set -e
 
 # --- Configuration ---
-# Using the Pre-Trained (Vanilla) Gemma 3 12B
 MODEL_ID="google/gemma-3-12b-pt"
-
-# GPU Assignments
+BASE_OUT_DIR="results_gemma_12b_sweep"
 GPU_VERA=0
 GPU_ORTHO=1
-
-BASE_OUT_DIR="results_gemma_12b"
 mkdir -p "$BASE_OUT_DIR"
 mkdir -p "logs"
 
-echo "=== Experiment Start: Gemma-3-12B Vanilla ==="
+# --- Hyperparameter Sweep Definitions ---
+VERA_RANK=1024
+VERA_LRS=("1e-4" "3e-4")
 
+ORTHO_SVAL=256
+ORTHO_SVEC=64
+ORTHO_LRS=("1e-4" "3e-4")
+
+# --- Flag Parsing ---
+DO_TRAIN=true
+DO_INFERENCE=true
+
+
+echo "=== Sweep Start ==="
+echo "Mode: Train=${DO_TRAIN}, Inference=${DO_INFERENCE}"
+
+# --- The Pipeline Function ---
 run_pipeline() {
     local PEFT_TYPE=$1
     local GPU_ID=$2
     local LR=$3
     local EXTRA_ARGS=$4
-    local LOG_FILE="logs/${PEFT_TYPE}_run.log"
+    local ADAPTER_NAME=$5  # Passed explicitly now
 
-    local ADAPTER_NAME="gemma-3-12b-${PEFT_TYPE}"
+    local LOG_FILE="logs/${ADAPTER_NAME}.log"
     local OUTPUT_DIR="${BASE_OUT_DIR}/${ADAPTER_NAME}"
+    local MERGED_DIR="${OUTPUT_DIR}_merged"
 
-    echo "[${PEFT_TYPE}] Starting Pipeline on GPU ${GPU_ID}..." > "$LOG_FILE"
+    echo "[${ADAPTER_NAME}] Starting on GPU ${GPU_ID}..." > "$LOG_FILE"
 
     # 1. TRAIN
-    echo "[${PEFT_TYPE}] Training..." | tee -a "$LOG_FILE"
-    CUDA_VISIBLE_DEVICES=$GPU_ID python3 train.py \
-        --model_id "$MODEL_ID" \
-        --output_dir "$OUTPUT_DIR" \
-        --peft_type "$PEFT_TYPE" \
-        --learning_rate "$LR" \
-        $EXTRA_ARGS >> "$LOG_FILE" 2>&1
+    if [ "$DO_TRAIN" = true ]; then
+        echo "[${ADAPTER_NAME}] Training (LR=${LR})..." | tee -a "$LOG_FILE"
+        CUDA_VISIBLE_DEVICES=$GPU_ID python3 train.py \
+            --model_id "$MODEL_ID" \
+            --output_dir "$OUTPUT_DIR" \
+            --peft_type "$PEFT_TYPE" \
+            --learning_rate "$LR" \
+            $EXTRA_ARGS >> "$LOG_FILE" 2>&1
 
-    if [ $? -ne 0 ]; then
-        echo "[${PEFT_TYPE}] ❌ Training Failed. Check $LOG_FILE" | tee -a "$LOG_FILE"
-        exit 1
+        if [ $? -ne 0 ]; then
+            echo "[${ADAPTER_NAME}] ❌ Training Failed." | tee -a "$LOG_FILE"
+            exit 1
+        fi
+        echo "[${ADAPTER_NAME}] ✅ Training Complete. Loss saved to loss_metrics.csv" | tee -a "$LOG_FILE"
+    else
+        echo "[${ADAPTER_NAME}] ⏭️  Skipping Training." | tee -a "$LOG_FILE"
     fi
-    echo "[${PEFT_TYPE}] ✅ Training Complete." | tee -a "$LOG_FILE"
 
-    # 2. INFERENCE (MT-Bench)
-    echo "[${PEFT_TYPE}] Running MT-Bench Inference..." | tee -a "$LOG_FILE"
+    # 2. INFERENCE
+    if [ "$DO_INFERENCE" = true ]; then
+        # Merge
+        echo "[${ADAPTER_NAME}] Merging..." | tee -a "$LOG_FILE"
+        CUDA_VISIBLE_DEVICES=$GPU_ID python3 merge.py \
+            --base_model "$MODEL_ID" \
+            --adapter_path "$OUTPUT_DIR" \
+            --output_path "$MERGED_DIR" >> "$LOG_FILE" 2>&1
 
-    # --conv-template alpaca: FORCES FastChat to use the format we trained on.
-    # --model-base: Explicitly points to the base model path/ID.
-    CUDA_VISIBLE_DEVICES=$GPU_ID python3 -m fastchat.llm_judge.gen_model_answer \
-        --model-path "$OUTPUT_DIR" \
-        --model-base "$MODEL_ID" \
-        --model-id "$ADAPTER_NAME" \
-        --conv-template alpaca \
-        --num-gpus-total 1 >> "$LOG_FILE" 2>&1
+        if [ $? -ne 0 ]; then
+            echo "[${ADAPTER_NAME}] ❌ Merge Failed." | tee -a "$LOG_FILE"
+            exit 1
+        fi
 
-    if [ $? -ne 0 ]; then
-        echo "[${PEFT_TYPE}] ❌ Inference Failed. Check $LOG_FILE" | tee -a "$LOG_FILE"
-        exit 1
+        # Gen Answers
+        echo "[${ADAPTER_NAME}] Running MT-Bench..." | tee -a "$LOG_FILE"
+        CUDA_VISIBLE_DEVICES=$GPU_ID python3 -m fastchat.llm_judge.gen_model_answer \
+            --model-path "$MERGED_DIR" \
+            --model-id "$ADAPTER_NAME" \
+            --dtype bfloat16 \
+            --num-gpus-total 1 >> "$LOG_FILE" 2>&1
+
+        if [ $? -ne 0 ]; then
+            echo "[${ADAPTER_NAME}] ❌ Inference Failed." | tee -a "$LOG_FILE"
+            exit 1
+        fi
+        echo "[${ADAPTER_NAME}] ✅ Inference Complete." | tee -a "$LOG_FILE"
     fi
-    echo "[${PEFT_TYPE}] ✅ Inference Complete. Answers saved." | tee -a "$LOG_FILE"
 }
 
-# --- Launch Parallel Jobs ---
+# --- Launch Sweeps in Parallel ---
 
-# Job 1: VeRA (Strict Table 9 Specs: Rank 1024, LR 4e-3)
+# Loop for VeRA (Runs sequentially on GPU_VERA)
 (
-    run_pipeline "vera" "$GPU_VERA" "4e-3" "--rank 1024"
+    for LR in "${VERA_LRS[@]}"; do
+        NAME="gemma-3-12b-vera-r${VERA_RANK}-lr${LR}"
+        run_pipeline "vera" "$GPU_VERA" "$LR" "--rank $VERA_RANK" "$NAME"
+    done
 ) &
 
-# Job 2: UIOrthoLoRA (Standard LoRA LR: 1e-4)
+# Loop for UIOrthoLoRA (Runs sequentially on GPU_ORTHO)
 (
-    run_pipeline "uiortholora" "$GPU_ORTHO" "1e-4" "--svalues 256 --svectors 64"
+    for LR in "${ORTHO_LRS[@]}"; do
+        NAME="gemma-3-12b-ortho-sv${ORTHO_SVAL}-vec${ORTHO_SVEC}-lr${LR}"
+        run_pipeline "uiortholora" "$GPU_ORTHO" "$LR" "--svalues $ORTHO_SVAL --svectors $ORTHO_SVEC" "$NAME"
+    done
 ) &
 
-# Wait for both to finish
 wait
-
 echo "=========================================="
-echo "All jobs finished."
-echo "Check $BASE_OUT_DIR for adapters and MT-Bench answers."
+echo "Sweep Finished. Check $BASE_OUT_DIR for results."
