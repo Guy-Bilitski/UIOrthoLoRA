@@ -255,27 +255,33 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
         U3 = getattr(self, f"{adapter}_U3")
         Vt3 = getattr(self, f"{adapter}_Vt3")
 
-        
         sigma = self.uiortholora_sigma[adapter]
         s2_size = self.medium_component_size - self.major_component_size
         S2 = sigma[:s2_size] if s2_size > 0 else torch.tensor([], device=self.device, dtype=self.dtype)
         S3 = sigma[s2_size:] if len(sigma) > s2_size else torch.tensor([], device=self.device, dtype=self.dtype)
 
+        # Ensure S2/S3 match the dtype (sometimes sigma is initialized differently)
+        S2 = S2.to(self.dtype)
+        S3 = S3.to(self.dtype)
+
         if self.num_svectors_to_adapt > 0:
             left_orthogonal = self.uiortholora_left_unitary[adapter].weight.to(self.dtype)
             right_orthogonal = self.uiortholora_right_unitary[adapter].weight.to(self.dtype)
             
-            new_U3 = U3 @ left_orthogonal
-            new_Vt3 = (Vt3.T @ right_orthogonal).T
+            # Cast inputs to self.dtype before matmul to avoid errors
+            new_U3 = U3.to(self.dtype) @ left_orthogonal
+            new_Vt3 = (Vt3.to(self.dtype).T @ right_orthogonal).T
         else:
-            new_U3 = U3
-            new_Vt3 = Vt3
+            new_U3 = U3.to(self.dtype)
+            new_Vt3 = Vt3.to(self.dtype)
 
-        U_cat  = torch.cat([U1, U2, new_U3],  dim=1)
-        S_cat  = torch.cat([S1, S2, S3])
-        Vt_cat = torch.cat([Vt1, Vt2, new_Vt3], dim=0)
+        # Concatenate
+        U_cat  = torch.cat([U1.to(self.dtype), U2.to(self.dtype), new_U3],  dim=1)
+        S_cat  = torch.cat([S1.to(self.dtype), S2, S3])
+        Vt_cat = torch.cat([Vt1.to(self.dtype), Vt2.to(self.dtype), new_Vt3], dim=0)
 
-        return U_cat, S_cat, Vt_cat
+        # Final safety cast to ensure output is strictly BFloat16 (or whatever self.dtype is)
+        return U_cat.to(self.dtype), S_cat.to(self.dtype), Vt_cat.to(self.dtype)
     
 
     def forward(self, x: torch.Tensor, *args, **kwargs):
