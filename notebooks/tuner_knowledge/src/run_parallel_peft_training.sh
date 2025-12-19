@@ -37,7 +37,8 @@ echo "Logs for this run will be stored under: ${LOG_ROOT}"
 
 ### Finished blocked
 
-#MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
+# MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
+#MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
 MODEL_ID="google/gemma-3-12b-it"
 #MODEL_ID="mistralai/Ministral-3-14B-Instruct-2512"
 ALPHA=32
@@ -51,11 +52,11 @@ RUN_QA_INFERENCE=true
 LORA_RANK=4
 VERA_RANK=1024
 RANDLORA_RANK=512
-SVALUES=256
-SVECS=64
+SVALUES=1024
+SVECS=32
 
 # MMLU Evaluation settings
-#RUN_MMLU_EVAL=true
+#RUN_MMLU_EVAL=false
 RUN_MMLU_EVAL=true
 MMLU_NUM_FEWSHOT=0
 MMLU_LIMIT=  # Set to empty string or remove --limit flag to run all
@@ -63,17 +64,19 @@ DELETE_MODEL_AFTER_EVAL=true
 
 # GPU mapping per adapter
 declare -A GPU_MAP=(
-    [uiortholora]=0
-    [lora]=1
-    [vera]=2
-    [randlora]=3
+    [uiortholora]=4
+    [lora]=5
+    [vera]=6
+    [randlora]=7
 )
 
-#WORK_DIR="results/llama-8b/workdir"
+# WORK_DIR="results/llama-8b/workdir"
+#WORK_DIR="results/llama-3b/workdir"
 WORK_DIR="results/gemma-12b/workdir"
 #WORK_DIR="results/mistral-14b/workdir"
 
-#WORK_FILE="meta-llama_Llama-3.1-8B-Instruct_scores"
+# WORK_FILE="meta-llama_Llama-3.1-8B-Instruct_scores"
+#WORK_FILE="meta-llama_Llama-3.2-3B-Instruct_scores"
 WORK_FILE="google_gemma-3-12b-it_scores"
 #WORK_FILE="Ministral-3-14B-Instruct-2512"
 
@@ -90,8 +93,9 @@ mkdir -p results logs models
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
 PEFT_TYPES="lora uiortholora vera randlora"
-TRAINING_NUMBERS="100 500 1000 2000 3000 4000 5000"
-LEARNING_RATES="1e-3 1e-4 1e-5"
+# TRAINING_NUMBERS="100 500 1000 2000 3000 4000 5000"
+TRAINING_NUMBERS="5000"
+LEARNING_RATES="5e-4 1e-4 5e-5"
 
 
 # Set flags based on config

@@ -328,13 +328,13 @@ def main():
     Main function to process all JSONL files and save results to CSV.
     """
     # Define thresholds to process
-    thresholds = [0.2, 0.4, 0.6, 0.8]
+    thresholds = [0.8]
     
     # Look for JSONL files in current directory and common locations
     search_paths = [
         "../results/gemma-12b/workdir/*.jsonl",
-        "../results/llama-8b/workdir/*.jsonl",
-        "../results/llama-3b/workdir/*.jsonl"
+        # "../results/llama-8b/workdir/*.jsonl",
+        # "../results/llama-3b/workdir/*.jsonl"
     ]
     
     jsonl_files = []
