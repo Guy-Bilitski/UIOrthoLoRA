@@ -25,7 +25,7 @@ def parse_arguments():
     parser.add_argument("--dropout", type=float, default=0.0,
                         help="Dropout for PEFT (default: 0.0)")
     
-    parser.add_argument("--training_number", type=int, required=True,
+    parser.add_argument("--training_number", type=int, required=False, # deprecated; used for different samples training.
                         help="Number of training examples to use (between 0 and total examples)")
 
     parser.add_argument("--seed", type=int, default=42,

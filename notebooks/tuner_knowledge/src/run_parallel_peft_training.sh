@@ -20,7 +20,7 @@ BASE_LOG_DIR="logs"
 LOG_ROOT="${BASE_LOG_DIR}/run_${RUN_ID}"
 mkdir -p "$LOG_ROOT"
 
-# Per run cleanup script (only kills this run and removes only this run logs)
+# Per run cleanup script
 cat << EOF > "cleanup_run_${RUN_ID}.sh"
 #!/bin/bash
 set -euo pipefail
@@ -41,6 +41,7 @@ echo "Logs for this run will be stored under: ${LOG_ROOT}"
 #MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
 MODEL_ID="google/gemma-3-12b-it"
 #MODEL_ID="mistralai/Ministral-3-14B-Instruct-2512"
+
 ALPHA=32
 DROPOUT=0.0
 NUM_EPOCHS=10
@@ -53,13 +54,13 @@ LORA_RANK=4
 VERA_RANK=1024
 RANDLORA_RANK=512
 SVALUES=1024
-SVECS=32
+SVECS=16
 
 # MMLU Evaluation settings
-#RUN_MMLU_EVAL=false
-RUN_MMLU_EVAL=true
+RUN_MMLU_EVAL=false
+# RUN_MMLU_EVAL=true
 MMLU_NUM_FEWSHOT=0
-MMLU_LIMIT=  # Set to empty string or remove --limit flag to run all
+MMLU_LIMIT="" # Set to empty string or remove --limit flag to run all
 DELETE_MODEL_AFTER_EVAL=true
 
 # GPU mapping per adapter
@@ -93,10 +94,8 @@ mkdir -p results logs models
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
 PEFT_TYPES="lora uiortholora vera randlora"
-# TRAINING_NUMBERS="100 500 1000 2000 3000 4000 5000"
-TRAINING_NUMBERS="5000"
+# Removed TRAINING_NUMBERS loop variable
 LEARNING_RATES="5e-4 1e-4 5e-5"
-
 
 # Set flags based on config
 if [ "$INCLUDE_TRAINING" = true ]; then
@@ -121,100 +120,102 @@ for PEFT_TYPE in $PEFT_TYPES; do
     echo "=== [$PEFT_TYPE] Using GPU ${GPU_MAP[$PEFT_TYPE]}, logging to $LOGFILE ===" | tee -a "$LOGFILE"
 
     for LEARNING_RATE in $LEARNING_RATES; do
-        for TRAINING_NUMBER in $TRAINING_NUMBERS; do
+        
+        # Hardcoded identifier since we are training on All data
+        TRAINING_LABEL="All" 
 
-            if [ "$PEFT_TYPE" = "uiortholora" ]; then
-                PEFT_ARGS="--svalues $SVALUES --svectors $SVECS"
-                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_uiortholora_s${SVALUES}_v${SVECS}_lr${LEARNING_RATE}"
-            elif [ "$PEFT_TYPE" = "lora" ]; then
-                PEFT_ARGS="--lora_rank $LORA_RANK"
-                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_lora_r${LORA_RANK}_lr${LEARNING_RATE}"
-            elif [ "$PEFT_TYPE" = "vera" ]; then
-                PEFT_ARGS="--vera_rank $VERA_RANK"
-                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_vera_r${VERA_RANK}_lr${LEARNING_RATE}"
-            elif [ "$PEFT_TYPE" = "randlora" ]; then
-                PEFT_ARGS="--rand_lora_rank $RANDLORA_RANK"
-                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_randlora_r${RANDLORA_RANK}_lr${LEARNING_RATE}"
+        if [ "$PEFT_TYPE" = "uiortholora" ]; then
+            PEFT_ARGS="--svalues $SVALUES --svectors $SVECS"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_uiortholora_s${SVALUES}_v${SVECS}_lr${LEARNING_RATE}"
+        elif [ "$PEFT_TYPE" = "lora" ]; then
+            PEFT_ARGS="--lora_rank $LORA_RANK"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lora_r${LORA_RANK}_lr${LEARNING_RATE}"
+        elif [ "$PEFT_TYPE" = "vera" ]; then
+            PEFT_ARGS="--vera_rank $VERA_RANK"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_vera_r${VERA_RANK}_lr${LEARNING_RATE}"
+        elif [ "$PEFT_TYPE" = "randlora" ]; then
+            PEFT_ARGS="--rand_lora_rank $RANDLORA_RANK"
+            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_randlora_r${RANDLORA_RANK}_lr${LEARNING_RATE}"
+        fi
+
+        mkdir -p "$(dirname "$OUTPUT_PATH")"
+
+        echo "[${PEFT_TYPE}] Train=${TRAINING_LABEL}, LR=${LEARNING_RATE}" | tee -a "$LOGFILE"
+
+        # Run training
+        # Note: Removed --training_number flag
+        python3 train.py \
+            --model_id "$MODEL_ID" \
+            --peft_type "$PEFT_TYPE" \
+            --alpha "$ALPHA" \
+            --dropout "$DROPOUT" \
+            --output_path "$OUTPUT_PATH" \
+            --num_epochs "$NUM_EPOCHS" \
+            --learning_rate "$LEARNING_RATE" \
+            --seed "$SEED" \
+            --results_path "$RESULTS_PATH" \
+            --sc_number "$SC_NUMBER" \
+            $INCLUDE_TRAINING_FLAG \
+            $RUN_QA_INFERENCE_FLAG \
+            --model_path "$OUTPUT_PATH" \
+            $PEFT_ARGS 2>&1 | tee -a "$LOGFILE"
+
+        TRAIN_EXIT_CODE=${PIPESTATUS[0]}
+
+        if [ $TRAIN_EXIT_CODE -ne 0 ]; then
+            echo "✗ Training failed with exit code $TRAIN_EXIT_CODE" | tee -a "$LOGFILE"
+            continue
+        fi
+
+        echo "✓ Training completed successfully" | tee -a "$LOGFILE"
+
+        # Run MMLU evaluation if enabled
+        if [ "$RUN_MMLU_EVAL" = true ]; then
+            echo "" | tee -a "$LOGFILE"
+            echo "==========================================" | tee -a "$LOGFILE"
+            echo "Running MMLU Evaluation" | tee -a "$LOGFILE"
+            echo "==========================================" | tee -a "$LOGFILE"
+
+            MMLU_OUTPUT_PATH="results/mmlu/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}"
+            mkdir -p "$(dirname "$MMLU_OUTPUT_PATH")"
+
+            # Build the lm_eval command
+            MMLU_CMD="lm_eval --model hf --model_args pretrained=$MODEL_ID,peft=$OUTPUT_PATH --tasks mmlu --num_fewshot $MMLU_NUM_FEWSHOT --batch_size auto --output_path $MMLU_OUTPUT_PATH"
+
+            # Add limit if specified
+            if [ -n "$MMLU_LIMIT" ]; then
+                MMLU_CMD="$MMLU_CMD --limit $MMLU_LIMIT"
             fi
 
-            mkdir -p "$(dirname "$OUTPUT_PATH")"
+            echo "Running: $MMLU_CMD" | tee -a "$LOGFILE"
+            MMLU_START_TIME=$(date +%s)
 
-            echo "[${PEFT_TYPE}] Train=${TRAINING_NUMBER}, LR=${LEARNING_RATE}" | tee -a "$LOGFILE"
+            eval $MMLU_CMD 2>&1 | tee -a "$LOGFILE"
+            MMLU_EXIT_CODE=${PIPESTATUS[0]}
 
-            # Run training
-            python3 train.py \
-                --model_id "$MODEL_ID" \
-                --peft_type "$PEFT_TYPE" \
-                --alpha "$ALPHA" \
-                --dropout "$DROPOUT" \
-                --training_number "$TRAINING_NUMBER" \
-                --output_path "$OUTPUT_PATH" \
-                --num_epochs "$NUM_EPOCHS" \
-                --learning_rate "$LEARNING_RATE" \
-                --seed "$SEED" \
-                --results_path "$RESULTS_PATH" \
-                --sc_number "$SC_NUMBER" \
-                $INCLUDE_TRAINING_FLAG \
-                $RUN_QA_INFERENCE_FLAG \
-                --model_path "$OUTPUT_PATH" \
-                $PEFT_ARGS 2>&1 | tee -a "$LOGFILE"
+            MMLU_END_TIME=$(date +%s)
+            MMLU_DURATION=$((MMLU_END_TIME - MMLU_START_TIME))
 
-            TRAIN_EXIT_CODE=${PIPESTATUS[0]}
-
-            if [ $TRAIN_EXIT_CODE -ne 0 ]; then
-                echo "✗ Training failed with exit code $TRAIN_EXIT_CODE" | tee -a "$LOGFILE"
-                continue
-            fi
-
-            echo "✓ Training completed successfully" | tee -a "$LOGFILE"
-
-            # Run MMLU evaluation if enabled
-            if [ "$RUN_MMLU_EVAL" = true ]; then
-                echo "" | tee -a "$LOGFILE"
-                echo "==========================================" | tee -a "$LOGFILE"
-                echo "Running MMLU Evaluation" | tee -a "$LOGFILE"
-                echo "==========================================" | tee -a "$LOGFILE"
-
-                MMLU_OUTPUT_PATH="results/mmlu/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_NUMBER}_lr${LEARNING_RATE}"
-                mkdir -p "$(dirname "$MMLU_OUTPUT_PATH")"
-
-                # Build the lm_eval command
-                MMLU_CMD="lm_eval --model hf --model_args pretrained=$MODEL_ID,peft=$OUTPUT_PATH --tasks mmlu --num_fewshot $MMLU_NUM_FEWSHOT --batch_size auto --output_path $MMLU_OUTPUT_PATH"
-
-                # Add limit if specified
-                if [ -n "$MMLU_LIMIT" ]; then
-                    MMLU_CMD="$MMLU_CMD --limit $MMLU_LIMIT"
-                fi
-
-                echo "Running: $MMLU_CMD" | tee -a "$LOGFILE"
-                MMLU_START_TIME=$(date +%s)
-
-                eval $MMLU_CMD 2>&1 | tee -a "$LOGFILE"
-                MMLU_EXIT_CODE=${PIPESTATUS[0]}
-
-                MMLU_END_TIME=$(date +%s)
-                MMLU_DURATION=$((MMLU_END_TIME - MMLU_START_TIME))
-
-                if [ $MMLU_EXIT_CODE -eq 0 ]; then
-                    echo "✓ MMLU evaluation completed successfully" | tee -a "$LOGFILE"
-                    echo "Results saved to: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
-                    echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
-                else
-                    echo "✗ MMLU evaluation failed with exit code $MMLU_EXIT_CODE" | tee -a "$LOGFILE"
-                    echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
-                fi
-
-                # Delete model after evaluation if enabled
-                if [ "$DELETE_MODEL_AFTER_EVAL" = true ]; then
-                    echo "" | tee -a "$LOGFILE"
-                    echo "Deleting model: $OUTPUT_PATH" | tee -a "$LOGFILE"
-                    rm -rf "$OUTPUT_PATH"
-                    echo "✓ Model deleted" | tee -a "$LOGFILE"
-                fi
+            if [ $MMLU_EXIT_CODE -eq 0 ]; then
+                echo "✓ MMLU evaluation completed successfully" | tee -a "$LOGFILE"
+                echo "Results saved to: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
+                echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
             else
-                echo "MMLU evaluation disabled (RUN_MMLU_EVAL=false)" | tee -a "$LOGFILE"
+                echo "✗ MMLU evaluation failed with exit code $MMLU_EXIT_CODE" | tee -a "$LOGFILE"
+                echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
             fi
-        done
+
+            # Delete model after evaluation if enabled
+            if [ "$DELETE_MODEL_AFTER_EVAL" = true ]; then
+                echo "" | tee -a "$LOGFILE"
+                echo "Deleting model: $OUTPUT_PATH" | tee -a "$LOGFILE"
+                rm -rf "$OUTPUT_PATH"
+                echo "✓ Model deleted" | tee -a "$LOGFILE"
+            fi
+        else
+            echo "MMLU evaluation disabled (RUN_MMLU_EVAL=false)" | tee -a "$LOGFILE"
+        fi
+
     done
 
     echo "=== [$PEFT_TYPE] Finished. Logs saved to $LOGFILE ===" | tee -a "$LOGFILE"

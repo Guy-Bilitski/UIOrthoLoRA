@@ -1,28 +1,36 @@
 import os
 import sys
+# Adjust paths as necessary
 sys.path.append(os.path.expanduser("/home/guy.bilitski/UIOrthoLoRA/notebooks/tuner_knowledge"))
 sys.path.append(os.path.expanduser("/home/guyb/projects/UIOrthoLoRA/notebooks/tuner_knowledge"))
 
 import torch
 import json
-import random
 from pathlib import Path
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainerCallback
-from peft import LoraConfig, VeraConfig, PeftConfig, PeftModel, RandLoraConfig, UIOrthoLoRAConfig
-from trl import SFTTrainer, SFTConfig, DataCollatorForCompletionOnlyLM
-from argument_parser import parse_arguments
-from datasets import Dataset
-from inference import evaluate_self_consistency, prepare_sc_inputs, get_prompt_template
 from typing import Any, Dict, List, Optional, Iterable
 from tqdm import tqdm
 
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainerCallback
+from peft import LoraConfig, VeraConfig, PeftConfig, PeftModel, RandLoraConfig, UIOrthoLoRAConfig
+from trl import SFTTrainer, SFTConfig
+from trl.trainer.sft_trainer import DataCollatorForLanguageModeling
+from datasets import Dataset
+
+# Custom imports
+from argument_parser import parse_arguments
+from inference import evaluate_self_consistency, prepare_sc_inputs
+from shared_prompt import SYSTEM_PROMPT, FEW_SHOT_EXAMPLES
+
 FT_MODEL_ID_DEFAULT = "ft-A"
 
-# Templates for DataCollatorForCompletionOnlyLM
-# The collator masks everything from INSTRUCTION_TEMPLATE up to (not including) RESPONSE_TEMPLATE
-# Loss is computed only on tokens AFTER RESPONSE_TEMPLATE
-INSTRUCTION_TEMPLATE = "Question:"
-RESPONSE_TEMPLATE = "\nAnswer:"
+# =============================================================================
+# CONSTANTS & TEMPLATES
+# =============================================================================
+
+# CRITICAL: This must match the token that signifies the start of the Assistant's turn.
+# For Gemma/Llama-3, this is usually "<start_of_turn>model".
+# The DataCollator will search for this token sequence and mask everything before it.
+RESPONSE_TEMPLATE = "<start_of_turn>model"
 
 
 # =============================================================================
@@ -31,6 +39,9 @@ RESPONSE_TEMPLATE = "\nAnswer:"
 
 def count_file_rows_and_duplicates(path: str) -> tuple:
     """Returns (total_rows, unique_ids, duplicate_count)"""
+    if not os.path.exists(path):
+        return 0, 0, 0
+    
     with open(path, "r", encoding="utf-8") as f:
         ids = []
         for line in f:
@@ -50,6 +61,9 @@ def count_file_rows_and_duplicates(path: str) -> tuple:
 
 def deduplicate_jsonl_file(path: str) -> int:
     """Remove duplicate rows from JSONL file, keeping the last occurrence of each ID."""
+    if not os.path.exists(path):
+        return 0
+
     rows = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
@@ -81,6 +95,10 @@ def deduplicate_jsonl_file(path: str) -> int:
 
 def log_file_state(path: str, context: str):
     """Simple one-line file state logging"""
+    if not os.path.exists(path):
+        print(f"[FILE STATE] {context}: File {path} not found.")
+        return
+        
     total, unique, dups = count_file_rows_and_duplicates(path)
     status = "✓" if dups == 0 else f"⚠️ {dups} DUPLICATES"
     print(f"[FILE STATE] {context}: rows={total}, unique_ids={unique} {status}", flush=True)
@@ -124,13 +142,6 @@ def _is_target_row(row: Dict[str, Any]) -> bool:
     return _score_is_zero(base.get("score", None))
 
 
-def _is_eligible(row: Dict[str, Any], ft_model_id: str) -> bool:
-    if not _is_target_row(row):
-        return False
-    train = row.get("ft_evals", {}).get(ft_model_id, {}).get("train", False)
-    return not bool(train)
-
-
 def _ensure_ft_entry(row: Dict[str, Any], ft_model_id: str) -> None:
     ft_evals = row.get("ft_evals")
     if not isinstance(ft_evals, dict):
@@ -143,10 +154,7 @@ def get_all_zero_score_samples(
     jsonl_path: str,
     ft_model_id: str = FT_MODEL_ID_DEFAULT,
 ) -> Dataset:
-    """Get ALL samples where base model scored 0 and return as Dataset.
-    
-    This ensures all adapters train on identical samples - no random selection.
-    """
+    """Get ALL samples where base model scored 0 and return as Dataset."""
     print(f"\n[SELECT] Getting all zero-score samples for training")
     print(f"[SELECT] ft_model_id={ft_model_id}")
     log_file_state(jsonl_path, "before selection")
@@ -178,77 +186,84 @@ def get_all_zero_score_samples(
     log_file_state(jsonl_path, "after selection")
     return Dataset.from_list(selected_rows)
 
-# def mark_and_return_number_to_train_inplace(
-#     jsonl_path: str,
-#     number_to_train: int,
-#     ft_model_id: str = FT_MODEL_ID_DEFAULT,
-#     seed: Optional[int] = 42,
-#     initialize_missing_flag: bool = True
-# ) -> Dataset:
-#     """Select training examples from JSONL, mark them, and return as Dataset."""
-#     print(f"\n[MARK] Starting mark_and_return_number_to_train_inplace")
-#     print(f"[MARK] ft_model_id={ft_model_id}, number_to_train={number_to_train}")
-#     log_file_state(jsonl_path, "before marking")
-
-#     if number_to_train is None:
-#         raise ValueError("number_to_train is required")
-
-#     if seed is not None:
-#         random.seed(seed)
-
-#     rows = []
-#     with open(jsonl_path, "r", encoding="utf-8") as f:
-#         for line in f:
-#             line = line.strip()
-#             if line:
-#                 rows.append(json.loads(line))
-
-#     print(f"[MARK] Loaded {len(rows)} rows")
-
-#     if initialize_missing_flag:
-#         for row in rows:
-#             if _is_target_row(row):
-#                 _ensure_ft_entry(row, ft_model_id)
-#                 if "train" not in row["ft_evals"][ft_model_id]:
-#                     row["ft_evals"][ft_model_id]["train"] = False
-
-#     eligible_idx = [i for i, r in enumerate(rows) if _is_eligible(r, ft_model_id)]
-#     print(f"[MARK] Eligible candidates: {len(eligible_idx)}, sampling: {number_to_train}")
-
-#     batch_idx = random.sample(eligible_idx, min(number_to_train, len(eligible_idx)))
-
-#     selected_rows = []
-#     for i in batch_idx:
-#         row = rows[i]
-#         _ensure_ft_entry(row, ft_model_id)
-#         row["ft_evals"][ft_model_id]["train"] = True
-#         selected_rows.append(row)
-
-#     print(f"[MARK] Writing {len(rows)} rows back to file")
-#     with open(jsonl_path, "w", encoding="utf-8") as f:
-#         for r in rows:
-#             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-
-#     log_file_state(jsonl_path, "after marking")
-#     return Dataset.from_list(selected_rows)
-
 
 # =============================================================================
 # DATA FORMATTING FOR SFTTrainer
 # =============================================================================
-
-def format_for_sft(example: Dict) -> Dict:
-    question = example["question"]
-    answer = example["answer"]["normalized_value"]
+def get_response_template_for_model(model_id: str):
+    """get response template based on model type."""
+    if "gemma" in model_id.lower():
+        return "<start_of_turn>model"
+    elif "llama" in model_id.lower():
+        return "<|start_header_id|>assistant<|end_header_id|>"
     
-    text = f"Question: {question}\nAnswer: {answer}"
-    return {"text": text}
+def build_completion_mask(input_ids: List[int], response_token_ids: List[int]) -> List[int]:
+    """Build completion mask based on response token IDs."""
+    start_index = -1
+    n = len(response_token_ids)
+    
+    # Scan the input_ids to find where the response template occurs
+    for i in range(len(input_ids) - n + 1):
+        if input_ids[i : i + n] == response_token_ids:
+            start_index = i + n  # The answer starts AFTER the template
+            break
+            
+    if start_index == -1:
+        # Fallback: If template not found, mask everything (train on nothing)
+        return [0] * len(input_ids)
+    else:
+        return [0] * start_index + [1] * (len(input_ids) - start_index)
 
 
-def format_dataset_for_sft(dataset: Dataset) -> Dataset:
+def format_for_sft(example: Dict, model_id: str, tokenizer=None) -> Dict:
+    """
+    Format, Tokenize, and Mask data for Packing.
+    """
+    if tokenizer is None:
+        raise ValueError("Tokenizer must be passed to format_for_sft")
+
+    # --- 1. Extract the Answer ---
+    raw_answer = example['answer']['normalized_value']
+
+    # --- 2. Create Full Text with Chat Template ---
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": f"Question: {example['question']}"},
+        {"role": "assistant", "content": raw_answer}
+    ]
+    
+    # Generate the full string (e.g. "<start_of_turn>user...<start_of_turn>model...")
+    full_text = tokenizer.apply_chat_template(messages, tokenize=False)
+    
+    # --- 3. Tokenization ---
+    # We must tokenize now to calculate indices.
+    tokenized_full = tokenizer(full_text, add_special_tokens=False)
+    input_ids = tokenized_full["input_ids"]
+    attention_mask = tokenized_full["attention_mask"]
+
+    # --- 4. Build the Completion Mask ---
+    # We need to find the token sequence for "<start_of_turn>model"
+    # Note: Use add_special_tokens=False to avoid adding BOS tokens to the template itself
+    response_template = get_response_template_for_model(model_id)
+    response_token_ids = tokenizer.encode(response_template, add_special_tokens=False)
+    completion_mask = build_completion_mask(
+        input_ids,
+        response_token_ids
+    )
+
+    # --- 5. Return the formatted example ---
+    return {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "completion_mask": completion_mask
+    }
+
+
+def format_dataset_for_sft(dataset: Dataset, tokenizer, model_id) -> Dataset:
     """Format all examples for SFTTrainer."""
     return dataset.map(
-        format_for_sft, 
+        format_for_sft,
+        fn_kwargs={"tokenizer": tokenizer, "model_id": model_id},
         remove_columns=[col for col in dataset.column_names if col != "text"],
         desc="Formatting for SFT"
     )
@@ -269,21 +284,14 @@ def log_tokenizer_info(tokenizer):
     print(f"  Padding side: {tokenizer.padding_side}")
     print(f"  PAD token: {repr(tokenizer.pad_token)} (id={tokenizer.pad_token_id})")
     print(f"  EOS token: {repr(tokenizer.eos_token)} (id={tokenizer.eos_token_id})")
-    print(f"  BOS token: {repr(tokenizer.bos_token)} (id={tokenizer.bos_token_id})")
     print("=" * 70 + "\n")
 
 
 def log_template_tokenization(tokenizer):
-    """Verify how templates tokenize - critical for DataCollatorForCompletionOnlyLM."""
+    """Verify how templates tokenize - critical for DataCollatorForLanguageModeling."""
     print("\n" + "=" * 70)
     print("TEMPLATE TOKENIZATION CHECK")
     print("=" * 70)
-    
-    # Check instruction template
-    instr_tokens = tokenizer.encode(INSTRUCTION_TEMPLATE, add_special_tokens=False)
-    print(f"  INSTRUCTION_TEMPLATE: {repr(INSTRUCTION_TEMPLATE)}")
-    print(f"    Token IDs: {instr_tokens}")
-    print(f"    Decoded: {repr(tokenizer.decode(instr_tokens))}")
     
     # Check response template
     resp_tokens = tokenizer.encode(RESPONSE_TEMPLATE, add_special_tokens=False)
@@ -292,22 +300,32 @@ def log_template_tokenization(tokenizer):
     print(f"    Decoded: {repr(tokenizer.decode(resp_tokens))}")
     
     # Check a full example
-    sample = f"Question: What is 2+2?{RESPONSE_TEMPLATE} 4"
-    sample_tokens = tokenizer.encode(sample, add_special_tokens=True)
-    print(f"\n  Sample text: {repr(sample)}")
-    print(f"    Full token IDs: {sample_tokens}")
-    print(f"    Token count: {len(sample_tokens)}")
-    
-    # Find where response template appears
-    for i in range(len(sample_tokens) - len(resp_tokens) + 1):
-        if sample_tokens[i:i+len(resp_tokens)] == resp_tokens:
-            print(f"    Response template found at position: {i}")
-            print(f"    Tokens before (prompt): {sample_tokens[:i]}")
-            print(f"    Tokens after (response): {sample_tokens[i+len(resp_tokens):]}")
-            break
-    else:
-        print("    ⚠️ WARNING: Response template NOT found as exact subsequence!")
-        print("    This may cause issues with DataCollatorForCompletionOnlyLM")
+    sample_msgs = [
+        {"role": "user", "content": "Test Q"},
+        {"role": "assistant", "content": "Test A"}
+    ]
+    # We try to use the chat template to see if our RESPONSE_TEMPLATE exists in it
+    try:
+        sample = tokenizer.apply_chat_template(sample_msgs, tokenize=False)
+        sample_tokens = tokenizer.encode(sample, add_special_tokens=True)
+        print(f"\n  Sample chat text: {repr(sample)}")
+        
+        # Find where response template appears
+        found = False
+        for i in range(len(sample_tokens) - len(resp_tokens) + 1):
+            if sample_tokens[i:i+len(resp_tokens)] == resp_tokens:
+                print(f"    Response template found at token index: {i}")
+                print(f"    Everything BEFORE index {i} will be MASKED (Loss = 0)")
+                print(f"    Everything FROM index {i} onwards will be TRAINED (Loss > 0)")
+                found = True
+                break
+        
+        if not found:
+            print("    ⚠️ WARNING: Response template NOT found as exact subsequence in default chat template!")
+            print("    This is expected if your template adds extra spaces or newlines.")
+            print("    The DataCollator will attempt to match the tokens flexibly.")
+    except Exception as e:
+        print(f"    Could not run template check: {e}")
     
     print("=" * 70 + "\n")
 
@@ -328,7 +346,7 @@ def verify_collator_output(tokenizer, dataset, data_collator, n_examples: int = 
         tokenized = tokenizer(
             text,
             truncation=True,
-            max_length=512,
+            max_length=1024,
             padding=False,
             return_tensors=None
         )
@@ -340,11 +358,6 @@ def verify_collator_output(tokenizer, dataset, data_collator, n_examples: int = 
     # Apply collator - this is what happens during training
     batch = data_collator(examples)
     
-    print(f"\nBatch shapes:")
-    print(f"  input_ids: {batch['input_ids'].shape}")
-    print(f"  attention_mask: {batch['attention_mask'].shape}")
-    print(f"  labels: {batch['labels'].shape}")
-    
     all_valid = True
     
     for i in range(len(examples)):
@@ -354,85 +367,45 @@ def verify_collator_output(tokenizer, dataset, data_collator, n_examples: int = 
         
         input_ids = batch["input_ids"][i].tolist()
         labels = batch["labels"][i].tolist()
-        attention_mask = batch["attention_mask"][i].tolist()
         
-        # Count tokens
-        n_pad = sum(1 for t in input_ids if t == tokenizer.pad_token_id)
         n_masked_labels = sum(1 for l in labels if l == -100)
         n_loss_labels = sum(1 for l in labels if l != -100)
         
         print(f"\n[COUNTS]")
         print(f"  Total tokens: {len(input_ids)}")
-        print(f"  Padding tokens: {n_pad}")
         print(f"  Masked labels (-100): {n_masked_labels}")
         print(f"  Loss labels: {n_loss_labels}")
         
-        # Decode full input (without padding)
-        non_pad_ids = [t for t, m in zip(input_ids, attention_mask) if m == 1]
-        print(f"\n[FULL INPUT] ({len(non_pad_ids)} tokens)")
-        print(tokenizer.decode(non_pad_ids))
-        
         # Decode ONLY the loss region
         loss_token_ids = [t for t, l in zip(input_ids, labels) if l != -100]
-        print(f"\n[LOSS REGION] ({len(loss_token_ids)} tokens)")
-        print(f"  Text: {repr(tokenizer.decode(loss_token_ids))}")
-        print(f"  Token IDs: {loss_token_ids}")
+        loss_text = tokenizer.decode(loss_token_ids)
+        
+        print(f"\n[WHAT THE MODEL LEARNS (Loss Region)]")
+        print(f"  '{loss_text}'")
         
         # Show token-by-token at boundary
-        print(f"\n[TOKEN-BY-TOKEN BOUNDARY]")
-        # Find first loss token
-        first_loss_idx = None
-        for j, l in enumerate(labels):
-            if l != -100:
-                first_loss_idx = j
-                break
+        print(f"\n[BOUNDARY INSPECTION]")
+        # Find first index where label is NOT -100
+        first_loss_idx = next((j for j, l in enumerate(labels) if l != -100), None)
         
-        if first_loss_idx is not None and first_loss_idx > 0:
-            # Show a few tokens before and after boundary
-            start = max(0, first_loss_idx - 3)
-            end = min(len(input_ids), first_loss_idx + 4)
+        if first_loss_idx is not None:
+            start = max(0, first_loss_idx - 5)
+            end = min(len(input_ids), first_loss_idx + 5)
             
-            print(f"  {'Pos':<5} {'Token ID':<10} {'Token':<20} {'Label':<10} {'Loss?'}")
-            print(f"  {'-'*5} {'-'*10} {'-'*20} {'-'*10} {'-'*5}")
+            print(f"  {'Pos':<5} {'Token':<20} {'Label':<10}")
+            print(f"  {'-'*5} {'-'*20} {'-'*10}")
             for j in range(start, end):
-                tok_id = input_ids[j]
-                tok_str = repr(tokenizer.decode([tok_id]))
-                label = labels[j]
-                label_str = "MASKED" if label == -100 else str(label)
-                loss_indicator = "" if label == -100 else "← LOSS"
+                tok_str = repr(tokenizer.decode([input_ids[j]]))
+                label_str = "MASKED" if labels[j] == -100 else "TRAIN"
                 marker = ">>>" if j == first_loss_idx else "   "
-                print(f"  {marker}{j:<2} {tok_id:<10} {tok_str:<20} {label_str:<10} {loss_indicator}")
+                print(f"  {marker}{j:<2} {tok_str:<20} {label_str:<10}")
         
-        # Validation checks
-        print(f"\n[VALIDATION]")
-        
-        # Check 1: Loss region should not be empty
+        # Check if loss region is empty
         if n_loss_labels == 0:
             print(f"  ❌ FAIL: No loss tokens! Model will learn nothing.")
             all_valid = False
         else:
-            print(f"  ✓ Has {n_loss_labels} loss tokens")
-        
-        # Check 2: Loss region should contain the answer
-        original_text = dataset[i]["text"]
-        answer_start = original_text.find(RESPONSE_TEMPLATE) + len(RESPONSE_TEMPLATE)
-        expected_answer = original_text[answer_start:].strip()
-        actual_loss_text = tokenizer.decode(loss_token_ids).strip()
-        
-        # Remove EOS if present for comparison
-        if actual_loss_text.endswith(tokenizer.eos_token):
-            actual_loss_text = actual_loss_text[:-len(tokenizer.eos_token)].strip()
-        
-        if expected_answer in actual_loss_text or actual_loss_text in expected_answer:
-            print(f"  ✓ Loss region contains expected answer")
-        else:
-            print(f"  ⚠️ WARNING: Loss text '{actual_loss_text}' vs expected '{expected_answer}'")
-        
-        # Check 3: EOS should be in loss region (model should learn to stop)
-        if tokenizer.eos_token_id in loss_token_ids:
-            print(f"  ✓ EOS token in loss region")
-        else:
-            print(f"  ⚠️ EOS token NOT in loss region (may affect generation stopping)")
+            print(f"  ✓ Valid loss region detected.")
     
     print(f"\n{'=' * 70}")
     if all_valid:
@@ -445,29 +418,12 @@ def verify_collator_output(tokenizer, dataset, data_collator, n_examples: int = 
 
 
 class SFTLoggingCallback(TrainerCallback):
-    """
-    Custom callback to log training internals.
-    Logs actual batch data periodically to verify training is proceeding correctly.
-    """
-    
     def __init__(self, tokenizer, log_every_n_steps: int = 50):
         self.tokenizer = tokenizer
         self.log_every_n_steps = log_every_n_steps
-        self.logged_first_batch = False
-    
-    def on_step_begin(self, args, state, control, **kwargs):
-        """Log at specific intervals."""
-        # Always log first step
-        if state.global_step == 0:
-            self._should_log_next = True
-        elif state.global_step % self.log_every_n_steps == 0:
-            self._should_log_next = True
-        else:
-            self._should_log_next = False
     
     def on_step_end(self, args, state, control, **kwargs):
-        """Log training metrics."""
-        if state.global_step % 10 == 0:  # Every 10 steps, basic metrics
+        if state.global_step % 10 == 0:
             if state.log_history:
                 latest = state.log_history[-1]
                 loss = latest.get("loss", "N/A")
@@ -475,79 +431,15 @@ class SFTLoggingCallback(TrainerCallback):
                 print(f"[STEP {state.global_step}] loss={loss}, lr={lr}", flush=True)
     
     def on_train_begin(self, args, state, control, model=None, **kwargs):
-        """Log at start of training."""
         print("\n" + "=" * 70)
         print("TRAINING STARTED")
         print("=" * 70)
-        
         if model is not None:
-            # Count parameters
-            total_params = sum(p.numel() for p in model.parameters())
             trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-            print(f"  Total parameters: {total_params:,}")
             print(f"  Trainable parameters: {trainable_params:,}")
-            print(f"  Trainable %: {100 * trainable_params / total_params:.4f}%")
-        
         print(f"  Epochs: {args.num_train_epochs}")
-        print(f"  Batch size: {args.per_device_train_batch_size}")
-        print(f"  Gradient accumulation: {args.gradient_accumulation_steps}")
-        print(f"  Effective batch size: {args.per_device_train_batch_size * args.gradient_accumulation_steps}")
         print(f"  Learning rate: {args.learning_rate}")
-        print(f"  Warmup ratio: {args.warmup_ratio}")
         print("=" * 70 + "\n")
-    
-    def on_train_end(self, args, state, control, **kwargs):
-        """Log at end of training."""
-        print("\n" + "=" * 70)
-        print("TRAINING COMPLETED")
-        print("=" * 70)
-        print(f"  Total steps: {state.global_step}")
-        print(f"  Final loss: {state.log_history[-1].get('loss', 'N/A') if state.log_history else 'N/A'}")
-        print("=" * 70 + "\n")
-
-
-def log_first_batch(trainer, tokenizer):
-    """
-    Log the very first batch to see exactly what goes into the model.
-    Call this AFTER trainer is created but BEFORE training.
-    """
-    print("\n" + "=" * 70)
-    print("FIRST BATCH INSPECTION")
-    print("=" * 70)
-    
-    # Get the dataloader
-    dataloader = trainer.get_train_dataloader()
-    
-    # Get first batch
-    first_batch = next(iter(dataloader))
-    
-    print(f"\nBatch keys: {list(first_batch.keys())}")
-    print(f"Batch size: {first_batch['input_ids'].shape[0]}")
-    print(f"Sequence length: {first_batch['input_ids'].shape[1]}")
-    
-    # Examine first example in batch
-    input_ids = first_batch["input_ids"][0].tolist()
-    labels = first_batch["labels"][0].tolist()
-    attention_mask = first_batch["attention_mask"][0].tolist()
-    
-    n_masked = sum(1 for l in labels if l == -100)
-    n_loss = sum(1 for l in labels if l != -100)
-    
-    print(f"\n[FIRST EXAMPLE IN BATCH]")
-    print(f"  Input length: {len(input_ids)}")
-    print(f"  Masked labels: {n_masked}")
-    print(f"  Loss labels: {n_loss}")
-    
-    # Full sequence
-    print(f"\n[FULL INPUT]")
-    print(tokenizer.decode(input_ids))
-    
-    # Loss region
-    loss_tokens = [t for t, l in zip(input_ids, labels) if l != -100]
-    print(f"\n[LOSS REGION]")
-    print(repr(tokenizer.decode(loss_tokens)))
-    
-    print("\n" + "=" * 70 + "\n")
 
 
 # =============================================================================
@@ -559,12 +451,11 @@ def get_tokenizer(model_id: str):
     tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"  # Standard for causal LM training
+    tokenizer.padding_side = "right" # SFT requires right padding for batching
     return tokenizer
 
 
 def build_peft_config(args):
-    """Build PEFT configuration based on args."""
     target_modules = ["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
     if args.peft_type == "lora":
         return LoraConfig(
@@ -606,16 +497,14 @@ def build_peft_config(args):
 
 
 def load_base_model(model_id: str):
-    """Load base model for training."""
     return AutoModelForCausalLM.from_pretrained(
         model_id,
-        dtype=torch.bfloat16,  # Using dtype, not torch_dtype (deprecated)
+        dtype=torch.bfloat16, 
         device_map="cuda",
     )
 
 
 def set_contiguous(model):
-    """Ensure parametrized weights are contiguous (needed for some PEFT methods)."""
     for m in model.modules():
         if hasattr(m, "parametrizations") and "weight" in m.parametrizations:
             base = m.parametrizations.weight[0].base
@@ -624,59 +513,30 @@ def set_contiguous(model):
 
 
 def create_sft_trainer(model, tokenizer, train_dataset, peft_config, args):
-    """
-    Create SFTTrainer with DataCollatorForCompletionOnlyLM.
-    """
-    
-    # Create completion-only collator
-    data_collator = DataCollatorForCompletionOnlyLM(
-        response_template=RESPONSE_TEMPLATE,
-        instruction_template=INSTRUCTION_TEMPLATE,
-        tokenizer=tokenizer,
-        mlm=False,
+    data_collator = DataCollatorForLanguageModeling(
+        tokenizer.pad_token_id,
+        completion_only_loss=True,
     )
     
-    # Training configuration
     sft_config = SFTConfig(
         output_dir=args.output_path,
-        
-        # Batch settings
         per_device_train_batch_size=4,
         gradient_accumulation_steps=4,
-        
-        # Training duration
         num_train_epochs=args.num_epochs,
-        
-        # Optimizer settings
         learning_rate=args.learning_rate,
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
         max_grad_norm=1.0,
-        optim="adamw_torch",
-        
-        # Precision
+        optim="adamw_torch_fused",
         bf16=True,
-        
-        # Logging
         logging_steps=10,
         logging_first_step=True,
-        
-        # Saving
         save_strategy="no",
-        
-        # Sequence length
-        max_seq_length=1024,
-        
-        # Dataset
-        dataset_text_field="text",
+        max_length=1024,
         packing=False,
-        
-        # Other
-        report_to="none",
-        remove_unused_columns=True,
+        remove_unused_columns=False,
     )
     
-    # Create logging callback
     logging_callback = SFTLoggingCallback(tokenizer, log_every_n_steps=50)
     
     return SFTTrainer(
@@ -691,19 +551,16 @@ def create_sft_trainer(model, tokenizer, train_dataset, peft_config, args):
 
 
 # =============================================================================
-# EVALUATION
+# EVALUATION & POST-PROCESSING
 # =============================================================================
 
 def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_model_id):
-    """Update self-consistency scores in the JSONL file."""
     if len(batch_data) != len(sc_scores):
         raise ValueError(f"Mismatch: {len(batch_data)} examples but {len(sc_scores)} scores")
 
     id_to_score = {}
     for example, score in zip(batch_data, sc_scores):
         question_id = example.get("id")
-        if question_id is None:
-            raise ValueError(f"Missing 'id' in batch_data example")
         id_to_score[question_id] = score
 
     jsonl_path = Path(jsonl_file_path)
@@ -726,16 +583,12 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
             updated_count += 1
 
     if updated_count != len(id_to_score):
-        print(f"[WRITE] Mismatch: updated {updated_count}, expected {len(id_to_score)}. Deduplicating...")
         deduplicate_jsonl_file(jsonl_file_path)
-        
         rows = []
         with open(jsonl_path, "r", encoding="utf-8") as f:
             for line in f:
-                line = line.strip()
-                if line:
+                if line.strip():
                     rows.append(json.loads(line))
-        
         updated_count = 0
         for row in rows:
             row_id = row.get("id")
@@ -748,29 +601,11 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    if updated_count != len(id_to_score):
-        raise ValueError(f"Expected to update {len(id_to_score)} entries but updated {updated_count}")
 
-
-def process_with_dynamic_batch_size(
-    jsonl_path,
-    initial_batch_size=30,
-    min_batch_size=1,
-    prompt_template=None,
-    model=None,
-    tokenizer=None,
-    args=None,
-    ft_model_id=None,
-):
-    """Run evaluation with dynamic batch sizing to handle OOM."""
+def process_with_dynamic_batch_size(jsonl_path, initial_batch_size, min_batch_size, model, tokenizer, args, ft_model_id):
     print(f"\n[PROCESS] Starting evaluation")
-    log_file_state(jsonl_path, "at start of evaluation")
-    
     batch_num = 0
-    for batch in tqdm(
-        stream_jsonl_batches(jsonl_path, batch_size=initial_batch_size),
-        desc="Evaluating batches"
-    ):
+    for batch in tqdm(stream_jsonl_batches(jsonl_path, batch_size=initial_batch_size), desc="Evaluating batches"):
         batch_num += 1
         current_chunk_size = initial_batch_size
         success = False
@@ -782,20 +617,12 @@ def process_with_dynamic_batch_size(
                     sub_batch = batch[i : i + current_chunk_size]
                     questions, ground_truths = prepare_sc_inputs(sub_batch)
                     sc_scores = evaluate_self_consistency(
-                        questions,
-                        ground_truths,
-                        prompt_template,
-                        model,
-                        tokenizer,
-                        args.sc_number
+                        questions, ground_truths, model, tokenizer, SYSTEM_PROMPT, FEW_SHOT_EXAMPLES, args.sc_number
                     )
                     batch_sc_scores.extend(sc_scores)
-                    print(f"\n* Processed chunk of size {len(sub_batch)}", flush=True)
                     torch.cuda.empty_cache()
 
-                print(f"[BATCH {batch_num}] Writing {len(batch)} items with {len(batch_sc_scores)} scores")
                 write_sc_score_FT_to_jsonl_batch(batch, batch_sc_scores, jsonl_path, ft_model_id)
-                print(f"** Successfully processed batch {batch_num}", flush=True)
                 success = True
 
             except torch.cuda.OutOfMemoryError:
@@ -803,13 +630,11 @@ def process_with_dynamic_batch_size(
                 new_chunk_size = current_chunk_size // 2
                 if new_chunk_size < min_batch_size:
                     break
-                print(f"! OOM with chunk size {current_chunk_size}, retrying with {new_chunk_size}", flush=True)
+                print(f"! OOM, retrying with {new_chunk_size}", flush=True)
                 current_chunk_size = new_chunk_size
 
         if not success:
-            raise RuntimeError(f"Cannot process batch even with minimum chunk size of {min_batch_size}.")
-
-    log_file_state(jsonl_path, "at end of evaluation")
+            raise RuntimeError(f"Cannot process batch.")
 
 
 # =============================================================================
@@ -819,52 +644,49 @@ def process_with_dynamic_batch_size(
 def main():
     args = parse_arguments()
     ft_model_id = args.model_path.split('/')[-1]
+    model_id = args.model_id
 
     print(f"\n{'=' * 70}")
     print(f"SFT TRAINING PIPELINE")
     print(f"{'=' * 70}")
     print(f"  PEFT type: {args.peft_type}")
     print(f"  Model ID: {ft_model_id}")
-    print(f"  Training samples: {args.training_number}")
+    print(f"  Base Model: {model_id}")
+    print(f"  Response Template (Masking Trigger): {repr(get_response_template_for_model(model_id))}")
     print(f"{'=' * 70}\n")
 
     log_file_state(args.results_path, "initial")
-    model_id = args.model_id
 
     if args.include_training:
         # =================================================================
-        # STEP 1: DATA PREPARATION
+        # STEP 1: TOKENIZER SETUP
         # =================================================================
-        print("\n[STEP 1] Data Preparation")
-        print("-" * 40)
-        
-        # raw_dataset = mark_and_return_number_to_train_inplace(
-        #     args.results_path,
-        #     args.training_number,
-        #     ft_model_id=ft_model_id,
-        #     seed=args.seed,
-        #     initialize_missing_flag=True
-        # )
-        raw_dataset = get_all_zero_score_samples(
-            args.results_path,
-            ft_model_id=ft_model_id,
-        )
-        train_dataset = format_dataset_for_sft(raw_dataset)
-        
-        print(f"\nDataset size: {len(train_dataset)} examples")
-        print("\n[SAMPLE DATA]")
-        for i in range(min(3, len(train_dataset))):
-            print(f"  Example {i+1}: {train_dataset[i]['text'][:100]}...")
-        
-        # =================================================================
-        # STEP 2: TOKENIZER SETUP
-        # =================================================================
-        print("\n[STEP 2] Tokenizer Setup")
+        print("\n[STEP 1] Tokenizer Setup")
         print("-" * 40)
         
         tokenizer = get_tokenizer(model_id)
         log_tokenizer_info(tokenizer)
         log_template_tokenization(tokenizer)
+        
+        # =================================================================
+        # STEP 2: DATA PREPARATION
+        # =================================================================
+        print("\n[STEP 2] Data Preparation")
+        print("-" * 40)
+        
+        # Get data based on zero scores
+        raw_dataset = get_all_zero_score_samples(
+            args.results_path,
+            ft_model_id=ft_model_id,
+        )
+        
+        # Format using the tokenizer's chat template
+        train_dataset = format_dataset_for_sft(raw_dataset, tokenizer, model_id)
+        
+        print(f"\nDataset size: {len(train_dataset)} examples")
+        print("\n[SAMPLE DATA - Formatted]")
+        if len(train_dataset) > 0:
+            print(f"{train_dataset[0]['text'][:300]}...")
         
         # =================================================================
         # STEP 3: MODEL LOADING
@@ -876,7 +698,6 @@ def main():
         peft_config = build_peft_config(args)
         
         print(f"  Base model loaded: {model_id}")
-        print(f"  PEFT config: {args.peft_type}")
         
         # =================================================================
         # STEP 4: TRAINER CREATION & VERIFICATION
@@ -886,7 +707,7 @@ def main():
         
         trainer = create_sft_trainer(model, tokenizer, train_dataset, peft_config, args)
         
-        # Critical: Verify the collator is working
+        # CRITICAL VERIFICATION: Ensure masking is correct
         collator_ok = verify_collator_output(
             tokenizer, 
             train_dataset, 
@@ -895,14 +716,7 @@ def main():
         )
         
         if not collator_ok:
-            raise RuntimeError(
-                "Data collator verification FAILED!\n"
-                "The response template may not be found in your data.\n"
-                f"Expected template: {repr(RESPONSE_TEMPLATE)}"
-            )
-        
-        # Log first actual batch
-        log_first_batch(trainer, tokenizer)
+            raise RuntimeError("Data collator verification FAILED! Aborting training.")
         
         # =================================================================
         # STEP 5: TRAINING
@@ -912,7 +726,6 @@ def main():
         
         trainer.train()
         
-        # Post-training cleanup
         set_contiguous(trainer.model)
         
         # =================================================================
@@ -929,17 +742,11 @@ def main():
         model = trainer.model
 
     else:
-        # =================================================================
         # LOAD PRE-TRAINED MODEL
-        # =================================================================
         print("\n[LOADING] Pre-trained model for evaluation")
-        print("-" * 40)
+        tokenizer = get_tokenizer(model_id)
+        tokenizer.padding_side = "left" # For inference
         
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.padding_side = "left"  # For generation
-
         config = PeftConfig.from_pretrained(args.model_path)
         base_model = AutoModelForCausalLM.from_pretrained(
             config.base_model_name_or_path,
@@ -961,28 +768,15 @@ def main():
 
     if args.run_qa_inference:
         print("\n[EVALUATION] Running Q&A inference")
-        print("-" * 40)
-        
-        tokenizer.padding_side = "left"  # For generation
-        
-        prompt_template = get_prompt_template()
+        tokenizer.padding_side = "left" # For inference
         process_with_dynamic_batch_size(
-            args.results_path,
-            initial_batch_size=500,
-            min_batch_size=1,
-            prompt_template=prompt_template,
-            model=model,
-            tokenizer=tokenizer,
-            args=args,
-            ft_model_id=ft_model_id
+            args.results_path, 500, 1, model, tokenizer, args, ft_model_id
         )
     else:
         print("\n[SKIP] Q&A inference (--run_qa_inference not set)")
 
     log_file_state(args.results_path, "final")
-    print(f"\n{'=' * 70}")
-    print("PIPELINE COMPLETED")
-    print(f"{'=' * 70}\n")
+    print(f"\n{'=' * 70}\nPIPELINE COMPLETED\n{'=' * 70}\n")
 
 
 if __name__ == "__main__":
