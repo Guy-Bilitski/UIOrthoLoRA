@@ -11,7 +11,7 @@ from triviaQA_load import stream_triviaqa_rc
 from shared_prompt import SYSTEM_PROMPT, FEW_SHOT_EXAMPLES
 
 # Configuration
-NUM_DEBUG_SAMPLES = 5
+NUM_DEBUG_SAMPLES = 1
 FUZZY_MATCH_THRESHOLD = 85
 
 # ==============================================================================
@@ -151,7 +151,7 @@ def get_tokenizer_and_model(model_id):
     tokenizer.padding_side = "left"
     model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda", dtype=torch.bfloat16)
     model.eval()
-    model = torch.compile(model)
+    # model = torch.compile(model)
     return tokenizer, model
 
 def evaluate_self_consistency(

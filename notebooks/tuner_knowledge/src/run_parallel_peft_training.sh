@@ -47,10 +47,11 @@ DROPOUT=0.0
 NUM_EPOCHS=10
 SEED=42
 SC_NUMBER=10
-INCLUDE_TRAINING=true
+# INCLUDE_TRAINING=true
+INCLUDE_TRAINING=false
 #RUN_QA_INFERENCE=false
 RUN_QA_INFERENCE=true
-LORA_RANK=4
+LORA_RANK=3
 VERA_RANK=1024
 RANDLORA_RANK=512
 SVALUES=1024
@@ -65,10 +66,10 @@ DELETE_MODEL_AFTER_EVAL=true
 
 # GPU mapping per adapter
 declare -A GPU_MAP=(
-    [uiortholora]=4
-    [lora]=5
-    [vera]=6
-    [randlora]=7
+    [uiortholora]=0
+    [lora]=1
+    [vera]=2
+    [randlora]=3
 )
 
 # WORK_DIR="results/llama-8b/workdir"
@@ -94,7 +95,6 @@ mkdir -p results logs models
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
 PEFT_TYPES="lora uiortholora vera randlora"
-# Removed TRAINING_NUMBERS loop variable
 LEARNING_RATES="5e-4 1e-4 5e-5"
 
 # Set flags based on config
@@ -143,7 +143,6 @@ for PEFT_TYPE in $PEFT_TYPES; do
         echo "[${PEFT_TYPE}] Train=${TRAINING_LABEL}, LR=${LEARNING_RATE}" | tee -a "$LOGFILE"
 
         # Run training
-        # Note: Removed --training_number flag
         python3 train.py \
             --model_id "$MODEL_ID" \
             --peft_type "$PEFT_TYPE" \
