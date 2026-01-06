@@ -44,8 +44,8 @@ class UIOrthoLoRAModel(BaseTuner):
     # ---------------------------------------------------------------------
     # Construction helpers
     # ---------------------------------------------------------------------
-    def __init__(self, model, config: UIOrthoLoRAConfig, adapter_name: str, *, low_cpu_mem_usage: bool = False):
-        super().__init__(model, config, adapter_name, low_cpu_mem_usage=low_cpu_mem_usage)
+    def __init__(self, model, config: UIOrthoLoRAConfig, adapter_name: str, *, low_cpu_mem_usage: bool = False, **kwargs):
+        super().__init__(model, config, adapter_name, low_cpu_mem_usage=low_cpu_mem_usage, **kwargs)
 
     # ------------------------------------------------------------------
     # Adapter‑config validation
@@ -322,3 +322,4 @@ class UIOrthoLoRAModel(BaseTuner):
             if name == "model":
                 raise
             return getattr(self.model, name)
+
