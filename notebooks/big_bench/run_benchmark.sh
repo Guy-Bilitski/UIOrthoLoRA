@@ -25,9 +25,9 @@ MODELS=(
 
     # --- UIOrthoLoRA Models ---
     #"google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s512_v16_lr5e-4"
-    "google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v16_lr1e-4"
+    #"google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v16_lr1e-4"
     #"google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v16_lr5e-4"
-    #"google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v16_lr5e-5"
+    "google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v16_lr5e-5"
 )
 
 # 3. Tasks list

@@ -1,0 +1,11 @@
+Model,Average_Accuracy,Num_Tasks
+google__gemma-3-12b-it/gemma-12b-results/base_model,0.638241,18
+google_gemma-3-12b-it_lora_trAll_lora_r3_lr5e-5,0.625979,9
+google_gemma-3-12b-it_vera_trAll_vera_r1024_lr5e-5,0.625426,9
+google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v16_lr1e-4,0.622219,9
+google_gemma-3-12b-it_vera_trAll_vera_r1024_lr1e-4,0.614424,9
+google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v16_lr5e-4,0.607884,9
+google_gemma-3-12b-it_vera_trAll_vera_r1024_lr5e-4,0.602708,9
+.,0.600942,18
+google_gemma-3-12b-it_lora_trAll_lora_r3_lr1e-4,0.600942,9
+google_gemma-3-12b-it_lora_trAll_lora_r3_lr5e-4,0.301060,9
