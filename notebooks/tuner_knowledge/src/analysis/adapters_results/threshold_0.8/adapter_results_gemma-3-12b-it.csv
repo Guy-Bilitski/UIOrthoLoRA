@@ -1,0 +1,13 @@
+source_file,base_model,adapter_type,lr,rank,tr_from_name,tr_actual,accuracy,negative_shift_count,negative_shift_score,positive_shift_count,positive_shift_score,raw_adapter_name
+google_gemma-3-12b-it_scores-lora.jsonl,gemma-3-12b-it,lora,1e-4,4.0,5000,5000,0.1349,37181,37129.6,10,9.0,google_gemma-3-12b-it_lora_tr5000_lora_r4_lr1e-4
+google_gemma-3-12b-it_scores-lora.jsonl,gemma-3-12b-it,lora,5e-4,4.0,5000,5000,0.03798,43778,43742.899999999994,5,4.5,google_gemma-3-12b-it_lora_tr5000_lora_r4_lr5e-4
+google_gemma-3-12b-it_scores-lora.jsonl,gemma-3-12b-it,lora,5e-5,4.0,5000,5000,0.1085,40312,40257.799999999996,8,7.2,google_gemma-3-12b-it_lora_tr5000_lora_r4_lr5e-5
+google_gemma-3-12b-it_scores-randlora.jsonl,gemma-3-12b-it,randlora,1e-4,512.0,5000,5000,0.03282,42920,42837.0,5,4.5,google_gemma-3-12b-it_randlora_tr5000_randlora_r512_lr1e-4
+google_gemma-3-12b-it_scores-randlora.jsonl,gemma-3-12b-it,randlora,5e-4,512.0,5000,5000,0.06902,42251,42204.9,7,6.300000000000001,google_gemma-3-12b-it_randlora_tr5000_randlora_r512_lr5e-4
+google_gemma-3-12b-it_scores-randlora.jsonl,gemma-3-12b-it,randlora,5e-5,512.0,5000,5000,0.025240000000000002,42851,42754.1,3,2.7,google_gemma-3-12b-it_randlora_tr5000_randlora_r512_lr5e-5
+google_gemma-3-12b-it_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,1e-4,,5000,5000,0.18352000000000002,1449,1421.2,113,101.70000000000003,google_gemma-3-12b-it_uiortholora_tr5000_uiortholora_s512_v32_lr1e-4
+google_gemma-3-12b-it_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,5e-4,,5000,5000,0.06762,36114,35916.399999999994,11,9.9,google_gemma-3-12b-it_uiortholora_tr5000_uiortholora_s512_v32_lr5e-4
+google_gemma-3-12b-it_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,5e-5,,5000,5000,0.11804,525,516.1,121,108.90000000000003,google_gemma-3-12b-it_uiortholora_tr5000_uiortholora_s512_v32_lr5e-5
+google_gemma-3-12b-it_scores-vera.jsonl,gemma-3-12b-it,vera,1e-4,1024.0,5000,5000,0.23496,4694,4642.6,105,94.50000000000003,google_gemma-3-12b-it_vera_tr5000_vera_r1024_lr1e-4
+google_gemma-3-12b-it_scores-vera.jsonl,gemma-3-12b-it,vera,5e-4,1024.0,5000,5000,0.053079999999999995,39167,39006.0,5,4.5,google_gemma-3-12b-it_vera_tr5000_vera_r1024_lr5e-4
+google_gemma-3-12b-it_scores-vera.jsonl,gemma-3-12b-it,vera,5e-5,1024.0,5000,5000,0.18082,1349,1325.7,114,102.60000000000004,google_gemma-3-12b-it_vera_tr5000_vera_r1024_lr5e-5
