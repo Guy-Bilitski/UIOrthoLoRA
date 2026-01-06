@@ -43,8 +43,8 @@ NUM_EPOCHS=10
 SEED=42
 SC_NUMBER=10
 INCLUDE_TRAINING=true
-#RUN_QA_INFERENCE=false
-RUN_QA_INFERENCE=true
+RUN_QA_INFERENCE=false
+#RUN_QA_INFERENCE=true
 LORA_RANK=3
 VERA_RANK=1024
 RANDLORA_RANK=512
@@ -52,18 +52,18 @@ SVALUES=256
 SVECS=64
 
 # MMLU Evaluation settings
-#RUN_MMLU_EVAL=true
-RUN_MMLU_EVAL=false
+RUN_MMLU_EVAL=true
+#RUN_MMLU_EVAL=false
 MMLU_NUM_FEWSHOT=5
 MMLU_LIMIT=  # Set to empty string or remove --limit flag to run all
 DELETE_MODEL_AFTER_EVAL=true
 
 # GPU mapping per adapter
 declare -A GPU_MAP=(
-    [uiortholora]=0
-    [lora]=1
-    [vera]=2
-    [randlora]=3
+    [uiortholora]=4
+    [lora]=5
+    [vera]=6
+    [randlora]=7
 )
 
 #WORK_DIR="results/llama-8b/workdir"

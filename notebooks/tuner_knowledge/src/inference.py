@@ -114,7 +114,7 @@ def get_tokenizer_and_model(model_id):
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
-    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda", torch_dtype=torch.float16)
+    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="cuda", dtype=torch.bfloat16)
     model.eval()
     model = torch.compile(model)
     return tokenizer, model
@@ -213,9 +213,9 @@ def write_sc_scores_to_jsonl_batch(batch_data, sc_scores, output_file_path, mode
 
 def main():
     debug=False
-    n_gen=5
+    n_gen=10
     split="train"
-    model_id = "meta-llama/Llama-3.2-3B"
+    model_id = "google/gemma-3-12b-it"
     
     # Add output file path
     output_file_path = f"results/{model_id.replace('/', '_')}_scores.jsonl"
@@ -224,7 +224,7 @@ def main():
     tokenizer, model = get_tokenizer_and_model(model_id)
     prompt_template, parser = get_prompt_template_and_parser()
 
-    for batch in tqdm(stream_triviaqa_rc(split, batch_size=250), desc="Evaluating batches"):
+    for batch in tqdm(stream_triviaqa_rc(split, batch_size=50), desc="Evaluating batches"):
         questions, ground_truths = prepare_sc_inputs(batch)
         sc_scores = evaluate_self_consistency(questions, ground_truths, prompt_template, parser, model, tokenizer, n_gen, debug)
         # Write the sc scores to the json file (batch processing)

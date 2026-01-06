@@ -11,11 +11,11 @@ from pathlib import Path
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, get_peft_model, VeraConfig, PeftConfig, PeftModel, RandLoraConfig, UIOrthoLoRAConfig
 import torch
-from src.shared_prompt import SYSTEM_PROMPT
+from shared_prompt import SYSTEM_PROMPT
 from transformers import DataCollatorForSeq2Seq
 from transformers import TrainingArguments, Trainer
 from triviaQA_load import take_first_n, stream_triviaqa_rc
-from src.argument_parser import parse_arguments
+from argument_parser import parse_arguments
 from datasets import Dataset
 from inference import evaluate_self_consistency, prepare_sc_inputs, get_prompt_template_and_parser
 import math
@@ -161,6 +161,11 @@ def mark_and_return_number_to_train_inplace(
 
     # 3) Find eligible indices (target & not already train==True)
     eligible_idx = [i for i, r in enumerate(rows) if _is_eligible(r, ft_model_id)]
+
+    num_eligible = len(eligible_idx)
+    print(f"Total eligible training candidates remaining: {num_eligible}")
+    print(f"Attempting to sample: {number_to_train}")
+
     batch_idx = random.sample(eligible_idx, number_to_train)
 
     # 5) Mark selected rows as train=True and collect full rows for return
@@ -175,8 +180,6 @@ def mark_and_return_number_to_train_inplace(
     with open(jsonl_path, "w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-
-    print(selected_rows[0:5])  # Debugging output
 
     formatted_examples = [
         format_prompt(example)
@@ -225,14 +228,14 @@ def tokenize_fn(example, tokenizer):
 
 def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_model_id):
     """
-    Update self-consistency scores for fine-tuned models in an existing JSONL file.    
+    Update self-consistency scores for fine-tuned models in an existing JSONL file.
     Args:
         batch_data (List[dict]): Original batch data from TriviaQA containing question_id, question, answer
         sc_scores (List[float]): Self-consistency scores for each question in the batch
         jsonl_file_path (str): Path to the existing JSONL file to update
         ft_model_id (str): Fine-tuned model ID (e.g., "ft-A", "ft-B")
     """
-    
+
     if len(batch_data) != len(sc_scores):
         raise ValueError(f"Mismatch: {len(batch_data)} examples but {len(sc_scores)} scores")
 
@@ -243,12 +246,12 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
         if question_id is None:
             raise ValueError(f"Missing 'id' in batch_data example: {example}")
         id_to_score[question_id] = score
-    
+
     # Read all entries from the JSONL file
     jsonl_path = Path(jsonl_file_path)
     if not jsonl_path.exists():
         raise FileNotFoundError(f"JSONL file not found: {jsonl_file_path}")
-    
+
     # Load all rows into memory
     rows = []
     with open(jsonl_path, "r", encoding="utf-8") as f:
@@ -260,7 +263,7 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
                 except json.JSONDecodeError:
                     print(f"Warning: Skipping invalid JSON line: {line}")
                     continue
-    
+
     # Update the relevant rows
     updated_count = 0
     for row in rows:
@@ -268,16 +271,16 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
         if row_id in id_to_score:
             # Ensure ft_evals structure exists
             _ensure_ft_entry(row, ft_model_id)
-            
+
             # Update the score (preserve existing train flag if it exists)
             row["ft_evals"][ft_model_id]["score"] = id_to_score[row_id]
             updated_count += 1
-    
+
     # Write all rows back to the file
     with open(jsonl_path, "w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
-    
+
     # Report any missing IDs - this ensures all batch data gets processed
     jsonl_ids = {row.get("id") for row in rows}
     missing_ids = set(id_to_score.keys()) - jsonl_ids
@@ -286,7 +289,7 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
         print(f"Batch IDs looking for: {list(id_to_score.keys())[:5]}...")  # Show first 5 for debugging
         print(f"JSONL IDs available: {list(jsonl_ids)[:5]}...")  # Show first 5 for debugging
         raise ValueError(f"Missing entries in JSONL for batch IDs: {missing_ids}")
-    
+
     # Verify all batch entries were processed
     if updated_count != len(id_to_score):
         raise ValueError(f"Expected to update {len(id_to_score)} entries but only updated {updated_count}")
@@ -329,10 +332,10 @@ def _build_lora_config(r, lora_alpha, lora_dropout):
 
 def _build_vera_config(rank, alpha, dropout):
     return VeraConfig(
-        task_type="CAUSAL_LM",           
-        r=rank,                                            
-        vera_dropout=dropout,                     
-        target_modules=["q_proj", "v_proj"], 
+        task_type="CAUSAL_LM",
+        r=rank,
+        vera_dropout=dropout,
+        target_modules=["q_proj", "v_proj"],
     )
 
 def _build_randlora_config(rank, alpha, dropout):
@@ -359,7 +362,7 @@ def _build_uiortholora_config(svalues, svectors, alpha, dropout):
 def load_peft_model(model_id, peft_config):
     base_model = AutoModelForCausalLM.from_pretrained(
         model_id,
-        torch_dtype=torch.float16,
+        dtype=torch.bfloat16,
         device_map="cuda",
     )
 
@@ -375,7 +378,7 @@ def get_trainer(model, tokenized_dataset, data_collator, args):
         gradient_accumulation_steps=4,
         num_train_epochs=args.num_epochs,
         learning_rate=args.learning_rate,
-        fp16=True,
+        bf16=True,
         logging_steps=10,
         save_strategy="no",
         lr_scheduler_type="cosine",
@@ -518,7 +521,7 @@ def main():
         os.makedirs(args.output_path, exist_ok=True)
         trainer.save_model(args.output_path)
         tokenizer.save_pretrained(args.output_path)
-    
+
     else:
         print("Loading pre-trained model for evaluation only...")
         tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -531,9 +534,9 @@ def main():
 
         # 3. Load base model (must match what was used during fine-tuning)
         base_model = AutoModelForCausalLM.from_pretrained(
-            config.base_model_name_or_path, 
-            device_map="cuda", 
-            torch_dtype=torch.float16
+            config.base_model_name_or_path,
+            device_map="cuda",
+            torch_dtype=torch.bfloat16
         )
 
         # 4. Attach the adapter
@@ -542,7 +545,7 @@ def main():
 
     model.eval()  # Set model to evaluation mode
     torch.compile(model)
-    
+
     # Only run Q&A inference if the flag is set
     if args.run_qa_inference:
         prompt_template, parser = get_prompt_template_and_parser()
@@ -563,7 +566,8 @@ def main():
         print(" =========================================== ")
         print("Skipping Q&A inference evaluation (--run_qa_inference not set)")
         print(" =========================================== ")
-        
+
 
 if __name__ == "__main__":
     main()
+
