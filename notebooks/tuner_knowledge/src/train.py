@@ -264,7 +264,13 @@ def format_for_sft(example: Dict, model_id: str, tokenizer=None) -> Dict:
         raise ValueError("Tokenizer must be passed to format_for_sft")
 
     # --- 1. Extract the Answer ---
-    raw_answer = example['answer']['normalized_value']
+    answer_field = example['answer']
+    if isinstance(answer_field, dict):
+        # TriviaQA format: {"normalized_value": "...", "aliases": [...], ...}
+        raw_answer = answer_field.get('normalized_value', answer_field.get('value', str(answer_field)))
+    else:
+        # HotpotQA format: answer is directly a string
+        raw_answer = str(answer_field)
 
     # --- 2. Create Full Text with Chat Template ---
     messages = [
@@ -532,7 +538,7 @@ def create_sft_trainer(model, tokenizer, train_dataset, peft_config, args):
         num_train_epochs=args.num_epochs,
         learning_rate=args.learning_rate,
         lr_scheduler_type="cosine",
-        warmup_steps=0.05,
+        warmup_ratio=0.05,
         max_grad_norm=1.0,
         optim="adamw_torch_fused",
         bf16=True,
@@ -590,6 +596,7 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
             updated_count += 1
 
     if updated_count != len(id_to_score):
+        print("### Warning: duplication found it the data!!  ###")
         deduplicate_jsonl_file(jsonl_file_path)
         rows = []
         with open(jsonl_path, "r", encoding="utf-8") as f:

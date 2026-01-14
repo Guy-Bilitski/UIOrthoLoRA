@@ -47,22 +47,24 @@ DROPOUT=0.0
 NUM_EPOCHS=10
 SEED=42
 SC_NUMBER=10
-# INCLUDE_TRAINING=true
 INCLUDE_TRAINING=true
-#RUN_QA_INFERENCE=false
 RUN_QA_INFERENCE=true
 LORA_RANK=3
 VERA_RANK=1024
 RANDLORA_RANK=512
 SVALUES=1024
-SVECS=16
+SVECS=0
 
 # MMLU Evaluation settings
-RUN_MMLU_EVAL=false
+RUN_MMLU_EVAL=true
 # RUN_MMLU_EVAL=true
 MMLU_NUM_FEWSHOT=0
 MMLU_LIMIT="" # Set to empty string or remove --limit flag to run all
 DELETE_MODEL_AFTER_EVAL=true
+
+# Big bench
+RUN_BIGBENCH_EVAL=true
+BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_effect_multiple_choice,bigbench_conceptual_combinations_multiple_choice,bigbench_causal_judgment_multiple_choice,bigbench_analogical_similarity_multiple_choice,bigbench_common_morpheme_multiple_choice,bigbench_logical_deduction_multiple_choice,bigbench_logical_sequence_multiple_choice,bigbench_odd_one_out_multiple_choice"
 
 # GPU mapping per adapter
 declare -A GPU_MAP=(
@@ -79,7 +81,8 @@ WORK_DIR="results/gemma-12b/workdir"
 
 # WORK_FILE="meta-llama_Llama-3.1-8B-Instruct_scores"
 #WORK_FILE="meta-llama_Llama-3.2-3B-Instruct_scores"
-WORK_FILE="google_gemma-3-12b-it_scores"
+# WORK_FILE="google_gemma-3-12b-it_scores"
+WORK_FILE="google_gemma-3-12b-it-hotspotqa_scores"
 #WORK_FILE="Ministral-3-14B-Instruct-2512"
 
 # Result JSONL per adapter
@@ -95,7 +98,7 @@ mkdir -p results logs models
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
 PEFT_TYPES="lora uiortholora vera randlora"
-LEARNING_RATES="5e-4 1e-4 5e-5"
+LEARNING_RATES="1e-4 5e-4"
 
 # Set flags based on config
 if [ "$INCLUDE_TRAINING" = true ]; then
@@ -213,6 +216,44 @@ for PEFT_TYPE in $PEFT_TYPES; do
             fi
         else
             echo "MMLU evaluation disabled (RUN_MMLU_EVAL=false)" | tee -a "$LOGFILE"
+        fi
+
+
+        # Run BigBench evaluation if enabled
+        if [ "$RUN_BIGBENCH_EVAL" = true ]; then
+            echo "" | tee -a "$LOGFILE"
+            echo "==========================================" | tee -a "$LOGFILE"
+            echo "Running BigBench Evaluation" | tee -a "$LOGFILE"
+            echo "==========================================" | tee -a "$LOGFILE"
+
+            BIGBENCH_OUTPUT_PATH="results/bigbench/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}"
+            mkdir -p "$BIGBENCH_OUTPUT_PATH"
+
+            BIGBENCH_CMD="lm_eval --model hf \
+                --model_args pretrained=${OUTPUT_PATH},tokenizer=${MODEL_ID},dtype=bfloat16,trust_remote_code=True \
+                --tasks $BIGBENCH_TASKS \
+                --batch_size auto \
+                --output_path $BIGBENCH_OUTPUT_PATH"
+
+            echo "Running: $BIGBENCH_CMD" | tee -a "$LOGFILE"
+            BIGBENCH_START_TIME=$(date +%s)
+
+            eval $BIGBENCH_CMD 2>&1 | tee -a "$LOGFILE"
+            BIGBENCH_EXIT_CODE=${PIPESTATUS[0]}
+
+            BIGBENCH_END_TIME=$(date +%s)
+            BIGBENCH_DURATION=$((BIGBENCH_END_TIME - BIGBENCH_START_TIME))
+
+            if [ $BIGBENCH_EXIT_CODE -eq 0 ]; then
+                echo "✓ BigBench evaluation completed successfully" | tee -a "$LOGFILE"
+                echo "Results saved to: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
+                echo "BigBench evaluation took: ${BIGBENCH_DURATION} seconds" | tee -a "$LOGFILE"
+            else
+                echo "✗ BigBench evaluation failed with exit code $BIGBENCH_EXIT_CODE" | tee -a "$LOGFILE"
+                echo "BigBench evaluation took: ${BIGBENCH_DURATION} seconds" | tee -a "$LOGFILE"
+            fi
+        else
+            echo "BigBench evaluation disabled (RUN_BIGBENCH_EVAL=false)" | tee -a "$LOGFILE"
         fi
 
     done

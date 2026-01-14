@@ -1,10 +1,10 @@
-# triviaqa_eval.py
+# hotpotqa_eval.py
 import os
 import json
 from typing import List
 from tqdm import tqdm
 
-from triviaQA_load import stream_triviaqa_rc
+from hotpotqa_load import stream_hotpotqa
 from shared_prompt import SYSTEM_PROMPT, FEW_SHOT_EXAMPLES
 from eval_utils import (
     get_tokenizer_and_model,
@@ -18,21 +18,19 @@ NUM_DEBUG_SAMPLES = 1
 def prepare_sc_inputs(batch):
     """
     Prepare inputs for self-consistency evaluation.
-    TriviaQA answer format: dict with normalized_aliases and normalized_value.
+    HotpotQA answer format: just a string (unlike TriviaQA's dict with aliases).
     """
     questions = []
     ground_truths = []
 
     for example in batch:
         q = example["question"]
-        normalized_aliases = example["answer"].get("normalized_aliases", [])
-        normalized_value = example["answer"].get("normalized_value", "")
-
-        if normalized_value and normalized_value not in normalized_aliases:
-            normalized_aliases.append(normalized_value)
-
+        answer = example["answer"]
+        # Wrap single answer in list for compatibility with scoring
+        aliases = [answer]
+        
         questions.append(q)
-        ground_truths.append(normalized_aliases)
+        ground_truths.append(aliases)
 
     return questions, ground_truths
 
@@ -49,10 +47,11 @@ def write_sc_scores_to_jsonl_batch(
     batch_results = []
     for example, score in zip(batch_data, sc_scores):
         result_entry = {
-            "id": example["question_id"], 
+            "id": example["id"], 
             "question": example["question"],
-            "answer": example["answer"], 
-            "is_validation": False, 
+            "answer": example["answer"],
+            "type": example.get("type", "unknown"),
+            "level": example.get("level", "unknown"),
             "base_eval": {
                 "model_id": model_name,
                 "score": score
@@ -69,13 +68,15 @@ def main():
     debug = True
     n_gen = 10
     split = "train"
+    level = "hard"  # Filter: "easy", "medium", "hard", or None for all
     model_id = "google/gemma-3-12b-it"
 
-    output_file_path = f"results/triviaqa_{model_id.replace('/', '_')}_scores.jsonl"
+    level_suffix = f"_{level}" if level else ""
+    output_file_path = f"results/hotpotqa{level_suffix}_{model_id.replace('/', '_')}_scores.jsonl"
 
     tokenizer, model = get_tokenizer_and_model(model_id)
 
-    for batch in tqdm(stream_triviaqa_rc(split, batch_size=50), desc="Evaluating TriviaQA"):
+    for batch in tqdm(stream_hotpotqa(split, batch_size=50, level=level), desc="Evaluating HotpotQA"):
         questions, ground_truths = prepare_sc_inputs(batch)
         sc_scores = evaluate_self_consistency(
             questions, 
