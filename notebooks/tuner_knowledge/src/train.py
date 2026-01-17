@@ -1,3 +1,4 @@
+import gc
 import os
 import sys
 # Adjust paths as necessary
@@ -506,14 +507,14 @@ def load_base_model(model_id: str):
         return Gemma3ForConditionalGeneration.from_pretrained(
             model_id,
             device_map="cuda",
-            torch_dtype=torch.bfloat16
+            dtype=torch.bfloat16
         )
     
     # Fallback for standard LLMs
     return AutoModelForCausalLM.from_pretrained(
         model_id,
         device_map="cuda",
-        torch_dtype=torch.bfloat16
+        dtype=torch.bfloat16
     )
 
 
@@ -657,6 +658,13 @@ def process_with_dynamic_batch_size(jsonl_path, initial_batch_size, min_batch_si
 
 def main():
     args = parse_arguments()
+
+    # Sample run banner
+    if args.sample_run:
+        print("\n" + "!" * 70)
+        print("!!! SAMPLE RUN MODE - Testing pipeline with minimal data !!!")
+        print("!" * 70 + "\n")
+
     ft_model_id = args.model_path.split('/')[-1]
     model_id = args.model_id
 
@@ -693,6 +701,14 @@ def main():
             args.results_path,
             ft_model_id=ft_model_id,
         )
+
+        if args.sample_run:
+            sample_size = min(args.sample_size, len(raw_dataset))
+            raw_dataset = raw_dataset.select(range(sample_size))
+            print(f"[SAMPLE RUN] Limited to {sample_size} samples")
+            # Override epochs for quick testing
+            args.num_epochs = 1
+            print(f"[SAMPLE RUN] Epochs set to 1")
         
         # Format using the tokenizer's chat template
         train_dataset = format_dataset_for_sft(raw_dataset, tokenizer, model_id)
@@ -741,7 +757,8 @@ def main():
         
         trainer.train()
         
-        set_contiguous(trainer.model)
+        if args.peft_type == "uiortholora":
+            set_contiguous(trainer.model)
         
         # =================================================================
         # STEP 6: SAVE MODEL
@@ -750,10 +767,23 @@ def main():
         print("-" * 40, flush=True)
         
         os.makedirs(args.output_path, exist_ok=True)
+
+        # # Delete optimizer states (biggest memory hog after model)
+        # trainer.optimizer = None
+        # trainer.lr_scheduler = None
+
+        # # Clear all gradients
+        # for param in trainer.model.parameters():
+        #     param.grad = None
+
+        # # Force garbage collection
+        # gc.collect()
+        # torch.cuda.empty_cache()
+
         trainer.save_model(args.output_path)
         tokenizer.save_pretrained(args.output_path)
         print(f"  Model saved to: {args.output_path}", flush=True)
-        
+
         model = trainer.model
 
     else:
@@ -785,7 +815,7 @@ def main():
         print("\n[EVALUATION] Running Q&A inference")
         tokenizer.padding_side = "left" # For inference
         process_with_dynamic_batch_size(
-            args.results_path, 300, 1, model, tokenizer, args, ft_model_id
+            args.results_path, 250, 1, model, tokenizer, args, ft_model_id
         )
     else:
         print("\n[SKIP] Q&A inference (--run_qa_inference not set)")

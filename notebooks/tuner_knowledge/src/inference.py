@@ -18,21 +18,31 @@ NUM_DEBUG_SAMPLES = 1
 def prepare_sc_inputs(batch):
     """
     Prepare inputs for self-consistency evaluation.
-    TriviaQA answer format: dict with normalized_aliases and normalized_value.
+    Supports multiple answer formats:
+    - TriviaQA: dict with normalized_aliases and normalized_value
+    - HotspotQA: simple string answer
     """
     questions = []
     ground_truths = []
 
     for example in batch:
         q = example["question"]
-        normalized_aliases = example["answer"].get("normalized_aliases", [])
-        normalized_value = example["answer"].get("normalized_value", "")
+        answer = example["answer"]
+        
+        # Handle different answer formats
+        if isinstance(answer, dict):
+            # TriviaQA format: dict with normalized_aliases and normalized_value
+            normalized_aliases = answer.get("normalized_aliases", [])
+            normalized_value = answer.get("normalized_value", "")
 
-        if normalized_value and normalized_value not in normalized_aliases:
-            normalized_aliases.append(normalized_value)
+            if normalized_value and normalized_value not in normalized_aliases:
+                normalized_aliases.append(normalized_value)
+            ground_truths.append(normalized_aliases)
+        else:
+            # HotspotQA / simple string format
+            ground_truths.append([str(answer)] if answer else [])
 
         questions.append(q)
-        ground_truths.append(normalized_aliases)
 
     return questions, ground_truths
 

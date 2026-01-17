@@ -59,6 +59,12 @@ def parse_arguments():
 
     parser.add_argument("--svectors", type=int,
                         help="Number of singular vectors to adapt for UIOrthoLORA")
+    
+    parser.add_argument("--sample_run", action="store_true",
+                    help="Run a quick test with few samples to verify pipeline works")
+    
+    parser.add_argument("--sample_size", type=int, default=10,
+                    help="Number of samples to use in sample run (default: 10)")
 
     args = parser.parse_args()
     
