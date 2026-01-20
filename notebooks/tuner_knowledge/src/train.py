@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Iterable
 from tqdm import tqdm
+from filelock import FileLock
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainerCallback, Gemma3ForConditionalGeneration
 from peft import LoraConfig, VeraConfig, PeftConfig, PeftModel, RandLoraConfig, UIOrthoLoRAConfig
@@ -578,32 +579,19 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
         id_to_score[question_id] = score
 
     jsonl_path = Path(jsonl_file_path)
+    lock_path = f"{jsonl_path}.lock"
     rows = []
-    with open(jsonl_path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                try:
-                    rows.append(json.loads(line))
-                except json.JSONDecodeError:
-                    continue
 
-    updated_count = 0
-    for row in rows:
-        row_id = row.get("id")
-        if row_id in id_to_score:
-            _ensure_ft_entry(row, ft_model_id)
-            row["ft_evals"][ft_model_id]["score"] = id_to_score[row_id]
-            updated_count += 1
-
-    if updated_count != len(id_to_score):
-        print("### Warning: duplication found it the data!!  ###")
-        deduplicate_jsonl_file(jsonl_file_path)
-        rows = []
+    with FileLock(lock_path):
         with open(jsonl_path, "r", encoding="utf-8") as f:
             for line in f:
-                if line.strip():
-                    rows.append(json.loads(line))
+                line = line.strip()
+                if line:
+                    try:
+                        rows.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+
         updated_count = 0
         for row in rows:
             row_id = row.get("id")
@@ -612,9 +600,32 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
                 row["ft_evals"][ft_model_id]["score"] = id_to_score[row_id]
                 updated_count += 1
 
-    with open(jsonl_path, "w", encoding="utf-8") as f:
-        for row in rows:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        if updated_count != len(id_to_score):
+            print("### Warning: duplication found i the data!!  ###")
+            deduplicate_jsonl_file(jsonl_file_path)
+            rows = []
+            with open(jsonl_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        rows.append(json.loads(line))
+            updated_count = 0
+            for row in rows:
+                row_id = row.get("id")
+                if row_id in id_to_score:
+                    _ensure_ft_entry(row, ft_model_id)
+                    row["ft_evals"][ft_model_id]["score"] = id_to_score[row_id]
+                    updated_count += 1
+
+        temp_path = f"{jsonl_path}.tmp"
+        with open(temp_path, "w") as f:
+            for row in rows:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+        os.replace(temp_path, jsonl_path)
+
+        # with open(jsonl_path, "w", encoding="utf-8") as f:
+        #     for row in rows:
+        #         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
 def process_with_dynamic_batch_size(jsonl_path, initial_batch_size, min_batch_size, model, tokenizer, args, ft_model_id):

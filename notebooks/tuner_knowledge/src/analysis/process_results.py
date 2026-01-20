@@ -21,9 +21,6 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-# Threshold for counting negative/positive shifts
-SHIFT_THRESHOLD = 0.2
-
 
 def _sanitize(name: str) -> str:
     """Make a string safe for use as a column name."""
@@ -328,7 +325,7 @@ def main():
     Main function to process all JSONL files and save results to CSV.
     """
     # Define thresholds to process
-    thresholds = [0.8]
+    thresholds = [0.6]
     
     # Look for JSONL files in current directory and common locations
     search_paths = [
