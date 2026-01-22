@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Iterable
 from tqdm import tqdm
 from filelock import FileLock
+import uuid
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainerCallback, Gemma3ForConditionalGeneration
 from peft import LoraConfig, VeraConfig, PeftConfig, PeftModel, RandLoraConfig, UIOrthoLoRAConfig
@@ -52,26 +53,54 @@ RESPONSE_TEMPLATE = "<start_of_turn>model"
 # FILE UTILITIES
 # =============================================================================
 
-def count_file_rows_and_duplicates(path: str) -> tuple:
-    """Returns (total_rows, unique_ids, duplicate_count)"""
-    if not os.path.exists(path):
-        return 0, 0, 0
+def atomic_write_jsonl(path: str, rows: List[Dict]) -> None:
+    """
+    Safely writes a list of dictionaries to a JSONL file.
+    1. Writes to a unique temporary file in the same directory.
+    2. Atomically replaces the target file with the temp file.
+    """
+    # Create a unique temp filename in the SAME directory to ensure os.replace is atomic
+    dirname = os.path.dirname(path)
+    basename = os.path.basename(path)
+    # e.g., .data.jsonl.1234abcd.tmp
+    temp_filename = f".{basename}.{uuid.uuid4().hex}.tmp"
+    temp_path = os.path.join(dirname, temp_filename)
     
-    with open(path, "r", encoding="utf-8") as f:
-        ids = []
-        for line in f:
-            line = line.strip()
-            if line:
-                try:
-                    row = json.loads(line)
-                    ids.append(row.get("id"))
-                except json.JSONDecodeError:
-                    pass
+    try:
+        with open(temp_path, "w", encoding="utf-8") as f:
+            for row in rows:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        
+        # Atomic replacement: Instant swap
+        os.replace(temp_path, path)
+        
+    except Exception as e:
+        print(f"[ATOMIC WRITE] Error writing to {path}: {e}")
+        # Clean up the specific temp file we created
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise e
+
+# def count_file_rows_and_duplicates(path: str) -> tuple:
+#     """Returns (total_rows, unique_ids, duplicate_count)"""
+#     if not os.path.exists(path):
+#         return 0, 0, 0
     
-    total = len(ids)
-    unique = len(set(ids))
-    duplicates = total - unique
-    return total, unique, duplicates
+#     with open(path, "r", encoding="utf-8") as f:
+#         ids = []
+#         for line in f:
+#             line = line.strip()
+#             if line:
+#                 try:
+#                     row = json.loads(line)
+#                     ids.append(row.get("id"))
+#                 except json.JSONDecodeError:
+#                     pass
+    
+#     total = len(ids)
+#     unique = len(set(ids))
+#     duplicates = total - unique
+#     return total, unique, duplicates
 
 
 def deduplicate_jsonl_file(path: str) -> int:
@@ -108,15 +137,15 @@ def deduplicate_jsonl_file(path: str) -> int:
     return removed_count
 
 
-def log_file_state(path: str, context: str):
-    """Simple one-line file state logging"""
-    if not os.path.exists(path):
-        print(f"[FILE STATE] {context}: File {path} not found.")
-        return
+# def log_file_state(path: str, context: str):
+#     """Simple one-line file state logging"""
+#     if not os.path.exists(path):
+#         print(f"[FILE STATE] {context}: File {path} not found.")
+#         return
         
-    total, unique, dups = count_file_rows_and_duplicates(path)
-    status = "✓" if dups == 0 else f"⚠️ {dups} DUPLICATES"
-    print(f"[FILE STATE] {context}: rows={total}, unique_ids={unique} {status}", flush=True)
+#     total, unique, dups = count_file_rows_and_duplicates(path)
+#     status = "✓" if dups == 0 else f"⚠️ {dups} DUPLICATES"
+#     print(f"[FILE STATE] {context}: rows={total}, unique_ids={unique} {status}", flush=True)
 
 
 def stream_jsonl_batches(path: str, batch_size: int = 32, limit: int = None) -> Iterable[List[Dict]]:
@@ -172,33 +201,34 @@ def get_all_zero_score_samples(
     """Get ALL samples where base model scored 0 and return as Dataset."""
     print(f"\n[SELECT] Getting all zero-score samples for training")
     print(f"[SELECT] ft_model_id={ft_model_id}")
-    log_file_state(jsonl_path, "before selection")
 
     rows = []
-    with open(jsonl_path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                rows.append(json.loads(line))
+    lock_path = f"{jsonl_path}.lock"
 
-    print(f"[SELECT] Loaded {len(rows)} total rows")
+    with FileLock(lock_path):
+        # log_file_state(jsonl_path, "before selection")
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    rows.append(json.loads(line))
 
-    # Select ALL rows where base model scored 0 (excluding validation)
-    selected_rows = [r for r in rows if _is_target_row(r)]
-    
-    # Mark them as training samples for this ft_model_id
-    for row in selected_rows:
-        _ensure_ft_entry(row, ft_model_id)
-        row["ft_evals"][ft_model_id]["train"] = True
+        print(f"[SELECT] Loaded {len(rows)} total rows")
 
-    print(f"[SELECT] Selected {len(selected_rows)} zero-score samples (100% of eligible)")
+        # Select ALL rows where base model scored 0 (excluding validation)
+        selected_rows = [r for r in rows if _is_target_row(r)]
+        
+        # Mark them as training samples for this ft_model_id
+        for row in selected_rows:
+            _ensure_ft_entry(row, ft_model_id)
+            row["ft_evals"][ft_model_id]["train"] = True
 
-    # Write back with train markers
-    with open(jsonl_path, "w", encoding="utf-8") as f:
-        for r in rows:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        print(f"[SELECT] Selected {len(selected_rows)} zero-score samples (100% of eligible)")
 
-    log_file_state(jsonl_path, "after selection")
+        # Write back with train markers
+        atomic_write_jsonl(jsonl_path, rows)
+
+        # log_file_state(jsonl_path, "after selection")
     return Dataset.from_list(selected_rows)
 
 
@@ -616,16 +646,7 @@ def write_sc_score_FT_to_jsonl_batch(batch_data, sc_scores, jsonl_file_path, ft_
                     row["ft_evals"][ft_model_id]["score"] = id_to_score[row_id]
                     updated_count += 1
 
-        temp_path = f"{jsonl_path}.tmp"
-        with open(temp_path, "w") as f:
-            for row in rows:
-                f.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-        os.replace(temp_path, jsonl_path)
-
-        # with open(jsonl_path, "w", encoding="utf-8") as f:
-        #     for row in rows:
-        #         f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        atomic_write_jsonl(str(jsonl_path), rows)
 
 
 def process_with_dynamic_batch_size(jsonl_path, initial_batch_size, min_batch_size, model, tokenizer, args, ft_model_id):
@@ -688,7 +709,7 @@ def main():
     print(f"  Response Template (Masking Trigger): {repr(get_response_template_for_model(model_id))}", flush=True)
     print(f"{'=' * 70}\n", flush=True)
 
-    log_file_state(args.results_path, "initial")
+    # log_file_state(args.results_path, "initial")
 
     if args.include_training:
         # =================================================================
@@ -831,7 +852,7 @@ def main():
     else:
         print("\n[SKIP] Q&A inference (--run_qa_inference not set)")
 
-    log_file_state(args.results_path, "final")
+    # log_file_state(args.results_path, "final")
     print(f"\n{'=' * 70}\nPIPELINE COMPLETED\n{'=' * 70}\n")
 
 

@@ -178,7 +178,9 @@ completed
 **/uilora-mistral-test/
 **/models/
 
-notebooks/tuner_knowledge/src/results
+notebooks/tuner_knowledge/src/results/**/*.json
+notebooks/tuner_knowledge/src/results/**/*.jsonl
+notebooks/tuner_knowledge/src/results/**/*.lock
 notebooks/tuner_knowledge/src/models
 notebooks/tuner_knowledge/src/backup
 notebooks/tuner_knowledge/*.jsonl

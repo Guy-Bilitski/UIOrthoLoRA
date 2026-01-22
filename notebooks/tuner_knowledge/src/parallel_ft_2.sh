@@ -24,7 +24,13 @@ check_inference_complete() {
     
     local adapter_name=$(basename "$model_path")
     
-    if grep -q "\"${adapter_name}\":" "$results_file" 2>/dev/null; then
+    # REGEX EXPLANATION:
+    # 1. \"${adapter_name}\":  -> Matches the key "adapter_name":
+    # 2. [[:space:]]*{         -> Matches optional space and the opening brace '{'
+    # 3. [^}]* -> Matches any character that is NOT a closing brace '}'
+    # 4. \"score\":            -> Must find the key "score": inside those braces
+    
+    if grep -q "\"${adapter_name}\":[[:space:]]*{[^}]*\"score\":" "$results_file"; then
         return 0
     fi
     

@@ -109,7 +109,7 @@ SEED=42
 SC_NUMBER=10
 INCLUDE_TRAINING=true
 RUN_QA_INFERENCE=true
-LORA_RANK=3
+LORA_RANK=1
 VERA_RANK=1024
 RANDLORA_RANK=512
 SVALUES=1024
@@ -134,8 +134,8 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 
 # GPU mapping per adapter
 declare -A GPU_MAP=(
-    [uiortholora]=0
-    [lora]=1
+    [uiortholora]=1
+    [lora]=0
     [vera]=2
     [randlora]=3
 )
@@ -164,8 +164,9 @@ mkdir -p results logs models
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
 
 # PEFT_TYPES="lora uiortholora vera"
-PEFT_TYPES="uiortholora"
-LEARNING_RATES="1e-6 5e-6 1e-5 5e-5 7e-5 1e-4 5e-4 7e-4 1e-3 5e-3 7e-3 1e-2"
+PEFT_TYPES="lora"
+# LEARNING_RATES="1e-6 5e-6 1e-5 5e-5 7e-5 1e-4 5e-4 7e-4 1e-3 5e-3 7e-3 1e-2"
+LEARNING_RATES="5e-5 7e-5 1e-4"
 
 # Set flags based on config
 if [ "$INCLUDE_TRAINING" = true ]; then
