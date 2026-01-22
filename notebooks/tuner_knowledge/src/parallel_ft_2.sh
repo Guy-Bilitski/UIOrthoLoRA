@@ -108,19 +108,19 @@ INCLUDE_TRAINING=true
 RUN_QA_INFERENCE=true
 
 # UIorthoLoRA sweep parameters
-LEARNING_RATES="7e-3 9e-3 1e-2 2e-2 4e-2"
-SVECTORS_LIST="512 256 128 64 32 0"
-SVALUES_LIST="1024"
+LEARNING_RATES="8e-3 9e-3 1e-2 2e-2"
+SVECTORS_LIST="0 3 10"
+SVALUES_LIST="1024 512 256"
 
 # GPU mapping: one GPU per svectors value
-declare -A GPU_MAP=(
-    [512]=2
-    [256]=3
-    [128]=4
-    [64]=5
-    [32]=6
-    [0]=7
-)
+# declare -A GPU_MAP=(
+#     [512]=2
+#     [256]=3
+#     [128]=4
+#     [64]=5
+#     [32]=6
+#     [0]=7
+# )
 
 # MMLU Evaluation settings
 RUN_MMLU_EVAL=true
@@ -151,11 +151,13 @@ TRAINING_LABEL="All"
 ###############################################################################
 
 for SVECS in $SVECTORS_LIST; do
-(
-    export CUDA_VISIBLE_DEVICES="${GPU_MAP[$SVECS]}"
+# (
+    # export CUDA_VISIBLE_DEVICES="${GPU_MAP[$SVECS]}"
+    export CUDA_VISIBLE_DEVICES="7" # TODO: attention that it runs only on GPU 7
     LOGFILE="${LOG_ROOT}/${PEFT_TYPE}_svecs${SVECS}_$(date +%Y%m%d_%H%M%S).log"
 
-    echo "=== [UIorthoLoRA svecs=$SVECS] Using GPU ${GPU_MAP[$SVECS]}, logging to $LOGFILE ===" | tee -a "$LOGFILE"
+    # echo "=== [UIorthoLoRA svecs=$SVECS] Using GPU ${GPU_MAP[$SVECS]}, logging to $LOGFILE ===" | tee -a "$LOGFILE"
+    echo "=== [UIorthoLoRA svecs=$SVECS] Using GPU 7, logging to $LOGFILE ===" | tee -a "$LOGFILE"
 
     RESULTS_PATH="$WORK_DIR/${WORK_FILE}-uiortholora.jsonl"
 
@@ -324,8 +326,8 @@ for SVECS in $SVECTORS_LIST; do
     done
 
     echo "=== [UIorthoLoRA svecs=$SVECS] Finished. Logs saved to $LOGFILE ===" | tee -a "$LOGFILE"
-) &
+# ) &
 done
 
-wait
+# wait
 echo "✅ All UIorthoLoRA configurations completed. Check ${LOG_ROOT}/ for detailed output."

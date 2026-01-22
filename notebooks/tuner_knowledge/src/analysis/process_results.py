@@ -325,7 +325,7 @@ def main():
     Main function to process all JSONL files and save results to CSV.
     """
     # Define thresholds to process
-    thresholds = [0.6]
+    thresholds = [0.8]
     
     # Look for JSONL files in current directory and common locations
     search_paths = [
