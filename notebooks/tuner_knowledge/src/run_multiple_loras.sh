@@ -6,47 +6,43 @@ set -e
 # Helper functions for checking if steps are already completed
 ###############################################################################
 
+# Check if model training is complete (adapter_config.json exists)
 check_training_complete() {
     local model_path="$1"
     if [ -d "$model_path" ] && [ -f "${model_path}/adapter_config.json" ]; then
-        return 0
+        return 0  # Training complete
     fi
-    return 1
+    return 1  # Training not complete
 }
 
+# Check if QA inference results exist in JSONL for this specific config
 check_inference_complete() {
     local results_file="$1"
     local model_path="$2"
     
     if [ ! -f "$results_file" ]; then
-        return 1
+        return 1  # File doesn't exist
     fi
     
+    # The adapter name is used as a key inside ft_evals
     local adapter_name=$(basename "$model_path")
     
-    # REGEX EXPLANATION:
-    # 1. \"${adapter_name}\":  -> Matches the key "adapter_name":
-    # 2. [[:space:]]*{         -> Matches optional space and the opening brace '{'
-    # 3. [^}]* -> Matches any character that is NOT a closing brace '}'
-    # 4. \"score\":            -> Must find the key "score": inside those braces
-    
-    if grep -q "\"${adapter_name}\":[[:space:]]*{[^}]*\"score\":" "$results_file"; then
-        return 0
+    # Check if adapter appears as a key in ft_evals (with quotes and colon)
+    if grep -q "\"${adapter_name}\":" "$results_file" 2>/dev/null; then
+        return 0  # Inference complete
     fi
     
-    return 1
+    return 1  # Inference not complete
 }
 
 check_mmlu_complete() {
     local mmlu_output_path="$1"
     local model_path="$2"
     
-    # First check if the model exists - if not, evaluation can't be complete
     if ! check_training_complete "$model_path"; then
         return 1
     fi
     
-    # Then check if results exist
     if [ -d "$mmlu_output_path" ]; then
         if ls "${mmlu_output_path}"/results*.json 1>/dev/null 2>&1 || \
            ls "${mmlu_output_path}"/**/results*.json 1>/dev/null 2>&1; then
@@ -60,12 +56,10 @@ check_bigbench_complete() {
     local bigbench_output_path="$1"
     local model_path="$2"
     
-    # First check if the model exists - if not, evaluation can't be complete
     if ! check_training_complete "$model_path"; then
         return 1
     fi
     
-    # Then check if results exist
     if [ -d "$bigbench_output_path" ]; then
         if ls "${bigbench_output_path}"/results*.json 1>/dev/null 2>&1 || \
            ls "${bigbench_output_path}"/**/results*.json 1>/dev/null 2>&1; then
@@ -89,11 +83,11 @@ MAIN_PGID="$(ps -o pgid= "$MAIN_PID" | tr -d " ")"
 echo "$MAIN_PGID" > "${RUN_STATE_DIR}/pgid_${RUN_ID}"
 echo "$RUN_ID" > "${RUN_STATE_DIR}/latest"
 
-DATASET="triviaqa"
 BASE_LOG_DIR="logs"
 LOG_ROOT="${BASE_LOG_DIR}/run_${RUN_ID}"
 mkdir -p "$LOG_ROOT"
 
+# Per run cleanup script
 cat << EOF > "cleanup_run_${RUN_ID}.sh"
 #!/bin/bash
 set -euo pipefail
@@ -108,11 +102,12 @@ chmod +x "cleanup_run_${RUN_ID}.sh"
 echo "Cleanup created: cleanup_run_${RUN_ID}.sh"
 echo "Logs for this run will be stored under: ${LOG_ROOT}"
 
-###############################################################################
-# Configuration
-###############################################################################
+### Finished blocked
 
+# MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
 MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
+# MODEL_ID="google/gemma-3-12b-it"
+#MODEL_ID="mistralai/Ministral-3-14B-Instruct-2512"
 
 ALPHA=32
 DROPOUT=0.0
@@ -122,60 +117,106 @@ SC_NUMBER=10
 INCLUDE_TRAINING=true
 RUN_QA_INFERENCE=true
 
-# UIorthoLoRA sweep parameters
-LEARNING_RATES="5e-3 6e-3 7e-3 8e-3 9e-3 1e-2"
-SVECTORS_LIST="0 32 64 128 256 512"
-SVALUES_LIST="256 512 1024"
+# List of ranks to iterate over for LoRA
+LORA_RANKS_TO_RUN="1 3 8 16" 
 
-# GPU mapping: one GPU per svectors value
-# declare -A GPU_MAP=(
-#     [64]=3
-#     [96]=4
-#     [128]=5
-# )
+VERA_RANK=1024
+SVALUES=1024
+SVECS=0
 
 # MMLU Evaluation settings
 RUN_MMLU_EVAL=true
 MMLU_NUM_FEWSHOT=0
-MMLU_LIMIT=""
+MMLU_LIMIT="" 
 
 DELETE_MODEL_AFTER_EVAL=false
 
-# Sample run settings
+# Sample run settings (for pipeline testing)
 SAMPLE_RUN=false
 SAMPLE_SIZE=10
 
-# BigBench
+# Big bench
 RUN_BIGBENCH_EVAL=true
 BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_effect_multiple_choice,bigbench_conceptual_combinations_multiple_choice,bigbench_causal_judgment_multiple_choice,bigbench_analogical_similarity_multiple_choice,bigbench_common_morpheme_multiple_choice,bigbench_logical_deduction_multiple_choice,bigbench_logical_sequence_multiple_choice,bigbench_odd_one_out_multiple_choice"
 
-WORK_DIR="results/llama-3b/${DATASET}/workdir"
+# GPU mapping per adapter
+declare -A GPU_MAP=(
+    [uiortholora]=7
+    [lora]=6
+    [vera]=2
+    [randlora]=3
+)
+
+# WORK_DIR="results/llama-8b/workdir"
+WORK_DIR="results/llama-3b/workdir"
+# WORK_DIR="results/gemma-12b/workdir"
+#WORK_DIR="results/mistral-14b/workdir"
+
+# WORK_FILE="meta-llama_Llama-3.1-8B-Instruct_scores"
 WORK_FILE="meta-llama_Llama-3.2-3B-Instruct_scores"
+# WORK_FILE="google_gemma-3-12b-it_scores"
+# WORK_FILE="google_gemma-3-12b-it-hotspotqa_scores"
+
+# Result JSONL per adapter
+declare -A RESULT_MAP=(
+    [uiortholora]="$WORK_DIR/$WORK_FILE-uiortholora.jsonl"
+    [lora]="$WORK_DIR/$WORK_FILE-lora.jsonl"
+    [vera]="$WORK_DIR/$WORK_FILE-vera.jsonl"
+    [randlora]="$WORK_DIR/$WORK_FILE-randlora.jsonl"
+)
 
 mkdir -p results logs models
 
 MODEL_SAFE_NAME="${MODEL_ID//\//_}"
-PEFT_TYPE="uiortholora"
-TRAINING_LABEL="All"
 
-###############################################################################
-# Launch one process per svectors value (each on its own GPU)
-###############################################################################
+# PEFT_TYPES="lora uiortholora vera"
+PEFT_TYPES="lora"
+# LEARNING_RATES="1e-6 5e-6 1e-5 5e-5 7e-5 1e-4 5e-4 7e-4 1e-3 5e-3 7e-3 1e-2"
+LEARNING_RATES="5e-5"
 
-for SVECS in $SVECTORS_LIST; do
-# (
-    # export CUDA_VISIBLE_DEVICES="${GPU_MAP[$SVECS]}"
-    export CUDA_VISIBLE_DEVICES="6"
-    LOGFILE="${LOG_ROOT}/${PEFT_TYPE}_svecs${SVECS}_$(date +%Y%m%d_%H%M%S).log"
+# Launch one process per adapter
+for PEFT_TYPE in $PEFT_TYPES; do
+(
+    export CUDA_VISIBLE_DEVICES="${GPU_MAP[$PEFT_TYPE]}"
+    RESULTS_PATH="${RESULT_MAP[$PEFT_TYPE]}"
+    LOGFILE="logs/${PEFT_TYPE}_$(date +%Y%m%d_%H%M%S).log"
 
-    # echo "=== [UIorthoLoRA svecs=$SVECS] Using GPU ${GPU_MAP[$SVECS]}, logging to $LOGFILE ===" | tee -a "$LOGFILE"
-    echo "=== [UIorthoLoRA svecs=$SVECS] Using GPU $CUDA_VISIBLE_DEVICES, logging to $LOGFILE ===" | tee -a "$LOGFILE"
+    echo "=== [$PEFT_TYPE] Using GPU ${GPU_MAP[$PEFT_TYPE]}, logging to $LOGFILE ===" | tee -a "$LOGFILE"
 
-    RESULTS_PATH="$WORK_DIR/${WORK_FILE}-uiortholora.jsonl"
+    for LEARNING_RATE in $LEARNING_RATES; do
+        
+        # --- [MODIFIED] Rank Loop Logic ---
+        # If PEFT_TYPE is lora, iterate through LORA_RANKS_TO_RUN
+        # Otherwise, run once with a placeholder "DEFAULT"
+        if [ "$PEFT_TYPE" = "lora" ]; then
+            CURRENT_RANK_ITERATOR="$LORA_RANKS_TO_RUN"
+        else
+            CURRENT_RANK_ITERATOR="DEFAULT"
+        fi
 
-    for SVALUES in $SVALUES_LIST; do
-        for LEARNING_RATE in $LEARNING_RATES; do
-            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_s${SVALUES}_v${SVECS}_lr${LEARNING_RATE}"
+        for RANK_VAL in $CURRENT_RANK_ITERATOR; do
+
+            # If we are iterating ranks, update the global LORA_RANK variable
+            if [ "$RANK_VAL" != "DEFAULT" ]; then
+                LORA_RANK="$RANK_VAL"
+            fi
+        
+            # Hardcoded identifier since we are training on All data
+            TRAINING_LABEL="All" 
+
+            if [ "$PEFT_TYPE" = "uiortholora" ]; then
+                PEFT_ARGS="--svalues $SVALUES --svectors $SVECS"
+                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_uiortholora_s${SVALUES}_v${SVECS}_lr${LEARNING_RATE}"
+            elif [ "$PEFT_TYPE" = "lora" ]; then
+                PEFT_ARGS="--lora_rank $LORA_RANK"
+                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lora_r${LORA_RANK}_lr${LEARNING_RATE}"
+            elif [ "$PEFT_TYPE" = "vera" ]; then
+                PEFT_ARGS="--vera_rank $VERA_RANK"
+                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_vera_r${VERA_RANK}_lr${LEARNING_RATE}"
+            elif [ "$PEFT_TYPE" = "randlora" ]; then
+                PEFT_ARGS="--rand_lora_rank $RANDLORA_RANK"
+                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_randlora_r${RANDLORA_RANK}_lr${LEARNING_RATE}"
+            fi
 
             if [ "$SAMPLE_RUN" = true ]; then
                 SAMPLE_RUN_FLAG="--sample_run --sample_size $SAMPLE_SIZE"
@@ -184,12 +225,8 @@ for SVECS in $SVECTORS_LIST; do
             fi
 
             mkdir -p "$(dirname "$OUTPUT_PATH")"
-            mkdir -p "$(dirname "$RESULTS_PATH")"
 
-            echo "" | tee -a "$LOGFILE"
-            echo "==========================================" | tee -a "$LOGFILE"
-            echo "[UIorthoLoRA] svalues=${SVALUES}, svecs=${SVECS}, LR=${LEARNING_RATE}" | tee -a "$LOGFILE"
-            echo "==========================================" | tee -a "$LOGFILE"
+            echo "[${PEFT_TYPE}] Train=${TRAINING_LABEL}, LR=${LEARNING_RATE}, Rank=${LORA_RANK}" | tee -a "$LOGFILE"
 
             # Check if training is needed
             SKIP_TRAINING=false
@@ -243,8 +280,7 @@ for SVECS in $SVECTORS_LIST; do
                         $RUN_QA_INFERENCE_FLAG \
                         $SAMPLE_RUN_FLAG \
                         --model_path "$OUTPUT_PATH" \
-                        --svalues "$SVALUES" \
-                        --svectors "$SVECS" 2>&1 | tee -a "$LOGFILE"
+                        $PEFT_ARGS 2>&1 | tee -a "$LOGFILE"
 
                     TRAIN_EXIT_CODE=${PIPESTATUS[0]}
 
@@ -259,13 +295,15 @@ for SVECS in $SVECTORS_LIST; do
 
             # Run MMLU evaluation if enabled
             if [ "$RUN_MMLU_EVAL" = true ]; then
-                MMLU_OUTPUT_PATH="results/mmlu/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_s${SVALUES}_v${SVECS}_lr${LEARNING_RATE}"
+                MMLU_OUTPUT_PATH="results/mmlu/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${LORA_RANK}"
 
                 if check_mmlu_complete "$MMLU_OUTPUT_PATH" "$OUTPUT_PATH"; then
                     echo "⏭️  [SKIP] MMLU evaluation already complete: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
                 else
                     echo "" | tee -a "$LOGFILE"
-                    echo "Running MMLU Evaluation" | tee -a "$LOGFILE"
+                    echo "==========================================" | tee -a "$LOGFILE"
+                    echo "Running MMLU Evaluation (Rank ${LORA_RANK})" | tee -a "$LOGFILE"
+                    echo "==========================================" | tee -a "$LOGFILE"
 
                     mkdir -p "$(dirname "$MMLU_OUTPUT_PATH")"
 
@@ -285,22 +323,28 @@ for SVECS in $SVECTORS_LIST; do
                     MMLU_DURATION=$((MMLU_END_TIME - MMLU_START_TIME))
 
                     if [ $MMLU_EXIT_CODE -eq 0 ]; then
-                        echo "✓ MMLU evaluation completed (${MMLU_DURATION}s)" | tee -a "$LOGFILE"
+                        echo "✓ MMLU evaluation completed successfully" | tee -a "$LOGFILE"
+                        echo "Results saved to: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
+                        echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
                     else
-                        echo "✗ MMLU evaluation failed with exit code $MMLU_EXIT_CODE (${MMLU_DURATION}s)" | tee -a "$LOGFILE"
+                        echo "✗ MMLU evaluation failed with exit code $MMLU_EXIT_CODE" | tee -a "$LOGFILE"
                     fi
-                fi
+                fi        
+            else
+                echo "MMLU evaluation disabled (RUN_MMLU_EVAL=false)" | tee -a "$LOGFILE"
             fi
-
+            
             # Run BigBench evaluation if enabled
             if [ "$RUN_BIGBENCH_EVAL" = true ]; then
-                BIGBENCH_OUTPUT_PATH="results/bigbench/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_s${SVALUES}_v${SVECS}_lr${LEARNING_RATE}"
+                BIGBENCH_OUTPUT_PATH="results/bigbench/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${LORA_RANK}"
 
                 if check_bigbench_complete "$BIGBENCH_OUTPUT_PATH" "$OUTPUT_PATH"; then
                     echo "⏭️  [SKIP] BigBench evaluation already complete: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
                 else
                     echo "" | tee -a "$LOGFILE"
-                    echo "Running BigBench Evaluation" | tee -a "$LOGFILE"
+                    echo "==========================================" | tee -a "$LOGFILE"
+                    echo "Running BigBench Evaluation (Rank ${LORA_RANK})" | tee -a "$LOGFILE"
+                    echo "==========================================" | tee -a "$LOGFILE"
 
                     mkdir -p "$BIGBENCH_OUTPUT_PATH"
 
@@ -320,26 +364,31 @@ for SVECS in $SVECTORS_LIST; do
                     BIGBENCH_DURATION=$((BIGBENCH_END_TIME - BIGBENCH_START_TIME))
 
                     if [ $BIGBENCH_EXIT_CODE -eq 0 ]; then
-                        echo "✓ BigBench evaluation completed (${BIGBENCH_DURATION}s)" | tee -a "$LOGFILE"
+                        echo "✓ BigBench evaluation completed successfully" | tee -a "$LOGFILE"
+                        echo "Results saved to: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
+                        echo "BigBench evaluation took: ${BIGBENCH_DURATION} seconds" | tee -a "$LOGFILE"
                     else
-                        echo "✗ BigBench evaluation failed with exit code $BIGBENCH_EXIT_CODE (${BIGBENCH_DURATION}s)" | tee -a "$LOGFILE"
+                        echo "✗ BigBench evaluation failed with exit code $BIGBENCH_EXIT_CODE" | tee -a "$LOGFILE"
                     fi
                 fi
+            else
+                echo "BigBench evaluation disabled (RUN_BIGBENCH_EVAL=false)" | tee -a "$LOGFILE"
             fi
 
             # Delete model after evaluation if enabled
             if [ "$DELETE_MODEL_AFTER_EVAL" = true ]; then
+                echo "" | tee -a "$LOGFILE"
                 echo "Deleting model: $OUTPUT_PATH" | tee -a "$LOGFILE"
                 rm -rf "$OUTPUT_PATH"
                 echo "✓ Model deleted" | tee -a "$LOGFILE"
             fi
 
-        done
+        done # End Rank Loop
     done
-
-    echo "=== [UIorthoLoRA svecs=$SVECS] Finished. Logs saved to $LOGFILE ===" | tee -a "$LOGFILE"
-# ) &
+    
+    echo "=== [$PEFT_TYPE] Finished. Logs saved to $LOGFILE ===" | tee -a "$LOGFILE"
+) &
 done
 
-# wait
-echo "✅ All UIorthoLoRA configurations completed. Check ${LOG_ROOT}/ for detailed output."
+wait
+echo "✅ All adapters completed. Check logs/ for detailed output."

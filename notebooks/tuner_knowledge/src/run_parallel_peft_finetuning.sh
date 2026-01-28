@@ -36,30 +36,42 @@ check_inference_complete() {
     return 1  # Inference not complete
 }
 
-# Check if MMLU evaluation is complete (results JSON exists)
 check_mmlu_complete() {
     local mmlu_output_path="$1"
+    local model_path="$2"
     
+    # First check if the model exists - if not, evaluation can't be complete
+    if ! check_training_complete "$model_path"; then
+        return 1
+    fi
+    
+    # Then check if results exist
     if [ -d "$mmlu_output_path" ]; then
         if ls "${mmlu_output_path}"/results*.json 1>/dev/null 2>&1 || \
            ls "${mmlu_output_path}"/**/results*.json 1>/dev/null 2>&1; then
-            return 0  # MMLU complete
+            return 0
         fi
     fi
-    return 1  # MMLU not complete
+    return 1
 }
 
-# Check if BigBench evaluation is complete (results JSON exists)
 check_bigbench_complete() {
     local bigbench_output_path="$1"
+    local model_path="$2"
     
+    # First check if the model exists - if not, evaluation can't be complete
+    if ! check_training_complete "$model_path"; then
+        return 1
+    fi
+    
+    # Then check if results exist
     if [ -d "$bigbench_output_path" ]; then
         if ls "${bigbench_output_path}"/results*.json 1>/dev/null 2>&1 || \
            ls "${bigbench_output_path}"/**/results*.json 1>/dev/null 2>&1; then
-            return 0  # BigBench complete
+            return 0
         fi
     fi
-    return 1  # BigBench not complete
+    return 1
 }
 
 ###############################################################################
@@ -111,7 +123,6 @@ INCLUDE_TRAINING=true
 RUN_QA_INFERENCE=true
 LORA_RANK=1
 VERA_RANK=1024
-RANDLORA_RANK=512
 SVALUES=1024
 SVECS=0
 
@@ -288,7 +299,7 @@ for PEFT_TYPE in $PEFT_TYPES; do
         if [ "$RUN_MMLU_EVAL" = true ]; then
             MMLU_OUTPUT_PATH="results/mmlu/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}"
 
-            if check_mmlu_complete "$MMLU_OUTPUT_PATH"; then
+            if check_mmlu_complete "$MMLU_OUTPUT_PATH" "$OUTPUT_PATH"; then
                 echo "⏭️  [SKIP] MMLU evaluation already complete: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
             else
                 echo "" | tee -a "$LOGFILE"
@@ -335,7 +346,7 @@ for PEFT_TYPE in $PEFT_TYPES; do
         if [ "$RUN_BIGBENCH_EVAL" = true ]; then
             BIGBENCH_OUTPUT_PATH="results/bigbench/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}"
 
-            if check_bigbench_complete "$BIGBENCH_OUTPUT_PATH"; then
+            if check_bigbench_complete "$BIGBENCH_OUTPUT_PATH" "$OUTPUT_PATH"; then
                 echo "⏭️  [SKIP] BigBench evaluation already complete: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
             else
                 echo "" | tee -a "$LOGFILE"
