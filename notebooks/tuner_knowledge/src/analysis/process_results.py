@@ -331,7 +331,7 @@ def main():
     search_paths = [
         "../results/gemma-12b/workdir/*.jsonl",
         # "../results/llama-8b/workdir/*.jsonl",
-        # "../results/llama-3b/workdir/*.jsonl"
+        "../results/llama-3b/triviaqa/workdir/*.jsonl"
     ]
     
     jsonl_files = []

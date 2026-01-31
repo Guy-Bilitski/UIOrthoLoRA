@@ -123,9 +123,9 @@ INCLUDE_TRAINING=true
 RUN_QA_INFERENCE=true
 
 # UIorthoLoRA sweep parameters
-LEARNING_RATES="5e-3 6e-3 7e-3 8e-3 9e-3 1e-2"
-SVECTORS_LIST="0 32 64 128 256 512"
-SVALUES_LIST="256 512 1024"
+LEARNING_RATES="5e-4 8e-4 1e-3"
+SVECTORS_LIST="0 32 64 128"
+SVALUES_LIST="256 512"
 
 # GPU mapping: one GPU per svectors value
 # declare -A GPU_MAP=(
@@ -165,7 +165,7 @@ TRAINING_LABEL="All"
 for SVECS in $SVECTORS_LIST; do
 # (
     # export CUDA_VISIBLE_DEVICES="${GPU_MAP[$SVECS]}"
-    export CUDA_VISIBLE_DEVICES="6"
+    export CUDA_VISIBLE_DEVICES="0"
     LOGFILE="${LOG_ROOT}/${PEFT_TYPE}_svecs${SVECS}_$(date +%Y%m%d_%H%M%S).log"
 
     # echo "=== [UIorthoLoRA svecs=$SVECS] Using GPU ${GPU_MAP[$SVECS]}, logging to $LOGFILE ===" | tee -a "$LOGFILE"
