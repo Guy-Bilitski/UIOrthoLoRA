@@ -3,6 +3,136 @@
 set -e
 
 ###############################################################################
+#                         CONFIGURATION SECTION                               #
+#     Adjust these parameters to control the entire pipeline behavior         #
+###############################################################################
+
+#------------------------------------------------------------------------------
+# MODEL CONFIGURATION
+#------------------------------------------------------------------------------
+# Available models (uncomment one):
+# MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
+MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
+# MODEL_ID="google/gemma-3-12b-it"
+# MODEL_ID="mistralai/Ministral-3-14B-Instruct-2512"
+
+#------------------------------------------------------------------------------
+# DATASET CONFIGURATION
+#------------------------------------------------------------------------------
+# Available datasets: "triviaqa" or "hotpotqa"
+DATASET="triviaqa"
+
+#------------------------------------------------------------------------------
+# ADAPTER CONFIGURATION
+#------------------------------------------------------------------------------
+# Space-separated list of adapters to run: lora, uiortholora, vera, randlora
+
+# Learning rates to sweep (space-separated)
+LEARNING_RATES="5e-5"
+
+# LoRA-specific settings
+LORA_RANKS_TO_RUN="1 3 8 16"  # Ranks to iterate over for LoRA
+ALPHA=32
+DROPOUT=0.0
+
+# UIorthoLoRA-specific settings
+SVALUES=1024
+SVECS=0
+
+# VeRA-specific settings
+VERA_RANK=1024
+
+# RandLoRA-specific settings
+RANDLORA_RANK=256
+
+#------------------------------------------------------------------------------
+# TRAINING CONFIGURATION
+#------------------------------------------------------------------------------
+NUM_EPOCHS=10
+SEED=42
+SC_NUMBER=10
+INCLUDE_TRAINING=true
+
+#------------------------------------------------------------------------------
+# INTRINSIC EVALUATION (QA Inference on training dataset)
+#------------------------------------------------------------------------------
+RUN_QA_INFERENCE=true
+
+#------------------------------------------------------------------------------
+# EXTRINSIC EVALUATION (MMLU & BigBench)
+#------------------------------------------------------------------------------
+# MMLU settings
+RUN_MMLU_EVAL=true
+MMLU_NUM_FEWSHOT=0
+MMLU_LIMIT=""
+
+# BigBench settings
+RUN_BIGBENCH_EVAL=true
+BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_effect_multiple_choice,bigbench_conceptual_combinations_multiple_choice,bigbench_causal_judgment_multiple_choice,bigbench_analogical_similarity_multiple_choice,bigbench_common_morpheme_multiple_choice,bigbench_logical_deduction_multiple_choice,bigbench_logical_sequence_multiple_choice,bigbench_odd_one_out_multiple_choice"
+
+#------------------------------------------------------------------------------
+# GPU MAPPING (adapter -> GPU ID)
+#------------------------------------------------------------------------------
+# declare -A GPU_MAP=(
+#     [uiortholora]=7
+#     [lora]=6
+#     [vera]=2
+#     [randlora]=3
+# )
+
+GPU_DEVICE=3
+
+#------------------------------------------------------------------------------
+# SAMPLE RUN (for pipeline testing)
+#------------------------------------------------------------------------------
+SAMPLE_RUN=false
+SAMPLE_SIZE=10
+
+#------------------------------------------------------------------------------
+# CLEANUP
+#------------------------------------------------------------------------------
+DELETE_MODEL_AFTER_EVAL=false
+
+###############################################################################
+#                     AUTO-DERIVED PATHS (do not modify)                      #
+###############################################################################
+
+# Create safe model name for file paths
+MODEL_SAFE_NAME="${MODEL_ID//\//_}"
+
+# Derive short model name for directory structure
+case "$MODEL_ID" in
+    *"Llama-3.1-8B"*)   MODEL_SHORT="llama-8b" ;;
+    *"Llama-3.2-3B"*)   MODEL_SHORT="llama-3b" ;;
+    *"gemma-3-12b"*)    MODEL_SHORT="gemma-12b" ;;
+    *)                  MODEL_SHORT="${MODEL_SAFE_NAME}" ;;
+esac
+
+# Work directory and file paths based on model and dataset
+WORK_DIR="results/${MODEL_SHORT}/${DATASET}/workdir"
+WORK_FILE="${MODEL_SAFE_NAME}_scores"
+
+# Result JSONL per adapter (auto-generated)
+declare -A RESULT_MAP=(
+    [uiortholora]="$WORK_DIR/$WORK_FILE-uiortholora.jsonl"
+    [lora]="$WORK_DIR/$WORK_FILE-lora.jsonl"
+    [vera]="$WORK_DIR/$WORK_FILE-vera.jsonl"
+    [randlora]="$WORK_DIR/$WORK_FILE-randlora.jsonl"
+)
+
+PEFT_TYPE="lora"
+
+# Print configuration summary
+echo "=============================================="
+echo "           PIPELINE CONFIGURATION            "
+echo "=============================================="
+echo "Model:       $MODEL_ID"
+echo "Dataset:     $DATASET"
+echo "Adapters:    $PEFT_TYPE"
+echo "Work dir:    $WORK_DIR"
+echo "=============================================="
+
+###############################################################################
 # Helper functions for checking if steps are already completed
 ###############################################################################
 
@@ -102,293 +232,190 @@ chmod +x "cleanup_run_${RUN_ID}.sh"
 echo "Cleanup created: cleanup_run_${RUN_ID}.sh"
 echo "Logs for this run will be stored under: ${LOG_ROOT}"
 
-### Finished blocked
+mkdir -p "$WORK_DIR" results logs models
 
-# MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
-MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
-# MODEL_ID="google/gemma-3-12b-it"
-#MODEL_ID="mistralai/Ministral-3-14B-Instruct-2512"
+export CUDA_VISIBLE_DEVICES=$GPU_DEVICE
+RESULTS_PATH="${RESULT_MAP[$PEFT_TYPE]}"
+LOGFILE="logs/${PEFT_TYPE}_$(date +%Y%m%d_%H%M%S).log"
 
-ALPHA=32
-DROPOUT=0.0
-NUM_EPOCHS=10
-SEED=42
-SC_NUMBER=10
-INCLUDE_TRAINING=true
-RUN_QA_INFERENCE=true
+echo "=== [$PEFT_TYPE] Using GPU $GPU_DEVICE, logging to $LOGFILE ===" | tee -a "$LOGFILE"
 
-# List of ranks to iterate over for LoRA
-LORA_RANKS_TO_RUN="1 3 8 16" 
+for LEARNING_RATE in $LEARNING_RATES; do
+    for LORA_RANK in $LORA_RANKS_TO_RUN; do
+   
+        # Hardcoded identifier since we are training on All data
+        TRAINING_LABEL="All" 
+        PEFT_ARGS="--lora_rank $LORA_RANK"
+        OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lora_r${LORA_RANK}_lr${LEARNING_RATE}"
 
-VERA_RANK=1024
-SVALUES=1024
-SVECS=0
-
-# MMLU Evaluation settings
-RUN_MMLU_EVAL=true
-MMLU_NUM_FEWSHOT=0
-MMLU_LIMIT="" 
-
-DELETE_MODEL_AFTER_EVAL=false
-
-# Sample run settings (for pipeline testing)
-SAMPLE_RUN=false
-SAMPLE_SIZE=10
-
-# Big bench
-RUN_BIGBENCH_EVAL=true
-BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_effect_multiple_choice,bigbench_conceptual_combinations_multiple_choice,bigbench_causal_judgment_multiple_choice,bigbench_analogical_similarity_multiple_choice,bigbench_common_morpheme_multiple_choice,bigbench_logical_deduction_multiple_choice,bigbench_logical_sequence_multiple_choice,bigbench_odd_one_out_multiple_choice"
-
-# GPU mapping per adapter
-declare -A GPU_MAP=(
-    [uiortholora]=7
-    [lora]=6
-    [vera]=2
-    [randlora]=3
-)
-
-# WORK_DIR="results/llama-8b/workdir"
-WORK_DIR="results/llama-3b/workdir"
-# WORK_DIR="results/gemma-12b/workdir"
-#WORK_DIR="results/mistral-14b/workdir"
-
-# WORK_FILE="meta-llama_Llama-3.1-8B-Instruct_scores"
-WORK_FILE="meta-llama_Llama-3.2-3B-Instruct_scores"
-# WORK_FILE="google_gemma-3-12b-it_scores"
-# WORK_FILE="google_gemma-3-12b-it-hotspotqa_scores"
-
-# Result JSONL per adapter
-declare -A RESULT_MAP=(
-    [uiortholora]="$WORK_DIR/$WORK_FILE-uiortholora.jsonl"
-    [lora]="$WORK_DIR/$WORK_FILE-lora.jsonl"
-    [vera]="$WORK_DIR/$WORK_FILE-vera.jsonl"
-    [randlora]="$WORK_DIR/$WORK_FILE-randlora.jsonl"
-)
-
-mkdir -p results logs models
-
-MODEL_SAFE_NAME="${MODEL_ID//\//_}"
-
-# PEFT_TYPES="lora uiortholora vera"
-PEFT_TYPES="lora"
-# LEARNING_RATES="1e-6 5e-6 1e-5 5e-5 7e-5 1e-4 5e-4 7e-4 1e-3 5e-3 7e-3 1e-2"
-LEARNING_RATES="5e-5"
-
-# Launch one process per adapter
-for PEFT_TYPE in $PEFT_TYPES; do
-(
-    export CUDA_VISIBLE_DEVICES="${GPU_MAP[$PEFT_TYPE]}"
-    RESULTS_PATH="${RESULT_MAP[$PEFT_TYPE]}"
-    LOGFILE="logs/${PEFT_TYPE}_$(date +%Y%m%d_%H%M%S).log"
-
-    echo "=== [$PEFT_TYPE] Using GPU ${GPU_MAP[$PEFT_TYPE]}, logging to $LOGFILE ===" | tee -a "$LOGFILE"
-
-    for LEARNING_RATE in $LEARNING_RATES; do
-        
-        # --- [MODIFIED] Rank Loop Logic ---
-        # If PEFT_TYPE is lora, iterate through LORA_RANKS_TO_RUN
-        # Otherwise, run once with a placeholder "DEFAULT"
-        if [ "$PEFT_TYPE" = "lora" ]; then
-            CURRENT_RANK_ITERATOR="$LORA_RANKS_TO_RUN"
+        if [ "$SAMPLE_RUN" = true ]; then
+            SAMPLE_RUN_FLAG="--sample_run --sample_size $SAMPLE_SIZE"
         else
-            CURRENT_RANK_ITERATOR="DEFAULT"
+            SAMPLE_RUN_FLAG=""
         fi
 
-        for RANK_VAL in $CURRENT_RANK_ITERATOR; do
+        mkdir -p "$(dirname "$OUTPUT_PATH")"
 
-            # If we are iterating ranks, update the global LORA_RANK variable
-            if [ "$RANK_VAL" != "DEFAULT" ]; then
-                LORA_RANK="$RANK_VAL"
-            fi
-        
-            # Hardcoded identifier since we are training on All data
-            TRAINING_LABEL="All" 
+        echo "[${PEFT_TYPE}] Train=${TRAINING_LABEL}, LR=${LEARNING_RATE}, Rank=${LORA_RANK}" | tee -a "$LOGFILE"
 
-            if [ "$PEFT_TYPE" = "uiortholora" ]; then
-                PEFT_ARGS="--svalues $SVALUES --svectors $SVECS"
-                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_uiortholora_s${SVALUES}_v${SVECS}_lr${LEARNING_RATE}"
-            elif [ "$PEFT_TYPE" = "lora" ]; then
-                PEFT_ARGS="--lora_rank $LORA_RANK"
-                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lora_r${LORA_RANK}_lr${LEARNING_RATE}"
-            elif [ "$PEFT_TYPE" = "vera" ]; then
-                PEFT_ARGS="--vera_rank $VERA_RANK"
-                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_vera_r${VERA_RANK}_lr${LEARNING_RATE}"
-            elif [ "$PEFT_TYPE" = "randlora" ]; then
-                PEFT_ARGS="--rand_lora_rank $RANDLORA_RANK"
-                OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_randlora_r${RANDLORA_RANK}_lr${LEARNING_RATE}"
-            fi
+        # Check if training is needed
+        SKIP_TRAINING=false
+        if check_training_complete "$OUTPUT_PATH"; then
+            echo "⏭️  [SKIP] Training already complete: $OUTPUT_PATH" | tee -a "$LOGFILE"
+            SKIP_TRAINING=true
+        fi
 
-            if [ "$SAMPLE_RUN" = true ]; then
-                SAMPLE_RUN_FLAG="--sample_run --sample_size $SAMPLE_SIZE"
+        # Check if inference is needed
+        SKIP_INFERENCE=false
+        if check_inference_complete "$RESULTS_PATH" "$OUTPUT_PATH"; then
+            echo "⏭️  [SKIP] Inference results already exist in: $RESULTS_PATH" | tee -a "$LOGFILE"
+            SKIP_INFERENCE=true
+        fi
+
+        # Run training/inference if needed
+        if [ "$SKIP_TRAINING" = true ] && [ "$SKIP_INFERENCE" = true ]; then
+            echo "⏭️  [SKIP] Both training and inference already complete, skipping train.py" | tee -a "$LOGFILE"
+        else
+            # Determine which flags to pass
+            if [ "$SKIP_TRAINING" = true ]; then
+                INCLUDE_TRAINING_FLAG=""
+            elif [ "$INCLUDE_TRAINING" = true ]; then
+                INCLUDE_TRAINING_FLAG="--include_training"
             else
-                SAMPLE_RUN_FLAG=""
+                INCLUDE_TRAINING_FLAG=""
             fi
 
-            mkdir -p "$(dirname "$OUTPUT_PATH")"
-
-            echo "[${PEFT_TYPE}] Train=${TRAINING_LABEL}, LR=${LEARNING_RATE}, Rank=${LORA_RANK}" | tee -a "$LOGFILE"
-
-            # Check if training is needed
-            SKIP_TRAINING=false
-            if check_training_complete "$OUTPUT_PATH"; then
-                echo "⏭️  [SKIP] Training already complete: $OUTPUT_PATH" | tee -a "$LOGFILE"
-                SKIP_TRAINING=true
-            fi
-
-            # Check if inference is needed
-            SKIP_INFERENCE=false
-            if check_inference_complete "$RESULTS_PATH" "$OUTPUT_PATH"; then
-                echo "⏭️  [SKIP] Inference results already exist in: $RESULTS_PATH" | tee -a "$LOGFILE"
-                SKIP_INFERENCE=true
-            fi
-
-            # Run training/inference if needed
-            if [ "$SKIP_TRAINING" = true ] && [ "$SKIP_INFERENCE" = true ]; then
-                echo "⏭️  [SKIP] Both training and inference already complete, skipping train.py" | tee -a "$LOGFILE"
+            if [ "$SKIP_INFERENCE" = true ]; then
+                RUN_QA_INFERENCE_FLAG=""
+            elif [ "$RUN_QA_INFERENCE" = true ]; then
+                RUN_QA_INFERENCE_FLAG="--run_qa_inference"
             else
-                # Determine which flags to pass
-                if [ "$SKIP_TRAINING" = true ]; then
-                    INCLUDE_TRAINING_FLAG=""
-                elif [ "$INCLUDE_TRAINING" = true ]; then
-                    INCLUDE_TRAINING_FLAG="--include_training"
-                else
-                    INCLUDE_TRAINING_FLAG=""
+                RUN_QA_INFERENCE_FLAG=""
+            fi
+
+            # Only run if at least one step is needed
+            if [ -n "$INCLUDE_TRAINING_FLAG" ] || [ -n "$RUN_QA_INFERENCE_FLAG" ]; then
+                python3 train.py \
+                    --model_id "$MODEL_ID" \
+                    --peft_type "$PEFT_TYPE" \
+                    --alpha "$ALPHA" \
+                    --dropout "$DROPOUT" \
+                    --output_path "$OUTPUT_PATH" \
+                    --num_epochs "$NUM_EPOCHS" \
+                    --learning_rate "$LEARNING_RATE" \
+                    --seed "$SEED" \
+                    --results_path "$RESULTS_PATH" \
+                    --sc_number "$SC_NUMBER" \
+                    $INCLUDE_TRAINING_FLAG \
+                    $RUN_QA_INFERENCE_FLAG \
+                    $SAMPLE_RUN_FLAG \
+                    --model_path "$OUTPUT_PATH" \
+                    $PEFT_ARGS 2>&1 | tee -a "$LOGFILE"
+
+                TRAIN_EXIT_CODE=${PIPESTATUS[0]}
+
+                if [ $TRAIN_EXIT_CODE -ne 0 ]; then
+                    echo "✗ Training/inference failed with exit code $TRAIN_EXIT_CODE" | tee -a "$LOGFILE"
+                    continue
                 fi
 
-                if [ "$SKIP_INFERENCE" = true ]; then
-                    RUN_QA_INFERENCE_FLAG=""
-                elif [ "$RUN_QA_INFERENCE" = true ]; then
-                    RUN_QA_INFERENCE_FLAG="--run_qa_inference"
-                else
-                    RUN_QA_INFERENCE_FLAG=""
-                fi
-
-                # Only run if at least one step is needed
-                if [ -n "$INCLUDE_TRAINING_FLAG" ] || [ -n "$RUN_QA_INFERENCE_FLAG" ]; then
-                    python3 train.py \
-                        --model_id "$MODEL_ID" \
-                        --peft_type "$PEFT_TYPE" \
-                        --alpha "$ALPHA" \
-                        --dropout "$DROPOUT" \
-                        --output_path "$OUTPUT_PATH" \
-                        --num_epochs "$NUM_EPOCHS" \
-                        --learning_rate "$LEARNING_RATE" \
-                        --seed "$SEED" \
-                        --results_path "$RESULTS_PATH" \
-                        --sc_number "$SC_NUMBER" \
-                        $INCLUDE_TRAINING_FLAG \
-                        $RUN_QA_INFERENCE_FLAG \
-                        $SAMPLE_RUN_FLAG \
-                        --model_path "$OUTPUT_PATH" \
-                        $PEFT_ARGS 2>&1 | tee -a "$LOGFILE"
-
-                    TRAIN_EXIT_CODE=${PIPESTATUS[0]}
-
-                    if [ $TRAIN_EXIT_CODE -ne 0 ]; then
-                        echo "✗ Training/inference failed with exit code $TRAIN_EXIT_CODE" | tee -a "$LOGFILE"
-                        continue
-                    fi
-
-                    echo "✓ Training/inference completed successfully" | tee -a "$LOGFILE"
-                fi
+                echo "✓ Training/inference completed successfully" | tee -a "$LOGFILE"
             fi
+        fi
 
-            # Run MMLU evaluation if enabled
-            if [ "$RUN_MMLU_EVAL" = true ]; then
-                MMLU_OUTPUT_PATH="results/mmlu/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${LORA_RANK}"
+        # Run MMLU evaluation if enabled
+        if [ "$RUN_MMLU_EVAL" = true ]; then
+            MMLU_OUTPUT_PATH="results/mmlu/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${LORA_RANK}"
 
-                if check_mmlu_complete "$MMLU_OUTPUT_PATH" "$OUTPUT_PATH"; then
-                    echo "⏭️  [SKIP] MMLU evaluation already complete: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
-                else
-                    echo "" | tee -a "$LOGFILE"
-                    echo "==========================================" | tee -a "$LOGFILE"
-                    echo "Running MMLU Evaluation (Rank ${LORA_RANK})" | tee -a "$LOGFILE"
-                    echo "==========================================" | tee -a "$LOGFILE"
-
-                    mkdir -p "$(dirname "$MMLU_OUTPUT_PATH")"
-
-                    MMLU_CMD="lm_eval --model hf --model_args pretrained=${OUTPUT_PATH},tokenizer=${MODEL_ID},dtype=bfloat16,trust_remote_code=True --tasks mmlu --num_fewshot $MMLU_NUM_FEWSHOT --batch_size auto --output_path $MMLU_OUTPUT_PATH"
-
-                    if [ -n "$MMLU_LIMIT" ]; then
-                        MMLU_CMD="$MMLU_CMD --limit $MMLU_LIMIT"
-                    fi
-
-                    echo "Running: $MMLU_CMD" | tee -a "$LOGFILE"
-                    MMLU_START_TIME=$(date +%s)
-
-                    eval $MMLU_CMD 2>&1 | tee -a "$LOGFILE"
-                    MMLU_EXIT_CODE=${PIPESTATUS[0]}
-
-                    MMLU_END_TIME=$(date +%s)
-                    MMLU_DURATION=$((MMLU_END_TIME - MMLU_START_TIME))
-
-                    if [ $MMLU_EXIT_CODE -eq 0 ]; then
-                        echo "✓ MMLU evaluation completed successfully" | tee -a "$LOGFILE"
-                        echo "Results saved to: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
-                        echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
-                    else
-                        echo "✗ MMLU evaluation failed with exit code $MMLU_EXIT_CODE" | tee -a "$LOGFILE"
-                    fi
-                fi        
+            if check_mmlu_complete "$MMLU_OUTPUT_PATH" "$OUTPUT_PATH"; then
+                echo "⏭️  [SKIP] MMLU evaluation already complete: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
             else
-                echo "MMLU evaluation disabled (RUN_MMLU_EVAL=false)" | tee -a "$LOGFILE"
-            fi
-            
-            # Run BigBench evaluation if enabled
-            if [ "$RUN_BIGBENCH_EVAL" = true ]; then
-                BIGBENCH_OUTPUT_PATH="results/bigbench/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${LORA_RANK}"
-
-                if check_bigbench_complete "$BIGBENCH_OUTPUT_PATH" "$OUTPUT_PATH"; then
-                    echo "⏭️  [SKIP] BigBench evaluation already complete: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
-                else
-                    echo "" | tee -a "$LOGFILE"
-                    echo "==========================================" | tee -a "$LOGFILE"
-                    echo "Running BigBench Evaluation (Rank ${LORA_RANK})" | tee -a "$LOGFILE"
-                    echo "==========================================" | tee -a "$LOGFILE"
-
-                    mkdir -p "$BIGBENCH_OUTPUT_PATH"
-
-                    BIGBENCH_CMD="lm_eval --model hf \
-                        --model_args pretrained=${OUTPUT_PATH},tokenizer=${MODEL_ID},dtype=bfloat16,trust_remote_code=True \
-                        --tasks $BIGBENCH_TASKS \
-                        --batch_size auto \
-                        --output_path $BIGBENCH_OUTPUT_PATH"
-
-                    echo "Running: $BIGBENCH_CMD" | tee -a "$LOGFILE"
-                    BIGBENCH_START_TIME=$(date +%s)
-
-                    eval $BIGBENCH_CMD 2>&1 | tee -a "$LOGFILE"
-                    BIGBENCH_EXIT_CODE=${PIPESTATUS[0]}
-
-                    BIGBENCH_END_TIME=$(date +%s)
-                    BIGBENCH_DURATION=$((BIGBENCH_END_TIME - BIGBENCH_START_TIME))
-
-                    if [ $BIGBENCH_EXIT_CODE -eq 0 ]; then
-                        echo "✓ BigBench evaluation completed successfully" | tee -a "$LOGFILE"
-                        echo "Results saved to: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
-                        echo "BigBench evaluation took: ${BIGBENCH_DURATION} seconds" | tee -a "$LOGFILE"
-                    else
-                        echo "✗ BigBench evaluation failed with exit code $BIGBENCH_EXIT_CODE" | tee -a "$LOGFILE"
-                    fi
-                fi
-            else
-                echo "BigBench evaluation disabled (RUN_BIGBENCH_EVAL=false)" | tee -a "$LOGFILE"
-            fi
-
-            # Delete model after evaluation if enabled
-            if [ "$DELETE_MODEL_AFTER_EVAL" = true ]; then
                 echo "" | tee -a "$LOGFILE"
-                echo "Deleting model: $OUTPUT_PATH" | tee -a "$LOGFILE"
-                rm -rf "$OUTPUT_PATH"
-                echo "✓ Model deleted" | tee -a "$LOGFILE"
-            fi
+                echo "==========================================" | tee -a "$LOGFILE"
+                echo "Running MMLU Evaluation (Rank ${LORA_RANK})" | tee -a "$LOGFILE"
+                echo "==========================================" | tee -a "$LOGFILE"
 
-        done # End Rank Loop
-    done
-    
-    echo "=== [$PEFT_TYPE] Finished. Logs saved to $LOGFILE ===" | tee -a "$LOGFILE"
-) &
+                mkdir -p "$(dirname "$MMLU_OUTPUT_PATH")"
+
+                MMLU_CMD="lm_eval --model hf --model_args pretrained=${OUTPUT_PATH},tokenizer=${MODEL_ID},dtype=bfloat16,trust_remote_code=True --tasks mmlu --num_fewshot $MMLU_NUM_FEWSHOT --batch_size auto --output_path $MMLU_OUTPUT_PATH"
+
+                if [ -n "$MMLU_LIMIT" ]; then
+                    MMLU_CMD="$MMLU_CMD --limit $MMLU_LIMIT"
+                fi
+
+                echo "Running: $MMLU_CMD" | tee -a "$LOGFILE"
+                MMLU_START_TIME=$(date +%s)
+
+                eval $MMLU_CMD 2>&1 | tee -a "$LOGFILE"
+                MMLU_EXIT_CODE=${PIPESTATUS[0]}
+
+                MMLU_END_TIME=$(date +%s)
+                MMLU_DURATION=$((MMLU_END_TIME - MMLU_START_TIME))
+
+                if [ $MMLU_EXIT_CODE -eq 0 ]; then
+                    echo "✓ MMLU evaluation completed successfully" | tee -a "$LOGFILE"
+                    echo "Results saved to: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
+                    echo "MMLU evaluation took: ${MMLU_DURATION} seconds" | tee -a "$LOGFILE"
+                else
+                    echo "✗ MMLU evaluation failed with exit code $MMLU_EXIT_CODE" | tee -a "$LOGFILE"
+                fi
+            fi        
+        else
+            echo "MMLU evaluation disabled (RUN_MMLU_EVAL=false)" | tee -a "$LOGFILE"
+        fi
+        
+        # Run BigBench evaluation if enabled
+        if [ "$RUN_BIGBENCH_EVAL" = true ]; then
+            BIGBENCH_OUTPUT_PATH="results/bigbench/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${LORA_RANK}"
+
+            if check_bigbench_complete "$BIGBENCH_OUTPUT_PATH" "$OUTPUT_PATH"; then
+                echo "⏭️  [SKIP] BigBench evaluation already complete: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
+            else
+                echo "" | tee -a "$LOGFILE"
+                echo "==========================================" | tee -a "$LOGFILE"
+                echo "Running BigBench Evaluation (Rank ${LORA_RANK})" | tee -a "$LOGFILE"
+                echo "==========================================" | tee -a "$LOGFILE"
+
+                mkdir -p "$BIGBENCH_OUTPUT_PATH"
+
+                BIGBENCH_CMD="lm_eval --model hf \
+                    --model_args pretrained=${OUTPUT_PATH},tokenizer=${MODEL_ID},dtype=bfloat16,trust_remote_code=True \
+                    --tasks $BIGBENCH_TASKS \
+                    --batch_size auto \
+                    --output_path $BIGBENCH_OUTPUT_PATH"
+
+                echo "Running: $BIGBENCH_CMD" | tee -a "$LOGFILE"
+                BIGBENCH_START_TIME=$(date +%s)
+
+                eval $BIGBENCH_CMD 2>&1 | tee -a "$LOGFILE"
+                BIGBENCH_EXIT_CODE=${PIPESTATUS[0]}
+
+                BIGBENCH_END_TIME=$(date +%s)
+                BIGBENCH_DURATION=$((BIGBENCH_END_TIME - BIGBENCH_START_TIME))
+
+                if [ $BIGBENCH_EXIT_CODE -eq 0 ]; then
+                    echo "✓ BigBench evaluation completed successfully" | tee -a "$LOGFILE"
+                    echo "Results saved to: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
+                    echo "BigBench evaluation took: ${BIGBENCH_DURATION} seconds" | tee -a "$LOGFILE"
+                else
+                    echo "✗ BigBench evaluation failed with exit code $BIGBENCH_EXIT_CODE" | tee -a "$LOGFILE"
+                fi
+            fi
+        else
+            echo "BigBench evaluation disabled (RUN_BIGBENCH_EVAL=false)" | tee -a "$LOGFILE"
+        fi
+
+        # Delete model after evaluation if enabled
+        if [ "$DELETE_MODEL_AFTER_EVAL" = true ]; then
+            echo "" | tee -a "$LOGFILE"
+            echo "Deleting model: $OUTPUT_PATH" | tee -a "$LOGFILE"
+            rm -rf "$OUTPUT_PATH"
+            echo "✓ Model deleted" | tee -a "$LOGFILE"
+        fi
+
+    done # End Rank Loop
 done
 
-wait
+echo "=== [$PEFT_TYPE] Finished. Logs saved to $LOGFILE ===" | tee -a "$LOGFILE"
+
 echo "✅ All adapters completed. Check logs/ for detailed output."

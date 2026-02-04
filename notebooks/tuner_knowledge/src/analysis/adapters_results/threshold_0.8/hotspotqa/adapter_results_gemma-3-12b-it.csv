@@ -26,6 +26,7 @@ google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiorthol
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-4,,,0,0.0,555,538.6,8,7.2,google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v0_lr7e-4
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-5,,,0,0.0,495,481.5,14,12.600000000000001,google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v0_lr7e-5
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,1e-2,,,10938,0.9947613823368076,1678,1668.5,16,14.4,google_gemma-3-12b-it_uiortholora_trAll_s1024_v0_lr1e-2
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,1e-2,,,10938,0.9956116291826659,1675,1666.1,24,21.6,google_gemma-3-12b-it_uiortholora_trAll_s1024_v10_lr1e-2
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,1e-2,,,10938,0.9949442311208632,1691,1682.1000000000001,20,17.999999999999996,google_gemma-3-12b-it_uiortholora_trAll_s1024_v128_lr1e-2
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,1e-2,,,10938,0.9946882428231852,1747,1738.1999999999998,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s1024_v256_lr1e-2
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,1e-2,,,10938,0.994322545255074,1729,1720.3,21,18.899999999999995,google_gemma-3-12b-it_uiortholora_trAll_s1024_v32_lr1e-2
@@ -76,9 +77,9 @@ google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiorthol
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,6e-3,,,10938,0.9769793380874018,1581,1571.7,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s256_v128_lr6e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,6e-3,,,10938,0.972782958493326,1551,1541.6,20,17.999999999999996,google_gemma-3-12b-it_uiortholora_trAll_s256_v64_lr6e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,6e-3,,,10938,0.9737520570488206,1551,1543.5,20,17.999999999999996,google_gemma-3-12b-it_uiortholora_trAll_s256_v96_lr6e-3
-google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,6e-3,,,10938,,0,0.0,0,0.0,google_gemma-3-12b-it_uiortholora_trAll_s512_v128_lr6e-3
-google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,6e-3,,,10938,,0,0.0,0,0.0,google_gemma-3-12b-it_uiortholora_trAll_s512_v64_lr6e-3
-google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,6e-3,,,10938,,0,0.0,0,0.0,google_gemma-3-12b-it_uiortholora_trAll_s512_v96_lr6e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,6e-3,,,10938,0.973368074602304,1509,1500.1000000000001,22,19.799999999999994,google_gemma-3-12b-it_uiortholora_trAll_s512_v128_lr6e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,6e-3,,,10938,0.9757268239166209,1586,1577.7,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s512_v64_lr6e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,6e-3,,,10938,0.9704424940574146,1578,1568.4,22,19.799999999999994,google_gemma-3-12b-it_uiortholora_trAll_s512_v96_lr6e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.9856737977692449,1612,1604.2,26,23.4,google_gemma-3-12b-it_uiortholora_trAll_s1024_v0_lr7e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.9877674163466814,1619,1609.5,19,17.099999999999998,google_gemma-3-12b-it_uiortholora_trAll_s1024_v128_lr7e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.9861217772901809,1532,1522.8,20,17.999999999999996,google_gemma-3-12b-it_uiortholora_trAll_s1024_v256_lr7e-3
@@ -88,9 +89,12 @@ google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiorthol
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.988443956847687,1499,1492.5,25,22.5,google_gemma-3-12b-it_uiortholora_trAll_s256_v128_lr7e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.9863960504662644,1601,1593.0,20,17.999999999999996,google_gemma-3-12b-it_uiortholora_trAll_s256_v64_lr7e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.9877857012250868,1569,1559.0,19,17.099999999999998,google_gemma-3-12b-it_uiortholora_trAll_s256_v96_lr7e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.9862771987566282,1559,1551.2999999999997,20,17.999999999999996,google_gemma-3-12b-it_uiortholora_trAll_s512_v128_lr7e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.9856737977692448,1614,1604.6000000000001,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s512_v64_lr7e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.9856280855732309,1544,1536.2,22,19.799999999999994,google_gemma-3-12b-it_uiortholora_trAll_s512_v96_lr7e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,7e-3,,,10938,0.9842932894496252,1590,1582.0,19,17.099999999999998,google_gemma-3-12b-it_uiortholora_trAll_uiortholora_s1024_v0_lr7e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9913238251965625,1585,1577.1,22,19.799999999999994,google_gemma-3-12b-it_uiortholora_trAll_s1024_v0_lr8e-3
-google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,,0,0.0,0,0.0,google_gemma-3-12b-it_uiortholora_trAll_s1024_v10_lr8e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.991012982263668,1615,1604.3000000000002,24,21.6,google_gemma-3-12b-it_uiortholora_trAll_s1024_v10_lr8e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9902084476138233,1591,1582.7,22,19.799999999999994,google_gemma-3-12b-it_uiortholora_trAll_s1024_v128_lr8e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.990766136405193,1574,1565.5,19,17.099999999999998,google_gemma-3-12b-it_uiortholora_trAll_s1024_v256_lr8e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9904095812762845,1578,1568.3,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s1024_v3_lr8e-3
@@ -102,8 +106,12 @@ google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiorthol
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9926403364417626,1663,1654.2,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s256_v64_lr8e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9917078076430791,1616,1607.2,21,18.899999999999995,google_gemma-3-12b-it_uiortholora_trAll_s256_v96_lr8e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9922380691168402,1621,1611.0,25,22.5,google_gemma-3-12b-it_uiortholora_trAll_s512_v0_lr8e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9922929237520571,1566,1555.6,17,15.3,google_gemma-3-12b-it_uiortholora_trAll_s512_v128_lr8e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9910678368988847,1608,1598.8,26,23.4,google_gemma-3-12b-it_uiortholora_trAll_s512_v3_lr8e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9924711361210827,1526,1518.8,17,15.3,google_gemma-3-12b-it_uiortholora_trAll_s512_v64_lr8e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,8e-3,,,10938,0.9912415432437374,1630,1620.7,22,19.799999999999994,google_gemma-3-12b-it_uiortholora_trAll_s512_v96_lr8e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,0.9935271530444323,1689,1679.4,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s1024_v0_lr9e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,0.9926951910769793,1629,1620.9,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s1024_v10_lr9e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,0.9947339550191993,1636,1627.7999999999997,19,17.099999999999998,google_gemma-3-12b-it_uiortholora_trAll_s1024_v128_lr9e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,0.9934357286524045,1634,1623.6,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s1024_v256_lr9e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,0.994322545255074,1590,1581.6000000000001,23,20.699999999999992,google_gemma-3-12b-it_uiortholora_trAll_s1024_v32_lr9e-3
@@ -116,6 +124,7 @@ google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiorthol
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,0.9927774730298043,1661,1651.9,21,18.899999999999995,google_gemma-3-12b-it_uiortholora_trAll_s256_v64_lr9e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,0.9941854086670323,1627,1617.7,20,17.999999999999996,google_gemma-3-12b-it_uiortholora_trAll_s256_v96_lr9e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,0.9935454379228378,1613,1603.8,20,17.999999999999996,google_gemma-3-12b-it_uiortholora_trAll_s512_v0_lr9e-3
+google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,,0,0.0,0,0.0,google_gemma-3-12b-it_uiortholora_trAll_s512_v128_lr9e-3
 google_gemma-3-12b-it-hotspotqa_scores-uiortholora.jsonl,gemma-3-12b-it,uiortholora,9e-3,,,10938,0.9941305540318156,1628,1618.6999999999998,22,19.799999999999994,google_gemma-3-12b-it_uiortholora_trAll_s512_v3_lr9e-3
 google_gemma-3-12b-it-hotspotqa_scores-vera.jsonl,gemma-3-12b-it,vera,1e-2,1024.0,,10938,0.9958127628451271,1989,1979.1,22,19.799999999999994,google_gemma-3-12b-it_vera_trAll_vera_r1024_lr1e-2
 google_gemma-3-12b-it-hotspotqa_scores-vera.jsonl,gemma-3-12b-it,vera,1e-3,1024.0,,10938,0.36706893399158896,1127,1110.2,16,14.4,google_gemma-3-12b-it_vera_trAll_vera_r1024_lr1e-3

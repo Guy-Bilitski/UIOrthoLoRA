@@ -81,28 +81,6 @@ def atomic_write_jsonl(path: str, rows: List[Dict]) -> None:
             os.remove(temp_path)
         raise e
 
-# def count_file_rows_and_duplicates(path: str) -> tuple:
-#     """Returns (total_rows, unique_ids, duplicate_count)"""
-#     if not os.path.exists(path):
-#         return 0, 0, 0
-    
-#     with open(path, "r", encoding="utf-8") as f:
-#         ids = []
-#         for line in f:
-#             line = line.strip()
-#             if line:
-#                 try:
-#                     row = json.loads(line)
-#                     ids.append(row.get("id"))
-#                 except json.JSONDecodeError:
-#                     pass
-    
-#     total = len(ids)
-#     unique = len(set(ids))
-#     duplicates = total - unique
-#     return total, unique, duplicates
-
-
 def deduplicate_jsonl_file(path: str) -> int:
     """Remove duplicate rows from JSONL file, keeping the last occurrence of each ID."""
     if not os.path.exists(path):
@@ -268,7 +246,9 @@ def get_response_template_for_model(model_id: str):
     if "gemma" in model_id.lower():
         return "<start_of_turn>model"
     elif "llama" in model_id.lower():
-        return "<|start_header_id|>assistant<|end_header_id|>"
+        return "<|start_header_id|>assistant<|end_header_id|>\n\n"
+    
+    raise Exception
     
 def build_completion_mask(input_ids: List[int], response_token_ids: List[int]) -> List[int]:
     """Build completion mask based on response token IDs."""
@@ -371,15 +351,18 @@ def log_tokenizer_info(tokenizer):
     print("=" * 70 + "\n")
 
 
-def log_template_tokenization(tokenizer):
+def log_template_tokenization(tokenizer, model_id):
     """Verify how templates tokenize - critical for DataCollatorForLanguageModeling."""
     print("\n" + "=" * 70)
     print("TEMPLATE TOKENIZATION CHECK")
     print("=" * 70)
     
+    # --- FIX: Get the correct template dynamically based on model_id ---
+    current_response_template = get_response_template_for_model(model_id)
+    
     # Check response template
-    resp_tokens = tokenizer.encode(RESPONSE_TEMPLATE, add_special_tokens=False)
-    print(f"  RESPONSE_TEMPLATE: {repr(RESPONSE_TEMPLATE)}")
+    resp_tokens = tokenizer.encode(current_response_template, add_special_tokens=False)
+    print(f"  RESPONSE_TEMPLATE: {repr(current_response_template)}")
     print(f"    Token IDs: {resp_tokens}")
     print(f"    Decoded: {repr(tokenizer.decode(resp_tokens))}")
     
@@ -709,8 +692,6 @@ def main():
     print(f"  Response Template (Masking Trigger): {repr(get_response_template_for_model(model_id))}", flush=True)
     print(f"{'=' * 70}\n", flush=True)
 
-    # log_file_state(args.results_path, "initial")
-
     if args.include_training:
         # =================================================================
         # STEP 1: TOKENIZER SETUP
@@ -720,7 +701,7 @@ def main():
         
         tokenizer = get_tokenizer(model_id)
         log_tokenizer_info(tokenizer)
-        log_template_tokenization(tokenizer)
+        log_template_tokenization(tokenizer, model_id)
         
         # =================================================================
         # STEP 2: DATA PREPARATION
