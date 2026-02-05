@@ -31,19 +31,9 @@ DATASET="triviaqa"
 LEARNING_RATES="5e-5"
 
 # LoRA-specific settings
-LORA_RANKS_TO_RUN="1 3 8 16"  # Ranks to iterate over for LoRA
+LORA_RANKS_TO_RUN="1 3"  # Ranks to iterate over for LoRA
 ALPHA=32
 DROPOUT=0.0
-
-# UIorthoLoRA-specific settings
-SVALUES=1024
-SVECS=0
-
-# VeRA-specific settings
-VERA_RANK=1024
-
-# RandLoRA-specific settings
-RANDLORA_RANK=256
 
 #------------------------------------------------------------------------------
 # TRAINING CONFIGURATION
@@ -80,7 +70,7 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #     [randlora]=3
 # )
 
-GPU_DEVICE=3
+GPU_DEVICE=1
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)
@@ -157,8 +147,14 @@ check_inference_complete() {
     # The adapter name is used as a key inside ft_evals
     local adapter_name=$(basename "$model_path")
     
-    # Check if adapter appears as a key in ft_evals (with quotes and colon)
-    if grep -q "\"${adapter_name}\":" "$results_file" 2>/dev/null; then
+    # Check if adapter appears as a key in ft_evals with a score value
+    # Pattern: "adapter_name": {"score": ...}
+    if grep -q "\"${adapter_name}\": {\"score\":" "$results_file" 2>/dev/null; then
+        return 0  # Inference complete
+    fi
+    
+    # Also check with spaces around the colon (in case of formatting variations)
+    if grep -q "\"${adapter_name}\": { *\"score\":" "$results_file" 2>/dev/null; then
         return 0  # Inference complete
     fi
     
@@ -305,6 +301,7 @@ for LEARNING_RATE in $LEARNING_RATES; do
                     --learning_rate "$LEARNING_RATE" \
                     --seed "$SEED" \
                     --results_path "$RESULTS_PATH" \
+                    --dataset "$DATASET" \
                     --sc_number "$SC_NUMBER" \
                     $INCLUDE_TRAINING_FLAG \
                     $RUN_QA_INFERENCE_FLAG \

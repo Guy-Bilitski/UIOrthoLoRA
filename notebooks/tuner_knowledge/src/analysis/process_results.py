@@ -320,9 +320,28 @@ def process_jsonl_file(json_path: str, threshold: float = 0.2) -> list:
     return results
 
 
+def extract_dataset_name(file_path: str) -> str:
+    """
+    Extract dataset name from file path.
+    Looks for known dataset names like 'triviaqa' in the path.
+    
+    Returns:
+        Dataset name if found, otherwise 'default'
+    """
+    path_lower = file_path.lower()
+    known_datasets = ['triviaqa', 'metamath', 'gsm8k', 'mmlu']
+    
+    for dataset in known_datasets:
+        if dataset in path_lower:
+            return dataset
+    
+    return 'default'
+
+
 def main():
     """
     Main function to process all JSONL files and save results to CSV.
+    Results are organized by dataset source (e.g., triviaqa files go to triviaqa folder).
     """
     # Define thresholds to process
     thresholds = [0.6, 0.8]
@@ -351,73 +370,90 @@ def main():
         print(f"  - {f}")
     print()
     
+    # Group files by dataset
+    files_by_dataset = {}
+    for f in jsonl_files:
+        dataset = extract_dataset_name(f)
+        if dataset not in files_by_dataset:
+            files_by_dataset[dataset] = []
+        files_by_dataset[dataset].append(f)
+    
+    print(f"Files grouped by dataset:")
+    for dataset, files in files_by_dataset.items():
+        print(f"  - {dataset}: {len(files)} files")
+    print()
+    
     # Process for each threshold
     for threshold in thresholds:
         print(f"\n{'='*70}")
         print(f"Processing with threshold: {threshold}")
         print(f"{'='*70}")
         
-        # Process all files with current threshold
-        all_results = []
-        for json_path in jsonl_files:
-            results = process_jsonl_file(json_path, threshold)
-            all_results.extend(results)
-        
-        if not all_results:
-            print(f"No results extracted for threshold {threshold}.")
-            continue
-        
-        # Create DataFrame
-        results_df = pd.DataFrame(all_results)
-        
-        # Reorder columns for readability
-        column_order = [
-            'source_file',
-            'base_model',
-            'adapter_type',
-            'lr',
-            'rank',
-            'tr_from_name',
-            'tr_actual',
-            'accuracy',
-            'negative_shift_count',
-            'negative_shift_score',
-            'positive_shift_count',
-            'positive_shift_score',
-            'raw_adapter_name',
-        ]
-        
-        # Only include columns that exist
-        column_order = [c for c in column_order if c in results_df.columns]
-        results_df = results_df[column_order]
-        
-        # Sort by adapter_type, then by tr_actual
-        results_df = results_df.sort_values(['adapter_type', 'tr_actual', 'lr'])
-        
-        # Create threshold-specific output directory
-        threshold_dir = Path("adapters_results") / f"threshold_{threshold}"
-        threshold_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Group by base model and save separate CSV for each
-        unique_models = results_df['base_model'].dropna().unique()
-        
-        print(f"\nSaving results for {len(unique_models)} models:")
-        for model_name in unique_models:
-            model_df = results_df[results_df['base_model'] == model_name].copy()
+        # Process files grouped by dataset
+        for dataset, dataset_files in files_by_dataset.items():
+            print(f"\n--- Dataset: {dataset} ---")
             
-            # Save to CSV
-            output_path = threshold_dir / f"adapter_results_{model_name}.csv"
-            model_df.to_csv(output_path, index=False)
+            # Process all files for this dataset with current threshold
+            all_results = []
+            for json_path in dataset_files:
+                results = process_jsonl_file(json_path, threshold)
+                all_results.extend(results)
             
-            print(f"  - {model_name}: {len(model_df)} adapters -> {output_path}")
-            print(f"    Summary: avg accuracy={model_df['accuracy'].mean():.3f}, "
-                  f"avg neg_shift={model_df['negative_shift_count'].mean():.1f}")
-        
-        print(f"\nOverall summary for threshold {threshold}:")
-        print(results_df.groupby('adapter_type')[['tr_actual', 'accuracy', 'negative_shift_count']].mean().round(3))
+            if not all_results:
+                print(f"No results extracted for dataset {dataset} at threshold {threshold}.")
+                continue
+            
+            # Create DataFrame
+            results_df = pd.DataFrame(all_results)
+            
+            # Reorder columns for readability
+            column_order = [
+                'source_file',
+                'base_model',
+                'adapter_type',
+                'lr',
+                'rank',
+                'tr_from_name',
+                'tr_actual',
+                'accuracy',
+                'negative_shift_count',
+                'negative_shift_score',
+                'positive_shift_count',
+                'positive_shift_score',
+                'raw_adapter_name',
+            ]
+            
+            # Only include columns that exist
+            column_order = [c for c in column_order if c in results_df.columns]
+            results_df = results_df[column_order]
+            
+            # Sort by adapter_type, then by tr_actual
+            results_df = results_df.sort_values(['adapter_type', 'tr_actual', 'lr'])
+            
+            # Create dataset and threshold-specific output directory
+            threshold_dir = Path("adapters_results") / dataset / f"threshold_{threshold}"
+            threshold_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Group by base model and save separate CSV for each
+            unique_models = results_df['base_model'].dropna().unique()
+            
+            print(f"\nSaving results for {len(unique_models)} models:")
+            for model_name in unique_models:
+                model_df = results_df[results_df['base_model'] == model_name].copy()
+                
+                # Save to CSV
+                output_path = threshold_dir / f"adapter_results_{model_name}.csv"
+                model_df.to_csv(output_path, index=False)
+                
+                print(f"  - {model_name}: {len(model_df)} adapters -> {output_path}")
+                print(f"    Summary: avg accuracy={model_df['accuracy'].mean():.3f}, "
+                      f"avg neg_shift={model_df['negative_shift_count'].mean():.1f}")
+            
+            print(f"\nSummary for {dataset} at threshold {threshold}:")
+            print(results_df.groupby('adapter_type')[['tr_actual', 'accuracy', 'negative_shift_count']].mean().round(3))
     
     print(f"\n{'='*70}")
-    print(f"Processing complete! Results saved in adapters_results/")
+    print(f"Processing complete! Results saved in adapters_results/<dataset>/")
     print(f"{'='*70}")
 
 

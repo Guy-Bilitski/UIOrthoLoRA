@@ -2,7 +2,6 @@
 import os
 import json
 import argparse
-from typing import List, Literal
 from tqdm import tqdm
 
 from triviaQA_load import stream_triviaqa_rc
@@ -83,7 +82,7 @@ def get_output_path(base_dir: str, model_name: str, dataset: str) -> str:
     output_dir = os.path.join(base_dir, dataset, "workdir")
     os.makedirs(output_dir, exist_ok=True)
     
-    return os.path.join(output_dir, f"{model_short}_{dataset}_scores.jsonl")
+    return os.path.join(output_dir, f"{model_short}_{dataset}_scores-final.jsonl")
 
 
 def write_sc_scores_to_jsonl_batch(

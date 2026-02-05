@@ -645,7 +645,7 @@ def process_with_dynamic_batch_size(jsonl_path, initial_batch_size, min_batch_si
                 batch_sc_scores = []
                 for i in range(0, len(batch), current_chunk_size):
                     sub_batch = batch[i : i + current_chunk_size]
-                    questions, ground_truths = prepare_sc_inputs(sub_batch)
+                    questions, ground_truths = prepare_sc_inputs(sub_batch, args.dataset)
                     sc_scores = evaluate_self_consistency(
                         questions, ground_truths, model, tokenizer, SYSTEM_PROMPT, [], args.sc_number, debug=True
                     )

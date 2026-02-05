@@ -34,6 +34,10 @@ def parse_arguments():
     parser.add_argument("--results_path", type=str, required=True,
                         help="Path to the results file containing the dataset")
     
+    parser.add_argument("--dataset", type=str, default="triviaqa",
+                        choices=["triviaqa", "hotpotqa"],
+                        help="Dataset type for answer format handling (default: triviaqa)")
+    
     parser.add_argument("--sc_number", type=int, default=5,
                         help="Number of self-consistency generations (default: 5)")
     

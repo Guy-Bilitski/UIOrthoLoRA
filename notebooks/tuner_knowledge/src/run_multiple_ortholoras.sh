@@ -138,8 +138,14 @@ check_inference_complete() {
     # The adapter name is used as a key inside ft_evals
     local adapter_name=$(basename "$model_path")
     
-    # Check if adapter appears as a key in ft_evals (with quotes and colon)
-    if grep -q "\"${adapter_name}\":" "$results_file" 2>/dev/null; then
+    # Check if adapter appears as a key in ft_evals with a score value
+    # Pattern: "adapter_name": {"score": ...}
+    if grep -q "\"${adapter_name}\": {\"score\":" "$results_file" 2>/dev/null; then
+        return 0  # Inference complete
+    fi
+    
+    # Also check with spaces around the colon (in case of formatting variations)
+    if grep -q "\"${adapter_name}\": { *\"score\":" "$results_file" 2>/dev/null; then
         return 0  # Inference complete
     fi
     
