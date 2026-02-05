@@ -25,15 +25,20 @@ SUPPORTED_MODELS = {
 }
 
 
-def get_dataset_loader(dataset: str):
-    """Return the appropriate dataset loader based on dataset name."""
-    loaders = {
-        "triviaqa": stream_triviaqa_rc,
-        "hotpotqa": stream_hotpotqa,
-    }
-    if dataset not in loaders:
+def get_dataset_loader(dataset: str, level: str = None):
+    """Return the appropriate dataset loader based on dataset name.
+    
+    Args:
+        dataset: Dataset name (triviaqa or hotpotqa)
+        level: For hotpotqa only - filter by difficulty (easy, medium, hard)
+    """
+    if dataset not in SUPPORTED_DATASETS:
         raise ValueError(f"Unknown dataset: {dataset}. Supported: {SUPPORTED_DATASETS}")
-    return loaders[dataset]
+    
+    if dataset == "triviaqa":
+        return lambda split, batch_size: stream_triviaqa_rc(split, batch_size=batch_size)
+    elif dataset == "hotpotqa":
+        return lambda split, batch_size: stream_hotpotqa(split, batch_size=batch_size, level=level)
 
 
 def prepare_sc_inputs(batch, dataset: str):
@@ -125,9 +130,14 @@ def run_evaluation(
     batch_size: int = 50,
     n_gen: int = 10,
     debug: bool = False,
-    base_output_dir: str = "results"
+    base_output_dir: str = "results",
+    level: str = None
 ):
-    """Run evaluation for a specific dataset and model combination."""
+    """Run evaluation for a specific dataset and model combination.
+    
+    Args:
+        level: For hotpotqa only - filter by difficulty (easy, medium, hard)
+    """
     
     # Resolve model ID
     if model_key in SUPPORTED_MODELS:
@@ -140,6 +150,8 @@ def run_evaluation(
     print(f"  Dataset: {dataset}")
     print(f"  Model: {model_id}")
     print(f"  Split: {split}")
+    if level:
+        print(f"  Level: {level}")
     print(f"  Debug: {debug}")
     
     # Setup paths following the structure from the image
@@ -160,8 +172,8 @@ def run_evaluation(
     # Load model and tokenizer
     tokenizer, model = get_tokenizer_and_model(model_id)
     
-    # Get dataset loader
-    dataset_loader = get_dataset_loader(dataset)
+    # Get dataset loader (with optional level filtering for hotpotqa)
+    dataset_loader = get_dataset_loader(dataset, level=level)
     
     # Run evaluation
     for batch in tqdm(
@@ -233,6 +245,13 @@ def main():
         default="results",
         help="Base output directory (default: results)"
     )
+    parser.add_argument(
+        "--level", 
+        type=str, 
+        choices=["easy", "medium", "hard"],
+        default=None,
+        help="For hotpotqa only: filter by difficulty level (default: all levels)"
+    )
     
     args = parser.parse_args()
     
@@ -243,7 +262,8 @@ def main():
         batch_size=args.batch_size,
         n_gen=args.n_gen,
         debug=args.debug,
-        base_output_dir=args.output_dir
+        base_output_dir=args.output_dir,
+        level=args.level
     )
 
 

@@ -323,13 +323,13 @@ def process_jsonl_file(json_path: str, threshold: float = 0.2) -> list:
 def extract_dataset_name(file_path: str) -> str:
     """
     Extract dataset name from file path.
-    Looks for known dataset names like 'triviaqa' in the path.
+    Looks for known dataset names like 'triviaqa', 'hotpotqa' in the path.
     
     Returns:
         Dataset name if found, otherwise 'default'
     """
     path_lower = file_path.lower()
-    known_datasets = ['triviaqa', 'metamath', 'gsm8k', 'mmlu']
+    known_datasets = ['triviaqa', 'hotpotqa', 'metamath', 'gsm8k', 'mmlu']
     
     for dataset in known_datasets:
         if dataset in path_lower:
@@ -346,16 +346,16 @@ def main():
     # Define thresholds to process
     thresholds = [0.6, 0.8]
     
-    # Look for JSONL files in current directory and common locations
+    # Dynamically find all JSONL files in workdir subdirectories
+    # Structure: ../results/<model>/<dataset>/workdir/*.jsonl
+    #        or: ../results/<model>/workdir/*.jsonl (for older structure)
     search_paths = [
-        "../results/gemma-12b/workdir/*.jsonl",
-        # "../results/llama-8b/workdir/*.jsonl",
-        "../results/llama-3b/triviaqa/workdir/*.jsonl"
+        "../results/*/*/workdir/*.jsonl",         # e.g., llama-3b/triviaqa/workdir/
     ]
     
     jsonl_files = []
     for pattern in search_paths:
-        jsonl_files.extend(glob.glob(pattern, recursive=True))
+        jsonl_files.extend(glob.glob(pattern, recursive=False))
     
     # Remove duplicates
     jsonl_files = list(set(jsonl_files))

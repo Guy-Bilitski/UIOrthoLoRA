@@ -200,19 +200,36 @@ def print_summary(rows: List[Dict[str, Any]]) -> None:
 
 
 def main() -> None:
-    base_dir = get_base_dir()
+    import sys
+    
+    # Parse command line arguments
+    if len(sys.argv) >= 2:
+        base_dir = Path(sys.argv[1]).resolve()
+    else:
+        base_dir = get_base_dir()
+    
+    if len(sys.argv) >= 3:
+        output_csv = Path(sys.argv[2])
+    else:
+        output_csv = None  # Will use default (base_dir / mmlu_summary.csv)
+    
     rows, fieldnames = aggregate_results(base_dir)
 
     if not rows:
         print(f"No valid MMLU result files found under {base_dir}")
         return
 
-    out_csv = write_csv(base_dir, rows, fieldnames)
-    print_summary(rows)
-    print()
-    print(f"CSV written to: {out_csv}")
-
-
-if __name__ == "__main__":
-    main()
-
+    if output_csv:
+        # Create output directory if needed
+        output_csv.parent.mkdir(parents=True, exist_ok=True)
+        out_csv = output_csv
+        with open(out_csv, "w", newline="") as f:
+            import csv
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for r in rows:
+                r_out = {k: v for k, v in r.items() if not k.startswith("_")}
+                writer.writerow(r_out)
+    else:
+        out_csv = write_csv(base_dir, rows, fieldnames)
+    

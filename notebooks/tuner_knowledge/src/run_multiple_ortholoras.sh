@@ -20,13 +20,14 @@ MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
 # DATASET CONFIGURATION
 #------------------------------------------------------------------------------
 # Available datasets: "triviaqa" or "hotpotqa"
-DATASET="triviaqa"
+# DATASET="triviaqa"
+DATASET="hotpotqa"
 
 #------------------------------------------------------------------------------
 # ADAPTER CONFIGURATION
 #------------------------------------------------------------------------------
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="4e-3 6e-3 7e-3"
+LEARNING_RATES="4e-3 6e-3 7e-3 8e-3 9e-3"
 
 # UIorthoLoRA settings
 ALPHA=32
@@ -64,7 +65,7 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #------------------------------------------------------------------------------
 # GPU MAPPING (adapter -> GPU ID)
 #------------------------------------------------------------------------------
-GPU_DEVICE=0
+GPU_DEVICE=3
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)
@@ -292,6 +293,7 @@ for LEARNING_RATE in $LEARNING_RATES; do
                         --learning_rate "$LEARNING_RATE" \
                         --seed "$SEED" \
                         --results_path "$RESULTS_PATH" \
+                        --dataset "$DATASET" \
                         --sc_number "$SC_NUMBER" \
                         $INCLUDE_TRAINING_FLAG \
                         $RUN_QA_INFERENCE_FLAG \
