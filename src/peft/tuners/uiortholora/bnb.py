@@ -13,34 +13,34 @@ from peft.tuners.tuners_utils import check_adapters_to_merge
 from peft.utils.integrations import dequantize_bnb_weight
 from peft.utils.other import transpose
 
-from peft.tuners.uilinlora.layer import UILinLoRALayer
+from peft.tuners.uiortholora.layer import UIOrthoLoRALayer
 
 
 if is_bnb_available():
 
-    class Linear8bitLt(torch.nn.Module, UILinLoRALayer):
+    class Linear8bitLt(torch.nn.Module, UIOrthoLoRALayer):
         # Row-trainable adapter implemented in a dense layer with 8-bit quantization
         def __init__(
             self,
             base_layer: torch.nn.Module,
             adapter_name: str,
-            uilinlora_alpha: float = 1.0,
-            uilinlora_dropout: float = 0.0,
+            uiortholora_alpha: float = 1.0,
+            uiortholora_dropout: float = 0.0,
             fan_in_fan_out: bool = False,
-            init_uilinlora_weights: bool = True,
+            init_uiortholora_weights: bool = True,
             bias: str = "none",
             **kwargs,
         ) -> None:
             super().__init__()
-            UILinLoRALayer.__init__(self, base_layer)
+            UIOrthoLoRALayer.__init__(self, base_layer)
             self.fan_in_fan_out = fan_in_fan_out
 
             self._active_adapter = adapter_name
             self.update_layer(
                 adapter_name,
-                uilinlora_alpha,
-                uilinlora_dropout,
-                init_uilinlora_weights,
+                uiortholora_alpha,
+                uiortholora_dropout,
+                init_uiortholora_weights,
                 bias,
             )
 
@@ -56,7 +56,7 @@ if is_bnb_available():
                 return
 
             for active_adapter in adapter_names:
-                if active_adapter not in self.uilinlora_sigma.keys():
+                if active_adapter not in self.uiortholora_sigma.keys():
                     continue
 
                 warnings.warn(
@@ -90,7 +90,7 @@ if is_bnb_available():
 
             while len(self.merged_adapters) > 0:
                 active_adapter = self.merged_adapters.pop()
-                if active_adapter not in self.uilinlora_sigma.keys():
+                if active_adapter not in self.uiortholora_sigma.keys():
                     continue
                 warnings.warn(
                     "Unmerge row-trainable module to 8-bit linear may get different generations due to rounding errors."
@@ -111,18 +111,18 @@ if is_bnb_available():
                 state.reset_grads()
 
         def get_delta_weight(self, adapter: str) -> torch.Tensor:
-            if adapter not in self.uilinlora_sigma:
+            if adapter not in self.uiortholora_sigma:
                 return torch.zeros_like(self.get_base_layer().weight, dtype=torch.float32)
 
-            diag = self.uilinlora_sigma[adapter]
+            diag = self.uiortholora_sigma[adapter]
             if self._meta[adapter]["pos"]:
                 diag = torch.relu(diag)                       # (r,)
 
             # buffers
             U  = getattr(self, f"{adapter}_U")       # (out, r)
             V  = getattr(self, f"{adapter}_V")       # (r,  in)
-            Dv = self.uilinlora_D[adapter]                   # (in,)
-            Ev = self.uilinlora_E[adapter]                   # (out,)
+            Dv = self.uiortholora_D[adapter]                   # (in,)
+            Ev = self.uiortholora_E[adapter]                   # (out,)
             Σ  = torch.diag(diag)                             # (r, r)
 
             # 1. low-rank product
@@ -153,26 +153,26 @@ if is_bnb_available():
             compute_dtype = x.dtype            # fp16 or bf16 — whatever the model runs in
 
             for name in self.active_adapters:
-                if name not in self.uilinlora_sigma:
+                if name not in self.uiortholora_sigma:
                     continue
 
                 # --- diagonal scaling (σ) --------------------------------
-                diag = self.uilinlora_sigma[name].to(compute_dtype)
+                diag = self.uiortholora_sigma[name].to(compute_dtype)
                 if self._meta[name]["pos"]:
                     diag = torch.relu(diag)
 
                 # --- frozen buffers, cast once ---------------------------
                 U = getattr(self, f"{name}_U").to(compute_dtype)              # (out, r)
                 V = getattr(self, f"{name}_V").to(compute_dtype)              # (r,  in)
-                D = self.uilinlora_D[name].to(compute_dtype)                  # (in,)
-                E = self.uilinlora_E[name].to(compute_dtype)                  # (out,)
+                D = self.uiortholora_D[name].to(compute_dtype)                  # (in,)
+                E = self.uiortholora_E[name].to(compute_dtype)                  # (out,)
 
                 # fuse per-column & per-row scales
                 V_scaled = V * D.unsqueeze(0)                                 # (r, in)
                 U_scaled = U * E.unsqueeze(1)                                 # (out, r)
 
                 # --- adapter computation ---------------------------------
-                x_drop = self.uilinlora_dropout[name](x)                      # stay in fp16/bf16
+                x_drop = self.uiortholora_dropout[name](x)                      # stay in fp16/bf16
                 x_proj = F.linear(x_drop, V_scaled) * diag                    # (B, r)
                 delta  = F.linear(x_proj, U_scaled)                           # (B, out)
 
@@ -188,21 +188,21 @@ if is_bnb_available():
 
 if is_bnb_4bit_available():
 
-    class Linear4bit(torch.nn.Module, UILinLoRALayer):
+    class Linear4bit(torch.nn.Module, UIOrthoLoRALayer):
         # Row-trainable adapter implemented in a dense layer with 4-bit quantization
         def __init__(
             self,
             base_layer: torch.nn.Module,
             adapter_name: str,
-            uilinlora_alpha: float = 1.0,
-            uilinlora_dropout: float = 0.0,
+            uiortholora_alpha: float = 1.0,
+            uiortholora_dropout: float = 0.0,
             fan_in_fan_out: bool = False,
-            init_uilinlora_weights: bool = True,
+            init_uiortholora_weights: bool = True,
             bias: str = "none",
             **kwargs,
         ) -> None:
             super().__init__()
-            UILinLoRALayer.__init__(self, base_layer)
+            UIOrthoLoRALayer.__init__(self, base_layer)
             self.fan_in_fan_out = fan_in_fan_out
 
             self._active_adapter = adapter_name
@@ -211,9 +211,9 @@ if is_bnb_4bit_available():
                 rank=kwargs.pop("rank", 4),
                 scaling_factor=kwargs.pop("scaling_factor", 1.0),
                 enforce_sv_positive=kwargs.pop("enforce_sv_positive", True),
-                uilinlora_alpha=uilinlora_alpha,
-                uilinlora_dropout=uilinlora_dropout,
-                init_uilinlora_weights=init_uilinlora_weights,
+                uiortholora_alpha=uiortholora_alpha,
+                uiortholora_dropout=uiortholora_dropout,
+                init_uiortholora_weights=init_uiortholora_weights,
                 bias=bias,
                 **kwargs,
             )
@@ -230,7 +230,7 @@ if is_bnb_4bit_available():
                 return
 
             for active_adapter in adapter_names:
-                if active_adapter not in self.uilinlora_sigma.keys():
+                if active_adapter not in self.uiortholora_sigma.keys():
                     continue
 
                 warnings.warn(
@@ -261,7 +261,7 @@ if is_bnb_4bit_available():
 
             while len(self.merged_adapters) > 0:
                 active_adapter = self.merged_adapters.pop()
-                if active_adapter not in self.uilinlora_sigma.keys():
+                if active_adapter not in self.uiortholora_sigma.keys():
                     continue
                 warnings.warn(
                     "Unmerge row-trainable module to 4-bit linear may get different generations due to rounding errors."
@@ -277,14 +277,14 @@ if is_bnb_4bit_available():
                 )
 
         def get_delta_weight(self, adapter: str) -> torch.Tensor:
-            diag = self.uilinlora_sigma[adapter]
+            diag = self.uiortholora_sigma[adapter]
             if self._meta[adapter]["pos"]:
                 diag = torch.relu(diag.clone())
 
             U = getattr(self, f"{adapter}_U")         # (out, r)
             V = getattr(self, f"{adapter}_V")         # (r, in)
-            D = self.uilinlora_D[adapter]             # (in,)
-            E = self.uilinlora_E[adapter]             # (out,)
+            D = self.uiortholora_D[adapter]             # (in,)
+            E = self.uiortholora_E[adapter]             # (out,)
 
             # Broadcast D and E
             VD = V * D.unsqueeze(0).clone()                   # (r, in)
@@ -309,26 +309,26 @@ if is_bnb_4bit_available():
             compute_dtype = x.dtype            # fp16 or bf16 — whatever the model runs in
 
             for name in self.active_adapters:
-                if name not in self.uilinlora_sigma:
+                if name not in self.uiortholora_sigma:
                     continue
 
                 # --- diagonal scaling (σ) --------------------------------
-                diag = self.uilinlora_sigma[name].to(compute_dtype)
+                diag = self.uiortholora_sigma[name].to(compute_dtype)
                 if self._meta[name]["pos"]:
                     diag = torch.relu(diag)
 
                 # --- frozen buffers, cast once ---------------------------
                 U = getattr(self, f"{name}_U").to(compute_dtype)              # (out, r)
                 V = getattr(self, f"{name}_V").to(compute_dtype)              # (r,  in)
-                D = self.uilinlora_D[name].to(compute_dtype)                  # (in,)
-                E = self.uilinlora_E[name].to(compute_dtype)                  # (out,)
+                D = self.uiortholora_D[name].to(compute_dtype)                  # (in,)
+                E = self.uiortholora_E[name].to(compute_dtype)                  # (out,)
 
                 # fuse per-column & per-row scales
                 V_scaled = V * D.unsqueeze(0)                                 # (r, in)
                 U_scaled = U * E.unsqueeze(1)                                 # (out, r)
 
                 # --- adapter computation ---------------------------------
-                x_drop = self.uilinlora_dropout[name](x)                      # stay in fp16/bf16
+                x_drop = self.uiortholora_dropout[name](x)                      # stay in fp16/bf16
                 x_proj = F.linear(x_drop, V_scaled) * diag                    # (B, r)
                 delta  = F.linear(x_proj, U_scaled)                           # (B, out)
 

@@ -26,15 +26,15 @@ DATASET="triviaqa"
 # ADAPTER CONFIGURATION
 #------------------------------------------------------------------------------
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="3e-3 4e-3 6e-3"
+LEARNING_RATES="4e-3 6e-3 7e-3"
 
 # UIorthoLoRA settings
 ALPHA=32
 DROPOUT=0.0
 
 # UIorthoLoRA-specific settings - iterate over these
-SVALUES_TO_RUN="1024 1536"
-SVECS_TO_RUN="0 16 32 64"
+SVALUES_TO_RUN="1024 1280 1536"
+SVECS_TO_RUN="0 128"
 
 #------------------------------------------------------------------------------
 # TRAINING CONFIGURATION
@@ -221,9 +221,9 @@ LOGFILE="logs/${PEFT_TYPE}_$(date +%Y%m%d_%H%M%S).log"
 echo "=== [$PEFT_TYPE] Using GPU $GPU_DEVICE, logging to $LOGFILE ===" | tee -a "$LOGFILE"
 
 for LEARNING_RATE in $LEARNING_RATES; do
-    for SVALUES in $SVALUES_TO_RUN; do
-        for SVECS in $SVECS_TO_RUN; do
-   
+    for SVECS in $SVECS_TO_RUN; do
+        for SVALUES in $SVALUES_TO_RUN; do
+
             # Hardcoded identifier since we are training on All data
             TRAINING_LABEL="All" 
             PEFT_ARGS="--svalues $SVALUES --svectors $SVECS"

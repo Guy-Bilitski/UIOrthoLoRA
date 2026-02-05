@@ -17,7 +17,7 @@ def main():
     parser.add_argument("--initial_scaler", type=float)
     parser.add_argument("--initial_sigma", type=float)
     parser.add_argument("--base_model_id", type=str)
-    parser.add_argument("--model_type", type=str)                    # uiortholora or uilinlora
+    parser.add_argument("--model_type", type=str)                    # uiortholora
     parser.add_argument("--uiortholora_alpha", type=float)
     parser.add_argument("--uiortholora_dropout", type=float)
     parser.add_argument("--target_modules", nargs="+")               # e.g., ["q_proj", "v_proj"]
