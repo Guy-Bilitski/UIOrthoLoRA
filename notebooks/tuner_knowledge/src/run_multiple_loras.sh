@@ -242,7 +242,7 @@ for LEARNING_RATE in $LEARNING_RATES; do
         # Hardcoded identifier since we are training on All data
         TRAINING_LABEL="All" 
         PEFT_ARGS="--lora_rank $LORA_RANK"
-        OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lora_r${LORA_RANK}_lr${LEARNING_RATE}"
+        OUTPUT_PATH="models/${MODEL_SHORT}/${DATASET}/${PEFT_TYPE}_tr${TRAINING_LABEL}_sv${SVALUES}_svec${SVECS}_lr${LEARNING_RATE}"
 
         if [ "$SAMPLE_RUN" = true ]; then
             SAMPLE_RUN_FLAG="--sample_run --sample_size $SAMPLE_SIZE"

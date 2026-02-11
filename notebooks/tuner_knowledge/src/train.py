@@ -548,8 +548,8 @@ def create_sft_trainer(model, tokenizer, train_dataset, peft_config, args):
     
     sft_config = SFTConfig(
         output_dir=args.output_path,
-        per_device_train_batch_size=4,
-        gradient_accumulation_steps=4,
+        per_device_train_batch_size=64,
+        gradient_accumulation_steps=1,
         num_train_epochs=args.num_epochs,
         learning_rate=args.learning_rate,
         lr_scheduler_type="cosine",

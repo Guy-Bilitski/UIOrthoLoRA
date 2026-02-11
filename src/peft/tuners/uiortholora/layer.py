@@ -322,4 +322,3 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
 
     def __repr__(self):
         return f"UIOrthoLoRALayer({self.get_base_layer().__repr__()})"
-

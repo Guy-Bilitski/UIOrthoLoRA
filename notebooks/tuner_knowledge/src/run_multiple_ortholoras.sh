@@ -12,8 +12,8 @@ set -e
 #------------------------------------------------------------------------------
 # Available models (uncomment one):
 # MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
-MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
-# MODEL_ID="google/gemma-3-12b-it"
+# MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
+MODEL_ID="google/gemma-3-12b-it"
 # MODEL_ID="mistralai/Ministral-3-14B-Instruct-2512"
 
 #------------------------------------------------------------------------------
@@ -27,15 +27,15 @@ DATASET="hotpotqa"
 # ADAPTER CONFIGURATION
 #------------------------------------------------------------------------------
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="4e-3 6e-3 7e-3 8e-3 9e-3"
+LEARNING_RATES="7e-3"
 
 # UIorthoLoRA settings
 ALPHA=32
 DROPOUT=0.0
 
 # UIorthoLoRA-specific settings - iterate over these
-SVALUES_TO_RUN="1024 1280 1536"
-SVECS_TO_RUN="0 128"
+SVALUES_TO_RUN="1024"
+SVECS_TO_RUN="0"
 
 #------------------------------------------------------------------------------
 # TRAINING CONFIGURATION
@@ -65,12 +65,12 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #------------------------------------------------------------------------------
 # GPU MAPPING (adapter -> GPU ID)
 #------------------------------------------------------------------------------
-GPU_DEVICE=3
+GPU_DEVICE=0
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)
 #------------------------------------------------------------------------------
-SAMPLE_RUN=false
+SAMPLE_RUN=true
 SAMPLE_SIZE=10
 
 #------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ esac
 
 # Work directory and file paths based on model and dataset
 WORK_DIR="results/${MODEL_SHORT}/${DATASET}/workdir"
-WORK_FILE="${MODEL_SAFE_NAME}_scores"
+WORK_FILE="${MODEL_SAFE_NAME}-${DATASET}_scores"
 
 PEFT_TYPE="uiortholora"
 
@@ -234,7 +234,7 @@ for LEARNING_RATE in $LEARNING_RATES; do
             # Hardcoded identifier since we are training on All data
             TRAINING_LABEL="All" 
             PEFT_ARGS="--svalues $SVALUES --svectors $SVECS"
-            OUTPUT_PATH="models/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_sv${SVALUES}_svec${SVECS}_lr${LEARNING_RATE}"
+            OUTPUT_PATH="models/${MODEL_SHORT}/${DATASET}/${PEFT_TYPE}_tr${TRAINING_LABEL}_sv${SVALUES}_svec${SVECS}_lr${LEARNING_RATE}"
 
             if [ "$SAMPLE_RUN" = true ]; then
                 SAMPLE_RUN_FLAG="--sample_run --sample_size $SAMPLE_SIZE"
