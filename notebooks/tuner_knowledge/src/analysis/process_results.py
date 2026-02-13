@@ -320,42 +320,37 @@ def process_jsonl_file(json_path: str, threshold: float = 0.2) -> list:
     return results
 
 
-def extract_benchmark_and_training_dataset(file_path: str) -> tuple:
+def extract_training_dataset(file_path: str) -> str:
     """
-    Extract benchmark and training dataset from file path.
+    Extract the training dataset name from a file path.
     
     Input paths can be:
-    - ../results/mmlu/hotpotqa/... -> benchmark=mmlu, training_dataset=hotpotqa
-    - ../results/bigbench/triviaqa/... -> benchmark=bigbench, training_dataset=triviaqa
-    - ../results/llama-3b/triviaqa/workdir/... -> benchmark=default, training_dataset=triviaqa
+    - ../results/mmlu/hotpotqa/... -> hotpotqa
+    - ../results/bigbench/triviaqa/... -> triviaqa
+    - ../results/llama-3b/triviaqa/workdir/... -> triviaqa
+    - ../results/gemma-12b/hotpotqa/workdir/... -> hotpotqa
     
     Returns:
-        (training_dataset, benchmark) tuple
+        training_dataset name (e.g. 'triviaqa', 'hotpotqa')
+    
+    Raises:
+        ValueError if no known training dataset found in path.
     """
     path_parts = file_path.replace('\\', '/').split('/')
     
-    known_benchmarks = ['mmlu', 'bigbench']
     known_training_datasets = ['triviaqa', 'hotpotqa']
     
-    benchmark = 'default'
-    training_dataset = 'default'
+    for part in path_parts:
+        if part.lower() in known_training_datasets:
+            return part.lower()
     
-    for i, part in enumerate(path_parts):
-        part_lower = part.lower()
-        # Check for benchmark
-        if part_lower in known_benchmarks:
-            benchmark = part_lower
-        # Check for training dataset (but not if it's in a benchmark folder already found)
-        if part_lower in known_training_datasets:
-            training_dataset = part_lower
-    
-    return (training_dataset, benchmark)
+    raise ValueError(f"Could not determine training dataset from path: {file_path}")
 
 
 def main():
     """
     Main function to process all JSONL files and save results to CSV.
-    Results are organized as: adapters_results/{training_dataset}/{benchmark}/threshold_{X}/
+    Results are organized as: adapters_results/{training_dataset}/threshold_{X}/
     """
     # Define thresholds to process
     thresholds = [0.6, 0.8]
@@ -386,18 +381,21 @@ def main():
         print(f"  - {f}")
     print()
     
-    # Group files by (training_dataset, benchmark)
+    # Group files by training_dataset
     files_by_group = {}
     for f in jsonl_files:
-        training_dataset, benchmark = extract_benchmark_and_training_dataset(f)
-        key = (training_dataset, benchmark)
-        if key not in files_by_group:
-            files_by_group[key] = []
-        files_by_group[key].append(f)
+        try:
+            training_dataset = extract_training_dataset(f)
+        except ValueError as e:
+            print(f"  Skipping file (unknown dataset): {f}")
+            continue
+        if training_dataset not in files_by_group:
+            files_by_group[training_dataset] = []
+        files_by_group[training_dataset].append(f)
     
-    print(f"Files grouped by (training_dataset, benchmark):")
-    for (training_dataset, benchmark), files in files_by_group.items():
-        print(f"  - {training_dataset}/{benchmark}: {len(files)} files")
+    print(f"Files grouped by training dataset:")
+    for training_dataset, files in files_by_group.items():
+        print(f"  - {training_dataset}: {len(files)} files")
     print()
     
     # Process for each threshold
@@ -406,9 +404,9 @@ def main():
         print(f"Processing with threshold: {threshold}")
         print(f"{'='*70}")
         
-        # Process files grouped by (training_dataset, benchmark)
-        for (training_dataset, benchmark), group_files in files_by_group.items():
-            print(f"\n--- Training: {training_dataset}, Benchmark: {benchmark} ---")
+        # Process files grouped by training_dataset
+        for training_dataset, group_files in files_by_group.items():
+            print(f"\n--- Training dataset: {training_dataset} ---")
             
             # Process all files for this group with current threshold
             all_results = []
@@ -417,7 +415,7 @@ def main():
                 all_results.extend(results)
             
             if not all_results:
-                print(f"No results extracted for {training_dataset}/{benchmark} at threshold {threshold}.")
+                print(f"No results extracted for {training_dataset} at threshold {threshold}.")
                 continue
             
             # Create DataFrame
@@ -447,8 +445,8 @@ def main():
             # Sort by adapter_type, then by tr_actual
             results_df = results_df.sort_values(['adapter_type', 'tr_actual', 'lr'])
             
-            # Output: adapters_results/{training_dataset}/{benchmark}/threshold_{X}/
-            threshold_dir = Path("adapters_results") / training_dataset / benchmark / f"threshold_{threshold}"
+            # Output: adapters_results/{training_dataset}/threshold_{X}/
+            threshold_dir = Path("adapters_results") / training_dataset / f"threshold_{threshold}"
             threshold_dir.mkdir(parents=True, exist_ok=True)
             
             # Group by base model and save separate CSV for each
@@ -466,11 +464,11 @@ def main():
                 print(f"    Summary: avg accuracy={model_df['accuracy'].mean():.3f}, "
                       f"avg neg_shift={model_df['negative_shift_count'].mean():.1f}")
             
-            print(f"\nSummary for {training_dataset}/{benchmark} at threshold {threshold}:")
+            print(f"\nSummary for {training_dataset} at threshold {threshold}:")
             print(results_df.groupby('adapter_type')[['tr_actual', 'accuracy', 'negative_shift_count']].mean().round(3))
     
     print(f"\n{'='*70}")
-    print(f"Processing complete! Results saved in adapters_results/<training_dataset>/<benchmark>/threshold_X/")
+    print(f"Processing complete! Results saved in adapters_results/<training_dataset>/threshold_X/")
     print(f"{'='*70}")
 
 

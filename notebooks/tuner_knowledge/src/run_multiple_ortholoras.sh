@@ -20,8 +20,8 @@ MODEL_ID="google/gemma-3-12b-it"
 # DATASET CONFIGURATION
 #------------------------------------------------------------------------------
 # Available datasets: "triviaqa" or "hotpotqa"
-# DATASET="triviaqa"
-DATASET="hotpotqa"
+DATASET="triviaqa"
+# DATASET="hotpotqa"
 
 #------------------------------------------------------------------------------
 # ADAPTER CONFIGURATION

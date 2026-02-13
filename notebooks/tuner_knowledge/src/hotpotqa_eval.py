@@ -69,7 +69,8 @@ def main():
     n_gen = 10
     split = "train"
     level = "hard"  # Filter: "easy", "medium", "hard", or None for all
-    model_id = "google/gemma-3-12b-it"
+    # model_id = "google/gemma-3-12b-it"
+    model_id = "meta-llama/Llama-3.2-3B-Instruct"
 
     level_suffix = f"_{level}" if level else ""
     output_file_path = f"results/hotpotqa{level_suffix}_{model_id.replace('/', '_')}_scores.jsonl"
