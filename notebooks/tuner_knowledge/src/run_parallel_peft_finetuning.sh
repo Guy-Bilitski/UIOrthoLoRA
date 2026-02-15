@@ -112,7 +112,6 @@ echo "Logs for this run will be stored under: ${LOG_ROOT}"
 # MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
 #MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
 MODEL_ID="google/gemma-3-12b-it"
-#MODEL_ID="mistralai/Ministral-3-14B-Instruct-2512"
 
 ALPHA=32
 DROPOUT=0.0

@@ -1,0 +1,2 @@
+source_file,adapter_type,lr,rank,tr_from_name,tr_actual,accuracy,negative_shift_count,negative_shift_score,positive_shift_count,positive_shift_score,raw_adapter_name
+meta-llama_Llama-3.2-3B-Instruct_scores-lora.jsonl,lora,5e-5,,,11323,0.4987105890665018,908,892.0,72,64.80000000000001,lora_trAll_sv_svec_lr5e-5

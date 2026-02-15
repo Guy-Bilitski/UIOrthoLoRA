@@ -14,7 +14,6 @@ set -e
 # MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
 # MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
 MODEL_ID="google/gemma-3-12b-it"
-# MODEL_ID="mistralai/Ministral-3-14B-Instruct-2512"
 
 #------------------------------------------------------------------------------
 # DATASET CONFIGURATION
@@ -27,7 +26,7 @@ DATASET="triviaqa"
 # ADAPTER CONFIGURATION
 #------------------------------------------------------------------------------
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="7e-3"
+LEARNING_RATES="5e-4 1e-4 5e-3 7e-3 9e-3 1e-2 2e-2 5e-2"
 
 # UIorthoLoRA settings
 ALPHA=32
@@ -35,7 +34,7 @@ DROPOUT=0.0
 
 # UIorthoLoRA-specific settings - iterate over these
 SVALUES_TO_RUN="1024"
-SVECS_TO_RUN="0"
+SVECS_TO_RUN="0 64 128 256 512"
 
 #------------------------------------------------------------------------------
 # TRAINING CONFIGURATION
@@ -65,12 +64,12 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #------------------------------------------------------------------------------
 # GPU MAPPING (adapter -> GPU ID)
 #------------------------------------------------------------------------------
-GPU_DEVICE=0
+GPU_DEVICE=6
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)
 #------------------------------------------------------------------------------
-SAMPLE_RUN=true
+SAMPLE_RUN=false
 SAMPLE_SIZE=10
 
 #------------------------------------------------------------------------------
@@ -95,7 +94,7 @@ esac
 
 # Work directory and file paths based on model and dataset
 WORK_DIR="results/${MODEL_SHORT}/${DATASET}/workdir"
-WORK_FILE="${MODEL_SAFE_NAME}-${DATASET}_scores"
+WORK_FILE="${MODEL_SAFE_NAME}_scores"
 
 PEFT_TYPE="uiortholora"
 

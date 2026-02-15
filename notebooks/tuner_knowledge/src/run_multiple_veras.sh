@@ -25,15 +25,11 @@ DATASET="triviaqa"
 #------------------------------------------------------------------------------
 # ADAPTER CONFIGURATION
 #------------------------------------------------------------------------------
-# Space-separated list of adapters to run: lora, uiortholora, vera, randlora
-
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="5e-6 1e-5 5e-5 1e-4 5e-4 1e-3 5e-3"
+LEARNING_RATES="1e-5 5e-5 1e-4 5e-4 1e-3 5e-3 1e-2 5e-2"
 
-# LoRA-specific settings
-LORA_RANKS_TO_RUN="1 3 8 16 32 64"  # Ranks to iterate over for LoRA
-ALPHA=32
-DROPOUT=0.0
+# VeRA-specific settings
+VERA_RANKS_TO_RUN="512 1024"  # Ranks to iterate over for VeRA
 
 #------------------------------------------------------------------------------
 # TRAINING CONFIGURATION
@@ -61,16 +57,9 @@ RUN_BIGBENCH_EVAL=true
 BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_effect_multiple_choice,bigbench_conceptual_combinations_multiple_choice,bigbench_causal_judgment_multiple_choice,bigbench_analogical_similarity_multiple_choice,bigbench_common_morpheme_multiple_choice,bigbench_logical_deduction_multiple_choice,bigbench_logical_sequence_multiple_choice,bigbench_odd_one_out_multiple_choice"
 
 #------------------------------------------------------------------------------
-# GPU MAPPING (adapter -> GPU ID)
+# GPU MAPPING
 #------------------------------------------------------------------------------
-# declare -A GPU_MAP=(
-#     [uiortholora]=7
-#     [lora]=6
-#     [vera]=2
-#     [randlora]=3
-# )
-
-GPU_DEVICE=3
+GPU_DEVICE=4
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)
@@ -110,7 +99,7 @@ declare -A RESULT_MAP=(
     [randlora]="$WORK_DIR/$WORK_FILE-randlora.jsonl"
 )
 
-PEFT_TYPE="lora"
+PEFT_TYPE="vera"
 
 # Print configuration summary
 echo "=============================================="
@@ -237,12 +226,12 @@ LOGFILE="logs/${PEFT_TYPE}_$(date +%Y%m%d_%H%M%S).log"
 echo "=== [$PEFT_TYPE] Using GPU $GPU_DEVICE, logging to $LOGFILE ===" | tee -a "$LOGFILE"
 
 for LEARNING_RATE in $LEARNING_RATES; do
-    for LORA_RANK in $LORA_RANKS_TO_RUN; do
+    for VERA_RANK in $VERA_RANKS_TO_RUN; do
    
         # Hardcoded identifier since we are training on All data
         TRAINING_LABEL="All" 
-        PEFT_ARGS="--lora_rank $LORA_RANK"
-        OUTPUT_PATH="models/${MODEL_SHORT}/${DATASET}/${PEFT_TYPE}_tr${TRAINING_LABEL}_lora_r${LORA_RANK}_lr${LEARNING_RATE}"
+        PEFT_ARGS="--vera_rank $VERA_RANK"
+        OUTPUT_PATH="models/${MODEL_SHORT}/${DATASET}/${PEFT_TYPE}_tr${TRAINING_LABEL}_vera_r${VERA_RANK}_lr${LEARNING_RATE}"
         if [ "$SAMPLE_RUN" = true ]; then
             SAMPLE_RUN_FLAG="--sample_run --sample_size $SAMPLE_SIZE"
         else
@@ -251,7 +240,7 @@ for LEARNING_RATE in $LEARNING_RATES; do
 
         mkdir -p "$(dirname "$OUTPUT_PATH")"
 
-        echo "[${PEFT_TYPE}] Train=${TRAINING_LABEL}, LR=${LEARNING_RATE}, Rank=${LORA_RANK}" | tee -a "$LOGFILE"
+        echo "[${PEFT_TYPE}] Train=${TRAINING_LABEL}, LR=${LEARNING_RATE}, Rank=${VERA_RANK}" | tee -a "$LOGFILE"
 
         # Check if training is needed
         SKIP_TRAINING=false
@@ -293,8 +282,6 @@ for LEARNING_RATE in $LEARNING_RATES; do
                 python3 train.py \
                     --model_id "$MODEL_ID" \
                     --peft_type "$PEFT_TYPE" \
-                    --alpha "$ALPHA" \
-                    --dropout "$DROPOUT" \
                     --output_path "$OUTPUT_PATH" \
                     --num_epochs "$NUM_EPOCHS" \
                     --learning_rate "$LEARNING_RATE" \
@@ -321,14 +308,14 @@ for LEARNING_RATE in $LEARNING_RATES; do
 
         # Run MMLU evaluation if enabled
         if [ "$RUN_MMLU_EVAL" = true ]; then
-            MMLU_OUTPUT_PATH="results/mmlu/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${LORA_RANK}"
+            MMLU_OUTPUT_PATH="results/mmlu/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${VERA_RANK}"
 
             if check_mmlu_complete "$MMLU_OUTPUT_PATH" "$OUTPUT_PATH"; then
                 echo "⏭️  [SKIP] MMLU evaluation already complete: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
             else
                 echo "" | tee -a "$LOGFILE"
                 echo "==========================================" | tee -a "$LOGFILE"
-                echo "Running MMLU Evaluation (Rank ${LORA_RANK})" | tee -a "$LOGFILE"
+                echo "Running MMLU Evaluation (Rank ${VERA_RANK})" | tee -a "$LOGFILE"
                 echo "==========================================" | tee -a "$LOGFILE"
 
                 mkdir -p "$(dirname "$MMLU_OUTPUT_PATH")"
@@ -362,14 +349,14 @@ for LEARNING_RATE in $LEARNING_RATES; do
         
         # Run BigBench evaluation if enabled
         if [ "$RUN_BIGBENCH_EVAL" = true ]; then
-            BIGBENCH_OUTPUT_PATH="results/bigbench/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${LORA_RANK}"
+            BIGBENCH_OUTPUT_PATH="results/bigbench/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_r${VERA_RANK}"
 
             if check_bigbench_complete "$BIGBENCH_OUTPUT_PATH" "$OUTPUT_PATH"; then
                 echo "⏭️  [SKIP] BigBench evaluation already complete: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
             else
                 echo "" | tee -a "$LOGFILE"
                 echo "==========================================" | tee -a "$LOGFILE"
-                echo "Running BigBench Evaluation (Rank ${LORA_RANK})" | tee -a "$LOGFILE"
+                echo "Running BigBench Evaluation (Rank ${VERA_RANK})" | tee -a "$LOGFILE"
                 echo "==========================================" | tee -a "$LOGFILE"
 
                 mkdir -p "$BIGBENCH_OUTPUT_PATH"
