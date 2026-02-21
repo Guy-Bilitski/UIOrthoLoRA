@@ -7,7 +7,7 @@ def parse_arguments():
                         help="Hugging Face model ID (e.g., meta-llama/Llama-3.2-3B)")
     
     parser.add_argument("--peft_type", type=str, required=True,
-                        choices=["lora", "vera", "randlora", "uiortholora"],
+                        choices=["lora", "vera", "dora", "uiortholora"],
                         help="Type of PEFT method")
     
     parser.add_argument("--output_path", type=str, required=True,

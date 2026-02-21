@@ -23,12 +23,12 @@ from pathlib import Path
 
 MODELS = ["gemma-12b", "llama-3b"]
 DATASETS = ["hotpotqa", "triviaqa"]
-THRESHOLDS = [0.6, 0.8]
+THRESHOLDS = [0.8]
 
 RESULTS_ROOT = Path("../results")
 OUTPUT_ROOT = Path("./adapters_results")
 
-ADAPTER_TYPES = ["uiortholora", "randlora", "vera", "lora"]
+ADAPTER_TYPES = ["dora", "uiortholora", "randlora", "vera", "lora"]
 
 CSV_COLUMNS = [
     "source_file", "adapter_type", "lr", "rank",

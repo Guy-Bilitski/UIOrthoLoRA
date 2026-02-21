@@ -511,6 +511,16 @@ def build_peft_config(args):
             initial_sigma=0.1,
             target_modules=target_modules,
         )
+    elif args.peft_type == "dora":
+        return LoraConfig(
+            r=args.lora_rank,      # Reuses standard LoRA rank arg
+            lora_alpha=args.alpha, # Reuses standard alpha arg
+            lora_dropout=args.dropout,
+            bias="none",
+            target_modules=target_modules,
+            task_type="CAUSAL_LM",
+            use_dora=True
+        )
     else:
         raise ValueError(f"Unknown PEFT type: {args.peft_type}")
 

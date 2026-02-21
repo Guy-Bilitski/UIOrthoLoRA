@@ -12,8 +12,8 @@ set -e
 #------------------------------------------------------------------------------
 # Available models (uncomment one):
 # MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
-# MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
-MODEL_ID="google/gemma-3-12b-it"
+MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
+# MODEL_ID="google/gemma-3-12b-it"
 
 #------------------------------------------------------------------------------
 # DATASET CONFIGURATION
@@ -29,7 +29,7 @@ DATASET="triviaqa"
 LEARNING_RATES="1e-5 5e-5 1e-4 5e-4 1e-3 5e-3 1e-2 5e-2"
 
 # VeRA-specific settings
-VERA_RANKS_TO_RUN="512 1024"  # Ranks to iterate over for VeRA
+VERA_RANKS_TO_RUN="1024"  # Ranks to iterate over for VeRA
 
 #------------------------------------------------------------------------------
 # TRAINING CONFIGURATION
@@ -59,7 +59,7 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #------------------------------------------------------------------------------
 # GPU MAPPING
 #------------------------------------------------------------------------------
-GPU_DEVICE=4
+GPU_DEVICE=7
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)

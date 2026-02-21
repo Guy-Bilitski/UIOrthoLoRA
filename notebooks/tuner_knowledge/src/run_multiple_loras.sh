@@ -12,15 +12,15 @@ set -e
 #------------------------------------------------------------------------------
 # Available models (uncomment one):
 # MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
-# MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
-MODEL_ID="google/gemma-3-12b-it"
+MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
+# MODEL_ID="google/gemma-3-12b-it"
 
 #------------------------------------------------------------------------------
 # DATASET CONFIGURATION
 #------------------------------------------------------------------------------
 # Available datasets: "triviaqa" or "hotpotqa"
-DATASET="triviaqa"
-# DATASET="hotpotqa"
+# DATASET="triviaqa"
+DATASET="hotpotqa"
 
 #------------------------------------------------------------------------------
 # ADAPTER CONFIGURATION
@@ -28,10 +28,10 @@ DATASET="triviaqa"
 # Space-separated list of adapters to run: lora, uiortholora, vera, randlora
 
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="5e-6 1e-5 5e-5 1e-4 5e-4 1e-3 5e-3"
+LEARNING_RATES="1e-5 5e-5 1e-4 5e-4 1e-3 5e-3 1e-2"
 
 # LoRA-specific settings
-LORA_RANKS_TO_RUN="1 3 8 16 32 64"  # Ranks to iterate over for LoRA
+LORA_RANKS_TO_RUN="1 3 8 16 32"  # Ranks to iterate over for LoRA
 ALPHA=32
 DROPOUT=0.0
 
@@ -70,7 +70,7 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #     [randlora]=3
 # )
 
-GPU_DEVICE=3
+GPU_DEVICE=5
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)
@@ -108,9 +108,11 @@ declare -A RESULT_MAP=(
     [lora]="$WORK_DIR/$WORK_FILE-lora.jsonl"
     [vera]="$WORK_DIR/$WORK_FILE-vera.jsonl"
     [randlora]="$WORK_DIR/$WORK_FILE-randlora.jsonl"
+    [dora]="$WORK_DIR/$WORK_FILE-dora.jsonl"
 )
 
-PEFT_TYPE="lora"
+# PEFT_TYPE="lora"
+PEFT_TYPE="dora"
 
 # Print configuration summary
 echo "=============================================="
