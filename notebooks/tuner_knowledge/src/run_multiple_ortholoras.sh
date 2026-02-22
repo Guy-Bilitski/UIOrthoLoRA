@@ -12,8 +12,8 @@ set -e
 #------------------------------------------------------------------------------
 # Available models (uncomment one):
 # MODEL_ID="meta-llama/Llama-3.1-8B-Instruct"
-MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
-# MODEL_ID="google/gemma-3-12b-it"
+# MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
+MODEL_ID="google/gemma-3-12b-it"
 
 #------------------------------------------------------------------------------
 # DATASET CONFIGURATION
@@ -26,7 +26,7 @@ DATASET="triviaqa"
 # ADAPTER CONFIGURATION
 #------------------------------------------------------------------------------
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="1e-1 3e-1 5e-1"
+LEARNING_RATES="8e-3 9e-3 1e-2"
 
 # UIorthoLoRA settings
 ALPHA=32
@@ -34,7 +34,7 @@ DROPOUT=0.0
 
 # UIorthoLoRA-specific settings - iterate over these
 SVALUES_TO_RUN="1024"
-SVECS_TO_RUN="0"
+SVECS_TO_RUN="512 256 128"
 
 #------------------------------------------------------------------------------
 # TRAINING CONFIGURATION
@@ -64,7 +64,7 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #------------------------------------------------------------------------------
 # GPU MAPPING (adapter -> GPU ID)
 #------------------------------------------------------------------------------
-GPU_DEVICE=7
+GPU_DEVICE=5
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)
