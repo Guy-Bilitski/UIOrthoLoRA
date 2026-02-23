@@ -34,7 +34,7 @@ def extract_model_config(model_path: str) -> dict:
         config["base_model"] = base_model_match.group(1).replace("_", "/", 1)
     
     # Extract PEFT method (lora, vera, randlora, uiortholora, etc.)
-    peft_match = re.search(r'_(uiortholora|ortholora|randlora|lora|vera|dora)_', path_str, re.IGNORECASE)
+    peft_match = re.search(r'(?:^|[/\-_])(dora|uiortholora|ortholora|randlora|lora|vera)(?:$|[/\-_])', path_str, re.IGNORECASE)
     if peft_match:
         config["peft_method"] = peft_match.group(1).lower()
     

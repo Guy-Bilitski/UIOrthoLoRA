@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# CONFIGURATION — edit these lists as you add models/datasets
+# CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
 MODELS = ["gemma-12b", "llama-3b"]
@@ -31,7 +31,7 @@ OUTPUT_ROOT = Path("./adapters_results")
 ADAPTER_TYPES = ["dora", "uiortholora", "randlora", "vera", "lora"]
 
 CSV_COLUMNS = [
-    "source_file", "adapter_type", "lr", "rank",
+    "source_file", "adapter_type", "lr", "rank", "svals", "svecs",
     "tr_from_name", "tr_actual", "accuracy",
     "negative_shift_count", "negative_shift_score",
     "positive_shift_count", "positive_shift_score",
@@ -44,24 +44,38 @@ CSV_COLUMNS = [
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def parse_adapter_name(name: str) -> dict:
-    result = {"adapter_type": None, "lr": None, "rank": None, "tr_from_name": None}
+    result = {
+        "adapter_type": None, "lr": None, "rank": None,
+        "svals": None, "svecs": None, "tr_from_name": None,
+    }
 
+    # Training samples from name
     m = re.search(r"_tr(\d+)", name)
     if m:
         result["tr_from_name"] = int(m.group(1))
 
+    # Learning rate
     m = re.search(r"_lr([0-9e\-\.]+)", name, re.IGNORECASE)
     if m:
         result["lr"] = m.group(1)
 
-    m = re.search(r"_r(\d+)(?:_|$)", name)
-    if m:
-        result["rank"] = int(m.group(1))
-
+    # Adapter type (order matters: dora before lora)
     for a in ADAPTER_TYPES:
         if a in name.lower():
             result["adapter_type"] = a
             break
+
+    # UIorthoLoRA: _s{svals}_v{svecs}
+    m_sv = re.search(r"_(?:s|sv)(\d+)_(?:v|svec)(\d+)", name)
+    if m_sv:
+        result["svals"] = int(m_sv.group(1))
+        result["svecs"] = int(m_sv.group(2))
+        result["rank"] = result["svals"]  # use svals as primary "rank"
+    else:
+        # LoRA/VeRA/DoRA: _r{rank}
+        m = re.search(r"_r(\d+)(?:_|$)", name)
+        if m:
+            result["rank"] = int(m.group(1))
 
     return result
 
@@ -165,15 +179,30 @@ def process_file(path: str, threshold: float) -> list:
     results = []
     for ft in ft_names:
         parsed = parse_adapter_name(ft)
+        
+        # --- NEW FILTER ---
+        # Only process if learning rate is <= 1e-2
+        lr_str = parsed.get("lr")
+        if lr_str is not None:
+            try:
+                if float(lr_str) >= 1e-1:
+                    continue  # Skip this adapter and move to the next one
+            except ValueError:
+                pass # Ignore if lr somehow isn't a valid float
+        # ------------------
+
         try:
             m = compute_metrics(df, ft, col_map, threshold)
         except Exception as e:
             print(f"      ✗ {ft}: {e}")
             continue
+            
         results.append({
             "source_file": os.path.basename(path),
             "adapter_type": parsed["adapter_type"], "lr": parsed["lr"],
-            "rank": parsed["rank"], "tr_from_name": parsed["tr_from_name"],
+            "rank": parsed["rank"],
+            "svals": parsed["svals"], "svecs": parsed["svecs"],
+            "tr_from_name": parsed["tr_from_name"],
             "tr_actual": m["tr_actual"], "accuracy": m["accuracy"],
             "negative_shift_count": m["negative_shift_count"],
             "negative_shift_score": m["negative_shift_score"],
@@ -210,7 +239,6 @@ def main():
             print(f"  JSONL files: {len(jsonl_files)}")
 
             if not jsonl_files:
-                # No data yet — save empty CSVs for all thresholds
                 for t in THRESHOLDS:
                     out_dir = OUTPUT_ROOT / dataset / f"threshold_{t}"
                     out_dir.mkdir(parents=True, exist_ok=True)
@@ -219,7 +247,6 @@ def main():
                     print(f"    Saved (empty): {out_path}")
                 continue
 
-            # Process once per threshold
             for t in THRESHOLDS:
                 print(f"\n  threshold={t}:")
                 all_results = []
@@ -245,7 +272,6 @@ def main():
                 else:
                     print(f"\n    → {out_path} (empty)")
 
-    # Summary
     print(f"\n{'='*70}")
     print("SUMMARY")
     print(f"{'='*70}")
