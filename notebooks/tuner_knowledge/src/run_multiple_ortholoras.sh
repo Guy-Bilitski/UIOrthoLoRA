@@ -19,22 +19,22 @@ MODEL_ID="google/gemma-3-12b-it"
 # DATASET CONFIGURATION
 #------------------------------------------------------------------------------
 # Available datasets: "triviaqa" or "hotpotqa"
-DATASET="triviaqa"
-# DATASET="hotpotqa"
+# DATASET="triviaqa"
+DATASET="hotpotqa"
 
 #------------------------------------------------------------------------------
 # ADAPTER CONFIGURATION
 #------------------------------------------------------------------------------
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="8e-3 9e-3 1e-2"
+LEARNING_RATES="6e-3 7e-3 8e-3"
 
 # UIorthoLoRA settings
 ALPHA=32
 DROPOUT=0.0
 
 # UIorthoLoRA-specific settings - iterate over these
-SVALUES_TO_RUN="1024"
-SVECS_TO_RUN="512 256 128"
+SVALUES_TO_RUN="1024 512 256"
+SVECS_TO_RUN="512 256 128 64 32 0"
 
 #------------------------------------------------------------------------------
 # TRAINING CONFIGURATION
@@ -64,7 +64,7 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #------------------------------------------------------------------------------
 # GPU MAPPING (adapter -> GPU ID)
 #------------------------------------------------------------------------------
-GPU_DEVICE=5
+GPU_DEVICE=4
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)
@@ -247,17 +247,17 @@ for LEARNING_RATE in $LEARNING_RATES; do
 
             # Check if training is needed
             SKIP_TRAINING=false
-            if check_training_complete "$OUTPUT_PATH"; then
-                echo "⏭️  [SKIP] Training already complete: $OUTPUT_PATH" | tee -a "$LOGFILE"
-                SKIP_TRAINING=true
-            fi
+            # if check_training_complete "$OUTPUT_PATH"; then
+            #     echo "⏭️  [SKIP] Training already complete: $OUTPUT_PATH" | tee -a "$LOGFILE"
+            #     SKIP_TRAINING=true
+            # fi
 
             # Check if inference is needed
             SKIP_INFERENCE=false
-            if check_inference_complete "$RESULTS_PATH" "$OUTPUT_PATH"; then
-                echo "⏭️  [SKIP] Inference results already exist in: $RESULTS_PATH" | tee -a "$LOGFILE"
-                SKIP_INFERENCE=true
-            fi
+            # if check_inference_complete "$RESULTS_PATH" "$OUTPUT_PATH"; then
+            #     echo "⏭️  [SKIP] Inference results already exist in: $RESULTS_PATH" | tee -a "$LOGFILE"
+            #     SKIP_INFERENCE=true
+            # fi
 
             # Run training/inference if needed
             if [ "$SKIP_TRAINING" = true ] && [ "$SKIP_INFERENCE" = true ]; then
@@ -315,7 +315,8 @@ for LEARNING_RATE in $LEARNING_RATES; do
             if [ "$RUN_MMLU_EVAL" = true ]; then
                 MMLU_OUTPUT_PATH="results/mmlu/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_sv${SVALUES}_svec${SVECS}"
 
-                if check_mmlu_complete "$MMLU_OUTPUT_PATH" "$OUTPUT_PATH"; then
+                # if check_mmlu_complete "$MMLU_OUTPUT_PATH" "$OUTPUT_PATH"; then
+                if false; then
                     echo "⏭️  [SKIP] MMLU evaluation already complete: $MMLU_OUTPUT_PATH" | tee -a "$LOGFILE"
                 else
                     echo "" | tee -a "$LOGFILE"
@@ -356,7 +357,8 @@ for LEARNING_RATE in $LEARNING_RATES; do
             if [ "$RUN_BIGBENCH_EVAL" = true ]; then
                 BIGBENCH_OUTPUT_PATH="results/bigbench/${DATASET}/${MODEL_SAFE_NAME}_${PEFT_TYPE}_tr${TRAINING_LABEL}_lr${LEARNING_RATE}_sv${SVALUES}_svec${SVECS}"
 
-                if check_bigbench_complete "$BIGBENCH_OUTPUT_PATH" "$OUTPUT_PATH"; then
+                # if check_bigbench_complete "$BIGBENCH_OUTPUT_PATH" "$OUTPUT_PATH"; then
+                if false; then
                     echo "⏭️  [SKIP] BigBench evaluation already complete: $BIGBENCH_OUTPUT_PATH" | tee -a "$LOGFILE"
                 else
                     echo "" | tee -a "$LOGFILE"

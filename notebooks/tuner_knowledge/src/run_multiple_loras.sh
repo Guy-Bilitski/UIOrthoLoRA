@@ -19,8 +19,8 @@ MODEL_ID="meta-llama/Llama-3.2-3B-Instruct"
 # DATASET CONFIGURATION
 #------------------------------------------------------------------------------
 # Available datasets: "triviaqa" or "hotpotqa"
-# DATASET="triviaqa"
-DATASET="hotpotqa"
+DATASET="triviaqa"
+# DATASET="hotpotqa"
 
 #------------------------------------------------------------------------------
 # ADAPTER CONFIGURATION
@@ -28,7 +28,7 @@ DATASET="hotpotqa"
 # Space-separated list of adapters to run: lora, uiortholora, vera, randlora
 
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="1e-5 5e-5 1e-4 5e-4 1e-3 5e-3 1e-2"
+LEARNING_RATES="5e-5 1e-4"
 
 # LoRA-specific settings
 LORA_RANKS_TO_RUN="1 3 8 16 32"  # Ranks to iterate over for LoRA
@@ -70,7 +70,7 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #     [randlora]=3
 # )
 
-GPU_DEVICE=5
+GPU_DEVICE=1
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)
@@ -111,8 +111,8 @@ declare -A RESULT_MAP=(
     [dora]="$WORK_DIR/$WORK_FILE-dora.jsonl"
 )
 
-# PEFT_TYPE="lora"
-PEFT_TYPE="dora"
+PEFT_TYPE="lora"
+# PEFT_TYPE="dora"
 
 # Print configuration summary
 echo "=============================================="
