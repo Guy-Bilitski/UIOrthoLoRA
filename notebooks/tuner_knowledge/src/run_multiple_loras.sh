@@ -28,7 +28,7 @@ DATASET="triviaqa"
 # Space-separated list of adapters to run: lora, uiortholora, vera, randlora
 
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="5e-5 1e-4"
+LEARNING_RATES="2e-4 5e-4 7e-4"
 
 # LoRA-specific settings
 LORA_RANKS_TO_RUN="1 3 8 16 32"  # Ranks to iterate over for LoRA
@@ -70,7 +70,7 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #     [randlora]=3
 # )
 
-GPU_DEVICE=1
+GPU_DEVICE=5
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)

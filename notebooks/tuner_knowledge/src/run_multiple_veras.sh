@@ -26,7 +26,7 @@ DATASET="triviaqa"
 # ADAPTER CONFIGURATION
 #------------------------------------------------------------------------------
 # Learning rates to sweep (space-separated)
-LEARNING_RATES="1e-5 5e-5 1e-4 5e-4 1e-3 5e-3 1e-2 5e-2"
+LEARNING_RATES="2e-2 3e-2 4e-2 5e-2"
 
 # VeRA-specific settings
 VERA_RANKS_TO_RUN="1024"  # Ranks to iterate over for VeRA
@@ -59,7 +59,7 @@ BIGBENCH_TASKS="bigbench_analytic_entailment_multiple_choice,bigbench_cause_and_
 #------------------------------------------------------------------------------
 # GPU MAPPING
 #------------------------------------------------------------------------------
-GPU_DEVICE=7
+GPU_DEVICE=1
 
 #------------------------------------------------------------------------------
 # SAMPLE RUN (for pipeline testing)

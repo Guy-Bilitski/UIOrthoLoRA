@@ -36,7 +36,7 @@ meta-llama_Llama-3.2-3B-Instruct_scores-dora.jsonl,dora,5e-5,3,,,,32799,0.828430
 meta-llama_Llama-3.2-3B-Instruct_scores-dora.jsonl,dora,5e-5,8,,,,32799,0.8504588554529102,10088,9978.800000000001,405,364.5000000000001,dora_trAll_lora_r8_lr5e-5
 meta-llama_Llama-3.2-3B-Instruct_scores-lora.jsonl,lora,1e-4,16,,,,32799,0.96486478246288,8937,8836.6,471,423.90000000000015,lora_trAll_lora_r16_lr1e-4
 meta-llama_Llama-3.2-3B-Instruct_scores-lora.jsonl,lora,1e-4,1,,,,32799,0.8443519619500595,10904,10792.300000000001,390,351.0000000000001,lora_trAll_lora_r1_lr1e-4
-meta-llama_Llama-3.2-3B-Instruct_scores-lora.jsonl,lora,1e-4,32,,,,32799,0.9663994249695897,4980,4925.700000000001,303,272.7000000000001,lora_trAll_lora_r32_lr1e-4
+meta-llama_Llama-3.2-3B-Instruct_scores-lora.jsonl,lora,1e-4,32,,,,32799,0.9662367755114485,8798,8703.0,484,435.60000000000014,lora_trAll_lora_r32_lr1e-4
 meta-llama_Llama-3.2-3B-Instruct_scores-lora.jsonl,lora,1e-4,3,,,,32799,0.9412146711789993,9963,9858.900000000001,459,413.10000000000014,lora_trAll_lora_r3_lr1e-4
 meta-llama_Llama-3.2-3B-Instruct_scores-lora.jsonl,lora,1e-4,8,,,,32799,0.9609683222049453,9066,8965.7,496,446.4000000000001,lora_trAll_lora_r8_lr1e-4
 meta-llama_Llama-3.2-3B-Instruct_scores-lora.jsonl,lora,5e-5,16,,,,32799,0.8551754626665448,10027,9920.2,424,381.6000000000001,lora_trAll_lora_r16_lr5e-5
@@ -51,11 +51,17 @@ meta-llama_Llama-3.2-3B-Instruct_scores-lora.jsonl,lora,5e-5,8,,,,32799,0.957669
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,1024,1024.0,0.0,,32799,0.9713832738803012,13208,13086.900000000001,382,343.80000000000007,meta-llama_Llama-3.2-3B-Instruct_uiortholora_trAll_s1024_v0_lr1e-2
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,256,256.0,0.0,,32799,0.9678099942071404,13387,13263.7,363,326.7000000000001,meta-llama_Llama-3.2-3B-Instruct_uiortholora_trAll_s256_v0_lr1e-2
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,512,512.0,0.0,,32799,0.9707003262294583,13493,13369.800000000001,395,355.5000000000001,meta-llama_Llama-3.2-3B-Instruct_uiortholora_trAll_s512_v0_lr1e-2
+meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,1024,1024.0,128.0,,32799,0.945422116527943,10346,10234.3,415,373.5000000000001,uiortholora_trAll_sv1024_svec128_lr1e-2
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,1024,1024.0,256.0,,32799,0.9463093386993506,10371,10261.0,444,399.60000000000014,uiortholora_trAll_sv1024_svec256_lr1e-2
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,1024,1024.0,512.0,,32799,0.9434494954114455,10217,10108.7,431,387.90000000000015,uiortholora_trAll_sv1024_svec512_lr1e-2
+meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,1024,1024.0,64.0,,32799,0.9432391231439984,10439,10330.400000000001,453,407.70000000000016,uiortholora_trAll_sv1024_svec64_lr1e-2
+meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,256,256.0,128.0,,32799,0.9325863593402238,10469,10359.8,432,388.80000000000007,uiortholora_trAll_sv256_svec128_lr1e-2
+meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,256,256.0,256.0,,32799,0.934464465380042,10523,10409.2,411,369.9000000000001,uiortholora_trAll_sv256_svec256_lr1e-2
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,256,256.0,512.0,,32799,,0,0.0,0,0.0,uiortholora_trAll_sv256_svec512_lr1e-2
-meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,512,512.0,256.0,,32799,0.9385342139057055,6989,6915.5,319,287.1000000000001,uiortholora_trAll_sv512_svec256_lr1e-2
+meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,512,512.0,128.0,,32799,0.9353364431842434,10492,10381.5,445,400.5000000000001,uiortholora_trAll_sv512_svec128_lr1e-2
+meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,512,512.0,256.0,,32799,0.9373700417695662,10401,10291.0,458,412.20000000000016,uiortholora_trAll_sv512_svec256_lr1e-2
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,512,512.0,512.0,,32799,0.9380346961797615,10278,10167.900000000001,433,389.7000000000001,uiortholora_trAll_sv512_svec512_lr1e-2
+meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-2,512,512.0,64.0,,32799,,0,0.0,0,0.0,uiortholora_trAll_sv512_svec64_lr1e-2
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-3,256,256.0,0.0,,32799,0.46065733711393636,5572,5459.7,429,386.10000000000014,meta-llama_Llama-3.2-3B-Instruct_uiortholora_trAll_s256_v0_lr1e-3
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,1e-3,512,512.0,0.0,,32799,0.4545565413579683,5485,5374.7,413,371.70000000000016,meta-llama_Llama-3.2-3B-Instruct_uiortholora_trAll_s512_v0_lr1e-3
 meta-llama_Llama-3.2-3B-Instruct_scores-uiortholora.jsonl,uiortholora,2e-2,1024,1024.0,128.0,,32799,0.9775084606237996,13363,13239.2,378,340.20000000000005,uiortholora_trAll_sv1024_svec128_lr2e-2
