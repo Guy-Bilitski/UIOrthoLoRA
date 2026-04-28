@@ -91,6 +91,10 @@ class UIOrthoLoRAConfig(PeftConfig):
         default=1e-1,
         metadata={"help": "Initial value for the sigma parameters. Defaults to 1e-1."}
     )
+    use_de: bool = field(
+        default=True,
+        metadata={"help": "Whether to use D and E diagonal scalers. Set to False to disable them (they are frozen to 1 and not trained)."}
+    )
 
     def __post_init__(self):        
         super().__post_init__()

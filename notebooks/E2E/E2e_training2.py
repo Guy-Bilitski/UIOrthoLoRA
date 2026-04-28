@@ -1,8 +1,9 @@
+import json
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
-
+import platform
 import torch
 import subprocess
+import sys
 from tqdm import tqdm
 import numpy as np
 from peft import UIOrthoLoRAConfig, get_peft_model, TaskType, PeftConfig, PeftModel, LoraConfig
@@ -14,6 +15,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 import random
 import transformers
+from collections import OrderedDict
 
 SYSTEM_OUTPUTS_PATH = "system_outputs"
 
@@ -27,6 +29,7 @@ def set_seed(seed):
     
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    torch.use_deterministic_algorithms(True, warn_only=True)
 
     transformers.set_seed(seed)  # affects Hugging Face Trainer, etc.
 
@@ -65,7 +68,7 @@ def load_and_prepare(tokenizer):
 def run_evaluation(results_output_dir, run_tag):
     result = subprocess.run(
         [
-            "python", "e2e-metrics/measure_scores.py",
+            sys.executable, "e2e-metrics/measure_scores.py",
             "--python",
             f"{results_output_dir}/testset.txt",
             f"{results_output_dir}/{run_tag}/system_outputs_uniq.txt"
@@ -103,7 +106,7 @@ def prepare_for_evaluation(original_ds, results_output_dir, run_tag):
             seen.add(mr)
 
     output_path = f"{results_output_dir}/{run_tag}/{SYSTEM_OUTPUTS_PATH}_uniq.txt"
-    os.makedirs(os.path.dirname(f"{results_output_dir}/{run_tag}"), exist_ok=True)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     # 4. Write the reduced file
     with open(output_path, "w", encoding="utf8") as fout:
@@ -111,6 +114,48 @@ def prepare_for_evaluation(original_ds, results_output_dir, run_tag):
             fout.write(line + "\n")
 
     print(f"✅ Wrote {SYSTEM_OUTPUTS_PATH}_uniq with {len(uniq_outputs)} lines")
+
+
+def write_reference_file(original_ds, results_output_dir):
+    """Write the official E2E multi-reference file used by e2e-metrics."""
+    reference_path = Path(results_output_dir) / "testset.txt"
+    reference_path.parent.mkdir(parents=True, exist_ok=True)
+
+    groups = OrderedDict()
+    for ex in original_ds["test"]:
+        mr = ex["meaning_representation"]
+        ref = ex["human_reference"].strip()
+        groups.setdefault(mr, []).append(ref)
+
+    with reference_path.open("w", encoding="utf8") as fout:
+        for idx, refs in enumerate(groups.values()):
+            for ref in refs:
+                fout.write(ref + "\n")
+            if idx < len(groups) - 1:
+                fout.write("\n")
+
+    print(f"✅ Wrote references to {reference_path} ({len(groups)} MR groups)")
+
+
+def write_run_metadata(output_dir, models_dir, results_dir, run_tag, metadata):
+    run_dir = Path(output_dir) / results_dir / run_tag
+    run_dir.mkdir(parents=True, exist_ok=True)
+    metadata_path = run_dir / "run_metadata.json"
+    payload = {
+        "run_tag": run_tag,
+        "model_path": str(Path(output_dir) / models_dir / run_tag),
+        "results_path": str(run_dir),
+        "python": sys.version,
+        "platform": platform.platform(),
+        "torch": torch.__version__,
+        "transformers": transformers.__version__,
+        "cuda_available": torch.cuda.is_available(),
+        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+        **metadata,
+    }
+    with metadata_path.open("w", encoding="utf8") as fout:
+        json.dump(payload, fout, indent=2, sort_keys=True, default=str)
+    print(f"✅ Wrote run metadata to {metadata_path}")
 
 
 def set_tokenizer(tokenizer, padding_side):
@@ -174,8 +219,9 @@ def finetune_model(tokenizer,training_args, orthoLoRA_args, ds, device, data_col
     initial_sigma          = orthoLoRA_args.initial_sigma,    # std-dev for the trainable Σ entries
     uiortholora_alpha      = orthoLoRA_args.uiortholora_alpha,
     uiortholora_dropout    = orthoLoRA_args.uiortholora_dropout,
-    num_svalues_to_adapt   = orthoLoRA_args.num_svalues_to_adapt,       
-    num_svectors_to_adapt  = orthoLoRA_args.num_svectors_to_adapt,       
+    num_svalues_to_adapt   = orthoLoRA_args.num_svalues_to_adapt,
+    num_svectors_to_adapt  = orthoLoRA_args.num_svectors_to_adapt,
+    use_de                 = getattr(orthoLoRA_args, "use_de", True),
     task_type              = TaskType.CAUSAL_LM)
 
     # lora_cfg = LoraConfig(
@@ -250,6 +296,7 @@ def run_inference(
         ds["test"],
         batch_size=inference_args["inference_batch_size"],
         collate_fn=collate_fn,
+        shuffle=False,
     )
 
     for item in tqdm(dataloader):
@@ -285,7 +332,8 @@ def run_inference(
 
 def train_and_evaluate(output_dir, models_dir, results_dir,
                        model_type="gpt2-medium", training_args=None, finetune=False, peft_config=None,
-                       inference_args=None, run_tag=None, inference=False, evaluate=False, seed=42):
+                       inference_args=None, run_tag=None, inference=False, evaluate=False, seed=42,
+                       metadata=None):
     print("training and evaluating \n", flush=True)
 
     # set seed and device
@@ -293,6 +341,8 @@ def train_and_evaluate(output_dir, models_dir, results_dir,
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_path = f"{output_dir}/{models_dir}/{run_tag}"
     results_output_dir = f"{output_dir}/{results_dir}"
+    Path(model_path).mkdir(parents=True, exist_ok=True)
+    Path(results_output_dir).mkdir(parents=True, exist_ok=True)
     print("device: ", device, flush=True)   
 
     tokenizer = get_tokenizer(model_type)
@@ -302,6 +352,8 @@ def train_and_evaluate(output_dir, models_dir, results_dir,
     ds = load_and_prepare(tokenizer)
     original_ds = load_dataset("tuetschek/e2e_nlg", trust_remote_code=True)
     print("dataset loaded \n", flush=True)
+    if metadata is not None:
+        write_run_metadata(output_dir, models_dir, results_dir, run_tag, metadata)
 
     if finetune:
         data_collator = DataCollatorWithPadding(tokenizer, padding=True)
@@ -318,5 +370,6 @@ def train_and_evaluate(output_dir, models_dir, results_dir,
         run_inference(model, tokenizer, ds, inference_args, out_dir=training_args.output_dir)
 
     if evaluate:
+        write_reference_file(original_ds, results_output_dir)
         prepare_for_evaluation(original_ds, results_output_dir, run_tag)
         run_evaluation(results_output_dir, run_tag)

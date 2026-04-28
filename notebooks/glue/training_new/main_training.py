@@ -22,8 +22,11 @@ def main():
     parser.add_argument("--uiortholora_dropout", type=float)
     parser.add_argument("--target_modules", nargs="+")               # e.g., ["q_proj", "v_proj"]
     parser.add_argument("--resume_from_checkpoint", type=str, default=None)
+    parser.add_argument("--results_dir", type=str, default=None)
+    parser.add_argument("--no_de", action="store_true", help="Disable D and E diagonal scalers")
 
     args = parser.parse_args()
+    args.use_de = not args.no_de
     train_model(args)
 
 

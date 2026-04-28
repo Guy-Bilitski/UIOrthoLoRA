@@ -1,9 +1,10 @@
 import os
+import shutil
 import torch, evaluate
 from datasets import load_dataset
 from transformers import (
     AutoTokenizer, AutoModelForSequenceClassification,
-    TrainingArguments, Trainer
+    TrainingArguments, Trainer, DataCollatorWithPadding
 )
 from peft import UIOrthoLoRAConfig, get_peft_model, TaskType
 from datetime import datetime
@@ -79,14 +80,12 @@ def prepare_dataset(tokenizer, max_len=128, task="sst2"):
             return tokenizer(
                 ex[c1],
                 truncation=True,
-                padding="max_length",
                 max_length=max_len,
             )
         return tokenizer(                           # sentence-pair tasks
             ex[c1],
             ex[c2],
             truncation=True,
-            padding="max_length",
             max_length=max_len,
         )
 
@@ -97,7 +96,7 @@ def prepare_dataset(tokenizer, max_len=128, task="sst2"):
         ds = ds.map(lambda x: {"labels": [float(l) for l in x["labels"]]})
 
     ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
-    return ds
+    return ds, tokenizer
 
 # def compute_metrics(eval_pred):
 #     logits, labels = eval_pred
@@ -143,7 +142,11 @@ def print_trainable_params(model):
     print(f"Trainable %: {100 * trainable / total:.8f}%")
 
 
-def write_results(score, timestamp, args, base_dir="results/glue"):
+def _results_dir(args):
+    return getattr(args, "results_dir", "results/glue")
+
+def write_results(score, timestamp, args):
+    base_dir = _results_dir(args)
     os.makedirs(base_dir, exist_ok=True)
     csv_path = os.path.join(base_dir, f"{args.model_type.lower()}_{args.task}_seeds2.csv")
 
@@ -154,6 +157,7 @@ def write_results(score, timestamp, args, base_dir="results/glue"):
         "adapter_lr": args.adapter_lr,
         "scaler": args.initial_scaler,
         "sigma": args.initial_sigma,
+        "use_de": getattr(args, "use_de", True),
         "score": round(score, 8),
         "seed": args.seed,
         "timestamp": timestamp
@@ -168,15 +172,17 @@ def write_results(score, timestamp, args, base_dir="results/glue"):
         df.to_csv(csv_path, mode='w', index=False, header=True)
 
 
-def is_duplicate_run(args, base_dir="results/glue"):
+def is_duplicate_run(args):
     if getattr(args, "resume_from_checkpoint", None):
         return False
+    base_dir = _results_dir(args)
     csv_path = os.path.join(base_dir, f"{args.model_type.lower()}_{args.task}_seeds2.csv")
     if not os.path.exists(csv_path):
         return False  # No file yet
 
     try:
         df_existing = pd.read_csv(csv_path)
+        use_de = getattr(args, "use_de", True)
         duplicate = df_existing[
             (df_existing["num_svalues"] == args.num_svalues_to_adapt) &
             (df_existing["num_svectors"] == args.num_svectors_to_adapt) &
@@ -184,7 +190,8 @@ def is_duplicate_run(args, base_dir="results/glue"):
             (df_existing["adapter_lr"] == args.adapter_lr) &
             (df_existing["scaler"] == args.initial_scaler) &
             (df_existing["sigma"] == args.initial_sigma) &
-            (df_existing["seed"] == args.seed)
+            (df_existing["seed"] == args.seed) &
+            (df_existing["use_de"] == use_de)
         ]
         return not duplicate.empty
     except Exception as e:
@@ -206,6 +213,7 @@ def get_peft_config(args):
                 initial_sigma=args.initial_sigma,
                 num_svalues_to_adapt=args.num_svalues_to_adapt,
                 num_svectors_to_adapt=args.num_svectors_to_adapt,
+                use_de=getattr(args, "use_de", True),
                 task_type=TaskType.SEQ_CLS)
     else:
         raise ValueError(f"Unsupported model type: {args.model_type}")
@@ -232,6 +240,8 @@ def prepare_trainer(model, args, data, tokenizer, eval_metric_type, timestamp):
         logging_steps=50,
         save_total_limit=1,
         seed=args.seed,
+        bf16=True,
+        dataloader_num_workers=4,
     )
 
     trainer = UIOrthoLoRATrainer(
@@ -239,7 +249,8 @@ def prepare_trainer(model, args, data, tokenizer, eval_metric_type, timestamp):
         args=train_args,
         train_dataset=data["train"],
         eval_dataset=data["validation"],
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
+        data_collator=DataCollatorWithPadding(tokenizer),
         compute_metrics=compute_metrics,
         head_lr=args.head_lr,
         adapter_lr=args.adapter_lr
@@ -299,7 +310,7 @@ def train_model(args):
     print("Trainable parameters without head:")
     print_trainable_params(model)
 
-    data = prepare_dataset(tokenizer, task=args.task, max_len=args.max_len)
+    data, tokenizer = prepare_dataset(tokenizer, task=args.task, max_len=args.max_len)
 
     trainer = prepare_trainer(model, args, data, tokenizer, eval_metric_type, timestamp)
 
@@ -318,5 +329,6 @@ def train_model(args):
     score = trainer.evaluate()[score_key]
     print(f"Final {eval_metric_type}:", score)
     write_results(score, timestamp, args)
-    # task.close()
 
+    # Delete checkpoint dir to keep disk usage low
+    shutil.rmtree(trainer.args.output_dir, ignore_errors=True)

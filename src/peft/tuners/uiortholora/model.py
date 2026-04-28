@@ -209,6 +209,7 @@ class UIOrthoLoRAModel(BaseTuner):
             fan_in_fan_out = uiortholora_config.fan_in_fan_out,
             initial_scaler = uiortholora_config.initial_scaler,
             initial_sigma = uiortholora_config.initial_sigma,
+            use_de = uiortholora_config.use_de,
         )
         kwargs.update(common)
 

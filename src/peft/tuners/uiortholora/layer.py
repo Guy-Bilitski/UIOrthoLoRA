@@ -62,6 +62,7 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         uiortholora_dropout: float = 0.0,
         initial_scaler: Optional[float] = 1e-1,
         initial_sigma: Optional[float] = 1e-1,
+        use_de: bool = True,
         **kwargs,
     ):
             
@@ -102,9 +103,13 @@ class UIOrthoLoRALayer(BaseTunerLayer):
 
         self.uiortholora_sigma[adapter_name] = nn.Parameter(torch.full((self.num_svalues_to_adapt,), initial_sigma, dtype=self.dtype))
 
-        # Initialize D and E with provided scaler or default of 1
-        self.uiortholora_D[adapter_name] = nn.Parameter(torch.full((self.in_features,), initial_scaler, dtype=self.dtype))
-        self.uiortholora_E[adapter_name] = nn.Parameter(torch.full((self.out_features,), initial_scaler, dtype=self.dtype))
+        # Initialize D and E; freeze them to 1 when use_de=False so they don't participate in training
+        de_init = initial_scaler if use_de else 1.0
+        self.uiortholora_D[adapter_name] = nn.Parameter(torch.full((self.in_features,), de_init, dtype=self.dtype), requires_grad=use_de)
+        self.uiortholora_E[adapter_name] = nn.Parameter(torch.full((self.out_features,), de_init, dtype=self.dtype), requires_grad=use_de)
+        if not use_de:
+            print(f"[UIOrthoLoRA] D and E DISABLED for adapter '{adapter_name}' "
+                  f"(frozen to 1, requires_grad=False, not applied in forward/merge)")
 
         if self.num_svectors_to_adapt == 0:
             left_orthogonal = IdentityWithTranspose()
@@ -121,7 +126,7 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         self.uiortholora_left_unitary[adapter_name] = left_orthogonal
         self.uiortholora_right_unitary[adapter_name] = right_orthogonal
 
-        self._meta[adapter_name] = dict(sf=scaling_factor, pos=enforce_sv_positive)
+        self._meta[adapter_name] = dict(sf=scaling_factor, pos=enforce_sv_positive, use_de=use_de)
 
         # Add dropout
         self.uiortholora_dropout.update(nn.ModuleDict({
@@ -186,17 +191,14 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
             uiortholora_alpha=uiortholora_alpha,
             uiortholora_dropout=uiortholora_dropout,
             initial_scaler=kwargs.pop("initial_scaler"),
-            initial_sigma=kwargs.pop("initial_sigma"))
+            initial_sigma=kwargs.pop("initial_sigma"),
+            use_de=kwargs.pop("use_de", True))
 
     def get_delta_weight(self, adapter: str) -> torch.Tensor:
         """
         Return ΔW = E[:,None] * (U @ diag(S) @ Vt) * D[None,:]
         Uses the learned parameters for merging.
         """
-        D = self.uiortholora_D[adapter]                 # (in,)
-        E = self.uiortholora_E[adapter]                 # (out,)
-
-        # Use trainable=False to take learned sigma and rotations
         U, S, Vt = self._calc_tuner_internal(adapter)  # U:(out,r), S:(r,), Vt:(r,in)
 
         # Internal adapter matrix: (out,r) * (r,) -> broadcast, then @ (r,in) -> (out,in)
@@ -206,7 +208,11 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
         w = self.get_base_layer().weight
         internal = internal.to(dtype=w.dtype, device=w.device)
 
-        # Apply row and column scaling
+        if not self._meta[adapter].get("use_de", True):
+            return internal
+
+        D = self.uiortholora_D[adapter]                 # (in,)
+        E = self.uiortholora_E[adapter]                 # (out,)
         return (E[:, None] * internal) * D[None, :]
 
 
@@ -297,22 +303,27 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
         for name in self.active_adapters:
             if name not in self.uiortholora_sigma:
                 continue
-            D = self.uiortholora_D[name].to(self.dtype)
-            E = self.uiortholora_E[name].to(self.dtype)
+            use_de = self._meta[name].get("use_de", True)
 
-            x_scaled = self.uiortholora_dropout[name](x) * D
+            x_dropped = self.uiortholora_dropout[name](x)
+            if use_de:
+                x_scaled = x_dropped * self.uiortholora_D[name].to(self.dtype)
+            else:
+                x_scaled = x_dropped
             x_scaled = x_scaled.to(self.dtype)
 
             U, S, Vt = self._calc_tuner_internal(name)
             mid = torch.matmul(x_scaled, Vt.transpose(-2, -1))
 
-            #multiply S from left with mid
             mid = mid * S
             mid = mid.to(self.dtype)
 
             y = torch.matmul(mid, U.transpose(-2, -1))
 
-            out = out + y * E
+            if use_de:
+                out = out + y * self.uiortholora_E[name].to(self.dtype)
+            else:
+                out = out + y
 
         return out
 
