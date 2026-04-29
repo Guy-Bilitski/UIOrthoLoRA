@@ -229,6 +229,7 @@ def prepare_trainer(model, args, data, tokenizer, eval_metric_type, timestamp):
     train_args = TrainingArguments(
         output_dir = f"outputs/{args.model_type.lower()}_{args.base_model_id.replace('/', '-')}_{args.task}_{timestamp}",
         per_device_train_batch_size=args.batch_size,
+        per_device_eval_batch_size=256,
         num_train_epochs=args.epochs,
         eval_strategy="epoch",
         save_strategy="epoch",
@@ -241,7 +242,10 @@ def prepare_trainer(model, args, data, tokenizer, eval_metric_type, timestamp):
         save_total_limit=1,
         seed=args.seed,
         bf16=True,
-        dataloader_num_workers=4,
+        dataloader_num_workers=8,
+        dataloader_pin_memory=True,
+        group_by_length=True,
+        torch_compile=True,
     )
 
     trainer = UIOrthoLoRATrainer(

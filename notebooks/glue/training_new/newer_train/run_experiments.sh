@@ -12,7 +12,8 @@ PYTHON="${PYTHON:-$REPO_ROOT/.venv/bin/python}"
 # Edit these values to choose what this launcher runs.
 MODEL_SIZE="large"
 USE_DE=true
-SEEDS=(42 123 2021 17 31415 1054)
+# SEEDS=(42 123 2021 17 31415 1054)
+SEEDS=(42)
 TASKS=()
 RESULTS_DIR="$SCRIPT_DIR/results/glue"
 
