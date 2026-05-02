@@ -33,7 +33,7 @@ TASK_CONFIGS = {
     "cola_lin": dict(
         epochs=[80],
         num_svalues=[256],
-        num_svectors=[30, 60, 90],
+        num_svectors=[45],
         head_lrs=[5e-3],
         adapter_lrs=[1e-2],  # best from glue_large_search (was 3e-2)
         scalers=[1e-2],
@@ -42,7 +42,7 @@ TASK_CONFIGS = {
     "sst2_lin": dict(
         epochs=[40],
         num_svalues=[256],
-        num_svectors=[30, 60, 90],
+        num_svectors=[45],
         head_lrs=[5e-3],     # best from glue_large_search (was 1e-2)
         adapter_lrs=[2e-2],  # best from glue_large_search (was 4e-2)
         scalers=[1e-1],
@@ -51,7 +51,7 @@ TASK_CONFIGS = {
     "mrpc_lin": dict(
         epochs=[30],
         num_svalues=[256],
-        num_svectors=[30, 60, 90],
+        num_svectors=[45],
         head_lrs=[1e-3],
         adapter_lrs=[2e-2],  # best from glue_large_search (was 5e-2)
         scalers=[1e-1],
@@ -60,7 +60,7 @@ TASK_CONFIGS = {
     "sts-b_lin": dict(
         epochs=[60],
         num_svalues=[256],
-        num_svectors=[30, 60, 90],
+        num_svectors=[45],
         head_lrs=[1e-3],     # best from glue_large_search (was 5e-3)
         adapter_lrs=[2e-2],  # best from glue_large_search (was 1e-2)
         scalers=[1e-1],
@@ -69,7 +69,7 @@ TASK_CONFIGS = {
     "qnli_lin": dict(
         epochs=[25],
         num_svalues=[256],
-        num_svectors=[30, 60, 90],
+        num_svectors=[45],
         head_lrs=[5e-4],     # best from glue_large_search (was 1e-3)
         adapter_lrs=[2e-2],
         scalers=[1e-1],
@@ -78,7 +78,7 @@ TASK_CONFIGS = {
     "rte_lin": dict(
         epochs=[90],
         num_svalues=[256],
-        num_svectors=[30, 60, 90],
+        num_svectors=[45],
         head_lrs=[5e-4],
         adapter_lrs=[2e-2],  # best from glue_large_search (was 1e-2)
         scalers=[1e-2],
