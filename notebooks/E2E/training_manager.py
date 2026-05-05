@@ -34,6 +34,9 @@ BASE_TRAIN_ARGS = dict(
     logging_steps=50,
     save_total_limit=1,
     report_to="none",
+    dataloader_num_workers=4,
+    dataloader_pin_memory=True,
+    dataloader_persistent_workers=True,
 )
 
 INFERENCE_ARGS = {
@@ -88,6 +91,10 @@ def build_parser():
     parser.add_argument("--no-evaluate", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--no-de", action="store_true", help="Disable D and E diagonal scalers (they are frozen to 1 and not trained)")
+    parser.add_argument("--bf16", action="store_true", default=True, help="Use bf16 mixed precision (A100 native). Default on.")
+    parser.add_argument("--no-bf16", dest="bf16", action="store_false", help="Disable bf16 (fall back to fp32).")
+    parser.add_argument("--strict-determinism", action="store_true", help="Force deterministic algorithms (slower).")
+    parser.add_argument("--dataloader-workers", type=int, default=BASE_TRAIN_ARGS["dataloader_num_workers"])
     return parser
 
 
@@ -118,6 +125,9 @@ def build_training_args(args, results_path, lr, seed):
         warmup_steps=args.warmup_steps,
         weight_decay=args.weight_decay,
         label_smoothing_factor=args.label_smoothing,
+        dataloader_num_workers=args.dataloader_workers,
+        bf16=args.bf16,
+        tf32=True,
     )
     return TrainingArguments(
         output_dir=results_path,
@@ -192,6 +202,7 @@ def main() -> None:
             evaluate=not args.no_evaluate,
             seed=seed,
             metadata=metadata,
+            strict_determinism=args.strict_determinism,
         )
         print(f"✅ Finished run {run_tag}")
 

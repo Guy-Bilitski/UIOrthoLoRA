@@ -19,24 +19,47 @@ from collections import OrderedDict
 
 SYSTEM_OUTPUTS_PATH = "system_outputs"
 
-def set_seed(seed):
+# Local CSV mirror of tuetschek/e2e_nlg (HF script-based loader is no longer supported in
+# datasets >= 4.0). Files are downloaded once into notebooks/E2E/data/ and renamed to the
+# original schema so the rest of the pipeline is untouched.
+_E2E_DATA_DIR = Path(__file__).resolve().parent / "data"
+_E2E_CSV_FILES = {
+    "train": str(_E2E_DATA_DIR / "trainset.csv"),
+    "validation": str(_E2E_DATA_DIR / "devset.csv"),
+    "test": str(_E2E_DATA_DIR / "testset_w_refs.csv"),
+}
+
+
+def load_e2e_dataset():
+    ds = load_dataset("csv", data_files=_E2E_CSV_FILES)
+    return ds.rename_columns({"mr": "meaning_representation", "ref": "human_reference"})
+
+def set_seed(seed, strict_determinism=False):
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # For multi-GPU (even if you only use one)
-    
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    torch.use_deterministic_algorithms(True, warn_only=True)
+
+    if strict_determinism:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True, warn_only=True)
+    else:
+        # Speed-first defaults for A100: enable cuDNN autotuning and TF32 matmul.
+        # Seeds are still set so runs remain reproducible-enough for paper-grade comparisons.
+        torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
 
     transformers.set_seed(seed)  # affects Hugging Face Trainer, etc.
 
-    print(f"✅ Seed set to {seed} for reproducibility")
+    print(f"✅ Seed set to {seed} (strict_determinism={strict_determinism})")
 
 def load_and_prepare(tokenizer):
-    ds = load_dataset("tuetschek/e2e_nlg", trust_remote_code=True)
+    ds = load_e2e_dataset()
 
     def to_features(rec):
         prompt    = f"{rec['meaning_representation']} => "
@@ -254,8 +277,15 @@ def finetune_model(tokenizer,training_args, orthoLoRA_args, ds, device, data_col
         )
 
     trainer.train()
-    trainer.save_model(model_path)
-    print("model saved to ", model_path, flush=True)
+    try:
+        trainer.save_model(model_path)
+        print("model saved to ", model_path, flush=True)
+    except Exception as exc:
+        print(
+            f"⚠️  Could not save model to {model_path}: {exc}. "
+            "Continuing with the trained in-memory model for inference/evaluation.",
+            flush=True,
+        )
 
     return trainer.model
 
@@ -333,11 +363,11 @@ def run_inference(
 def train_and_evaluate(output_dir, models_dir, results_dir,
                        model_type="gpt2-medium", training_args=None, finetune=False, peft_config=None,
                        inference_args=None, run_tag=None, inference=False, evaluate=False, seed=42,
-                       metadata=None):
+                       metadata=None, strict_determinism=False):
     print("training and evaluating \n", flush=True)
 
     # set seed and device
-    set_seed(seed)
+    set_seed(seed, strict_determinism=strict_determinism)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_path = f"{output_dir}/{models_dir}/{run_tag}"
     results_output_dir = f"{output_dir}/{results_dir}"
@@ -350,7 +380,7 @@ def train_and_evaluate(output_dir, models_dir, results_dir,
 
     # load dataset
     ds = load_and_prepare(tokenizer)
-    original_ds = load_dataset("tuetschek/e2e_nlg", trust_remote_code=True)
+    original_ds = load_e2e_dataset()
     print("dataset loaded \n", flush=True)
     if metadata is not None:
         write_run_metadata(output_dir, models_dir, results_dir, run_tag, metadata)

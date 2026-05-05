@@ -1,0 +1,164 @@
+{
+  "config": {
+    "ablation": "rte_soft_mixing_regularization",
+    "variants": {
+      "A_no_reg": {
+        "lambda_E_mix": 0.0,
+        "lambda_D_mix": 0.0
+      },
+      "B_muE_only": {
+        "lambda_E_mix": 0.001,
+        "lambda_D_mix": 0.0
+      },
+      "C_muE_nuD": {
+        "lambda_E_mix": 0.001,
+        "lambda_D_mix": 0.001
+      }
+    },
+    "args": {
+      "model_size": "base",
+      "base_model_id": null,
+      "seeds": [
+        42
+      ],
+      "variants": [
+        "C_muE_nuD"
+      ],
+      "epochs": null,
+      "batch_size": 64,
+      "max_len": 256,
+      "output_dir": "results/rte_ablation_smoke",
+      "use_de": true,
+      "cuda_visible_devices": null,
+      "smoke": true
+    },
+    "task_config": {
+      "epochs": [
+        90
+      ],
+      "num_svalues": [
+        256
+      ],
+      "num_svectors": [
+        0
+      ],
+      "head_lrs": [
+        0.0005
+      ],
+      "adapter_lrs": [
+        0.03
+      ],
+      "scalers": [
+        0.01
+      ],
+      "sigmas": [
+        0.01
+      ]
+    },
+    "target_modules": [
+      "attention.output.dense",
+      "query",
+      "key",
+      "value"
+    ]
+  },
+  "runs": [
+    {
+      "run_name": "C_muE_nuD_seed42",
+      "seed": 42,
+      "lambda_E_mix": 0.001,
+      "lambda_D_mix": 0.001,
+      "best_val_score": 0.5270758122743683,
+      "final_val_score": 0.5270758122743683,
+      "best_checkpoint_step": 39,
+      "trainable_params": 86016,
+      "total_train_time": 8.913151025772095,
+      "train_time_per_epoch": 8.913151025772095,
+      "peak_gpu_memory_bytes": 8364489216,
+      "epochs": 1,
+      "summary_spectral": {
+        "mean_mu_E": 0.0049937578102496145,
+        "max_mu_E": 0.030903847888112068,
+        "mean_nu_D": 0.004578439363588889,
+        "max_nu_D": 0.01954871602356434,
+        "mean_M_E_fro": 0.01902183543037002,
+        "max_M_E_fro": 0.06410478800535202,
+        "mean_M_D_fro": 0.013384906070617339,
+        "max_M_D_fro": 0.024559270590543747,
+        "mean_RelPert_2": 3.7696631712454597e-05,
+        "max_RelPert_2": 0.00022236061340663582,
+        "mean_RelPert_F": 5.5394160957196924e-05,
+        "max_RelPert_F": 0.0001490151189500466,
+        "mean_Leak11": 0.959059601649642,
+        "max_Leak11": 0.9979206323623657,
+        "mean_Leak12": 0.23816463723778725,
+        "max_Leak12": 0.48340415954589844,
+        "mean_Leak21": 0.2355896393613269,
+        "max_Leak21": 0.6586365103721619,
+        "mean_Leak11_F": 0.9888480131824812,
+        "max_Leak11_F": 0.9981591701507568,
+        "mean_Leak12_F": 0.0649326709875216,
+        "max_Leak12_F": 0.21957208216190338,
+        "mean_Leak21_F": 0.09032379160635173,
+        "max_Leak21_F": 0.2947745621204376,
+        "mean_OffTailRatio_2": 0.9882771472136179,
+        "max_OffTailRatio_2": 1.000036597251892,
+        "mean_OffTailRatio_F": 0.9978326012690862,
+        "max_OffTailRatio_F": 0.9999430775642395,
+        "mean_Drift_U": 0.022657347105753917,
+        "max_Drift_U": 0.033356256783008575,
+        "mean_Drift_V": 0.0,
+        "max_Drift_V": 0.0,
+        "mean_SVDrift": 0.00021613968283418217,
+        "max_SVDrift": 0.00037331992643885314
+      },
+      "step_log": {
+        "step": [
+          0,
+          25
+        ],
+        "task_loss": [
+          0.68951416015625,
+          0.688385009765625
+        ],
+        "mix_E": [
+          3.122222203000291e-10,
+          0.08207503706216812
+        ],
+        "mix_D": [
+          7.950826802494149e-11,
+          0.031419575214385986
+        ],
+        "mix_loss": [
+          3.9173048485552364e-13,
+          0.00011349462147336453
+        ],
+        "total_loss": [
+          0.68951416015625,
+          0.6884984970092773
+        ]
+      },
+      "eval_log": [
+        {
+          "step": 39,
+          "epoch": 1.0,
+          "eval_loss": 0.6888307929039001,
+          "eval_accuracy": 0.5270758122743683,
+          "eval_runtime": 0.5411,
+          "eval_samples_per_second": 511.957,
+          "eval_steps_per_second": 3.696
+        },
+        {
+          "step": 39,
+          "epoch": 1.0,
+          "eval_loss": 0.6888307929039001,
+          "eval_accuracy": 0.5270758122743683,
+          "eval_runtime": 0.4998,
+          "eval_samples_per_second": 554.26,
+          "eval_steps_per_second": 4.002
+        }
+      ],
+      "timestamp": "20260504-115029"
+    }
+  ]
+}
