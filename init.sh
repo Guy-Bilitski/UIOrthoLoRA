@@ -3,7 +3,7 @@
 
 # fail on error
 set -e
-export CONDA_ENV="intlx"
+export CONDA_ENV="${CONDA_ENV:-uiortholora}"
 
 
 # go to project source dir

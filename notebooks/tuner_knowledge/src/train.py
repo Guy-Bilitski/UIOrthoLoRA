@@ -1,9 +1,8 @@
 import gc
 import os
 import sys
-# Adjust paths as necessary
-sys.path.append(os.path.expanduser("/home/guy.bilitski/UIOrthoLoRA/notebooks/tuner_knowledge"))
-sys.path.append(os.path.expanduser("/home/guyb/projects/UIOrthoLoRA/notebooks/tuner_knowledge"))
+# Make sibling packages importable regardless of where this script is launched from.
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import torch
 import json

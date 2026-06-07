@@ -4,7 +4,7 @@ set -euo pipefail
 WAIT_PID="${1:-}"
 STAMP="${2:-$(date -u +%Y%m%d_%H%M)}"
 
-PYTHON="${PYTHON:-/home/guy_bilitski_idcdsi_ongcp_org/UIOrthoLoRA/.venv/bin/python}"
+PYTHON="${PYTHON:-python}"
 LOG_DIR="outputs/logs"
 SUMMARY="$LOG_DIR/e2e_phase2_lr003_${STAMP}_summary.txt"
 PHASE2_LOG="$LOG_DIR/e2e_phase2_size_lr003_${STAMP}.log"
