@@ -12,3 +12,4 @@ pyyaml
 datasets
 psutil
 setuptools
+trl

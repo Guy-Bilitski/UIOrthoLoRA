@@ -30,7 +30,7 @@ class C3AModel(BaseTuner):
     """
     Creates C3A model from a pretrained transformers model.
 
-    The method is described in detail in [TODO].
+    The method is described in detail in https://huggingface.co/papers/2407.19342.
 
     Args:
         model ([`torch.nn.Module`]): The model to be adapted.
@@ -93,5 +93,9 @@ class C3AModel(BaseTuner):
 
         if isinstance(target_base_layer, torch.nn.Linear):
             new_module = C3ALinear(target, adapter_name, **kwargs)
+        else:
+            raise ValueError(
+                f"Target module {target} is not supported. Currently, only `torch.nn.Linear` is supported."
+            )
 
         return new_module
