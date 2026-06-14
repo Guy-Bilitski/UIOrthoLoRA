@@ -1,0 +1,5 @@
+python uio_inprocess.py --run_name uio_kval410_kvec410 --k_val 410 --k_vec 410 --use_de 1
+python uio_inprocess.py --run_name uio_kval1024_kvec410 --k_val 1024 --k_vec 410 --use_de 1
+python uio_inprocess.py --run_name uio_kval3072_kvec410 --k_val 3072 --k_vec 410 --use_de 1
+python uio_inprocess.py --run_name uio_kval4096_kvec410 --k_val 4096 --k_vec 410 --use_de 1
+python uio_inprocess.py --run_name uilin_kval4096_kvec0 --k_val 4096 --k_vec 0 --use_de 1

@@ -1,0 +1,8 @@
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name uioW2_k256_v32_dE0   --k_val 256  --k_vec 32  --use_de 0 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name uioW2_k512_v64_dE0   --k_val 512  --k_vec 64  --use_de 0 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name uioW2_k1024_v128_dE0 --k_val 1024 --k_vec 128 --use_de 0 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name uioW2_k2048_v410_dE0 --k_val 2048 --k_vec 410 --use_de 0 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name uioW2_k512_v64_dE1   --k_val 512  --k_vec 64  --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name uioW2_k1024_v128_dE1 --k_val 1024 --k_vec 128 --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name uioW2_k2048_v256_dE1 --k_val 2048 --k_vec 256 --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name uioW2_k256_v32_dE1   --k_val 256  --k_vec 32  --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512

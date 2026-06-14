@@ -1,0 +1,8 @@
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name d1_clean_lr1e3 --k_val 1024 --k_vec 128 --use_de 0 --drop_major 1 --learning_rate 1e-3 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name d1_leaky_lr1e3 --k_val 1024 --k_vec 128 --use_de 1 --drop_major 1 --learning_rate 1e-3 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name d1_clean_lr3e3 --k_val 1024 --k_vec 128 --use_de 0 --drop_major 1 --learning_rate 3e-3 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name d1_leaky_lr3e3 --k_val 1024 --k_vec 128 --use_de 1 --drop_major 1 --learning_rate 3e-3 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name d1_clean_lr1e2 --k_val 1024 --k_vec 128 --use_de 0 --drop_major 1 --learning_rate 1e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name d1_leaky_lr1e2 --k_val 1024 --k_vec 128 --use_de 1 --drop_major 1 --learning_rate 1e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name d1_clean_lr2e2 --k_val 1024 --k_vec 128 --use_de 0 --drop_major 1 --learning_rate 2e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name d1_leaky_lr2e2 --k_val 1024 --k_vec 128 --use_de 1 --drop_major 1 --learning_rate 2e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512

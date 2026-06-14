@@ -1,0 +1,5 @@
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics.py --adapter /scratch/cf_models/clora_cs_k128 --run_name clora_k128
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics.py --adapter /scratch/cf_models/clora_cs_k256 --run_name clora_k256
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics.py --adapter /scratch/cf_models/clora_cs_k512 --run_name clora_k512
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics.py --adapter /scratch/cf_models/clora_cs_k1024 --run_name clora_k1024
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics.py --adapter /scratch/cf_models/clora_cs_k2048 --run_name clora_k2048

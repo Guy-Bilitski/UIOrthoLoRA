@@ -1,0 +1,6 @@
+python uio_inprocess.py --run_name lrsweep_lr3e4 --k_val 2048 --k_vec 410 --use_de 1 --learning_rate 3e-4 --max_samples 32000 --num_epochs 1 --warmup_steps 20 --eval_limit 100 --skip_retention
+python uio_inprocess.py --run_name lrsweep_lr1e3 --k_val 2048 --k_vec 410 --use_de 1 --learning_rate 1e-3 --max_samples 32000 --num_epochs 1 --warmup_steps 20 --eval_limit 100 --skip_retention
+python uio_inprocess.py --run_name lrsweep_lr2e3 --k_val 2048 --k_vec 410 --use_de 1 --learning_rate 2e-3 --max_samples 32000 --num_epochs 1 --warmup_steps 20 --eval_limit 100 --skip_retention
+python uio_inprocess.py --run_name lrsweep_lr3e3 --k_val 2048 --k_vec 410 --use_de 1 --learning_rate 3e-3 --max_samples 32000 --num_epochs 1 --warmup_steps 20 --eval_limit 100 --skip_retention
+python uio_inprocess.py --run_name lrsweep_lr5e3 --k_val 2048 --k_vec 410 --use_de 1 --learning_rate 5e-3 --max_samples 32000 --num_epochs 1 --warmup_steps 20 --eval_limit 100 --skip_retention
+python uio_inprocess.py --run_name lrsweep_lr1e2 --k_val 2048 --k_vec 410 --use_de 1 --learning_rate 1e-2 --max_samples 32000 --num_epochs 1 --warmup_steps 20 --eval_limit 100 --skip_retention

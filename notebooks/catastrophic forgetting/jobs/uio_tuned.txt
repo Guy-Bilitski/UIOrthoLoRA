@@ -1,0 +1,8 @@
+python uio_inprocess.py --run_name uioT_k410_lr1e2  --k_val 410  --k_vec 410 --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+python uio_inprocess.py --run_name uioT_k1024_lr1e2 --k_val 1024 --k_vec 410 --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+python uio_inprocess.py --run_name uioT_k2048_lr1e2 --k_val 2048 --k_vec 410 --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+python uio_inprocess.py --run_name uioT_k3072_lr1e2 --k_val 3072 --k_vec 410 --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+python uio_inprocess.py --run_name uioT_k4096_lr1e2 --k_val 4096 --k_vec 410 --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512
+python uio_inprocess.py --run_name uioT_k2048_lr2e2 --k_val 2048 --k_vec 410 --use_de 1 --learning_rate 2e-2 --ret_limit 64 --ret_max_gen 512
+python uio_inprocess.py --run_name uioT_k2048_lr5e3 --k_val 2048 --k_vec 410 --use_de 1 --learning_rate 5e-3 --ret_limit 64 --ret_max_gen 512
+python uio_inprocess.py --run_name uioT_uilin_lr1e2 --k_val 4096 --k_vec 0   --use_de 1 --learning_rate 1e-2 --ret_limit 64 --ret_max_gen 512

@@ -1,0 +1,6 @@
+python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k2048
+python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k128
+python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k256
+python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k512
+python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k1024
+python eval_one_gpu.py --adapter models/lora_cs_l2-7b_r32

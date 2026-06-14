@@ -1,0 +1,3 @@
+python eval_one_gpu.py --adapter models/lora_cs_l2-7b_r32 --run_name calib_lora_fastret --ret_limit 64 --ret_max_gen 512 --eval_limit 400
+python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k1024 --run_name calib_clora_k1024_fastret --ret_limit 64 --ret_max_gen 512 --eval_limit 400
+python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k2048 --run_name calib_clora_k2048_fastret --ret_limit 64 --ret_max_gen 512 --eval_limit 400

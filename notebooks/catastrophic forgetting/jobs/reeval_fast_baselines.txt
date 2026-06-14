@@ -1,0 +1,6 @@
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k128 --run_name clora_k128_fast --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k256 --run_name clora_k256_fast --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k512 --run_name clora_k512_fast --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k1024 --run_name clora_k1024_fast --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k2048 --run_name clora_k2048_fast --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/lora_cs_r32_repro --run_name lora_wd0_fast --ret_limit 64 --ret_max_gen 512 && /home/guy/UIOrthoLoRA/.venv/bin/python forensics.py --adapter /scratch/cf_models/lora_cs_r32_repro --run_name lora_wd0

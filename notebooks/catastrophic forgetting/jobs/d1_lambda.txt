@@ -1,0 +1,5 @@
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name lam_E1e4_D1e4 --k_val 1024 --k_vec 128 --use_de 1 --drop_major 1 --learning_rate 1e-2 --lambda_E 1e-4 --lambda_D 1e-4 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name lam_E1e3_D1e3 --k_val 1024 --k_vec 128 --use_de 1 --drop_major 1 --learning_rate 1e-2 --lambda_E 1e-3 --lambda_D 1e-3 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name lam_E1e2_D1e2 --k_val 1024 --k_vec 128 --use_de 1 --drop_major 1 --learning_rate 1e-2 --lambda_E 1e-2 --lambda_D 1e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name lam_E1e1_D1e1 --k_val 1024 --k_vec 128 --use_de 1 --drop_major 1 --learning_rate 1e-2 --lambda_E 1e-1 --lambda_D 1e-1 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name lam_E1e2_D0_onesided --k_val 1024 --k_vec 128 --use_de 1 --drop_major 1 --learning_rate 1e-2 --lambda_E 1e-2 --lambda_D 0 --num_epochs 3 --ret_limit 64 --ret_max_gen 512

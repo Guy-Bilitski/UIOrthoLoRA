@@ -1,0 +1,1 @@
+python uio_inprocess.py --run_name uio_kval2048_kvec410 --k_val 2048 --k_vec 410 --use_de 1  # launched standalone on GPU5
