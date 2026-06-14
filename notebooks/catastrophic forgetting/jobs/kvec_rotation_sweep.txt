@@ -1,0 +1,6 @@
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name rot_k410_v410_dE1_lr1e2 --k_val 410 --k_vec 410 --use_de 1 --drop_major 1 --learning_rate 1e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name rot_k410_v410_dE1_lr2e2 --k_val 410 --k_vec 410 --use_de 1 --drop_major 1 --learning_rate 2e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name rot_k410_v410_dE0_lr1e2 --k_val 410 --k_vec 410 --use_de 0 --drop_major 1 --learning_rate 1e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name rot_k1024_v1024_dE1_lr1e2 --k_val 1024 --k_vec 1024 --use_de 1 --drop_major 1 --learning_rate 1e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name rot_k1024_v1024_dE0_lr1e2 --k_val 1024 --k_vec 1024 --use_de 0 --drop_major 1 --learning_rate 1e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python uio_inprocess.py --run_name rot_k2048_v1024_dE1_lr1e2 --k_val 2048 --k_vec 1024 --use_de 1 --drop_major 1 --learning_rate 1e-2 --num_epochs 3 --ret_limit 64 --ret_max_gen 512

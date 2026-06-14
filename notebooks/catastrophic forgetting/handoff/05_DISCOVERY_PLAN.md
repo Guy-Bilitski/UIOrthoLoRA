@@ -87,6 +87,18 @@ the headline.
    sides" leakage-penalty result, exp B3).
 9. Figures, error bars, paper draft.
 
+## Phase-1 facts established (2026-06-14 eve)
+- BASELINE / retention ceiling = **26.0** (base Llama-2-7B, answer-only BBH 33.1 + MMLU-Pro 19.0).
+  Good configs (CLoRA-k2048 25.7, UIO-A5 ~26.9) essentially TIE it → forgetting <1 pt for strong
+  configs (noise). Retention CANNOT go higher; the attractive lever is ADAPTATION at the ceiling.
+- HYPERPARAM AUDIT: LR (3e-4→5e-2) and k_val (256→4096) thoroughly swept. **k_vec (rotation rank)
+  UNDER-explored** (mostly ratio 0.125). Full-rotation `uioT_k410` (k_vec=k_val=410, LEGACY) =
+  **CS 72.7 @ ret 25.0 @ ‖ΔW‖ₘₐₓ 9** — best adaptation-per-magnitude in the whole set.
+  => jobs/kvec_rotation_sweep.txt: full-rotation × drop_major=1 (corrected should beat the legacy
+  number). Hypothesis: rotation freedom buys high CS at low magnitude → high CS at the retention ceiling.
+- High LR raises CS to ~74 but only at retention-destroying magnitude (dwSVmax 200+). So magnitude,
+  not LR per se, is the binding constraint — consistent with D1.
+
 ## Honest risk register
 - D1 might come back "direction also matters" → still publishable (a quantified decomposition).
 - D2's "neutral" claim needs the LoRA anchor; CLoRA's target is an activation context subspace, not
