@@ -94,8 +94,10 @@ the headline.
 - HYPERPARAM AUDIT: LR (3e-4→5e-2) and k_val (256→4096) thoroughly swept. **k_vec (rotation rank)
   UNDER-explored** (mostly ratio 0.125). Full-rotation `uioT_k410` (k_vec=k_val=410, LEGACY) =
   **CS 72.7 @ ret 25.0 @ ‖ΔW‖ₘₐₓ 9** — best adaptation-per-magnitude in the whole set.
-  => jobs/kvec_rotation_sweep.txt: full-rotation × drop_major=1 (corrected should beat the legacy
-  number). Hypothesis: rotation freedom buys high CS at low magnitude → high CS at the retention ceiling.
+  => jobs/kval_kvec_grid.txt: JOINT 2-D (k_val × k_vec) map, drop_major=1. k_val = which spectral
+  BAND is adapted (= D3) ; k_vec = rotation freedom within it. They INTERACT (small band + full
+  rotation beat large band + low rotation on CS-per-magnitude). Hypothesis: rotation freedom buys
+  high CS at low magnitude → high CS at the retention ceiling; band size trades adapt vs preserve.
 - High LR raises CS to ~74 but only at retention-destroying magnitude (dwSVmax 200+). So magnitude,
   not LR per se, is the binding constraint — consistent with D1.
 
