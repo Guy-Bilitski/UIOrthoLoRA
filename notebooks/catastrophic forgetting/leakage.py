@@ -110,6 +110,51 @@ def uio_layer_leakage(layer, adapter="default", with_drift=True):
     return out
 
 
+def leakage_penalty(model, lambda_E=0.0, lambda_D=0.0, adapter="default"):
+    """GRAD-ENABLED directional-leakage penalty (exp B2 / the clean D1 intervention):
+        R_mix = lambda_E * sum ||M_E||_F^2  +  lambda_D * sum ||M_D||_F^2
+    where M_E = U_R^T (E . Ubar_r), M_D = V_R^T (D . Vbar_r) — the SAME quantities the
+    thermometers measure, but here in the autograd graph so training can drive directional
+    leakage down. Only meaningful with use_de=1 (E,D trainable). Lets us dial directional
+    leakage at ~fixed structure and ask whether retention tracks it (D1) vs magnitude."""
+    if lambda_E <= 0 and lambda_D <= 0:
+        return None
+    from peft.tuners.uiortholora.layer import UIOrthoLoRALayer
+    pen = None
+    for _, layer in model.named_modules():
+        if not isinstance(layer, UIOrthoLoRALayer):
+            continue
+        if adapter not in getattr(layer, "uiortholora_sigma", {}):
+            continue
+        if not layer._meta[adapter].get("use_de", True):
+            continue  # no E/D -> nothing to penalize
+        U1 = layer.uiortholora_U1[adapter].float()
+        Vt1 = layer.uiortholora_Vt1[adapter].float()
+        U2 = layer.uiortholora_U2[adapter].float()
+        U3 = layer.uiortholora_U3[adapter].float()
+        Vt2 = layer.uiortholora_Vt2[adapter].float()
+        Vt3 = layer.uiortholora_Vt3[adapter].float()
+        E = layer.uiortholora_E[adapter].float()
+        D = layer.uiortholora_D[adapter].float()
+        lu, rv = layer.uiortholora_left_unitary[adapter], layer.uiortholora_right_unitary[adapter]
+        if hasattr(lu, "weight"):
+            U3b = U3 @ lu.weight.float()
+            V3b = Vt3.transpose(-1, -2) @ rv.weight.float()
+        else:
+            U3b, V3b = U3, Vt3.transpose(-1, -2)
+        Ubar = torch.cat([U2, U3b], dim=1)                       # (out, k_val)
+        Vbar = torch.cat([Vt2.transpose(-1, -2), V3b], dim=1)    # (in, k_val)
+        term = 0.0
+        if lambda_E > 0:
+            M_E = U1.transpose(-1, -2) @ (E[:, None] * Ubar)     # (R, k_val)
+            term = term + lambda_E * (M_E * M_E).sum()
+        if lambda_D > 0:
+            M_D = Vt1 @ (D[:, None] * Vbar)                      # (R, k_val)
+            term = term + lambda_D * (M_D * M_D).sum()
+        pen = term if pen is None else pen + term
+    return pen
+
+
 @torch.no_grad()
 def model_leakage(model, adapter="default", with_drift=True, max_modules=None):
     """Aggregate (mean over adapted modules) the leakage diagnostics across a peft model."""

@@ -85,6 +85,8 @@ def main():
     ap.add_argument("--use_de", type=int, default=1)
     ap.add_argument("--drop_major", type=int, default=0,
                     help="1 = paper-correct: major/preserved band contributes 0 to ΔW (true-identity top subspace). exp A5.")
+    ap.add_argument("--lambda_E", type=float, default=0.0, help="directional-leakage penalty weight (left/E side). exp B2 / clean D1 knob.")
+    ap.add_argument("--lambda_D", type=float, default=0.0, help="directional-leakage penalty weight (right/D side).")
     ap.add_argument("--alpha", type=float, default=1.0)
     ap.add_argument("--initial_scaler", type=float, default=0.1)
     ap.add_argument("--initial_sigma", type=float, default=0.1)
@@ -140,9 +142,24 @@ def main():
     print(f"[{args.run_name}] UIOrthoLoRA k_val={args.k_val} k_vec={args.k_vec} use_de={args.use_de} "
           f"trainable={trainable:,} ({100*trainable/total:.3f}%)", flush=True)
 
+    # penalty-aware trainer: adds the grad-enabled directional-leakage penalty (exp B2 / clean D1)
+    class PenTrainer(transformers.Trainer):
+        def compute_loss(self, model, inputs, return_outputs=False, **kw):
+            out = model(**inputs)
+            loss = out.loss
+            import leakage as _lkp
+            pen = _lkp.leakage_penalty(model, args.lambda_E, args.lambda_D)
+            if pen is not None:
+                loss = loss + pen.to(loss.dtype)
+            return (loss, out) if return_outputs else loss
+
+    TrainerCls = PenTrainer if (args.lambda_E > 0 or args.lambda_D > 0) else transformers.Trainer
+    if TrainerCls is PenTrainer:
+        print(f"[{args.run_name}] leakage penalty ON: lambda_E={args.lambda_E} lambda_D={args.lambda_D}", flush=True)
+
     t0 = time.time()
     if not args.skip_train:
-        trainer = transformers.Trainer(
+        trainer = TrainerCls(
             model=model, train_dataset=train_data,
             args=transformers.TrainingArguments(
                 per_device_train_batch_size=args.micro_batch_size, gradient_accumulation_steps=grad_accum,
@@ -224,7 +241,7 @@ def main():
                "config": {"k_val": args.k_val, "k_vec": args.k_vec, "use_de": bool(args.use_de),
                           "drop_major": bool(args.drop_major), "learning_rate": args.learning_rate,
                           "initial_sigma": args.initial_sigma, "initial_scaler": args.initial_scaler,
-                          "seed": args.seed},
+                          "seed": args.seed, "lambda_E": args.lambda_E, "lambda_D": args.lambda_D},
                "trainable_params": trainable, "trainable_pct": round(100 * trainable / total, 4),
                "train_loss": train_loss, "train_s": train_s, "per_dataset": cs, "fdelta": fd,
                "leakage": leak, "forensics": fx, "headline": headline,
