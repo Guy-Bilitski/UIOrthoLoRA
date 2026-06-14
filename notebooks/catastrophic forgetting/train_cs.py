@@ -124,6 +124,8 @@ def main():
     ap.add_argument("--cutoff_len", type=int, default=256)
     ap.add_argument("--num_epochs", type=int, default=3)
     ap.add_argument("--learning_rate", type=float, default=3e-4)
+    ap.add_argument("--weight_decay", type=float, default=0.0,
+                    help="AdamW decay on adapter params = subspace-free MAGNITUDE knob (CLoRA control).")
     ap.add_argument("--batch_size", type=int, default=16)
     ap.add_argument("--micro_batch_size", type=int, default=16)
     ap.add_argument("--warmup_steps", type=int, default=100)
@@ -199,6 +201,7 @@ def main():
         per_device_train_batch_size=args.micro_batch_size,
         gradient_accumulation_steps=grad_accum, warmup_steps=args.warmup_steps,
         num_train_epochs=args.num_epochs, learning_rate=args.learning_rate, bf16=True,
+        weight_decay=args.weight_decay,
         logging_steps=10, optim="adamw_torch", lr_scheduler_type="linear",
         save_strategy="no", output_dir=out_dir, report_to="none", seed=args.seed)
     collator = DataCollatorForSeq2Seq(tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True)
