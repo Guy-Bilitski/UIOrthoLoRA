@@ -210,6 +210,7 @@ class UIOrthoLoRAModel(BaseTuner):
             initial_scaler = uiortholora_config.initial_scaler,
             initial_sigma = uiortholora_config.initial_sigma,
             use_de = uiortholora_config.use_de,
+            drop_major = getattr(uiortholora_config, "drop_major", False),
         )
         kwargs.update(common)
 

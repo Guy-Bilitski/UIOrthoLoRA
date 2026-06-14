@@ -44,6 +44,14 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         self.uiortholora_E = nn.ParameterDict()
         self.uiortholora_left_unitary = nn.ParameterDict()
         self.uiortholora_right_unitary = nn.ParameterDict()
+        # Frozen SVD basis of the (frozen) pretrained weight. Stored as
+        # requires_grad=False Parameters under the 'uiortholora_' prefix so PEFT
+        # PERSISTS them in the saved adapter — recomputing the SVD on reload is
+        # non-deterministic for near-degenerate singular values (the bottom
+        # subspace the rotators act on), which would make train != eval.
+        self.uiortholora_U1 = nn.ParameterDict(); self.uiortholora_S1 = nn.ParameterDict(); self.uiortholora_Vt1 = nn.ParameterDict()
+        self.uiortholora_U2 = nn.ParameterDict(); self.uiortholora_S2 = nn.ParameterDict(); self.uiortholora_Vt2 = nn.ParameterDict()
+        self.uiortholora_U3 = nn.ParameterDict(); self.uiortholora_S3 = nn.ParameterDict(); self.uiortholora_Vt3 = nn.ParameterDict()
         self.uiortholora_dropout = nn.ModuleDict()
         self.device = self.base_layer.weight.device
         self._meta: Dict[str, dict] = {}
@@ -63,6 +71,7 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         initial_scaler: Optional[float] = 1e-1,
         initial_sigma: Optional[float] = 1e-1,
         use_de: bool = True,
+        drop_major: bool = False,
         **kwargs,
     ):
             
@@ -76,7 +85,8 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         self.major_component_size = rank - self.num_svalues_to_adapt
         self.medium_component_size = rank - self.num_svectors_to_adapt
 
-        # Compute SVD and slice the smallest singular vectors
+        # Compute SVD and slice the smallest singular vectors. (On reload this runs
+        # once at construction, then the saved frozen Parameters below overwrite it.)
         if not self.buffers_loaded(adapter_name):
             with torch.no_grad():
                 U, S, Vt = torch.linalg.svd(base_w.float(), full_matrices=False)
@@ -84,22 +94,32 @@ class UIOrthoLoRALayer(BaseTunerLayer):
                 Vt = Vt.to(dtype=self.dtype)
                 S = S.to(dtype=self.dtype)
             print(f"Calculated SVD!")
+        else:
+            return  # SVD basis already present for this adapter; nothing to (re)build
 
-        # Major component between svalues and svectors
-        print(f"keeping major: {self.major_component_size}")
-        self.register_buffer(f"{adapter_name}_U1", U[:, :self.major_component_size].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_S1", torch.ones(self.major_component_size, dtype=self.dtype).detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_Vt1", Vt[:self.major_component_size, :].detach(), persistent=True)
+        def _frozen(t):
+            return nn.Parameter(t.detach().to(self.dtype), requires_grad=False)
 
-        # Medium component between svalues and svectors
-        self.register_buffer(f"{adapter_name}_U2", U[:, self.major_component_size:self.medium_component_size].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_S2", S[self.major_component_size:self.medium_component_size].to(self.dtype).detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_Vt2", Vt[self.major_component_size:self.medium_component_size, :].detach(), persistent=True)
-
-        # Small component
-        self.register_buffer(f"{adapter_name}_U3", U[:, self.medium_component_size:].detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_S3", S[self.medium_component_size:].to(self.dtype).detach(), persistent=True)
-        self.register_buffer(f"{adapter_name}_Vt3", Vt[self.medium_component_size:, :].detach(), persistent=True)
+        maj, med = self.major_component_size, self.medium_component_size
+        print(f"keeping major: {maj}  drop_major={drop_major}")
+        # Major component (top singular directions): kept frozen.
+        # Legacy: singular values -> 1, so the adapter ADDS U1·I·Vt1 (a rank-`maj` unit
+        # perturbation) to the frozen base in the preserved top subspace — NOT in the
+        # paper's ΔW (tail-only). drop_major=True sets these to 0 so the adapter delta is
+        # confined to the adapted tail and the preserved subspace stays true identity (exp A5).
+        self.drop_major = drop_major
+        self.uiortholora_U1[adapter_name] = _frozen(U[:, :maj])
+        _major_sv = torch.zeros(maj, dtype=self.dtype) if drop_major else torch.ones(maj, dtype=self.dtype)
+        self.uiortholora_S1[adapter_name] = _frozen(_major_sv)
+        self.uiortholora_Vt1[adapter_name] = _frozen(Vt[:maj, :])
+        # Medium component: frozen vectors, trainable sigma supplies the values
+        self.uiortholora_U2[adapter_name] = _frozen(U[:, maj:med])
+        self.uiortholora_S2[adapter_name] = _frozen(S[maj:med])
+        self.uiortholora_Vt2[adapter_name] = _frozen(Vt[maj:med, :])
+        # Small component: rotated by the trainable orthogonal matrices
+        self.uiortholora_U3[adapter_name] = _frozen(U[:, med:])
+        self.uiortholora_S3[adapter_name] = _frozen(S[med:])
+        self.uiortholora_Vt3[adapter_name] = _frozen(Vt[med:, :])
 
         self.uiortholora_sigma[adapter_name] = nn.Parameter(torch.full((self.num_svalues_to_adapt,), initial_sigma, dtype=self.dtype))
 
@@ -140,8 +160,8 @@ class UIOrthoLoRALayer(BaseTunerLayer):
         self.set_adapter(self.active_adapters)
 
     def buffers_loaded(self, adapter: str) -> bool:
-        # just check one of the core buffers
-        return hasattr(self, f"{adapter}_U1") and isinstance(getattr(self, f"{adapter}_U1"), torch.Tensor)
+        # just check one of the core SVD-basis tensors
+        return adapter in self.uiortholora_U1
 
 
 
@@ -192,7 +212,8 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
             uiortholora_dropout=uiortholora_dropout,
             initial_scaler=kwargs.pop("initial_scaler"),
             initial_sigma=kwargs.pop("initial_sigma"),
-            use_de=kwargs.pop("use_de", True))
+            use_de=kwargs.pop("use_de", True),
+            drop_major=kwargs.pop("drop_major", False))
 
     def get_delta_weight(self, adapter: str) -> torch.Tensor:
         """
@@ -253,13 +274,13 @@ class Linear(nn.Linear, UIOrthoLoRALayer):
                 self.get_base_layer().weight.data -= self.get_delta_weight(active_adapter)
 
     def _calc_tuner_internal(self, adapter: str):
-        U1 = getattr(self, f"{adapter}_U1")
-        Vt1 = getattr(self, f"{adapter}_Vt1")
-        S1 = getattr(self, f"{adapter}_S1")
-        U2 = getattr(self, f"{adapter}_U2")
-        Vt2 = getattr(self, f"{adapter}_Vt2")
-        U3 = getattr(self, f"{adapter}_U3")
-        Vt3 = getattr(self, f"{adapter}_Vt3")
+        U1 = self.uiortholora_U1[adapter]
+        Vt1 = self.uiortholora_Vt1[adapter]
+        S1 = self.uiortholora_S1[adapter]
+        U2 = self.uiortholora_U2[adapter]
+        Vt2 = self.uiortholora_Vt2[adapter]
+        U3 = self.uiortholora_U3[adapter]
+        Vt3 = self.uiortholora_Vt3[adapter]
 
         sigma = self.uiortholora_sigma[adapter]
         s2_size = self.medium_component_size - self.major_component_size

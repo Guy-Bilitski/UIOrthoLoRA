@@ -95,8 +95,17 @@ class UIOrthoLoRAConfig(PeftConfig):
         default=True,
         metadata={"help": "Whether to use D and E diagonal scalers. Set to False to disable them (they are frozen to 1 and not trained)."}
     )
+    drop_major: bool = field(
+        default=False,
+        metadata={"help": (
+            "If True, the frozen major/preserved band contributes ZERO to the adapter delta "
+            "(major-band singular values set to 0 instead of 1). This makes the preserved subspace a "
+            "true identity (paper-correct: ΔW touches only the adapted tail) instead of adding a "
+            "rank-(major) unit perturbation to the top subspace. Default False = legacy behavior."
+        )}
+    )
 
-    def __post_init__(self):        
+    def __post_init__(self):
         super().__post_init__()
         self.peft_type = PeftType.UIORTHOLORA
         self.target_modules = (

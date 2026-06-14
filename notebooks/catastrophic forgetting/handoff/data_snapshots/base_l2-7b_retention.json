@@ -1,0 +1,178 @@
+{
+  "run_name": "base_l2-7b",
+  "adapter": "(base)",
+  "kind": "retention_agg",
+  "scores": {
+    "bbh": 39.51,
+    "mmlu_pro": 18.96
+  },
+  "per_subtask": {
+    "mmlu_pro_math": {
+      "exact_match": 0.08734270910436713,
+      "n": 1351
+    },
+    "bbh_cot_fewshot_causal_judgement": {
+      "exact_match": 0.5240641711229946,
+      "n": 250
+    },
+    "bbh_cot_fewshot_geometric_shapes": {
+      "exact_match": 0.376,
+      "n": 250
+    },
+    "bbh_cot_fewshot_object_counting": {
+      "exact_match": 0.504,
+      "n": 250
+    },
+    "bbh_cot_fewshot_tracking_shuffled_objects_five_objects": {
+      "exact_match": 0.172,
+      "n": 250
+    },
+    "mmlu_pro_physics": {
+      "exact_match": 0.1562740569668976,
+      "n": 1299
+    },
+    "bbh_cot_fewshot_boolean_expressions": {
+      "exact_match": 0.676,
+      "n": 250
+    },
+    "bbh_cot_fewshot_formal_fallacies": {
+      "exact_match": 0.52,
+      "n": 250
+    },
+    "bbh_cot_fewshot_navigate": {
+      "exact_match": 0.532,
+      "n": 250
+    },
+    "bbh_cot_fewshot_temporal_sequences": {
+      "exact_match": 0.128,
+      "n": 250
+    },
+    "mmlu_pro_chemistry": {
+      "exact_match": 0.0812720848056537,
+      "n": 1132
+    },
+    "mmlu_pro_history": {
+      "exact_match": 0.2204724409448819,
+      "n": 381
+    },
+    "bbh_cot_fewshot_dyck_languages": {
+      "exact_match": 0.02,
+      "n": 250
+    },
+    "bbh_cot_fewshot_multistep_arithmetic_two": {
+      "exact_match": 0.004,
+      "n": 250
+    },
+    "bbh_cot_fewshot_sports_understanding": {
+      "exact_match": 0.844,
+      "n": 250
+    },
+    "mmlu_pro_law": {
+      "exact_match": 0.16348773841961853,
+      "n": 1101
+    },
+    "mmlu_pro_computer_science": {
+      "exact_match": 0.17560975609756097,
+      "n": 410
+    },
+    "bbh_cot_fewshot_disambiguation_qa": {
+      "exact_match": 0.444,
+      "n": 250
+    },
+    "bbh_cot_fewshot_movie_recommendation": {
+      "exact_match": 0.708,
+      "n": 250
+    },
+    "bbh_cot_fewshot_snarks": {
+      "exact_match": 0.4887640449438202,
+      "n": 250
+    },
+    "mmlu_pro_engineering": {
+      "exact_match": 0.12280701754385964,
+      "n": 969
+    },
+    "mmlu_pro_philosophy": {
+      "exact_match": 0.19839679358717435,
+      "n": 499
+    },
+    "bbh_cot_fewshot_date_understanding": {
+      "exact_match": 0.632,
+      "n": 250
+    },
+    "bbh_cot_fewshot_logical_deduction_three_objects": {
+      "exact_match": 0.536,
+      "n": 250
+    },
+    "bbh_cot_fewshot_salient_translation_error_detection": {
+      "exact_match": 0.252,
+      "n": 250
+    },
+    "bbh_cot_fewshot_word_sorting": {
+      "exact_match": 0.108,
+      "n": 250
+    },
+    "mmlu_pro_other": {
+      "exact_match": 0.21428571428571427,
+      "n": 924
+    },
+    "mmlu_pro_biology": {
+      "exact_match": 0.3514644351464435,
+      "n": 717
+    },
+    "bbh_cot_fewshot_logical_deduction_seven_objects": {
+      "exact_match": 0.24,
+      "n": 250
+    },
+    "bbh_cot_fewshot_ruin_names": {
+      "exact_match": 0.336,
+      "n": 250
+    },
+    "bbh_cot_fewshot_web_of_lies": {
+      "exact_match": 0.524,
+      "n": 250
+    },
+    "mmlu_pro_economics": {
+      "exact_match": 0.31990521327014215,
+      "n": 844
+    },
+    "mmlu_pro_business": {
+      "exact_match": 0.1888466413181242,
+      "n": 789
+    },
+    "bbh_cot_fewshot_logical_deduction_five_objects": {
+      "exact_match": 0.332,
+      "n": 250
+    },
+    "bbh_cot_fewshot_reasoning_about_colored_objects": {
+      "exact_match": 0.46,
+      "n": 250
+    },
+    "bbh_cot_fewshot_tracking_shuffled_objects_three_objects": {
+      "exact_match": 0.336,
+      "n": 250
+    },
+    "mmlu_pro_health": {
+      "exact_match": 0.22249388753056235,
+      "n": 818
+    },
+    "mmlu_pro_psychology": {
+      "exact_match": 0.32957393483709274,
+      "n": 798
+    },
+    "bbh_cot_fewshot_hyperbaton": {
+      "exact_match": 0.516,
+      "n": 250
+    },
+    "bbh_cot_fewshot_penguins_in_a_table": {
+      "exact_match": 0.3150684931506849,
+      "n": 250
+    },
+    "bbh_cot_fewshot_tracking_shuffled_objects_seven_objects": {
+      "exact_match": 0.14,
+      "n": 250
+    }
+  },
+  "n_shards": 8,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-09T23:57:32+03:00"
+}
