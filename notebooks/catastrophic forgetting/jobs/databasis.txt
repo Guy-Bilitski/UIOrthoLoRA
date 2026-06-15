@@ -1,0 +1,6 @@
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics_databasis.py --adapter /scratch/cf_models/clora_cs_k128 --run_name clora_k128 --rfrac 0.1
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics_databasis.py --adapter /scratch/cf_models/clora_cs_k256 --run_name clora_k256 --rfrac 0.1
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics_databasis.py --adapter /scratch/cf_models/clora_cs_k512 --run_name clora_k512 --rfrac 0.1
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics_databasis.py --adapter /scratch/cf_models/clora_cs_k1024 --run_name clora_k1024 --rfrac 0.1
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics_databasis.py --adapter /scratch/cf_models/clora_cs_k2048 --run_name clora_k2048 --rfrac 0.1
+/home/guy/UIOrthoLoRA/.venv/bin/python forensics_databasis.py --adapter /scratch/cf_models/lora_cs_r32_repro --run_name lora_wd0 --rfrac 0.1

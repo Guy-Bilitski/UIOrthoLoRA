@@ -1,3 +1,24 @@
+# 06 — INSIGHTS (live; updated 2026-06-15 after lit review, see 07_RELATED_WORK.md)
+
+## ★ THE BASIS REVEAL (2026-06-15) — reframes everything; resolves "why magnitude>direction"
+Our μ_E / out_top measure directional leakage in the STATIC WEIGHT-SVD basis (U_r,V_r of W0).
+The data-driven literature (CorDA: W0·C_X^{1/2}; SC-LoRA: P+/P- activation dists; Subspace-Geometry:
+Fisher/gradient subspace) shows knowledge lives in the DATA/ACTIVATION-COVARIANCE basis, NOT the
+weight-SVD basis. Therefore:
+  - r(retention, WEIGHT-basis direction μ_E) ≈ -0.09 is NOT "direction doesn't matter" — it is
+    "the weight-SVD basis is the WRONG basis." Magnitude looks dominant only because it's the one
+    thing our weight-basis metric still captures.
+  - REFRAME (the thesis to pursue): forgetting is governed by σ-WEIGHTED MAGNITUDE *and* by DIRECTION
+    IN THE DATA-COVARIANCE BASIS. Weight-SVD orthogonality (OPLoRA, CLoRA-random, legacy UIOrtho) is a
+    red herring that helps only via incidental magnitude suppression.
+  - THE DISCOVERABLE GAP: nobody (a) shows weight-basis direction is irrelevant, nor (b) runs a
+    CONTROLLED, CONTINUOUS dissociation of magnitude vs direction in the DATA basis. CorDA/SC-LoRA use
+    the right basis but only DISCRETE magnitude control (freeze / per-layer rank / single β).
+  - KILLER TEST (build now): data-basis forensic — recompute leakage in CorDA's W0·C_X^{1/2} basis (+
+    raw C_X eigenbasis). Predict: weight-basis leakage→retention r≈-0.09 (red herring), but
+    DATA-basis leakage→retention strongly negative. If it flips, we've shown THE BASIS MATTERS.
+  - Citation IDs in 07 are [VERIFY] (2603.02224 date implausible; confirm OPLoRA/CorDA IDs).
+
 # 06 — INSIGHTS (live, 2026-06-14 night)
 
 ## THESIS (sharpened by the D1 verdict, 2026-06-15)
