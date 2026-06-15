@@ -29,6 +29,24 @@ meaningful one way, it's a weak experiment. Status as of 2026-06-15 ~13:40.
 - Nomenclature: keep generic protocol-based run/checkpoint names (lora_rN, clora_kN, grid_…) for clean
   cross-architecture aggregation — already followed.
 
+## RESULTS vs PREDICTIONS (first wave, 2026-06-16 ~00:30)
+- **#2 directional-vs-raw norm → CONFIRMED but MARGINAL.** corr(ret,directional ‖ΔW·C_retain^½‖)
+  beats corr(ret,raw ‖ΔW‖_F): −0.809 vs −0.735 (n=13), −0.793 vs −0.768 (n=8 deduped fast). Direction
+  DOES modulate the slope, but the margin is small → headline is present, not yet convincing. Firming up
+  with C_task zero-sum (GPU0, running) + rank-sweep databasis. RISK: if it stays Δ~0.02 it's a weak headline.
+- **#1 scale-unified ONE curve → REFUTED (and that's GOOD).** Pooled cross-arch/structure
+  corr(ret,‖ΔW‖_F) is only −0.465 (within fixed structure −0.93..−0.98). So raw Frobenius is NOT a clean
+  cross-structure constraint → structure/direction matters beyond raw magnitude. This AVOIDS the
+  "it's all just ‖ΔW‖_F = known F∆ folklore" collapse (the pre-reg red flag). Consistent with #2.
+- **#4 drop_major × rotation → NOT an LR artifact; rotation has an OPTIMUM.** lr2e2 made CS WORSE (39<48),
+  so corrected full-rotation-dE1's low CS is real, not LR. But the rotation ladder at k410 (dE1,lr1e2):
+  v51→CS23, v205→**CS71/ret25.7**, v410→CS48; and clean full-rot **v410 dE0→CS69/ret26.3 @ spec8.2**.
+  ⇒ the CORRECTED instrument DOES reach strong Pareto (CS~70 @ ret~26, BETTER retention than legacy
+  uioT_k410 72.7/25) — at the right rotation/use_de. The first CS48 point was a bad cell, not a limit.
+- **#5 rank → PARTIAL, deflating the surprise for LoRA.** r4 ret25.36, r8 25.32, r32 23.4 ⇒ higher LoRA
+  rank → MORE forgetting (CONVENTIONAL), OPPOSITE to "rank mitigates CF". The surprise was likely
+  UIO-k_val-specific (more low-σ directions at lower magnitude), NOT general. Await full sweep + E2b matched-CS.
+
 ## Self-audit: is each row meaningful either way?
 ALL 7 are bidirectionally informative ✓ — every CONFIRMED and REFUTED cell is a publishable statement,
 not a null. That is the check the user asked for ("are we on the right track to MEANINGFUL results").
