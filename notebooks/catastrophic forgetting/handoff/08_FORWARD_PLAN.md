@@ -3,8 +3,17 @@
 Grounding finding (controlled D1 set, n=7, corrected k1024_v128, use_de×LR): retention is a
 near-perfect function of the **Frobenius norm** of ΔW.
   corr(ret, ‖ΔW‖_F)=−0.984 | spectral ‖ΔW‖₂=−0.857 | σ-weighted(≈F∆)=−0.459 | weight-dir μ_E=−0.088
-Plain Frobenius BEATS the σ-weighted/F∆ proxy and crushes weight-basis direction. (Within ONE
+Plain Frobenius edges the σ-weighted/F∆ proxy and crushes weight-basis direction. (Within ONE
 structure so far — Thread 2 tests whether it's universal.)
+
+UPDATE [bake-off, 2026-06-15]: head-to-head on the n=7 forensics set: Frobenius −0.984, actual F∆
+−0.938, spectral −0.857 — all strong; Frobenius marginally best but n=7 CANNOT firmly rank Frobenius
+vs F∆ (need more forensics runs; phase-2 + rank-sweep grow n). ACROSS all 49 runs (mixed structure +
+mixed eval scale) the correlation DROPS: F∆ −0.705, spectral −0.538. KEY SIGNAL: magnitude predicts
+near-perfectly WITHIN a fixed structure but weakens ACROSS structures → either scale-mixing noise OR
+genuine structure/rank dependence (Thread 2 HYP-B). The rank sweep (same scale, vary rank) decides.
+Do NOT yet assert "Frobenius beats F∆" — tempered to "magnitude (Frobenius≈F∆) is the dominant
+within-structure predictor; weight-direction is irrelevant."
 
 Provenance discipline (per 07): tag claims [OURS]/[HYP]/[VERIFY]; do not assert hypotheses as fact.
 
