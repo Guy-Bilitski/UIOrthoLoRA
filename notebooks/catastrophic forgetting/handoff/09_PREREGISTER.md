@@ -1,0 +1,35 @@
+# 09 — PRE-REGISTRATION: what's running, predicted outcome, and what EACH outcome means
+
+Purpose: before results land, commit to (a) the question, (b) the prediction, (c) the interpretation
+of BOTH outcomes. Every row must be **bidirectionally informative** — if an experiment is only
+meaningful one way, it's a weak experiment. Status as of 2026-06-15 ~13:40.
+
+| # | Experiment (status) | Thread | Question | Metric / comparison | PREDICTED | If CONFIRMED | If REFUTED | grade |
+|---|---|---|---|---|---|---|---|---|
+| 1 | CLoRA fast re-eval ×5 (**2/5 done**, ~2.5h) | T1 | Does ret~‖ΔW‖_F hold ACROSS LoRA/CLoRA/UIO on ONE curve at matched eval scale? | pooled corr(ret,‖ΔW‖_F), fast scale; do arches interleave? | pooled r tightens from −0.79(conf.) → ~−0.9; interleave | Frobenius law is a CROSS-ARCH first-order constraint (anchor) | arches sit on SEPARATE curves → structure matters beyond magnitude (bigger T2 story) | ANCHOR (near-circular; necessary, not the headline) |
+| 2 | **Data-basis forensic ×6** (queued, ~3h) | T1/T3 | Does the DIRECTIONAL norm ‖ΔW·C_X^{1/2}‖_F predict forgetting BETTER than raw ‖ΔW‖_F? | corr(ret, data_resp) vs corr(ret, ‖ΔW‖_F), pooled | directional ≥ raw (direction modulates slope) | **THE non-circular headline**: direction-in-data-basis is the 2nd-order term — carry-paper plot | forgetting is direction-AGNOSTIC magnitude; CorDA/SC-LoRA's basis is NOT the operative variable (contrarian, also publishable) | ★ HEADLINE |
+| 3 | **LoRA+weight_decay ×5** (running, ~this PM) | T1 | Does magnitude-matched L2 retain AS WELL as CLoRA at the same ‖ΔW‖_F? | LoRA-wd vs CLoRA on (‖ΔW‖_F, ret) plane | same curve (L2 reproduces CLoRA) | CLoRA's random-subspace adds NOTHING beyond magnitude (the reattribution) | CLoRA retains better at matched norm → structure matters independently; "illusion" framing COLLAPSES (sharper, different paper) | ★ FALSIFIER |
+| 4 | grid k410 lr2e2 + clean cells (running, ~this PM) | T2/instr | Does drop_major help or HURT CS, and does it depend on rotation k_vec? | corrected vs legacy CS across k_vec (grid_k410 lr1e2 already: corrected 48 << legacy 72.7) | interaction: helps at low k_vec, hurts at full k_vec — OR lr1e2 artifact (lr2e2 recovers CS) | "bug fix improves both axes" is CONFIG-DEPENDENT (honesty correction) | lr2e2 recovers CS→70 ⇒ it was an LR artifact, drop_major is fine | DISAMBIGUATE |
+| 5 | LoRA rank sweep r∈{4..256} (queued, overnight) | T2 | At fixed LR, does higher rank retain better, and is it explained by ‖ΔW‖_F? | ret vs ‖ΔW‖_F colored by rank — ONE curve or rank-separated? | likely HYP-A (folds into Frobenius law) | rank only helps via magnitude ⇒ unifies field under Frobenius law | HYP-B: rank-separated ⇒ genuine structural effect of the spectral tail (novel) | KINGMAKER-prereq (feeds E2b matched-CS) |
+| 6 | norm_trace in rank sweep + UIO (overnight) | cliff | Does ‖ΔW‖_F keep INFLATING after task loss plateaus? | d‖ΔW‖_F/dt vs loss trajectory | uncertain (AdamW+wd may NOT inflate) | motivates early-stop / "magnitude tax after task learned" story | norm plateaus with loss ⇒ no free stopping lunch; kills that sub-idea | ASSUMPTION-CHECK |
+| 7 | λ_E/λ_D sweep ×5 (running, ~this PM) | T1 | At ~fixed structure, does forcing weight-basis direction (μ_E) DOWN improve retention? | ret vs λ, controlling resulting μ_E & ‖ΔW‖_F | weak/none at fixed magnitude (weight-dir irrelevant) | weight-basis direction is CAUSALLY irrelevant (controlled D1) | λ improves ret at fixed magnitude ⇒ weight-direction matters causally | CONTROLLED-D1 |
+
+## Self-audit: is each row meaningful either way?
+ALL 7 are bidirectionally informative ✓ — every CONFIRMED and REFUTED cell is a publishable statement,
+not a null. That is the check the user asked for ("are we on the right track to MEANINGFUL results").
+
+## Which rows actually carry the paper
+- **#2 (directional vs raw norm)** is THE headline — the non-circular claim. Everything else supports it.
+- **#3 (L2 falsifier)** decides whether the story is "structure=magnitude" (reattribution) or "direction
+  matters independently" (different, sharper paper). Either is a paper; we just need to KNOW which.
+- **#1** is an ANCHOR, NOT a discovery (r~−0.9 is near-true by construction per Claude-web critique).
+  Do not headline it. It only earns its place if it interleaves cleanly (rules out a confound).
+- **#5/#7** are the controlled/causal backbone (rank-beyond-magnitude; direction-beyond-magnitude).
+
+## Red flags to watch (would mean we are NOT on track)
+- If #2 shows directional ≈ raw AND #3 shows L2 ≈ CLoRA AND #5 is HYP-A AND #7 is null ⇒ the WHOLE
+  story collapses to "forgetting = ‖ΔW‖_F, full stop" = CLoRA's F∆ folklore = NOT novel. In that case
+  the only contribution left is the controlled/causal METHODOLOGY + the CLoRA-random-subspace audit
+  (a modest measurement paper). We should pre-commit to that honest downgrade if the data says so.
+- The data-driven REGULARIZER (idea 1: soft data-covariance directional penalty) is the constructive
+  follow-up IF #2 confirms — it is NOT yet run; it's the "so what do we DO about it" of the finding.
