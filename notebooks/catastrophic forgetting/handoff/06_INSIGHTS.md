@@ -18,6 +18,15 @@ weight-SVD basis. Therefore:
     raw C_X eigenbasis). Predict: weight-basis leakage→retention r≈-0.09 (red herring), but
     DATA-basis leakage→retention strongly negative. If it flips, we've shown THE BASIS MATTERS.
   - Citation IDs in 07 are [VERIFY] (2603.02224 date implausible; confirm OPLoRA/CorDA IDs).
+  - ⚠️ NOT NOVEL ON ITS OWN (2026-06-15, user pushback): "data basis is the right basis" IS
+    CorDA/SC-LoRA's central claim. Do NOT present the basis reframe as our discovery. Three angles
+    in a row are now preempted: magnitude (≈CLoRA F-delta), weight-direction (≈OPLoRA), data-basis
+    (≈CorDA/SC-LoRA). HONEST STATUS: no novel discovery currently identified; the CF-mechanism space
+    in PEFT is mature/crowded. Remaining angles are INCREMENTAL (controlled magnitude-vs-direction
+    ablation; CLoRA-random audit; cross-method unifying diagnostic) — an audit/measurement paper, not
+    a discovery. Open candidates to pressure-test before more compute: adaptation-side Pareto FLOOR
+    (everyone optimizes preservation, few characterize the trade-off limit); whether methods' data-
+    basis confinement HOLDS THROUGH TRAINING (drift audit); regimes untested by prior work.
 
 # 06 — INSIGHTS (live, 2026-06-14 night)
 

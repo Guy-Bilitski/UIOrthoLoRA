@@ -1,3 +1,7 @@
+> 🔁 **PARTIALLY SUPERSEDED (2026-06-15).** The instrument-pivot framing here is still valid, but the
+> experiment specifics (D1/D2/D3) are folded into and extended by **08_FORWARD_PLAN.md** (3 threads).
+> Read 08 for the live plan; this is the intermediate pivot doc.
+
 # 05 — DISCOVERY PLAN (re-plan, 2026-06-14)
 
 Supersedes the "beat CLoRA" framing in `02_EXPERIMENT_PLAN.md`. We are NOT trying to win a

@@ -1,14 +1,31 @@
 # OPERATING STATE — read this first (handoff for any agent / future me)
 
-**Project:** Is **UIOrthoLoRA** a real catastrophic-forgetting mitigator worth A*-publishing?
-Head-to-head vs **LoRA** (forgetful baseline) and **CLoRA** (SOTA forgetting-mitigator, ACL'25)
-on CLoRA's own commonsense one-stage setting, LLaMA-2-7B. Full spec: `../agent_instructions.nd`.
+**Project (EVOLVED 2026-06-15):** A **controlled study of WHAT GOVERNS catastrophic forgetting (CF)
+in PEFT**, using corrected **UIOrthoLoRA / UILinLoRA as controllable INSTRUMENTS**. The original goal
+("is UIOrthoLoRA an A*-worthy CLoRA-beater?") is **DEAD** — even corrected (drop_major) it only TIES
+CLoRA and loses the high-CS corner. Setting unchanged: CLoRA's commonsense one-stage setup, LLaMA-2-7B;
+in-domain CS-avg vs out-domain retention=mean(answer-only-BBH, MMLU-Pro). **The live science is in
+`06_INSIGHTS.md` (findings), `07_RELATED_WORK.md` (lit positioning), `08_FORWARD_PLAN.md` (the plan) —
+READ THOSE.** This file = environment + durable findings + what's running.
 
-**Decision criterion:** frontier of **in-domain commonsense CS-avg (x)** vs **out-domain
-retention = mean(answer-only-BBH, MMLU-Pro) (y)**. GO if UIOrthoLoRA's frontier sits on/above
-CLoRA's, esp. dominating CLoRA in some corner. A *tie* is NOT enough for A* (UIOrthoLoRA carries
-~4× train cost, ~8× memory, non-round-trippable checkpoints) — needs a clear win or a strong
-second story (the **leakage thermometers** + **LR-robustness** are those stories).
+**Current thesis (2026-06-15) — 3 threads (full detail in 08):**
+1. **THE MAGNITUDE (FROBENIUS) LAW.** retention ≈ f(‖ΔW‖_F). Within-architecture corr **−0.96 to −0.98**
+   across LoRA / CLoRA / UIOrthoLoRA (points interleave on ONE curve; pooled −0.79 only due to a
+   CLoRA-full vs UIO-fast SCALE offset → fast CLoRA re-eval unifies it). Weight-basis DIRECTION is
+   irrelevant (μ_E r=−0.09). CLoRA's random-subspace penalty "works" only by shrinking ‖ΔW‖_F (it is
+   spectrally neutral, out_top≈0.5). [F-norm > spectral −0.86 > σ-weighted/F∆ −0.46 > weight-dir −0.09.]
+2. **THE RANK QUESTION (open / kingmaker).** "Higher rank surprisingly mitigates CF" — is it an
+   independent structural effect, or just rank↑⇒‖ΔW‖_F↓? E2b = match task-CS across ranks, compare
+   retention. HYP-A folds into the Frobenius law; HYP-B = genuine spectral-tail structural property.
+3. **THE DATA-BASIS FRONTIER.** Is data/activation-covariance direction (CorDA/SC-LoRA's claim) a
+   SECOND-ORDER correction to the first-order Frobenius tax? (data-basis forensic + CorDA-basis
+   instrument E3c.)
+
+**Honesty guardrails (do not relapse):** the CF-mechanism space is CROWDED. "magnitude matters" ≈
+CLoRA's F∆; "data basis matters" = CorDA/SC-LoRA; "geometry/direction" = OPLoRA/Subspace-Geometry.
+THREE reframes already preempted (see 06 ★). Our defensible contribution = the **controlled/causal
+dissociation** + the **cross-architecture Frobenius law** + (if it lands) the **rank result** — NOT
+"we discovered magnitude/basis matters." Verify [VERIFY] citation IDs in 07 before any manuscript.
 
 ---
 
@@ -90,14 +107,26 @@ Results: `results/<run>/summary.json` + `results/campaign_summary.jsonl` (one li
 
 ---
 
-## What's running RIGHT NOW (update as it changes; as of 2026-06-14 ~14:30)
-- **A5 RESULTS IN (6 runs, drop_major=1) — VERDICT SHIFTED from "dominated" to "COMPETITIVE in the high-retention corner."** Dropping the spurious major term improves BOTH axes vs legacy twins (it was actively hurting adaptation, not just leaking into the preserved subspace). A5-vs-legacy:
-  - `a5_k2048_v410_dE0_lr1e3`: **CS 64.4 / ret 26.93** (vs legacy 57.5/25.7) — **highest retention of ANY adapter run**, edges CLoRA-k2048 (26.76) and matches base, at ~same CS. No longer dominated.
-  - `a5_k1024_v128_dE1_lr1e2`: **CS 69.0 / ret 25.04** (vs legacy 50.5/23.68, **+18.5 CS**) — DOMINATES CLoRA-k512 (67.6/23.06) on both axes. use_de=1+drop_major is a big CS booster.
-  - clean-arm twins all improved: k1024_lr1e3 60/19.9→53.6/**26.3**; k2048_lr1e2 46.9/22.2→56.1/24.3; k512_lr1e2 48/17.2→54.8/22.3; k1024_lr1e2 55/18.5→54.8/23.1. dw_max consistently ↓ (major term was big Frobenius mass).
-  - **STILL loses the high-CS corner:** no A5 point reaches CLoRA-k1024 (CS 79.9/ret 25.57); A5 tops out ~69 CS. ⇒ competitive/tied in retention corner, not yet a clear A* domination.
-- **Wave 5b LAUNCHED (the CS-ceiling test) — pool `uio_w5b` GPUs 1,3,7:** 3× use_de=1+drop_major at higher LR/k to see if the corrected layer can push CS toward 80 (`a5_k1024_v128_dE1_lr2e2`, `a5_k2048_v256_dE1_lr1e2`, `a5_k2048_v410_dE1_lr2e2`). **This decides GO vs competitive-but-tied.** Logs `logs/uio_w5b_*`. ETA k1024 ~7h, k2048 ~11h.
-- **Wave 5 seeds (5 still running on `uio_w5` GPUs 0,2,4,5,6):** seeds 43/44 on the 3 anchor points → error bars on the retention-corner edge. seed43_k1024_dE0 done.
+## What's running RIGHT NOW (as of 2026-06-15 ~09:45)
+- **Phase-2 pool** `logs/phase2_pool.log` (GPUs 1-4,6,7; auto-launched by a watcher when the D1 grid freed):
+  24 jobs = (a) **k_val×k_vec grid** `jobs/kval_kvec_grid.txt` (T2 adaptation/Pareto + D3 contrast),
+  (b) **λ_E/λ_D sweep** `jobs/d1_lambda.txt` (T1 controlled DIRECTION intervention at ~fixed structure),
+  (c) **LoRA+weight_decay** `jobs/mag_control_lora.txt` (T1 D2-killer: does a subspace-free magnitude
+  knob reproduce CLoRA's curve?), (d) **CLoRA fast re-eval** `jobs/reeval_fast_baselines.txt`
+  (**SCALE UNIFICATION** for the cross-arch Frobenius curve). ~50% through training as of 09:45;
+  first results this afternoon. ⚠️ `grid_k1024_v1024` (full rotation, 1024×1024 orthogonal mat) is
+  SLOW (~16h) — expected, deprioritize if it blocks.
+- **`grid_k410_v410_dE1_lr1e2`** on GPU5: corrected full-rotation Pareto-push (the corrected twin of the
+  legacy `uioT_k410` CS72.7@ret25 standout) — in eval phase.
+- **data-basis forensic** `jobs/databasis.txt` (T3): queued via watcher (fires when grid_k410 frees GPU5).
+  **rank sweep** `jobs/rank_sweep_lora.txt` (T2/E2a, LoRA r∈{4..256}): built, queue when GPUs free.
+- **TWO readouts that convert preliminary→discovery-grade (bring to user/Gemini when they land):**
+  (1) **scale-unified cross-architecture Frobenius curve** (needs CLoRA fast re-eval); (2) **E2b
+  matched-CS rank result** (needs rank sweep + per-rank LR tuning to match CS, then compare retention).
+- Analysis: `analyze_magnitude_law.py` (predictor bake-off, join FIXED via _norm), `analyze_d1_d2.py`
+  (D1 verdict + D2 overlay), `forensics.py` (weight/spectral), `forensics_databasis.py` (data/CorDA basis).
+
+## HISTORY (chronological, for provenance — superseded by the thesis above)
 
 ### Prior state (as of 2026-06-13 ~21:25)
 - **Wave 4 DONE (use_de=0 low-LR sweep) — VERDICT HARDENED: clean arm has NO win.** Best clean point `uioW4_k2048_v410_dE0_lr1e3` = CS **57.5**/ret **25.7** (dw_max 3.3) — still dominated on BOTH axes by CLoRA-k2048 (CS 65.4/ret 26.76). Mechanism confirmed across the grid: use_de=0 has no D/E magnitude brake, so anything > LR 1e-3 explodes ΔW and **collapses CS** (lr3e3→CS 32, lr5e3→CS 28; near-random siqa/openbookqa) while only LR 1e-3 gives a sane-but-under-adapted point. Low LR recovers retention purely by bounding magnitude — does NOT recover CS. **Only 1 trailing job left:** `uioW4_k512_v64_dE0_lr1e3` on GPU7 (mid-train, will add another dominated point). 7 GPUs idle; no Wave-5 queued (by design).

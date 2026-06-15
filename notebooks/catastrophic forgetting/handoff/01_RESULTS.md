@@ -1,3 +1,6 @@
+> 📦 **HISTORICAL snapshot (Wave-1 era).** For the live results pile use `analyze_magnitude_law.py` /
+> `analyze_d1_d2.py` over `results/`, and the tables in 08/06. Current headline numbers live there.
+
 # RESULTS (LLaMA-2-7B, commonsense one-stage) — snapshot
 
 Retention = mean(answer-only-BBH, MMLU-Pro). **Two retention scales — keep them separate:**

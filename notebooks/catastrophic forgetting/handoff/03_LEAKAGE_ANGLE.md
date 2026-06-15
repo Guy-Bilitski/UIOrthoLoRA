@@ -1,3 +1,7 @@
+> 📑 **REFERENCE (weight-basis leakage angle).** Superseded as the HEADLINE by the Frobenius-magnitude
+> law (08/06) + the data-basis reframe (07). The weight-basis thermometers (μ_E/ν_D) turned out NOT to
+> predict retention (r≈−0.09) — that's now part of the story, not the thesis. Kept for the diagnostics.
+
 # LEAKAGE THERMOMETERS — the paper angle (user is excited about this)
 
 > User's framing: *"how much leakage do we need between the low tail and major component"* — i.e.,

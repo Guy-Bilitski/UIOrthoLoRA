@@ -1,3 +1,6 @@
+> ⛔ **SUPERSEDED (2026-06-15).** Original "beat CLoRA" plan; that goal is abandoned (corrected
+> UIOrthoLoRA only ties CLoRA). Current plan: **08_FORWARD_PLAN.md**. Kept for provenance.
+
 # EXPERIMENT PLAN — what to run for a publishable result
 
 Three threads: **(A) the UIOrthoLoRA/UILinLoRA frontier** (the go/no-go), **(B) the leakage
