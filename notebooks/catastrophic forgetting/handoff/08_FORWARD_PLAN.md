@@ -83,6 +83,23 @@ confirm CorDA. Pursue only if E3a shows data-basis adds predictive power BEYOND 
 
 ---
 
+## Gemini review refinements (2026-06-15) + cross-structure result
+- E1a CROSS-ARCHITECTURE (done, preliminary): corr(ret, ‖ΔW‖_F) = CLoRA −0.964 (n5), UIO-corr −0.984
+  (n7), pooled −0.793 (n13); points INTERLEAVE on one curve (CLoRA-k2048 sits among UIO points at
+  matched ‖ΔW‖_F). Pooled is scale-confounded (CLoRA full vs UIO/LoRA fast ~+0.9); phase-2 fast CLoRA
+  re-eval unifies. IF it holds on one curve post-unification, the Frobenius law is a CROSS-ARCHITECTURE
+  CONSTRAINT, not an observation (Gemini). [join bug fixed in analyze_magnitude_law.py: _norm()].
+- E2b is THE KINGMAKER (Gemini): match task-CS across ranks (tune LR per rank), then compare retention.
+  Isolates the pure structural effect of rank. HYP-A→unify field under Frobenius law; HYP-B→genuine
+  structural property of the spectral tail. Parallelize the rank sweeps on Blackwell.
+- E3c is the ULTIMATE INTERVENTION (Gemini): apply our continuous controlled mechanism to CorDA's
+  dynamic basis (W0·C_X^{1/2}); if data-basis direction is a SECOND-ORDER correction to first-order
+  Frobenius magnitude, we contextualize the entire data-driven literature ("no one escapes the
+  magnitude tax").
+- UILinLoRA vs UIOrthoLoRA (Gemini): if UIOrtho's rigid orthogonality merely acts as a magnitude
+  dampener / chokes capacity, UILinLoRA's lightweight LINEAR scaling path may navigate the 2nd-order
+  data-basis correction more cleanly (capacity-preserving). Test both as the controllable mechanism.
+
 ## Immediate (no-GPU) next action
 Run E1a predictor bake-off (retention vs Frobenius / spectral / actual F∆ / μ_E / data-basis) across
 ALL runs and per-method. This decides whether the Frobenius law is universal (Thread 1 headline) or

@@ -23,16 +23,19 @@ def pear(xy):
     cov=sum((x-mx)*(y-my) for x,y in xy); vx=sum((x-mx)**2 for x,_ in xy); vy=sum((y-my)**2 for _,y in xy)
     return (cov/math.sqrt(vx*vy) if vx>0 and vy>0 else float('nan')), n
 
+def _norm(s):  # reconcile forensics run_name (clora_k128 / lora_wd0) with summary run_name (clora_cs_k128 / lora_wd0_fast)
+    for t in ["_fast","_repro","_cs","cs_"]: s=s.replace(t,"")
+    return s
 rows=[]
 fxext={}
 for f in glob.glob(os.path.join(RES,"forensics_*.json")):
-    try:d=json.load(open(f));fxext[d["run_name"]]=d.get("agg_energy_weighted",{})
+    try:d=json.load(open(f));fxext[_norm(d["run_name"])]=d.get("agg_energy_weighted",{})
     except:pass
 for f in glob.glob(os.path.join(RES,"*","summary.json")):
     try:d=json.load(open(f))
     except:continue
     rn=d.get("run_name") or os.path.basename(os.path.dirname(f))
-    h=d.get("headline",{}) or {}; c=d.get("config",{}) or {}; fd=d.get("fdelta",{}) or {}; fx=d.get("forensics",{}) or fxext.get(rn,{}) or {}
+    h=d.get("headline",{}) or {}; c=d.get("config",{}) or {}; fd=d.get("fdelta",{}) or {}; fx=d.get("forensics",{}) or fxext.get(_norm(rn),{}) or {}
     ret=h.get("retention_mean"); cs=h.get("cs_avg")
     if ret is None and cs is None: continue
     dm=c.get("drop_major"); meth=d.get("method","")
