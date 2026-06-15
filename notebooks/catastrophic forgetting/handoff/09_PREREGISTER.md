@@ -14,6 +14,21 @@ meaningful one way, it's a weak experiment. Status as of 2026-06-15 ~13:40.
 | 6 | norm_trace in rank sweep + UIO (overnight) | cliff | Does ‖ΔW‖_F keep INFLATING after task loss plateaus? | d‖ΔW‖_F/dt vs loss trajectory | uncertain (AdamW+wd may NOT inflate) | motivates early-stop / "magnitude tax after task learned" story | norm plateaus with loss ⇒ no free stopping lunch; kills that sub-idea | ASSUMPTION-CHECK |
 | 7 | λ_E/λ_D sweep ×5 (running, ~this PM) | T1 | At ~fixed structure, does forcing weight-basis direction (μ_E) DOWN improve retention? | ret vs λ, controlling resulting μ_E & ‖ΔW‖_F | weak/none at fixed magnitude (weight-dir irrelevant) | weight-basis direction is CAUSALLY irrelevant (controlled D1) | λ improves ret at fixed magnitude ⇒ weight-direction matters causally | CONTROLLED-D1 |
 
+## Methodology fixes from Gemini review (2026-06-15) — applied before runs land
+- **#2 covariance BUG FIXED (critical).** `forensics_databasis.py` was computing C from the COMMONSENSE
+  (fine-tuning TASK) prompts = C_task; forgetting is out-domain, so the predictor must use C_retain.
+  Now `--cov_source retain` (DEFAULT) loads **MMLU-Pro** (our retention benchmark) — validated it loads.
+  Output now `databasis_<run>_<cov_source>.json`. The queued GPU5 runs exec the file at runtime ⇒ they
+  use the fixed retain covariance. ZERO-SUM FOLLOW-UP (Gemini): also run `--cov_source task` on the same
+  checkpoints to show C_X-alignment↓ ⇔ C_task-alignment↑ (capacity trade-off) — queue when a GPU frees.
+- **#3 L2-trap verified clean.** AdamW weight_decay touches ONLY lora_A/lora_B (base+layernorm frozen,
+  not in optimizer) — confirmed empirically. So the magnitude-matched L2-vs-CLoRA comparison is valid.
+- **#5 "diffusion" test (Gemini).** Track σ₁=‖ΔW‖₂ (we log dw_sv_max) ALONGSIDE ‖ΔW‖_F across the rank
+  sweep: if higher rank retains better by spreading the update (lower σ₁ at matched ‖ΔW‖_F), that's the
+  mechanism. The analysis must plot σ₁ vs rank at matched Frobenius/CS.
+- Nomenclature: keep generic protocol-based run/checkpoint names (lora_rN, clora_kN, grid_…) for clean
+  cross-architecture aggregation — already followed.
+
 ## Self-audit: is each row meaningful either way?
 ALL 7 are bidirectionally informative ✓ — every CONFIRMED and REFUTED cell is a publishable statement,
 not a null. That is the check the user asked for ("are we on the right track to MEANINGFUL results").

@@ -25,6 +25,21 @@ import run_lib, fdelta
 HERE = run_lib.HERE
 
 
+def load_retain_inputs(n, tok):
+    """RETAINED-knowledge distribution (MMLU-Pro = our out-domain retention benchmark) — the directions
+    forgetting is measured on. This is the CORRECT covariance for predicting forgetting (NOT the
+    commonsense fine-tuning task, which fdelta.load_inputs returns = C_task)."""
+    from datasets import load_dataset
+    ds = load_dataset("TIGER-Lab/MMLU-Pro", split="test")
+    prompts = []
+    for d in ds.select(range(min(len(ds), n * 3))):
+        opts = "\n".join(f"{chr(65+i)}. {o}" for i, o in enumerate(d["options"]))
+        prompts.append(f"{d['question']}\n{opts}\nAnswer:")
+        if len(prompts) >= n:
+            break
+    return prompts[:n]
+
+
 @torch.no_grad()
 def basis_metrics(W0, dW, CX, rfrac):
     W0=W0.float(); dW=dW.float(); CX=CX.float()
@@ -51,6 +66,8 @@ def main():
     ap.add_argument("--base_model",default="meta-llama/Llama-2-7b-hf")
     ap.add_argument("--adapter",required=True); ap.add_argument("--run_name",default="")
     ap.add_argument("--n_inputs",type=int,default=64); ap.add_argument("--rfrac",type=float,default=0.1)
+    ap.add_argument("--cov_source",default="retain",choices=["retain","task"],
+                    help="retain=MMLU-Pro (out-domain; predicts FORGETTING — default); task=commonsense (C_task, for the zero-sum trade-off)")
     args=ap.parse_args()
     tok=AutoTokenizer.from_pretrained(args.base_model); tok.pad_token_id=0; tok.padding_side="left"
     model=AutoModelForCausalLM.from_pretrained(args.base_model,dtype=torch.bfloat16,device_map="cuda:0")
@@ -68,7 +85,14 @@ def main():
             try: layers[n]=(m.get_delta_weight("default").detach(), m.get_base_layer().weight.detach())
             except: continue
             hooks.append(m.register_forward_pre_hook(mk(n)))
-    prompts=fdelta.load_inputs(args.n_inputs,tok)
+    if args.cov_source=="retain":
+        try: prompts=load_retain_inputs(args.n_inputs,tok)
+        except Exception as e:
+            print(f"[databasis] retain (MMLU-Pro) load FAILED ({e}); falling back to task covariance",flush=True)
+            args.cov_source="task_fallback"; prompts=fdelta.load_inputs(args.n_inputs,tok)
+    else:
+        prompts=fdelta.load_inputs(args.n_inputs,tok)
+    print(f"[databasis] cov_source={args.cov_source} ({len(prompts)} prompts)",flush=True)
     for i in range(0,len(prompts),8):
         enc=tok(prompts[i:i+8],return_tensors="pt",padding=True,truncation=True,max_length=256).to("cuda:0")
         model(**enc)
@@ -83,10 +107,12 @@ def main():
     agg={k:round(sum(r[k]*r["dwF"]**2 for r in rows)/tot,5) for k in keys}
     agg["n_matrices"]=len(rows); agg["rfrac"]=args.rfrac
     rn=args.run_name or os.path.basename(os.path.normpath(args.adapter))
-    run_lib.write_json(os.path.join(HERE,"results",f"databasis_{rn}.json"),
-                       {"run_name":rn,"adapter":args.adapter,"kind":"databasis","agg":agg})
-    print(f"[databasis] {rn}: WEIGHT-basis inTop={agg['w_inTop']:.3f}  DATA-basis inTop={agg['d_inTop']:.3f}  "
-          f"CorDA-basis inTop={agg['c_inTop']:.3f}  data_resp={agg['data_resp']:.3f} (rfrac={args.rfrac})",flush=True)
+    agg["cov_source"]=args.cov_source
+    run_lib.write_json(os.path.join(HERE,"results",f"databasis_{rn}_{args.cov_source}.json"),
+                       {"run_name":rn,"adapter":args.adapter,"kind":"databasis","cov_source":args.cov_source,"agg":agg})
+    print(f"[databasis] {rn} [cov={args.cov_source}]: WEIGHT-basis inTop={agg['w_inTop']:.3f}  "
+          f"DATA-basis inTop={agg['d_inTop']:.3f}  CorDA-basis inTop={agg['c_inTop']:.3f}  "
+          f"data_resp(||dW.C^1/2||_F^2 norm)={agg['data_resp']:.3f} (rfrac={args.rfrac})",flush=True)
 
 
 if __name__=="__main__":
