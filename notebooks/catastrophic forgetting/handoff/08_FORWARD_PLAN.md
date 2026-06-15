@@ -105,10 +105,30 @@ Run E1a predictor bake-off (retention vs Frobenius / spectral / actual F∆ / μ
 ALL runs and per-method. This decides whether the Frobenius law is universal (Thread 1 headline) or
 structure-dependent (motivates Thread 2). When phase-2 lands it auto-includes the grid+λ+mag_control.
 
-## The cleanest potential discovery (falsifiable, to defend not assert)  [HYP]
-"In PEFT, catastrophic forgetting is governed to first order by a single structure/direction-agnostic
-scalar — the Frobenius norm of the adapter update — which dominates spectral concentration, the
-data-weighted disruption metric F∆, and weight-basis directional confinement; alignment with the
-data-activation subspace is at most a second-order correction." Contrarian (field builds basis/
-direction machinery), simple, testable. MUST verify against lit (esp. that F∆/spectral are the
-accepted proxies we're beating) before claiming.
+## REVIEW REFINEMENTS (Claude-web, 2026-06-15) — sharpens the framing, do NOT relapse
+1. **r=−0.98 is NEAR-CIRCULAR. Do not headline it.** Retention falling with ‖ΔW‖_F is ~true by
+   construction (any ΔW perturbs; bigger perturbs more). The NON-OBVIOUS, paper-carrying claim is that
+   **DIRECTION modulates the SLOPE**: the same ‖ΔW‖_F costs different retention by alignment with the
+   data covariance C_X. ⇒ THE headline test = does the DIRECTIONAL norm ‖ΔW·C_X^{1/2}‖_F predict
+   forgetting BETTER than raw ‖ΔW‖_F? (We already compute it: `forensics_databasis.py data_resp =
+   ‖ΔW·C_X^{1/2}‖_F²`.) If directional-norm beats raw-norm across runs → that single plot carries the paper.
+2. **"Structure is just a magnitude brake" may OVERCLAIM — falsify it.** Test: does a magnitude-matched
+   L2 (weight-decay) retain AS WELL as CLoRA/OrthoLoRA at the SAME ‖ΔW‖_F? If NOT → direction matters
+   independently → the "illusion" framing collapses (good — sharper result either way). This IS the
+   queued `mag_control_lora` (LoRA+wd) vs CLoRA overlay; frame it explicitly as the strong-claim test.
+3. **Norm-inflation cliff is an ASSUMPTION.** AdamW+wd may NOT inflate ‖ΔW‖_F after loss plateaus.
+   DONE: `norm_trace.py` now logs per-step (loss, ‖ΔW‖_F) in train_cs + uio_inprocess → check
+   d‖ΔW‖_F/dt vs loss plateau (rank sweep captures it) BEFORE building any stopping criterion.
+4. Regularizer priority: **idea 1 = data-covariance directional penalty** (soft counterpart to
+   CorDA/SC-LoRA's hard projections; direct consequence of #1) is the core. Drop per-layer asymmetric
+   (idea 3) to future work — too many moving parts for a scope-flagged paper.
+
+## The cleanest potential discovery (REFRAMED per #1 above — falsifiable, defend not assert)  [HYP]
+"In PEFT, catastrophic forgetting is governed by the magnitude of the update *weighted by its alignment
+with the pretraining data-covariance subspace* — the DIRECTIONAL norm ‖ΔW·C_X^{1/2}‖_F predicts
+forgetting better than the raw Frobenius norm, and a magnitude-matched direction-agnostic penalty (L2)
+does NOT retain as well as data-aware structure. Raw ‖ΔW‖_F is the (near-trivial) first-order term;
+the DIRECTION term is the contribution." Verify [VERIFY] lit first.
+Open empirical Qs feeding this: (a) directional-norm vs raw-norm correlation [databasis, ~4.5h];
+(b) L2-matched vs CLoRA retention [mag_control, this PM]; (c) rank beyond ‖ΔW‖_F [rank sweep, overnight];
+(d) does ‖ΔW‖_F inflate post-loss-plateau? [norm_trace, rank sweep].

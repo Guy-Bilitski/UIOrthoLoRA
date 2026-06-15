@@ -168,10 +168,13 @@ def main():
                 lr_scheduler_type="linear", save_strategy="no", output_dir="/tmp/uio_trash",
                 report_to="none", seed=args.seed),
             data_collator=DataCollatorForSeq2Seq(tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True))
+        from norm_trace import NormTraceCallback
+        _ntc = NormTraceCallback(); trainer.add_callback(_ntc)
         tr = trainer.train()
         train_loss = tr.training_loss
+        norm_trace = _ntc.trace
     else:
-        train_loss = None
+        train_loss = None; norm_trace = []
     train_s = round(time.time() - t0, 1)
     model.eval()
     model.config.use_cache = True
@@ -244,7 +247,7 @@ def main():
                           "seed": args.seed, "lambda_E": args.lambda_E, "lambda_D": args.lambda_D},
                "trainable_params": trainable, "trainable_pct": round(100 * trainable / total, 4),
                "train_loss": train_loss, "train_s": train_s, "per_dataset": cs, "fdelta": fd,
-               "leakage": leak, "forensics": fx, "headline": headline,
+               "leakage": leak, "forensics": fx, "norm_trace": norm_trace, "headline": headline,
                "git_commit": run_lib.git_commit(), "evaluated_at": run_lib.now_iso()}
     run_lib.write_json(os.path.join(HERE, "results", args.run_name, "summary.json"), summary)
     run_lib.append_registry("campaign_summary.jsonl", {"run_name": args.run_name, **headline,

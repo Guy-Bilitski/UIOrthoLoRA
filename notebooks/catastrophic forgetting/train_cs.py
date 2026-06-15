@@ -211,6 +211,8 @@ def main():
     else:
         trainer = transformers.Trainer(model=model, train_dataset=train_data, args=training_args,
                                        data_collator=collator)
+    from norm_trace import NormTraceCallback
+    _ntc = NormTraceCallback(); trainer.add_callback(_ntc)
     t0 = time.time()
     tr_out = trainer.train()
     dt = time.time() - t0
@@ -224,6 +226,7 @@ def main():
         "trainable_pct": round(100 * trainable / total, 4),
         "grad_accum": grad_accum, "effective_batch": args.micro_batch_size * grad_accum,
         "train_runtime_s": round(dt, 1), "final_train_loss": tr_out.training_loss,
+        "norm_trace": _ntc.trace,
         "git_commit": run_lib.git_commit(), "finished_at": run_lib.now_iso(),
     }
     run_lib.write_json(os.path.join(out_dir, "run_config.json"), cfg)
