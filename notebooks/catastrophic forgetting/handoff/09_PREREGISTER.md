@@ -52,6 +52,9 @@ meaningful one way, it's a weak experiment. Status as of 2026-06-15 ~13:40.
 - **#5 COMPLETE (r4..r256):** clean monotone — ret 25.4/25.3/24.8/23.4/21.1/16.2/**8.5** as rank 4→256, ||dW||_F 19→129. Textbook magnitude→forgetting (supporting figure, not novel). Surprise dead.
 - **#3 first point:** LoRA+wd=0.01 ||dW||_F=39 (barely shrank from 40.8) ret23.5 ~ CLoRA-k128 (23.5) at that magnitude. INCONCLUSIVE — need wd 0.1/0.3/1.0 to reach CLoRA-k1024/k2048's low-mag range. Running GPU0.
 
+
+- **#3 RESULT (PRELIMINARY, fast-scale ±4 noise):** LoRA+weight_decay does NOT just match CLoRA — it appears to DOMINATE it. wd 0.05/0.1/0.3 -> ||dW||_F 33/28/15, ret 24.4/26.6/28.4 at CS ~80 (monotone). At matched ||dW||~28: LoRA+wd ret 26.6 vs CLoRA 22.7. THIRD outcome (not pre-registered): plain weight decay BEATS CLoRA's subspace machinery. CAVEAT: ret>base=noise; FULL-scale confirm queued (lora_wd0p1/0p3_full). If confirmed = the concrete constructive finding + raises the bar for gate/DoRA.
+
 ## Self-audit: is each row meaningful either way?
 ALL 7 are bidirectionally informative ✓ — every CONFIRMED and REFUTED cell is a publishable statement,
 not a null. That is the check the user asked for ("are we on the right track to MEANINGFUL results").
