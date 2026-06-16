@@ -77,6 +77,25 @@ training that makes muting GENERALIZE to unseen out-domain, (c) the empirical fr
 in/out separation as mechanism. MUST search: "gated/conditional/dynamic LoRA forgetting", "input-dependent
 LoRA scaling", MoELoRA-for-CF. If the exact method exists, contribution narrows to the analysis.
 
+## 9b. REVIEW ADDITIONS (clear-mind pass, 2026-06-16) — things the first draft missed
+- **Honest target reframe:** oracle = (CS 79.1, ret 26.0) = LoRA's in-domain CS at BASE retention.
+  CS is BOUNDED by the underlying adapter (~79), so we DON'T exceed CLoRA's CS (79.9); the win is the
+  RETENTION corner — full adaptation with ~zero forgetting. Success = APPROACH (79,26), not beat CS.
+- **FIRING generalization (dual to muting):** gate must also fire on in-domain at test (preserve CS), and
+  may OVER-mute on real downstream inputs that differ from the training format — note as a limitation.
+- **Preservation-loss cost:** KL-to-base needs a 2nd (base) forward = 2× cost; ‖g·ΔW·x‖→0 on the general
+  corpus is cheaper and directly pushes g→0. Default to ‖g·ΔW·x‖→0; KL as a variant.
+- **Preservation corpus must be DIVERSE** (multi-format general text/instructions) so muting generalizes
+  to BBH (format very different from commonsense), not just to its own training format.
+- **Generation-time gating:** per-token gate on the current hidden state; prompt tokens (clearly
+  out-domain) → mute. Check consistency across the generated sequence.
+- **2-STAGE training as the MINIMAL FIRST EXPERIMENT + instability fallback:** freeze an ALREADY-trained
+  LoRA, train ONLY the gate on top (task + preservation). Far fewer moving parts than joint training,
+  directly answers "can a gate learn to mute on held-out out-domain?", and avoids adapter↔gate instability.
+  Do this BEFORE joint training.
+- **Mechanism evidence is mandatory:** report the g(x) distribution — high on commonsense, low on
+  held-out BBH/MMLU. High retention WITHOUT demonstrated muting separation is not evidence.
+
 ## 10. Connection to the thesis (the paper arc, if it works)
 finding (magnitude governs forgetting, direction doesn't) → implication (the cost is applying magnitude
 off-task) → method (gate magnitude per-input, learn the off-region via a preservation loss) → result
