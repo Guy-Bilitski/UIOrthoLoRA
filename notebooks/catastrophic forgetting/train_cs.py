@@ -90,8 +90,10 @@ def build_adapter(method, model, args):
     targets = args.target_modules.split(",")
     if method in ("lora", "clora"):
         cfg = LoraConfig(r=args.lora_r, lora_alpha=args.lora_alpha, target_modules=targets,
-                         lora_dropout=args.dropout, bias="none", task_type="CAUSAL_LM")
-        desc = {"r": args.lora_r, "lora_alpha": args.lora_alpha, "lora_dropout": args.dropout}
+                         lora_dropout=args.dropout, bias="none", task_type="CAUSAL_LM",
+                         use_dora=bool(getattr(args, "use_dora", 0)))
+        desc = {"r": args.lora_r, "lora_alpha": args.lora_alpha, "lora_dropout": args.dropout,
+                "use_dora": bool(getattr(args, "use_dora", 0))}
         if method == "clora":
             desc.update({"clora_k": args.clora_k, "clora_lambda": args.clora_lambda})
     elif method == "uiortholora":
@@ -135,6 +137,7 @@ def main():
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--max_samples", type=int, default=0)
     # LoRA
+    ap.add_argument("--use_dora", type=int, default=0, help="DoRA: decouple magnitude (m) from direction. Test the adaptation-per-||dW|| frontier vs retention (DoRA never eval'd for retention).")
     ap.add_argument("--lora_r", type=int, default=32)
     ap.add_argument("--lora_alpha", type=int, default=64)
     # CLoRA
