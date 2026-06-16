@@ -43,9 +43,10 @@ meaningful one way, it's a weak experiment. Status as of 2026-06-15 ~13:40.
   v51→CS23, v205→**CS71/ret25.7**, v410→CS48; and clean full-rot **v410 dE0→CS69/ret26.3 @ spec8.2**.
   ⇒ the CORRECTED instrument DOES reach strong Pareto (CS~70 @ ret~26, BETTER retention than legacy
   uioT_k410 72.7/25) — at the right rotation/use_de. The first CS48 point was a bad cell, not a limit.
-- **#5 rank → PARTIAL, deflating the surprise for LoRA.** r4 ret25.36, r8 25.32, r32 23.4 ⇒ higher LoRA
-  rank → MORE forgetting (CONVENTIONAL), OPPOSITE to "rank mitigates CF". The surprise was likely
-  UIO-k_val-specific (more low-σ directions at lower magnitude), NOT general. Await full sweep + E2b matched-CS.
+- **#5 rank → REFUTED for LoRA (r4..r64).** ret monotone DOWN 25.4→25.3→24.8→23.4→21.1 as rank 4→64,
+  tracking ‖ΔW‖_F up 19→56 (CONVENTIONAL rank↑→forget↑, magnitude-explained). Gemini's "diffusion" also
+  refuted: σ₁ GROWS with rank (38.8→111.3), no spreading. ⇒ NO independent rank effect; "rank mitigates
+  CF" was UIO-k_val-specific, not general. Thread-2 yielded no surprise — folds into the magnitude law.
 
 ## Self-audit: is each row meaningful either way?
 ALL 7 are bidirectionally informative ✓ — every CONFIRMED and REFUTED cell is a publishable statement,
