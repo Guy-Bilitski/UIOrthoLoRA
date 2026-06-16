@@ -48,6 +48,10 @@ meaningful one way, it's a weak experiment. Status as of 2026-06-15 ~13:40.
   refuted: σ₁ GROWS with rank (38.8→111.3), no spreading. ⇒ NO independent rank effect; "rank mitigates
   CF" was UIO-k_val-specific, not general. Thread-2 yielded no surprise — folds into the magnitude law.
 
+
+- **#5 COMPLETE (r4..r256):** clean monotone — ret 25.4/25.3/24.8/23.4/21.1/16.2/**8.5** as rank 4→256, ||dW||_F 19→129. Textbook magnitude→forgetting (supporting figure, not novel). Surprise dead.
+- **#3 first point:** LoRA+wd=0.01 ||dW||_F=39 (barely shrank from 40.8) ret23.5 ~ CLoRA-k128 (23.5) at that magnitude. INCONCLUSIVE — need wd 0.1/0.3/1.0 to reach CLoRA-k1024/k2048's low-mag range. Running GPU0.
+
 ## Self-audit: is each row meaningful either way?
 ALL 7 are bidirectionally informative ✓ — every CONFIRMED and REFUTED cell is a publishable statement,
 not a null. That is the check the user asked for ("are we on the right track to MEANINGFUL results").
