@@ -58,6 +58,52 @@ must be argued against (a) our WELL-reproduced CLoRA points (k1024 = 79.9/25.6, 
 - Lit-check shows the field already reported tuned-wd baselines beating/comparable → not novel.
 - Doesn't generalize to a 2nd setting → scope down to "in this setting" / curiosity.
 
+## ⚠️ UNIVERSAL-CURVE TEST (2026-06-16, fast-scale preview) — TEMPERS the bold claim
+The bold claim "geometry doesn't matter, only ‖ΔW‖_F" predicts ALL adapters COLLAPSE onto one
+retention-vs-F curve. Preview over 36 points (CLoRA/LoRA-rank/LoRA+wd/UIO-corr): at matched F, retention
+SPREADS 3–5.6 pts, systematically (LoRA+wd & UIO-corr ABOVE CLoRA). That is NOT a collapse → HINTS
+geometry DOES matter → bold claim likely FALSE. BUT the spread ≈ fast-eval noise (±4), so UNRESOLVED until
+full-scale (noise ~±1.5). 
+**CLAIM DISCIPLINE:** lead with the DEFENSIBLE claim — "simple LoRA+wd ≥ elaborate forgetting adapters"
+(strong-baselines). Do NOT lead with "geometry irrelevant" — the data leans AGAINST it. The universal
+collapse is an ADDITIONAL claim, only if full-scale shows the spread vanish. Two SEPARATE axes:
+  - retention vs F  : universal? (tests "geometry irrelevant for forgetting")
+  - CS vs F         : differs by method (adaptation EFFICIENCY) — LoRA+wd best (CS80.7@F15), UIO worst.
+
+## ═══ FULL CAMPAIGN (2026-06-16): "Are forgetting-mitigation adapters necessary vs regularized LoRA?" ═══
+Goal: a fair, full-scale, multi-axis comparison showing simple **LoRA+weight-decay** matches/dominates the
+elaborate forgetting adapters on the adaptation–retention frontier. If it holds + is novel → a strong
+"rethinking strong baselines" paper.
+
+### TWO GATES (enforce BEFORE committing the full compute)
+- **GATE 1 — premise (running now):** full-scale LoRA+wd vs well-reproduced CLoRA. If full-scale does NOT
+  show LoRA+wd ≥ CLoRA → fast-eval inflated it; STOP the campaign, fall back to measurement paper.
+- **GATE 2 — novelty (lit-check, do ASAP):** has anyone shown TUNED regularized-LoRA (wd / dropout) is a
+  strong baseline that matches CLoRA/CorDA/DoRA/OPLoRA for FORGETTING? The "PEFT baselines are underrated"
+  genre EXISTS — must confirm this specific forgetting comparison is unclaimed. If claimed → not novel.
+
+### Comparison matrix (full-scale retention = FULL BBH+MMLU-Pro; CS = 8-task; report ‖ΔW‖_F + F∆)
+Protagonist — **LoRA+wd**: rank ∈ {8,16,32,64} × wd ∈ {0,0.05,0.1,0.3,1.0} (+ LR sensitivity {3e-4,1e-3}
+at rank32). Traces LoRA+wd's full frontier + rank×wd interaction.
+Competitors (each TUNED, not strawman; main HP swept):
+  - LoRA (wd=0) — forgetful baseline ✓        - CLoRA (k128..2048) ✓ + PAPER numbers (our k2048 weak)
+  - DoRA (matched ranks) — running             - UIOrthoLoRA-corrected ✓ (best ~71/26)
+  - MiLoRA (minor-SV init) — PORT+run          - [stretch] PiSSA / LoRA-Null / SC-LoRA / OPLoRA
+Seeds ≥3 on headline points (error bars on "dominates"). GENERALIZATION (for the strong claim): ≥1 more
+setting — Llama-3-8B and/or a math task (harder task = bigger ‖ΔW‖ needed → does wd still win, or hurt
+adaptation? this is where the claim could break — important regime test).
+
+### Mechanism (the "why" figure)
+Overlay ALL methods on (‖ΔW‖_F → retention): do they collapse onto ONE magnitude curve? LoRA+wd reduces
+‖ΔW‖ WITHOUT cutting CS; CLoRA's constraint cuts CS (k2048→65). Ties the result to the magnitude law (08).
+
+### Sequencing (gated)
+- A [running]: full-scale LoRA+wd vs CLoRA (GATE 1).
+- B [queued, training proceeds in parallel]: LoRA+wd rank×wd grid (full-scale).
+- C [ONLY if GATE 1 ✓ and GATE 2 ✓]: port MiLoRA(+others), seeds, generalization (2nd model/task).
+HONEST: a math/hard-task generalization is the make-or-break for the strong claim — commonsense is easy
+(small ‖ΔW‖ suffices), so wd looks free here; a task needing large ‖ΔW‖ may show wd trading CS for ret.
+
 ## Relation to other docs
 - DEPRIORITIZES 10 (gated adapter): if wd already breaks the frontier, the gate must beat wd-LoRA (higher
   bar) — keep as "can we do even better" / future work, not the lead.
