@@ -138,6 +138,8 @@ def main():
     ap.add_argument("--max_samples", type=int, default=0)
     # LoRA
     ap.add_argument("--use_dora", type=int, default=0, help="DoRA: decouple magnitude (m) from direction. Test the adaptation-per-||dW|| frontier vs retention (DoRA never eval'd for retention).")
+    ap.add_argument("--corda", type=int, default=0, help="CorDA-KPA data-aware init (faithful port; needs --lora_alpha==--lora_r). corda_init.py.")
+    ap.add_argument("--corda_calib_size", type=int, default=256)
     ap.add_argument("--lora_r", type=int, default=32)
     ap.add_argument("--lora_alpha", type=int, default=64)
     # CLoRA
@@ -195,6 +197,16 @@ def main():
     model.config.use_cache = False
     print(f"[run {run_name}] method={args.method} trainable={trainable:,} ({100*trainable/total:.3f}%) "
           f"adapter={adapter_desc}", flush=True)
+
+    if getattr(args, "corda", 0):
+        import corda_init as Ci
+        from datasets import load_dataset as _ld
+        assert args.lora_alpha == args.lora_r, "CorDA needs scaling=1 -> set --lora_alpha == --lora_r"
+        wt = _ld("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")   # CorDA default KPA calib (general text, NOT the eval set)
+        cprompts = [t for t in wt["text"] if len(t.strip()) > 50][:args.corda_calib_size]
+        cov = Ci.collect_corda_cov(model, cprompts, tokenizer, calib_size=args.corda_calib_size)
+        err = Ci.apply_corda(model, cov, r=args.lora_r)
+        print(f"[corda] KPA init applied to {len(cov)} layers; loss-preserving err={err:.2e}", flush=True)
 
     clora_reg = None
     if args.method == "clora":
