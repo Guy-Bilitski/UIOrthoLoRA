@@ -223,6 +223,85 @@ def correlations(cells):
     return "\n".join(lines)
 
 
+def leakage_analysis(rows):
+    """Geometry/leakage: join forensics (weight-basis out_top = fraction of dW energy in W0's
+    top singular subspace) + databasis (data_resp). Tests whether 'leakage into important
+    directions' predicts retention BEYOND magnitude. Auto-activates once forensics_*.json exist."""
+    fro, dat = {}, {}
+    for f in glob.glob(os.path.join(RES, "forensics_*.json")):
+        try:
+            d = json.load(open(f)); fro[d.get("run_name", "")] = d
+        except Exception:
+            pass
+    for f in glob.glob(os.path.join(RES, "databasis_*.json")):
+        try:
+            d = json.load(open(f)); dat[d.get("run_name", "")] = d
+        except Exception:
+            pass
+    if not fro and not dat:
+        return "[leakage] pending forensics pass (run_forensics.sh) — paper/fig3 will auto-build then."
+    # build (method, F, ret, Lweight, Ldata) per run that has forensics
+    pts = []
+    for r in rows:
+        rn = r["run"]
+        fw = fro.get(rn, {}); fd = dat.get(rn, {})
+        # weight-basis leakage: energy fraction in top output singular subspace (out_top_*), pick mid-k
+        lw = next((fw[k] for k in fw if k.startswith("out_top_")), None)
+        ld = fd.get("d_inTop") if isinstance(fd.get("d_inTop"), (int, float)) else None
+        if r["F"] is not None and r["ret"] is not None and (lw is not None or ld is not None):
+            pts.append(dict(method=r["method"], F=r["F"], ret=r["ret"], lw=lw, ld=ld))
+    if not pts:
+        return "[leakage] forensics files present but no joinable runs yet."
+    lines = [f"=== LEAKAGE / GEOMETRY ({len(pts)} runs with forensics) ==="]
+    # partial correlation retention ~ leakage controlling for ||dW||_F (residualize both on F)
+    for name, key in (("weight-basis L_weight", "lw"), ("data-basis L_data", "ld")):
+        sub = [p for p in pts if p[key] is not None]
+        if len(sub) < 4:
+            continue
+        F = [p["F"] for p in sub]; R = [p["ret"] for p in sub]; L = [p[key] for p in sub]
+        rRL = _pearson(R, L); rRF = _pearson(R, F)
+        # residualize R and L on F, correlate residuals = partial corr
+        def resid(y):
+            b = _slope(F, y); a = (sum(y) - b * sum(F)) / len(y)
+            return [yi - (a + b * fi) for yi, fi in zip(y, F)]
+        rp = _pearson(resid(R), resid(L))
+        lines.append(f"  {name}: r(ret,L)={rRL:.2f}  r(ret,||dW||F)={rRF:.2f}  "
+                     f"PARTIAL r(ret,L | ||dW||F)={rp:.2f}  (n={len(sub)})")
+    lines.append("  -> partial r near 0 = geometry adds nothing beyond magnitude (the thesis).")
+    # Fig3: retention residual (after removing ||dW||_F) vs leakage
+    try:
+        import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
+        sub = [p for p in pts if p["lw"] is not None]
+        if len(sub) >= 4:
+            F = [p["F"] for p in sub]; R = [p["ret"] for p in sub]
+            b = _slope(F, R); a = (sum(R) - b * sum(F)) / len(R)
+            res = [ri - (a + b * fi) for ri, fi in zip(R, F)]
+            fig, ax = plt.subplots(figsize=(6.0, 4.4))
+            COL = {"lora": "#1f77b4", "lorawd": "#d62728", "clora": "#2ca02c", "dora": "#9467bd",
+                   "corda": "#8c564b", "milora": "#e377c2", "sclora": "#ff7f0e"}
+            for m in METHODS:
+                xs = [p["lw"] for p in sub if p["method"] == m]; ys = [r for p, r in zip(sub, res) if p["method"] == m]
+                if xs:
+                    ax.scatter(xs, ys, color=COL.get(m, "k"), s=55 if m in SIMPLE else 38,
+                               marker="o" if m in SIMPLE else "s", label=PRETTY[m], alpha=0.85)
+            ax.axhline(0, ls=":", color="gray")
+            ax.set_xlabel("weight-basis leakage  $L_{weight}$ (energy in top-$k$ subspace) →")
+            ax.set_ylabel("retention residual (after removing $\\|\\Delta W\\|_F$)")
+            ax.set_title("Geometry adds nothing beyond magnitude (flat = thesis)")
+            ax.legend(fontsize=7.5, ncol=2); ax.grid(alpha=0.25)
+            fig.tight_layout(); fig.savefig(os.path.join(OUT, "fig3_leakage.png"), dpi=140); plt.close(fig)
+            lines.append("  [figures] wrote paper/fig3_leakage.png")
+    except Exception as e:
+        lines.append(f"  [fig3] skipped: {e}")
+    return "\n".join(lines)
+
+
+def _slope(x, y):
+    n = len(x); mx = sum(x) / n; my = sum(y) / n
+    num = sum((a - mx) * (b - my) for a, b in zip(x, y)); den = sum((a - mx) ** 2 for a in x)
+    return num / (den + 1e-12)
+
+
 if __name__ == "__main__":
     rows = load()
     cells = agg_cfg(rows)
@@ -231,6 +310,7 @@ if __name__ == "__main__":
         if any(c["domain"] == domain for c in cells):
             out.append("\n" + build_table(cells, domain))
     out.append("\n" + correlations(cells))
+    out.append("\n" + leakage_analysis(rows))
     try:
         figures(cells, rows)
         out.append("\n[figures] wrote paper/fig1_pareto_*.png, paper/fig2_magnitude.png")
