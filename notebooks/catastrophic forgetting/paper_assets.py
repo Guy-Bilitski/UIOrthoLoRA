@@ -223,6 +223,77 @@ def correlations(cells):
     return "\n".join(lines)
 
 
+def _parse_lr(cfg):
+    """cfg like 'corda_r16_lr2e5' -> 2e-5 (encoding XeY means Xe-Y)."""
+    for tok in cfg.split("_"):
+        if tok.startswith("lr"):
+            m = tok[2:]
+            if "e" in m:
+                a, b = m.split("e")
+                try:
+                    return float(f"{a}e-{b}")
+                except Exception:
+                    return None
+    return None
+
+
+def lr_sensitivity(rows):
+    """THE LR-FAIRNESS EXHIBIT. From the per-method LR sweep (lrsw_/lrswm_ runs), show that
+    each adapter's optimal LR differs -> fixing one LR (as prior work does) biases the comparison.
+    Produces: (1) best-LR-per-method table (each adapter at its OWN adaptation-optimal LR -> the
+    defensible 'best result' row), (2) full adapt-vs-LR sweep, (3) fig. Auto-fills once Phase 2 lands."""
+    sw = {}   # (domain, method) -> [(lr, adapt, ret, F)]
+    for r in rows:
+        if not (r["run"].startswith("lrsw_") or r["run"].startswith("lrswm_")):
+            continue
+        lr = _parse_lr(r["cfg"])
+        if lr is None or r["adapt"] is None:
+            continue
+        sw.setdefault((r["domain"], r["method"]), []).append((lr, r["adapt"], r["ret"], r["F"]))
+    if not sw:
+        return "[LR-fairness] pending Phase-2 LR sweep (lrsw_*). Table+fig auto-build when it lands."
+    lines = ["=== LR-FAIRNESS: each adapter at its OWN best LR (defensible best-result table) ==="]
+    for domain in ("cs", "math"):
+        ms = [(m, sw[(d, m)]) for (d, m) in sw if d == domain]
+        if not ms:
+            continue
+        lines.append(f"-- {domain} -- (best LR chosen by max adaptation per method)")
+        lines.append(f'  {"method":9s} {"bestLR":>8s} {"adapt":>6s} {"ret":>6s} {"||dW||F":>8s}   sweep(LR:adapt)')
+        best_lrs = []
+        for m in METHODS:
+            pts = next((v for mm, v in ms if mm == m), None)
+            if not pts:
+                continue
+            pts = sorted(pts)
+            lr_b, ad_b, rt_b, f_b = max(pts, key=lambda t: (t[1] if t[1] is not None else -1))  # max adaptation
+            best_lrs.append(lr_b)
+            sweepstr = " ".join(f"{lr:g}:{(ad if ad is not None else 0):.0f}" for lr, ad, _, _ in pts)
+            lines.append(f'  {PRETTY[m]:9s} {lr_b:>8g} {ad_b or 0:6.1f} {rt_b or 0:6.1f} {(f_b or 0):8.3f}   {sweepstr}')
+        if len(set(best_lrs)) > 1:
+            lines.append(f"  => best LR is NOT the same across methods ({sorted(set(best_lrs))}) "
+                         f"-> a single fixed LR biases the comparison (the thesis).")
+    # figure: adaptation vs LR per method (cs)
+    try:
+        import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
+        COL = {"lora": "#1f77b4", "lorawd": "#d62728", "clora": "#2ca02c", "dora": "#9467bd",
+               "corda": "#8c564b", "milora": "#e377c2", "sclora": "#ff7f0e"}
+        ms = [(m, sw[("cs", m)]) for (d, m) in sw if d == "cs"]
+        if ms:
+            fig, ax = plt.subplots(figsize=(6.4, 4.6))
+            for m, pts in ms:
+                pts = sorted(pts)
+                ax.plot([p[0] for p in pts], [p[1] for p in pts], "-o", color=COL.get(m, "k"),
+                        lw=2.2 if m in SIMPLE else 1.3, label=PRETTY[m])
+            ax.set_xscale("log"); ax.set_xlabel("learning rate (log) →"); ax.set_ylabel("adaptation acc (%)")
+            ax.set_title("Per-method LR sensitivity (optimum differs → fixed-LR comparison is biased)")
+            ax.legend(fontsize=7.5, ncol=2); ax.grid(alpha=0.25, which="both")
+            fig.tight_layout(); fig.savefig(os.path.join(OUT, "fig4_lr_sensitivity.png"), dpi=140); plt.close(fig)
+            lines.append("  [figures] wrote paper/fig4_lr_sensitivity.png")
+    except Exception as e:
+        lines.append(f"  [fig4] skipped: {e}")
+    return "\n".join(lines)
+
+
 def leakage_analysis(rows):
     """Geometry/leakage: join forensics (weight-basis out_top = fraction of dW energy in W0's
     top singular subspace) + databasis (data_resp). Tests whether 'leakage into important
@@ -310,6 +381,7 @@ if __name__ == "__main__":
         if any(c["domain"] == domain for c in cells):
             out.append("\n" + build_table(cells, domain))
     out.append("\n" + correlations(cells))
+    out.append("\n" + lr_sensitivity(rows))
     out.append("\n" + leakage_analysis(rows))
     try:
         figures(cells, rows)
