@@ -1,0 +1,33 @@
+{
+  "run_name": "clora_k1024_s43",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/clora_k1024_s43",
+  "per_dataset": {
+    "boolq": 66.91,
+    "piqa": 82.7,
+    "social_i_qa": 24.67,
+    "hellaswag": 20.56,
+    "winogrande": 74.11,
+    "ARC-Easy": 76.39,
+    "ARC-Challenge": 63.05,
+    "openbookqa": 57.0
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.4361,
+    "dw_sv_mean": 9.9253,
+    "dw_sv_max": 21.3107,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 58.17,
+    "bbh": 32.31,
+    "mmlu_pro": 16.74,
+    "retention_mean": 24.52,
+    "retention_broad": null,
+    "fdelta": 0.4361,
+    "dw_sv_max": 21.3107,
+    "dw_sv_mean": 9.9253
+  },
+  "git_commit": "f41c78b90667ad840d43fcfb7cd5c7c53a3ebb98",
+  "evaluated_at": "2026-06-18T20:05:44+03:00"
+}

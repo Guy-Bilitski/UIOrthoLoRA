@@ -1,0 +1,81 @@
+{
+  "run_name": "base_l2-7b__retshard3",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_law",
+    "mmlu_pro_computer_science",
+    "bbh_cot_fewshot_disambiguation_qa",
+    "bbh_cot_fewshot_movie_recommendation",
+    "bbh_cot_fewshot_snarks"
+  ],
+  "scores": {
+    "mmlu_pro_law": 0.16348773841961853,
+    "mmlu_pro_computer_science": 0.17560975609756097,
+    "bbh_cot_fewshot_disambiguation_qa": 0.444,
+    "bbh_cot_fewshot_movie_recommendation": 0.708,
+    "bbh_cot_fewshot_snarks": 0.4887640449438202
+  },
+  "results": {
+    "mmlu_pro_law": {
+      "name": "mmlu_pro_law",
+      "alias": "law",
+      "sample_len": 1101,
+      "exact_match,custom-extract": 0.16348773841961853,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_computer_science": {
+      "name": "mmlu_pro_computer_science",
+      "alias": "computer_science",
+      "sample_len": 410,
+      "exact_match,custom-extract": 0.17560975609756097,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_cot_fewshot_disambiguation_qa": {
+      "name": "bbh_cot_fewshot_disambiguation_qa",
+      "alias": "bbh_cot_fewshot_disambiguation_qa",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.444,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_movie_recommendation": {
+      "name": "bbh_cot_fewshot_movie_recommendation",
+      "alias": "bbh_cot_fewshot_movie_recommendation",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.708,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_snarks": {
+      "name": "bbh_cot_fewshot_snarks",
+      "alias": "bbh_cot_fewshot_snarks",
+      "sample_len": 178,
+      "exact_match,get-answer": 0.4887640449438202,
+      "exact_match_stderr,get-answer": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_law": {
+      "original": 1101,
+      "effective": 1101
+    },
+    "mmlu_pro_computer_science": {
+      "original": 410,
+      "effective": 410
+    },
+    "bbh_cot_fewshot_disambiguation_qa": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_movie_recommendation": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_snarks": {
+      "original": 178,
+      "effective": 178
+    }
+  },
+  "runtime_s": 2940.5,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-09T23:51:08+03:00"
+}

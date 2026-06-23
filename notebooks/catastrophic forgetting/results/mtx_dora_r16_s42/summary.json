@@ -1,0 +1,37 @@
+{
+  "run_name": "mtx_dora_r16_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/mtx_dora_r16_s42",
+  "per_dataset": {
+    "boolq": 71.68,
+    "piqa": 82.64,
+    "social_i_qa": 79.63,
+    "hellaswag": 87.05,
+    "winogrande": 83.11,
+    "ARC-Easy": 83.04,
+    "ARC-Challenge": 68.09,
+    "openbookqa": 79.6
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.6658,
+    "dw_sv_mean": 17.7157,
+    "dw_sv_max": 52.6412,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 79.36,
+    "adapt_task": "cs",
+    "bbh": 30.52,
+    "mmlu_pro": 16.12,
+    "mmlu": 42.13,
+    "arc_c": 38.82,
+    "truthfulqa": 34.49,
+    "retention_mean": 23.32,
+    "retention_broad": 32.42,
+    "fdelta": 0.6658,
+    "dw_sv_max": 52.6412,
+    "dw_sv_mean": 17.7157
+  },
+  "git_commit": "f41c78b90667ad840d43fcfb7cd5c7c53a3ebb98",
+  "evaluated_at": "2026-06-22T07:23:13+03:00"
+}

@@ -1,0 +1,121 @@
+{
+  "run_name": "base_l2-7b_bbhAO",
+  "adapter": "(base)",
+  "kind": "retention_agg",
+  "scores": {
+    "bbh": 33.1
+  },
+  "per_subtask": {
+    "bbh_fewshot_boolean_expressions": {
+      "exact_match": 0.648,
+      "n": 250
+    },
+    "bbh_fewshot_logical_deduction_five_objects": {
+      "exact_match": 0.216,
+      "n": 250
+    },
+    "bbh_fewshot_reasoning_about_colored_objects": {
+      "exact_match": 0.224,
+      "n": 250
+    },
+    "bbh_fewshot_tracking_shuffled_objects_three_objects": {
+      "exact_match": 0.32,
+      "n": 250
+    },
+    "bbh_fewshot_causal_judgement": {
+      "exact_match": 0.48128342245989303,
+      "n": 250
+    },
+    "bbh_fewshot_logical_deduction_seven_objects": {
+      "exact_match": 0.148,
+      "n": 250
+    },
+    "bbh_fewshot_ruin_names": {
+      "exact_match": 0.26,
+      "n": 250
+    },
+    "bbh_fewshot_web_of_lies": {
+      "exact_match": 0.488,
+      "n": 250
+    },
+    "bbh_fewshot_date_understanding": {
+      "exact_match": 0.38,
+      "n": 250
+    },
+    "bbh_fewshot_logical_deduction_three_objects": {
+      "exact_match": 0.344,
+      "n": 250
+    },
+    "bbh_fewshot_salient_translation_error_detection": {
+      "exact_match": 0.224,
+      "n": 250
+    },
+    "bbh_fewshot_word_sorting": {
+      "exact_match": 0.316,
+      "n": 250
+    },
+    "bbh_fewshot_disambiguation_qa": {
+      "exact_match": 0.468,
+      "n": 250
+    },
+    "bbh_fewshot_movie_recommendation": {
+      "exact_match": 0.46,
+      "n": 250
+    },
+    "bbh_fewshot_snarks": {
+      "exact_match": 0.47752808988764045,
+      "n": 250
+    },
+    "bbh_fewshot_dyck_languages": {
+      "exact_match": 0.236,
+      "n": 250
+    },
+    "bbh_fewshot_multistep_arithmetic_two": {
+      "exact_match": 0.004,
+      "n": 250
+    },
+    "bbh_fewshot_sports_understanding": {
+      "exact_match": 0.676,
+      "n": 250
+    },
+    "bbh_fewshot_formal_fallacies": {
+      "exact_match": 0.464,
+      "n": 250
+    },
+    "bbh_fewshot_navigate": {
+      "exact_match": 0.44,
+      "n": 250
+    },
+    "bbh_fewshot_temporal_sequences": {
+      "exact_match": 0.08,
+      "n": 250
+    },
+    "bbh_fewshot_geometric_shapes": {
+      "exact_match": 0.108,
+      "n": 250
+    },
+    "bbh_fewshot_object_counting": {
+      "exact_match": 0.4,
+      "n": 250
+    },
+    "bbh_fewshot_tracking_shuffled_objects_five_objects": {
+      "exact_match": 0.18,
+      "n": 250
+    },
+    "bbh_fewshot_hyperbaton": {
+      "exact_match": 0.484,
+      "n": 250
+    },
+    "bbh_fewshot_penguins_in_a_table": {
+      "exact_match": 0.273972602739726,
+      "n": 250
+    },
+    "bbh_fewshot_tracking_shuffled_objects_seven_objects": {
+      "exact_match": 0.136,
+      "n": 250
+    }
+  },
+  "n_shards": 8,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T00:09:50+03:00"
+}

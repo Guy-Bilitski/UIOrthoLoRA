@@ -1,0 +1,198 @@
+{
+  "run_name": "lora_cs_l2-7b_r32__retshard0",
+  "adapter": "models/lora_cs_l2-7b_r32",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_math",
+    "mmlu_pro_other",
+    "mmlu_pro_psychology",
+    "mmlu_pro_business",
+    "bbh_fewshot_boolean_expressions",
+    "bbh_fewshot_date_understanding",
+    "bbh_fewshot_formal_fallacies",
+    "bbh_fewshot_logical_deduction_five_objects",
+    "bbh_fewshot_movie_recommendation",
+    "bbh_fewshot_object_counting",
+    "bbh_fewshot_ruin_names",
+    "bbh_fewshot_sports_understanding",
+    "bbh_fewshot_tracking_shuffled_objects_seven_objects",
+    "bbh_fewshot_word_sorting"
+  ],
+  "scores": {
+    "mmlu_pro_math": 0.05477424130273871,
+    "mmlu_pro_other": 0.14826839826839827,
+    "mmlu_pro_psychology": 0.20050125313283207,
+    "mmlu_pro_business": 0.11406844106463879,
+    "bbh_fewshot_boolean_expressions": 0.608,
+    "bbh_fewshot_date_understanding": 0.252,
+    "bbh_fewshot_formal_fallacies": 0.468,
+    "bbh_fewshot_logical_deduction_five_objects": 0.22,
+    "bbh_fewshot_movie_recommendation": 0.548,
+    "bbh_fewshot_object_counting": 0.3,
+    "bbh_fewshot_ruin_names": 0.16,
+    "bbh_fewshot_sports_understanding": 0.548,
+    "bbh_fewshot_tracking_shuffled_objects_seven_objects": 0.156,
+    "bbh_fewshot_word_sorting": 0.008
+  },
+  "results": {
+    "mmlu_pro_math": {
+      "name": "mmlu_pro_math",
+      "alias": "math",
+      "sample_len": 1351,
+      "exact_match,custom-extract": 0.05477424130273871,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_other": {
+      "name": "mmlu_pro_other",
+      "alias": "other",
+      "sample_len": 924,
+      "exact_match,custom-extract": 0.14826839826839827,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_psychology": {
+      "name": "mmlu_pro_psychology",
+      "alias": "psychology",
+      "sample_len": 798,
+      "exact_match,custom-extract": 0.20050125313283207,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_business": {
+      "name": "mmlu_pro_business",
+      "alias": "business",
+      "sample_len": 789,
+      "exact_match,custom-extract": 0.11406844106463879,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_fewshot_boolean_expressions": {
+      "name": "bbh_fewshot_boolean_expressions",
+      "alias": "bbh_fewshot_boolean_expressions",
+      "sample_len": 250,
+      "exact_match,none": 0.608,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_date_understanding": {
+      "name": "bbh_fewshot_date_understanding",
+      "alias": "bbh_fewshot_date_understanding",
+      "sample_len": 250,
+      "exact_match,none": 0.252,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_formal_fallacies": {
+      "name": "bbh_fewshot_formal_fallacies",
+      "alias": "bbh_fewshot_formal_fallacies",
+      "sample_len": 250,
+      "exact_match,none": 0.468,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_logical_deduction_five_objects": {
+      "name": "bbh_fewshot_logical_deduction_five_objects",
+      "alias": "bbh_fewshot_logical_deduction_five_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.22,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_movie_recommendation": {
+      "name": "bbh_fewshot_movie_recommendation",
+      "alias": "bbh_fewshot_movie_recommendation",
+      "sample_len": 250,
+      "exact_match,none": 0.548,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_object_counting": {
+      "name": "bbh_fewshot_object_counting",
+      "alias": "bbh_fewshot_object_counting",
+      "sample_len": 250,
+      "exact_match,none": 0.3,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_ruin_names": {
+      "name": "bbh_fewshot_ruin_names",
+      "alias": "bbh_fewshot_ruin_names",
+      "sample_len": 250,
+      "exact_match,none": 0.16,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_sports_understanding": {
+      "name": "bbh_fewshot_sports_understanding",
+      "alias": "bbh_fewshot_sports_understanding",
+      "sample_len": 250,
+      "exact_match,none": 0.548,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_tracking_shuffled_objects_seven_objects": {
+      "name": "bbh_fewshot_tracking_shuffled_objects_seven_objects",
+      "alias": "bbh_fewshot_tracking_shuffled_objects_seven_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.156,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_word_sorting": {
+      "name": "bbh_fewshot_word_sorting",
+      "alias": "bbh_fewshot_word_sorting",
+      "sample_len": 250,
+      "exact_match,none": 0.008,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_math": {
+      "original": 1351,
+      "effective": 1351
+    },
+    "mmlu_pro_other": {
+      "original": 924,
+      "effective": 924
+    },
+    "mmlu_pro_psychology": {
+      "original": 798,
+      "effective": 798
+    },
+    "mmlu_pro_business": {
+      "original": 789,
+      "effective": 789
+    },
+    "bbh_fewshot_boolean_expressions": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_date_understanding": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_formal_fallacies": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_logical_deduction_five_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_movie_recommendation": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_object_counting": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_ruin_names": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_sports_understanding": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_tracking_shuffled_objects_seven_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_word_sorting": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 7337.4,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T11:20:29+03:00"
+}

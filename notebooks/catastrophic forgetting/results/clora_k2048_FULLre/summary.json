@@ -1,0 +1,32 @@
+{
+  "run_name": "clora_k2048_FULLre",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/clora_cs_k2048",
+  "per_dataset": {
+    "boolq": 71.8,
+    "piqa": 83.13,
+    "social_i_qa": 12.18,
+    "hellaswag": 37.81,
+    "winogrande": 81.45,
+    "ARC-Easy": 84.68,
+    "ARC-Challenge": 69.62,
+    "openbookqa": 82.4
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.3376,
+    "dw_sv_mean": 8.2798,
+    "dw_sv_max": 16.4119,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 65.38,
+    "bbh": 34.05,
+    "mmlu_pro": 17.34,
+    "retention_mean": 25.7,
+    "fdelta": 0.3376,
+    "dw_sv_max": 16.4119,
+    "dw_sv_mean": 8.2798
+  },
+  "git_commit": "c4e44cb73ca112ae777e04a2e4d1076b172a6f43",
+  "evaluated_at": "2026-06-17T02:31:21+03:00"
+}

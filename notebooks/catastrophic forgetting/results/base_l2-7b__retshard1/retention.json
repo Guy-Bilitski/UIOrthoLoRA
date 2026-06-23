@@ -1,0 +1,81 @@
+{
+  "run_name": "base_l2-7b__retshard1",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_physics",
+    "bbh_cot_fewshot_boolean_expressions",
+    "bbh_cot_fewshot_formal_fallacies",
+    "bbh_cot_fewshot_navigate",
+    "bbh_cot_fewshot_temporal_sequences"
+  ],
+  "scores": {
+    "mmlu_pro_physics": 0.1562740569668976,
+    "bbh_cot_fewshot_boolean_expressions": 0.676,
+    "bbh_cot_fewshot_formal_fallacies": 0.52,
+    "bbh_cot_fewshot_navigate": 0.532,
+    "bbh_cot_fewshot_temporal_sequences": 0.128
+  },
+  "results": {
+    "mmlu_pro_physics": {
+      "name": "mmlu_pro_physics",
+      "alias": "physics",
+      "sample_len": 1299,
+      "exact_match,custom-extract": 0.1562740569668976,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_cot_fewshot_boolean_expressions": {
+      "name": "bbh_cot_fewshot_boolean_expressions",
+      "alias": "bbh_cot_fewshot_boolean_expressions",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.676,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_formal_fallacies": {
+      "name": "bbh_cot_fewshot_formal_fallacies",
+      "alias": "bbh_cot_fewshot_formal_fallacies",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.52,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_navigate": {
+      "name": "bbh_cot_fewshot_navigate",
+      "alias": "bbh_cot_fewshot_navigate",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.532,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_temporal_sequences": {
+      "name": "bbh_cot_fewshot_temporal_sequences",
+      "alias": "bbh_cot_fewshot_temporal_sequences",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.128,
+      "exact_match_stderr,get-answer": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_physics": {
+      "original": 1299,
+      "effective": 1299
+    },
+    "bbh_cot_fewshot_boolean_expressions": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_formal_fallacies": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_navigate": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_temporal_sequences": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 2872.2,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-09T23:50:00+03:00"
+}

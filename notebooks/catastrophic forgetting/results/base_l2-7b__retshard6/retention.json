@@ -1,0 +1,81 @@
+{
+  "run_name": "base_l2-7b__retshard6",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_economics",
+    "mmlu_pro_business",
+    "bbh_cot_fewshot_logical_deduction_five_objects",
+    "bbh_cot_fewshot_reasoning_about_colored_objects",
+    "bbh_cot_fewshot_tracking_shuffled_objects_three_objects"
+  ],
+  "scores": {
+    "mmlu_pro_economics": 0.31990521327014215,
+    "mmlu_pro_business": 0.1888466413181242,
+    "bbh_cot_fewshot_logical_deduction_five_objects": 0.332,
+    "bbh_cot_fewshot_reasoning_about_colored_objects": 0.46,
+    "bbh_cot_fewshot_tracking_shuffled_objects_three_objects": 0.336
+  },
+  "results": {
+    "mmlu_pro_economics": {
+      "name": "mmlu_pro_economics",
+      "alias": "economics",
+      "sample_len": 844,
+      "exact_match,custom-extract": 0.31990521327014215,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_business": {
+      "name": "mmlu_pro_business",
+      "alias": "business",
+      "sample_len": 789,
+      "exact_match,custom-extract": 0.1888466413181242,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_cot_fewshot_logical_deduction_five_objects": {
+      "name": "bbh_cot_fewshot_logical_deduction_five_objects",
+      "alias": "bbh_cot_fewshot_logical_deduction_five_objects",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.332,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_reasoning_about_colored_objects": {
+      "name": "bbh_cot_fewshot_reasoning_about_colored_objects",
+      "alias": "bbh_cot_fewshot_reasoning_about_colored_objects",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.46,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_tracking_shuffled_objects_three_objects": {
+      "name": "bbh_cot_fewshot_tracking_shuffled_objects_three_objects",
+      "alias": "bbh_cot_fewshot_tracking_shuffled_objects_three_objects",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.336,
+      "exact_match_stderr,get-answer": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_economics": {
+      "original": 844,
+      "effective": 844
+    },
+    "mmlu_pro_business": {
+      "original": 789,
+      "effective": 789
+    },
+    "bbh_cot_fewshot_logical_deduction_five_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_reasoning_about_colored_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_tracking_shuffled_objects_three_objects": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 2770.4,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-09T23:48:18+03:00"
+}

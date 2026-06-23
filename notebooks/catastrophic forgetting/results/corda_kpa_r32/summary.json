@@ -1,0 +1,32 @@
+{
+  "run_name": "corda_kpa_r32",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/corda_kpa_r32",
+  "per_dataset": {
+    "boolq": 63.82,
+    "piqa": 71.93,
+    "social_i_qa": 76.41,
+    "hellaswag": 65.63,
+    "winogrande": 71.98,
+    "ARC-Easy": 64.94,
+    "ARC-Challenge": 51.19,
+    "openbookqa": 67.0
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 1.3567,
+    "dw_sv_mean": 39.1148,
+    "dw_sv_max": 1012.2668,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 66.61,
+    "bbh": 22.07,
+    "mmlu_pro": 4.35,
+    "retention_mean": 13.21,
+    "fdelta": 1.3567,
+    "dw_sv_max": 1012.2668,
+    "dw_sv_mean": 39.1148
+  },
+  "git_commit": "f41c78b90667ad840d43fcfb7cd5c7c53a3ebb98",
+  "evaluated_at": "2026-06-18T16:36:10+03:00"
+}

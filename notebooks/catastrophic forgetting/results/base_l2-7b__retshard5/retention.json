@@ -1,0 +1,81 @@
+{
+  "run_name": "base_l2-7b__retshard5",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_other",
+    "mmlu_pro_biology",
+    "bbh_cot_fewshot_logical_deduction_seven_objects",
+    "bbh_cot_fewshot_ruin_names",
+    "bbh_cot_fewshot_web_of_lies"
+  ],
+  "scores": {
+    "mmlu_pro_other": 0.21428571428571427,
+    "mmlu_pro_biology": 0.3514644351464435,
+    "bbh_cot_fewshot_logical_deduction_seven_objects": 0.24,
+    "bbh_cot_fewshot_ruin_names": 0.336,
+    "bbh_cot_fewshot_web_of_lies": 0.524
+  },
+  "results": {
+    "mmlu_pro_other": {
+      "name": "mmlu_pro_other",
+      "alias": "other",
+      "sample_len": 924,
+      "exact_match,custom-extract": 0.21428571428571427,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_biology": {
+      "name": "mmlu_pro_biology",
+      "alias": "biology",
+      "sample_len": 717,
+      "exact_match,custom-extract": 0.3514644351464435,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_cot_fewshot_logical_deduction_seven_objects": {
+      "name": "bbh_cot_fewshot_logical_deduction_seven_objects",
+      "alias": "bbh_cot_fewshot_logical_deduction_seven_objects",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.24,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_ruin_names": {
+      "name": "bbh_cot_fewshot_ruin_names",
+      "alias": "bbh_cot_fewshot_ruin_names",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.336,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_web_of_lies": {
+      "name": "bbh_cot_fewshot_web_of_lies",
+      "alias": "bbh_cot_fewshot_web_of_lies",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.524,
+      "exact_match_stderr,get-answer": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_other": {
+      "original": 924,
+      "effective": 924
+    },
+    "mmlu_pro_biology": {
+      "original": 717,
+      "effective": 717
+    },
+    "bbh_cot_fewshot_logical_deduction_seven_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_ruin_names": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_web_of_lies": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 2282.9,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-09T23:40:07+03:00"
+}

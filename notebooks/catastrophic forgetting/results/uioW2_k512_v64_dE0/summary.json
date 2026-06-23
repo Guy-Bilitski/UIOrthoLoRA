@@ -1,0 +1,57 @@
+{
+  "run_name": "uioW2_k512_v64_dE0",
+  "method": "uiortholora",
+  "config": {
+    "k_val": 512,
+    "k_vec": 64,
+    "use_de": false,
+    "learning_rate": 0.01
+  },
+  "trainable_params": 3145728,
+  "trainable_pct": 0.0226,
+  "train_loss": 1.0088195777204998,
+  "train_s": 24993.3,
+  "per_dataset": {
+    "boolq": 62.51,
+    "piqa": 58.92,
+    "social_i_qa": 53.53,
+    "hellaswag": 21.75,
+    "winogrande": 48.07,
+    "ARC-Easy": 56.94,
+    "ARC-Challenge": 37.54,
+    "openbookqa": 44.4
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 1.0276,
+    "dw_sv_mean": 5.8841,
+    "dw_sv_max": 33.7548,
+    "n_matrices": 160
+  },
+  "leakage": {
+    "mu_E": 0.00275,
+    "nu_D": 0.00278,
+    "leak11": 0.0,
+    "offtail_F": 0.00283,
+    "rel_pert_F": 0.38258,
+    "drift_U": 1.00006,
+    "drift_V": 1.00087,
+    "n_modules": 160
+  },
+  "headline": {
+    "cs_avg": 47.96,
+    "bbh": 29.22,
+    "mmlu_pro": 5.13,
+    "retention_mean": 17.18,
+    "fdelta": 1.0276,
+    "dw_sv_max": 33.7548,
+    "dw_sv_mean": 5.8841,
+    "mu_E": 0.00275,
+    "nu_D": 0.00278,
+    "leak11": 0.0,
+    "offtail_F": 0.00283,
+    "drift_U": 1.00006,
+    "drift_V": 1.00087
+  },
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-12T21:44:42+03:00"
+}

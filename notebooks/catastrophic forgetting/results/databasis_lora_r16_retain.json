@@ -1,0 +1,16 @@
+{
+  "run_name": "lora_r16",
+  "adapter": "/scratch/cf_models/lora_r16",
+  "kind": "databasis",
+  "cov_source": "retain",
+  "agg": {
+    "w_inTop": 0.1241,
+    "d_inTop": 0.12928,
+    "c_inTop": 0.13398,
+    "data_resp": 0.42604,
+    "dwF": 39.90033,
+    "n_matrices": 160,
+    "rfrac": 0.1,
+    "cov_source": "retain"
+  }
+}

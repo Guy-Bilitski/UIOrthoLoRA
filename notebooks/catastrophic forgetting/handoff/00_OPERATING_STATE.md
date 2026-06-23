@@ -1,5 +1,11 @@
 # OPERATING STATE — read this first (handoff for any agent / future me)
 
+> ⚡ **LIVE STATE (2026-06-17): read `12_STATE_DUMP.md` FIRST** — it has the current findings ledger,
+> running pools, the two open gates, the SC-LoRA/CorDA pointers, the data-contamination bug, and how to
+> resume. Headline since the docs below: the "LoRA+wd DOMINATES CLoRA" excitement **deflated to a TIE**
+> at full scale; live claim = "simple LoRA+wd MATCHES the forgetting adapters" (pending data-aware
+> SC-LoRA/CorDA ports). The "what's running" section below is STALE — see 12.
+
 **Project (EVOLVED 2026-06-15):** A **controlled study of WHAT GOVERNS catastrophic forgetting (CF)
 in PEFT**, using corrected **UIOrthoLoRA / UILinLoRA as controllable INSTRUMENTS**. The original goal
 ("is UIOrthoLoRA an A*-worthy CLoRA-beater?") is **DEAD** — even corrected (drop_major) it only TIES

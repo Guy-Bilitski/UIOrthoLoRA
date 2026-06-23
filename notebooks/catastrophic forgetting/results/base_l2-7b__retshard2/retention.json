@@ -1,0 +1,81 @@
+{
+  "run_name": "base_l2-7b__retshard2",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_chemistry",
+    "mmlu_pro_history",
+    "bbh_cot_fewshot_dyck_languages",
+    "bbh_cot_fewshot_multistep_arithmetic_two",
+    "bbh_cot_fewshot_sports_understanding"
+  ],
+  "scores": {
+    "mmlu_pro_chemistry": 0.0812720848056537,
+    "mmlu_pro_history": 0.2204724409448819,
+    "bbh_cot_fewshot_dyck_languages": 0.02,
+    "bbh_cot_fewshot_multistep_arithmetic_two": 0.004,
+    "bbh_cot_fewshot_sports_understanding": 0.844
+  },
+  "results": {
+    "mmlu_pro_chemistry": {
+      "name": "mmlu_pro_chemistry",
+      "alias": "chemistry",
+      "sample_len": 1132,
+      "exact_match,custom-extract": 0.0812720848056537,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_history": {
+      "name": "mmlu_pro_history",
+      "alias": "history",
+      "sample_len": 381,
+      "exact_match,custom-extract": 0.2204724409448819,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_cot_fewshot_dyck_languages": {
+      "name": "bbh_cot_fewshot_dyck_languages",
+      "alias": "bbh_cot_fewshot_dyck_languages",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.02,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_multistep_arithmetic_two": {
+      "name": "bbh_cot_fewshot_multistep_arithmetic_two",
+      "alias": "bbh_cot_fewshot_multistep_arithmetic_two",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.004,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_sports_understanding": {
+      "name": "bbh_cot_fewshot_sports_understanding",
+      "alias": "bbh_cot_fewshot_sports_understanding",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.844,
+      "exact_match_stderr,get-answer": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_chemistry": {
+      "original": 1132,
+      "effective": 1132
+    },
+    "mmlu_pro_history": {
+      "original": 381,
+      "effective": 381
+    },
+    "bbh_cot_fewshot_dyck_languages": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_multistep_arithmetic_two": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_sports_understanding": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 3290.0,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-09T23:56:57+03:00"
+}

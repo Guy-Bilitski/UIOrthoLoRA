@@ -1,0 +1,68 @@
+{
+  "run_name": "base_l2-7b_bbhAO__retshard1",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "bbh_fewshot_causal_judgement",
+    "bbh_fewshot_logical_deduction_seven_objects",
+    "bbh_fewshot_ruin_names",
+    "bbh_fewshot_web_of_lies"
+  ],
+  "scores": {
+    "bbh_fewshot_causal_judgement": 0.48128342245989303,
+    "bbh_fewshot_logical_deduction_seven_objects": 0.148,
+    "bbh_fewshot_ruin_names": 0.26,
+    "bbh_fewshot_web_of_lies": 0.488
+  },
+  "results": {
+    "bbh_fewshot_causal_judgement": {
+      "name": "bbh_fewshot_causal_judgement",
+      "alias": "bbh_fewshot_causal_judgement",
+      "sample_len": 187,
+      "exact_match,none": 0.48128342245989303,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_logical_deduction_seven_objects": {
+      "name": "bbh_fewshot_logical_deduction_seven_objects",
+      "alias": "bbh_fewshot_logical_deduction_seven_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.148,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_ruin_names": {
+      "name": "bbh_fewshot_ruin_names",
+      "alias": "bbh_fewshot_ruin_names",
+      "sample_len": 250,
+      "exact_match,none": 0.26,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_web_of_lies": {
+      "name": "bbh_fewshot_web_of_lies",
+      "alias": "bbh_fewshot_web_of_lies",
+      "sample_len": 250,
+      "exact_match,none": 0.488,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "bbh_fewshot_causal_judgement": {
+      "original": 187,
+      "effective": 187
+    },
+    "bbh_fewshot_logical_deduction_seven_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_ruin_names": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_web_of_lies": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 155.4,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T00:09:09+03:00"
+}

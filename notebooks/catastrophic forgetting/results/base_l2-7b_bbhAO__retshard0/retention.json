@@ -1,0 +1,68 @@
+{
+  "run_name": "base_l2-7b_bbhAO__retshard0",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "bbh_fewshot_boolean_expressions",
+    "bbh_fewshot_logical_deduction_five_objects",
+    "bbh_fewshot_reasoning_about_colored_objects",
+    "bbh_fewshot_tracking_shuffled_objects_three_objects"
+  ],
+  "scores": {
+    "bbh_fewshot_boolean_expressions": 0.648,
+    "bbh_fewshot_logical_deduction_five_objects": 0.216,
+    "bbh_fewshot_reasoning_about_colored_objects": 0.224,
+    "bbh_fewshot_tracking_shuffled_objects_three_objects": 0.32
+  },
+  "results": {
+    "bbh_fewshot_boolean_expressions": {
+      "name": "bbh_fewshot_boolean_expressions",
+      "alias": "bbh_fewshot_boolean_expressions",
+      "sample_len": 250,
+      "exact_match,none": 0.648,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_logical_deduction_five_objects": {
+      "name": "bbh_fewshot_logical_deduction_five_objects",
+      "alias": "bbh_fewshot_logical_deduction_five_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.216,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_reasoning_about_colored_objects": {
+      "name": "bbh_fewshot_reasoning_about_colored_objects",
+      "alias": "bbh_fewshot_reasoning_about_colored_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.224,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_tracking_shuffled_objects_three_objects": {
+      "name": "bbh_fewshot_tracking_shuffled_objects_three_objects",
+      "alias": "bbh_fewshot_tracking_shuffled_objects_three_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.32,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "bbh_fewshot_boolean_expressions": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_logical_deduction_five_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_reasoning_about_colored_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_tracking_shuffled_objects_three_objects": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 155.4,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T00:09:13+03:00"
+}

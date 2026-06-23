@@ -1,0 +1,16 @@
+{
+  "run_name": "dora_r32",
+  "adapter": "/scratch/cf_models/dora_r32",
+  "kind": "databasis",
+  "cov_source": "retain",
+  "agg": {
+    "w_inTop": 0.14304,
+    "d_inTop": 0.13711,
+    "c_inTop": 0.14413,
+    "data_resp": 23.33701,
+    "dwF": 59.34606,
+    "n_matrices": 160,
+    "rfrac": 0.1,
+    "cov_source": "retain"
+  }
+}

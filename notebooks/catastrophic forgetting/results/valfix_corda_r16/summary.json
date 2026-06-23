@@ -1,0 +1,33 @@
+{
+  "run_name": "valfix_corda_r16",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/valfix_corda_r16",
+  "per_dataset": {
+    "boolq": 63.5,
+    "piqa": 10.5,
+    "social_i_qa": 7.0,
+    "hellaswag": 9.0,
+    "winogrande": 27.0,
+    "ARC-Easy": 8.0,
+    "ARC-Challenge": 8.0,
+    "openbookqa": 9.0
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.0878,
+    "dw_sv_mean": 3.5636,
+    "dw_sv_max": 115.7356,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 17.75,
+    "bbh": 29.28,
+    "mmlu_pro": 8.32,
+    "retention_mean": 18.8,
+    "retention_broad": null,
+    "fdelta": 0.0878,
+    "dw_sv_max": 115.7356,
+    "dw_sv_mean": 3.5636
+  },
+  "git_commit": "f41c78b90667ad840d43fcfb7cd5c7c53a3ebb98",
+  "evaluated_at": "2026-06-18T18:59:16+03:00"
+}

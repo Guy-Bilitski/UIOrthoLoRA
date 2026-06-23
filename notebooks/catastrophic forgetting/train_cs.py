@@ -140,6 +140,10 @@ def main():
     ap.add_argument("--use_dora", type=int, default=0, help="DoRA: decouple magnitude (m) from direction. Test the adaptation-per-||dW|| frontier vs retention (DoRA never eval'd for retention).")
     ap.add_argument("--corda", type=int, default=0, help="CorDA-KPA data-aware init (faithful port; needs --lora_alpha==--lora_r). corda_init.py.")
     ap.add_argument("--corda_calib_size", type=int, default=256)
+    ap.add_argument("--milora", type=int, default=0, help="MiLoRA minor (bottom-r) SVD init; no calib. milora_init.py. Needs --lora_alpha==--lora_r.")
+    ap.add_argument("--sclora", type=int, default=0, help="SC-LoRA data-aware init (D+/D- covariance). sclora_init.py. Needs --lora_alpha==--lora_r.")
+    ap.add_argument("--sclora_beta", type=float, default=0.5, help="SC-LoRA balance: top-r eigvecs of (1-beta)Cov+ - beta*Cov- (swept knob).")
+    ap.add_argument("--sclora_calib_size", type=int, default=256)
     ap.add_argument("--lora_r", type=int, default=32)
     ap.add_argument("--lora_alpha", type=int, default=64)
     # CLoRA
@@ -208,6 +212,40 @@ def main():
         err = Ci.apply_corda(model, cov, r=args.lora_r)
         print(f"[corda] KPA init applied to {len(cov)} layers; loss-preserving err={err:.2e}", flush=True)
 
+    if getattr(args, "milora", 0):
+        import milora_init as Mi
+        assert args.lora_alpha == args.lora_r, "MiLoRA needs scaling=1 -> set --lora_alpha == --lora_r"
+        err = Mi.apply_milora(model, r=args.lora_r)
+        print(f"[milora] minor-SVD init applied; loss-preserving err={err:.2e}", flush=True)
+
+    if getattr(args, "sclora", 0):
+        import sclora_init as Si
+        from datasets import load_dataset as _ld
+        assert args.lora_alpha == args.lora_r, "SC-LoRA needs scaling=1 -> set --lora_alpha == --lora_r"
+        # D+ = the finetuning task; D- = world knowledge to preserve. Repo uses NQ-open (nq_open).
+        dplus = [run_lib.train_prompt(dp) for dp in data.select(range(min(args.sclora_calib_size, len(data))))]
+        try:
+            nq = _ld("google-research-datasets/nq_open", split="validation")
+            dminus = [q for q in nq["question"][:args.sclora_calib_size]]
+        except Exception as e:
+            print(f"[sclora] nq_open load failed ({e}); falling back to wikitext D-", flush=True)
+            wt = _ld("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
+            dminus = [t for t in wt["text"] if len(t.strip()) > 50][:args.sclora_calib_size]
+        # output-side balanced 2nd-moment with beta+sign folded in (repo-faithful); then eigh top-r.
+        M = Si.collect_sclora_M(model, dplus, dminus, tokenizer, beta=args.sclora_beta,
+                                max_len=args.cutoff_len)
+        err = Si.apply_sclora(model, M, r=args.lora_r)
+        print(f"[sclora] beta={args.sclora_beta} (output-side, NQ-open D-) init applied; "
+              f"loss-preserving err={err:.2e}", flush=True)
+
+    # CorDA/MiLoRA/SC-LoRA overwrite base.weight=W_res but PEFT saves only the adapter ->
+    # snapshot the init adapter now so we can persist a W0-relative (rank-2r) adapter at save.
+    residual_method = bool(getattr(args, "corda", 0) or getattr(args, "milora", 0) or getattr(args, "sclora", 0))
+    init_adapter = None
+    if residual_method:
+        import residual_save as Rs
+        init_adapter = Rs.capture_init_adapter(model)
+
     clora_reg = None
     if args.method == "clora":
         clora_reg = CLoRARegularizer(model, k=args.clora_k, lambda_=args.clora_lambda, seed=args.seed)
@@ -233,6 +271,11 @@ def main():
     dt = time.time() - t0
     model.save_pretrained(out_dir)
     tokenizer.save_pretrained(out_dir)
+    if residual_method:
+        import residual_save as Rs
+        n, r0 = Rs.convert_saved_to_w0_relative(out_dir, init_adapter)
+        print(f"[residual_save] converted {n} layers to W0-relative rank-{2*r0} adapter "
+              f"(was rank-{r0}); eval now uses correct W0 base", flush=True)
 
     cfg = {
         "run_name": run_name, "method": args.method, "task": "commonsense_170k",

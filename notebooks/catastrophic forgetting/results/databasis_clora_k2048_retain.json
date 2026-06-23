@@ -1,0 +1,16 @@
+{
+  "run_name": "clora_k2048",
+  "adapter": "/scratch/cf_models/clora_cs_k2048",
+  "kind": "databasis",
+  "cov_source": "retain",
+  "agg": {
+    "w_inTop": 0.11375,
+    "d_inTop": 0.12376,
+    "c_inTop": 0.12518,
+    "data_resp": 0.30369,
+    "dwF": 32.48882,
+    "n_matrices": 160,
+    "rfrac": 0.1,
+    "cov_source": "retain"
+  }
+}

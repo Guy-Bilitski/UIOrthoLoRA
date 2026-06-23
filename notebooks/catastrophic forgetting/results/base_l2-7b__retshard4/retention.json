@@ -1,0 +1,94 @@
+{
+  "run_name": "base_l2-7b__retshard4",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_engineering",
+    "mmlu_pro_philosophy",
+    "bbh_cot_fewshot_date_understanding",
+    "bbh_cot_fewshot_logical_deduction_three_objects",
+    "bbh_cot_fewshot_salient_translation_error_detection",
+    "bbh_cot_fewshot_word_sorting"
+  ],
+  "scores": {
+    "mmlu_pro_engineering": 0.12280701754385964,
+    "mmlu_pro_philosophy": 0.19839679358717435,
+    "bbh_cot_fewshot_date_understanding": 0.632,
+    "bbh_cot_fewshot_logical_deduction_three_objects": 0.536,
+    "bbh_cot_fewshot_salient_translation_error_detection": 0.252,
+    "bbh_cot_fewshot_word_sorting": 0.108
+  },
+  "results": {
+    "mmlu_pro_engineering": {
+      "name": "mmlu_pro_engineering",
+      "alias": "engineering",
+      "sample_len": 969,
+      "exact_match,custom-extract": 0.12280701754385964,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_philosophy": {
+      "name": "mmlu_pro_philosophy",
+      "alias": "philosophy",
+      "sample_len": 499,
+      "exact_match,custom-extract": 0.19839679358717435,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_cot_fewshot_date_understanding": {
+      "name": "bbh_cot_fewshot_date_understanding",
+      "alias": "bbh_cot_fewshot_date_understanding",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.632,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_logical_deduction_three_objects": {
+      "name": "bbh_cot_fewshot_logical_deduction_three_objects",
+      "alias": "bbh_cot_fewshot_logical_deduction_three_objects",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.536,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_salient_translation_error_detection": {
+      "name": "bbh_cot_fewshot_salient_translation_error_detection",
+      "alias": "bbh_cot_fewshot_salient_translation_error_detection",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.252,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_word_sorting": {
+      "name": "bbh_cot_fewshot_word_sorting",
+      "alias": "bbh_cot_fewshot_word_sorting",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.108,
+      "exact_match_stderr,get-answer": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_engineering": {
+      "original": 969,
+      "effective": 969
+    },
+    "mmlu_pro_philosophy": {
+      "original": 499,
+      "effective": 499
+    },
+    "bbh_cot_fewshot_date_understanding": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_logical_deduction_three_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_salient_translation_error_detection": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_word_sorting": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 2791.4,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-09T23:48:39+03:00"
+}

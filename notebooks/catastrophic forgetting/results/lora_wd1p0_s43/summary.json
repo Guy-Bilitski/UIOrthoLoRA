@@ -1,0 +1,33 @@
+{
+  "run_name": "lora_wd1p0_s43",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/lora_wd1p0_s43",
+  "per_dataset": {
+    "boolq": 72.32,
+    "piqa": 84.17,
+    "social_i_qa": 79.63,
+    "hellaswag": 91.45,
+    "winogrande": 83.11,
+    "ARC-Easy": 86.45,
+    "ARC-Challenge": 70.99,
+    "openbookqa": 82.8
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.1889,
+    "dw_sv_mean": 2.767,
+    "dw_sv_max": 8.7367,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 81.36,
+    "bbh": 35.79,
+    "mmlu_pro": 20.41,
+    "retention_mean": 28.1,
+    "retention_broad": null,
+    "fdelta": 0.1889,
+    "dw_sv_max": 8.7367,
+    "dw_sv_mean": 2.767
+  },
+  "git_commit": "f41c78b90667ad840d43fcfb7cd5c7c53a3ebb98",
+  "evaluated_at": "2026-06-18T19:32:20+03:00"
+}

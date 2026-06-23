@@ -1,0 +1,40 @@
+{
+  "run_name": "uioT_k4096_lr1e2",
+  "method": "uiortholora",
+  "config": {
+    "k_val": 4096,
+    "k_vec": 410,
+    "use_de": true
+  },
+  "trainable_params": 56200448,
+  "trainable_pct": 0.4021,
+  "train_loss": 0.8625485454636441,
+  "train_s": 31349.4,
+  "per_dataset": {
+    "boolq": 59.45,
+    "piqa": 60.77,
+    "social_i_qa": 29.22,
+    "hellaswag": 29.02,
+    "winogrande": 66.61,
+    "ARC-Easy": 56.82,
+    "ARC-Challenge": 41.04,
+    "openbookqa": 63.6
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.7616,
+    "dw_sv_mean": 4.5784,
+    "dw_sv_max": 9.0742,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 50.82,
+    "bbh": 31.83,
+    "mmlu_pro": 15.4,
+    "retention_mean": 23.62,
+    "fdelta": 0.7616,
+    "dw_sv_max": 9.0742,
+    "dw_sv_mean": 4.5784
+  },
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-12T02:00:28+03:00"
+}

@@ -1,0 +1,55 @@
+{
+  "run_name": "base_l2-7b_bbhAO__retshard7",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "bbh_fewshot_hyperbaton",
+    "bbh_fewshot_penguins_in_a_table",
+    "bbh_fewshot_tracking_shuffled_objects_seven_objects"
+  ],
+  "scores": {
+    "bbh_fewshot_hyperbaton": 0.484,
+    "bbh_fewshot_penguins_in_a_table": 0.273972602739726,
+    "bbh_fewshot_tracking_shuffled_objects_seven_objects": 0.136
+  },
+  "results": {
+    "bbh_fewshot_hyperbaton": {
+      "name": "bbh_fewshot_hyperbaton",
+      "alias": "bbh_fewshot_hyperbaton",
+      "sample_len": 250,
+      "exact_match,none": 0.484,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_penguins_in_a_table": {
+      "name": "bbh_fewshot_penguins_in_a_table",
+      "alias": "bbh_fewshot_penguins_in_a_table",
+      "sample_len": 146,
+      "exact_match,none": 0.273972602739726,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_tracking_shuffled_objects_seven_objects": {
+      "name": "bbh_fewshot_tracking_shuffled_objects_seven_objects",
+      "alias": "bbh_fewshot_tracking_shuffled_objects_seven_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.136,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "bbh_fewshot_hyperbaton": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_penguins_in_a_table": {
+      "original": 146,
+      "effective": 146
+    },
+    "bbh_fewshot_tracking_shuffled_objects_seven_objects": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 125.9,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T00:08:43+03:00"
+}

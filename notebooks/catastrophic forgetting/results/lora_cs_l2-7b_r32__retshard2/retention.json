@@ -1,0 +1,185 @@
+{
+  "run_name": "lora_cs_l2-7b_r32__retshard2",
+  "adapter": "models/lora_cs_l2-7b_r32",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_chemistry",
+    "mmlu_pro_law",
+    "mmlu_pro_economics",
+    "mmlu_pro_biology",
+    "mmlu_pro_history",
+    "bbh_fewshot_disambiguation_qa",
+    "bbh_fewshot_geometric_shapes",
+    "bbh_fewshot_logical_deduction_seven_objects",
+    "bbh_fewshot_multistep_arithmetic_two",
+    "bbh_fewshot_penguins_in_a_table",
+    "bbh_fewshot_salient_translation_error_detection",
+    "bbh_fewshot_temporal_sequences",
+    "bbh_fewshot_tracking_shuffled_objects_three_objects"
+  ],
+  "scores": {
+    "mmlu_pro_chemistry": 0.0812720848056537,
+    "mmlu_pro_law": 0.11262488646684832,
+    "mmlu_pro_economics": 0.1646919431279621,
+    "mmlu_pro_biology": 0.2384937238493724,
+    "mmlu_pro_history": 0.12073490813648294,
+    "bbh_fewshot_disambiguation_qa": 0.472,
+    "bbh_fewshot_geometric_shapes": 0.084,
+    "bbh_fewshot_logical_deduction_seven_objects": 0.136,
+    "bbh_fewshot_multistep_arithmetic_two": 0.004,
+    "bbh_fewshot_penguins_in_a_table": 0.2876712328767123,
+    "bbh_fewshot_salient_translation_error_detection": 0.116,
+    "bbh_fewshot_temporal_sequences": 0.224,
+    "bbh_fewshot_tracking_shuffled_objects_three_objects": 0.34
+  },
+  "results": {
+    "mmlu_pro_chemistry": {
+      "name": "mmlu_pro_chemistry",
+      "alias": "chemistry",
+      "sample_len": 1132,
+      "exact_match,custom-extract": 0.0812720848056537,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_law": {
+      "name": "mmlu_pro_law",
+      "alias": "law",
+      "sample_len": 1101,
+      "exact_match,custom-extract": 0.11262488646684832,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_economics": {
+      "name": "mmlu_pro_economics",
+      "alias": "economics",
+      "sample_len": 844,
+      "exact_match,custom-extract": 0.1646919431279621,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_biology": {
+      "name": "mmlu_pro_biology",
+      "alias": "biology",
+      "sample_len": 717,
+      "exact_match,custom-extract": 0.2384937238493724,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_history": {
+      "name": "mmlu_pro_history",
+      "alias": "history",
+      "sample_len": 381,
+      "exact_match,custom-extract": 0.12073490813648294,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_fewshot_disambiguation_qa": {
+      "name": "bbh_fewshot_disambiguation_qa",
+      "alias": "bbh_fewshot_disambiguation_qa",
+      "sample_len": 250,
+      "exact_match,none": 0.472,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_geometric_shapes": {
+      "name": "bbh_fewshot_geometric_shapes",
+      "alias": "bbh_fewshot_geometric_shapes",
+      "sample_len": 250,
+      "exact_match,none": 0.084,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_logical_deduction_seven_objects": {
+      "name": "bbh_fewshot_logical_deduction_seven_objects",
+      "alias": "bbh_fewshot_logical_deduction_seven_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.136,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_multistep_arithmetic_two": {
+      "name": "bbh_fewshot_multistep_arithmetic_two",
+      "alias": "bbh_fewshot_multistep_arithmetic_two",
+      "sample_len": 250,
+      "exact_match,none": 0.004,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_penguins_in_a_table": {
+      "name": "bbh_fewshot_penguins_in_a_table",
+      "alias": "bbh_fewshot_penguins_in_a_table",
+      "sample_len": 146,
+      "exact_match,none": 0.2876712328767123,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_salient_translation_error_detection": {
+      "name": "bbh_fewshot_salient_translation_error_detection",
+      "alias": "bbh_fewshot_salient_translation_error_detection",
+      "sample_len": 250,
+      "exact_match,none": 0.116,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_temporal_sequences": {
+      "name": "bbh_fewshot_temporal_sequences",
+      "alias": "bbh_fewshot_temporal_sequences",
+      "sample_len": 250,
+      "exact_match,none": 0.224,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_tracking_shuffled_objects_three_objects": {
+      "name": "bbh_fewshot_tracking_shuffled_objects_three_objects",
+      "alias": "bbh_fewshot_tracking_shuffled_objects_three_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.34,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_chemistry": {
+      "original": 1132,
+      "effective": 1132
+    },
+    "mmlu_pro_law": {
+      "original": 1101,
+      "effective": 1101
+    },
+    "mmlu_pro_economics": {
+      "original": 844,
+      "effective": 844
+    },
+    "mmlu_pro_biology": {
+      "original": 717,
+      "effective": 717
+    },
+    "mmlu_pro_history": {
+      "original": 381,
+      "effective": 381
+    },
+    "bbh_fewshot_disambiguation_qa": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_geometric_shapes": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_logical_deduction_seven_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_multistep_arithmetic_two": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_penguins_in_a_table": {
+      "original": 146,
+      "effective": 146
+    },
+    "bbh_fewshot_salient_translation_error_detection": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_temporal_sequences": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_tracking_shuffled_objects_three_objects": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 10200.2,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T12:08:25+03:00"
+}

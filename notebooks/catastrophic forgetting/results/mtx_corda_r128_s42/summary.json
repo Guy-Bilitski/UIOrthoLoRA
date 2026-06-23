@@ -1,0 +1,37 @@
+{
+  "run_name": "mtx_corda_r128_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/mtx_corda_r128_s42",
+  "per_dataset": {
+    "boolq": 62.54,
+    "piqa": 52.01,
+    "social_i_qa": 34.95,
+    "hellaswag": 24.43,
+    "winogrande": 51.38,
+    "ARC-Easy": 25.72,
+    "ARC-Challenge": 25.26,
+    "openbookqa": 26.4
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 4.5449,
+    "dw_sv_mean": 75.8764,
+    "dw_sv_max": 3311.2883,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 37.84,
+    "adapt_task": "cs",
+    "bbh": 0.06,
+    "mmlu_pro": 0.0,
+    "mmlu": 24.01,
+    "arc_c": 26.54,
+    "truthfulqa": 49.34,
+    "retention_mean": 0.03,
+    "retention_broad": 19.99,
+    "fdelta": 4.5449,
+    "dw_sv_max": 3311.2883,
+    "dw_sv_mean": 75.8764
+  },
+  "git_commit": "f41c78b90667ad840d43fcfb7cd5c7c53a3ebb98",
+  "evaluated_at": "2026-06-22T03:00:53+03:00"
+}

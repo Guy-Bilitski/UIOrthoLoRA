@@ -1,0 +1,32 @@
+{
+  "run_name": "dora_r32",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/dora_r32",
+  "per_dataset": {
+    "boolq": 65.99,
+    "piqa": 82.81,
+    "social_i_qa": 78.81,
+    "hellaswag": 83.25,
+    "winogrande": 82.56,
+    "ARC-Easy": 81.02,
+    "ARC-Challenge": 65.61,
+    "openbookqa": 81.2
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.9179,
+    "dw_sv_mean": 19.0795,
+    "dw_sv_max": 138.4138,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 77.66,
+    "bbh": 33.56,
+    "mmlu_pro": 12.5,
+    "retention_mean": 23.03,
+    "fdelta": 0.9179,
+    "dw_sv_max": 138.4138,
+    "dw_sv_mean": 19.0795
+  },
+  "git_commit": "c4e44cb73ca112ae777e04a2e4d1076b172a6f43",
+  "evaluated_at": "2026-06-18T03:22:13+03:00"
+}

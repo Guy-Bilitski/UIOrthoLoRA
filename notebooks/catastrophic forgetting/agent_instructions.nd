@@ -1,0 +1,195 @@
+# Phase 1 — Fast Go/No-Go: Is UIOrthoLoRA a Forgetting Remediator?
+
+**Scope.** Three methods only: **LoRA**, **CLoRA**, **UIOrthoLoRA**. One setting (CLoRA's commonsense one-stage finetuning on LLaMA-2-7B) as the decisive gate, with math as a fast follow-on. The init-only family (MiLoRA, LoRA-Null, SC-LoRA) is deferred to Phase 2.
+
+**Single objective.** Determine quickly and decisively whether UIOrthoLoRA's adaptation/retention frontier reaches or beats CLoRA's on CLoRA's own benchmark. If yes → UIOrthoLoRA is a viable forgetting-mitigation adapter and we proceed to the full comparison. If no → stop and rethink the architecture before spending compute on the rest.
+
+**Anchor paper.** Lu et al., *Controlled Low-Rank Adaptation with Subspace Regularization* (ACL 2025). We reproduce its **one-stage finetuning** results: Table 2 (commonsense), Table 3 (math), Table 4 (mechanism metrics). We do **not** touch its continual-learning / T5 experiments.
+
+> These settings and target numbers are taken directly from the CLoRA paper, including Appendix A (Table 6) and the full result Tables 2/3/4/7/8. Items still needing a check against the CLoRA repo (github.com/sutakori/CLoRA) are marked **[VERIFY]**.
+
+---
+
+## 1. The decision criterion (read first — it drives everything)
+
+Primary plot: **in-domain commonsense accuracy (x)** vs **out-domain retention (y) = mean(BBH, MMLU-Pro)**, on LLaMA-2-7B.
+- LoRA = one point (the unconstrained baseline; high adaptation, heavy forgetting).
+- CLoRA = a curve over k ∈ {128, 256, 512, 1024, 2048}.
+- UIOrthoLoRA = a curve over its (k_val, k_vec) sweep.
+
+Plus the mechanism metric **F∆** (relative output change; see §5.3) for LoRA, best-CLoRA, best-UIOrthoLoRA.
+
+**GO (UIOrthoLoRA is a candidate)** if *both*:
+1. UIOrthoLoRA's frontier sits **on or above** CLoRA's (at matched in-domain accuracy, equal-or-better retention), and
+2. UIOrthoLoRA clearly beats LoRA on retention (out-domain), ideally approaching or exceeding the **base model** out-domain reference the way CLoRA does (CLoRA-k2048 exceeds base: 38.67 > 34.91 BBH).
+
+**NO-GO / rethink** if UIOrthoLoRA's frontier is dominated by CLoRA's, or if it cannot beat plain LoRA on retention at comparable adaptation. A *tie* with CLoRA is still informative (novelty = "exact & free vs. tuned penalty") but signals the ablations must carry more weight — flag it, don't bury it.
+
+Report the decision as a one-paragraph verdict + the frontier plot + F∆ table. That's the Phase-1 deliverable.
+
+---
+
+## 2. The setting — CLoRA commonsense one-stage (exact)
+
+| Item | Value |
+|---|---|
+| Base model | `meta-llama/Llama-2-7b-hf` (base, not chat) |
+| Train data | Commonsense170K (from LLM-Adapters, Hu et al. 2023) |
+| In-domain eval | 8 datasets: BoolQ, PIQA, SIQA, HellaSwag, WinoGrande, ARC-e, ARC-c, OBQA — multiple-choice accuracy, **last checkpoint** |
+| Out-domain eval | BBH + MMLU-Pro via **lm-eval** (EleutherAI) |
+| Rank r | 32 |
+| LoRA α | 64 |
+| Dropout | 0.05 |
+| Optimizer | AdamW |
+| Learning rate | 3e-4 (LLaMA-2-7B) |
+| Scheduler | Linear |
+| Batch size | 16 |
+| Warmup steps | 100 |
+| Epochs | 3 |
+| Precision | bf16 |
+| **Target modules** | **q_proj, k_proj, v_proj, up_proj, down_proj** (5 modules) |
+| Max seq length | **[VERIFY]** — not in Table 6; pull from CLoRA/MiLoRA repo |
+| Trainer | HF `transformers` Trainer + `peft` + DeepSpeed ZeRO |
+
+Two **target-module gotchas**:
+- This is **5 modules, not 7**: it includes MLP `up_proj` and `down_proj` but **not** `gate_proj`, and **not** attention `o_proj`. LLaMA MLP has three projections (gate/up/down) — CLoRA omits gate. Do not add the missing ones.
+- CLoRA's Figure 2 caption says updating is applied "on v-proj … for each layer," which contradicts Table 6's 5-module list. **Table 6 is authoritative** (it's the hyperparameter spec); the figure caption is just illustrating the diagram. **[VERIFY]** against the repo config, but default to the 5 modules.
+
+**UIOrthoLoRA harmonization:** drop to these same 5 target modules (your original paper used 7); set (k_val, k_vec) so trainable-param count matches a rank-32 LoRA on these 5 modules within ±10%; bf16; same trainer.
+
+---
+
+## 3. Reproduction targets (correctness gates)
+
+These are the exact CLoRA-paper numbers (LLaMA-2-7B). Reproducing them is how we trust the harness *before* drawing any conclusion about UIOrthoLoRA.
+
+**Out-domain (Table 2 / Table 8), accuracy %:**
+
+| Method | BBH | MMLU-Pro |
+|---|---|---|
+| **Base (no adapter)** | **34.91** | **18.56** |
+| LoRA | 26.69 | 14.46 |
+| CLoRA-random-k128 | 30.82 | 12.07 |
+| CLoRA-random-k512 | 34.32 | 17.00 |
+| CLoRA-random-k2048 | 38.67 | 20.59 |
+
+**In-domain commonsense avg (Table 2):** LoRA **79.9**; CLoRA-random-k2048 **83.7**.
+Per-dataset LoRA reference: BoolQ 71.9 / PIQA 80.9 / SIQA 78.9 / HS 90.3 / WG 83.5 / ARC-e 83.0 / ARC-c 70.2 / OBQA 80.8.
+
+**Gates, in order of strictness:**
+1. **Base-model out-domain (34.91 / 18.56)** — no training; the very first check. If lm-eval doesn't reproduce these two numbers, the retention leg is wrong; stop.
+2. **LoRA row (in-domain ≈79.9, BBH 26.69, MMLU-Pro 14.46)** — proves training + both eval legs.
+3. **CLoRA-k2048 (in-domain ≈83.7, BBH 38.67, MMLU-Pro 20.59)** — proves the anchor reproduces and the orthogonal-penalty implementation is correct.
+
+Small deviations (±1–2 pts) from seed/library drift are acceptable; large gaps mean a harness bug, not a finding.
+
+---
+
+## 4. The three methods — exact configuration
+
+### LoRA
+`peft` `LoraConfig`, r=32, α=64, dropout 0.05, the 5 target modules. Gaussian A / zero B. Nothing else.
+
+### CLoRA
+- **Modeling:** standard LoRA structure, ΔW = AB^T with A ∈ ℝ^{m×r}, B ∈ ℝ^{n×r} (note CLoRA's A/B index convention — **[VERIFY]** against repo). **Vanilla init** (Gaussian A, zero B) — CLoRA is *not* an SVD-init method.
+- **Orthogonal penalty added to loss:**
+  `L = L_LM + λ · Σ_i ( ‖A_iᵀ P_{A,i}‖²_F + ‖(B_iᵀ)ᵀ P_{B,i}ᵀ‖²_F )`
+  with `P_A ∈ ℝ^{m×k}`, `P_B ∈ ℝ^{n×k}` **fixed, untrainable**, orthonormal columns (`‖P[:,i]‖=1`, `P[:,i]·P[:,j]=0`). **[VERIFY]** the exact second-term form and that the sum is over the 5 target modules only.
+- **Variant:** use **CLoRA-random** (random-orthogonal P) — the main-paper default. (CLoRA-major/minor are appendix variants; skip in Phase 1.)
+- **λ = 1** (paper reports it's insensitive; do not sweep in Phase 1).
+- **k sweep (the trade-off knob):** {128, 256, 512, 1024, 2048}.
+
+### UIOrthoLoRA
+- Your implementation, harmonized to §2 (5 modules, param-matched, bf16, same trainer).
+- **No loss term** — orthogonality is structural. This is the whole point of the comparison: CLoRA approximates orthogonality via a tunable penalty; UIOrthoLoRA enforces it by construction.
+- **Knob sweep:** choose 4–5 (k_val, k_vec) points spanning heavily-constrained (small null space) → permissive, to produce a frontier comparable in spread to CLoRA's k-curve. Include the **UILinLoRA point (k_vec=0)** as the magnitude-only end of the curve — it doubles as a free internal ablation.
+
+---
+
+## 5. Evaluation
+
+### 5.1 In-domain commonsense (utility)
+The 8-dataset multiple-choice accuracy eval used by MiLoRA/DoRA (LLM-Adapters protocol), last checkpoint. **[VERIFY]** you're using the same harness CLoRA used — the gate is reproducing LoRA ≈79.9 avg. Do **not** substitute lm-eval likelihood-MC here; the numbers won't match.
+
+### 5.2 Out-domain (retention)
+BBH + MMLU-Pro via **lm-eval**. **[VERIFY]** exact task names and few-shot settings from the CLoRA repo; the gate is reproducing base 34.91/18.56.
+
+### 5.3 Mechanism metric F∆ (cheap, high-value — add it)
+From CLoRA Table 4, define per updating matrix ΔW and input x:
+`F∆(ΔW, x) = ‖ΔW x‖ / ‖x‖`, averaged over **100 real-world inputs**, over all tokens and all updated matrices. Lower = less output disruption = less forgetting. Also report `‖ΔW‖` (largest singular value = capacity proxy).
+
+Targets to reproduce (Table 4, rank 32, CS): LoRA F∆=0.79, ‖ΔW‖=22.63; CLoRA-k2048 F∆=0.14, ‖ΔW‖=5.00. This metric is nearly free (one 100-input forward pass + a singular-value call per matrix) and gives the mechanism-level story: *UIOrthoLoRA should achieve low F∆ by construction (orthogonal to the protected directions), where CLoRA achieves it via a tuned penalty.* Compute it for LoRA, best-CLoRA, best-UIOrthoLoRA. **[VERIFY]** the exact averaging convention (over tokens and matrices) and the "reference row" definition from the repo.
+
+**Phase 1 uses CLoRA's native metrics only.** Do not bring in the negative-shift / error-set framework here — keep the go/no-go legible and directly comparable to CLoRA's tables. The dual-axis framework is a later, supplementary layer.
+
+---
+
+## 6. Run list (minimal, ordered)
+
+Commonsense, LLaMA-2-7B:
+
+| # | Run | Knob | Seeds | Purpose |
+|---|---|---|---|---|
+| 0 | base (no adapter) eval | — | — | gate 1 |
+| 1 | LoRA | — | 3 | gate 2 + baseline point |
+| 2 | CLoRA-random | k ∈ {128, 256, 512, 1024, 2048} | 3 on k2048, 1 elsewhere | gate 3 + anchor curve |
+| 3 | UIOrthoLoRA | (k_val,k_vec) × 4–5 | 3 on best, 1 elsewhere | the test |
+| 3b | UILinLoRA (k_vec=0) | — | 1 | curve endpoint / ablation |
+
+≈ 13–15 commonsense runs. **If GO**, immediately add the math follow-on:
+
+Math, LLaMA-2-7B (rank 64, α 128, MetaMathQA 395K, GSM8K+MATH EM):
+
+| # | Run | Knob |
+|---|---|---|
+| 4 | LoRA | — |
+| 5 | CLoRA-random | k ∈ {64, 128, 256} |
+| 6 | UIOrthoLoRA | (k_val,k_vec) × 3 |
+
+Math targets to confirm anchor: LoRA GSM8K 60.58/MATH 16.88; CLoRA-k128 64.59/18.38 (best — note CLoRA *degrades* past k=128 on math; this capacity ceiling is exactly the seam UIOrthoLoRA's medium tier may exploit).
+
+---
+
+## 7. Build & validation order (hard checkpoints)
+
+1. Shared trainer (`transformers` Trainer + `peft` + ZeRO, bf16) with two extension points: an **init hook** and an **optional loss-term hook**.
+2. Wire the two eval legs (in-domain CS harness; lm-eval BBH/MMLU-Pro). **CHECKPOINT A:** reproduce base 34.91 / 18.56 — stop if not.
+3. Train LoRA end-to-end. **CHECKPOINT B:** reproduce LoRA ≈79.9 / 26.69 / 14.46 — stop if not.
+4. Implement CLoRA's orthogonal-penalty loss hook + fixed orthonormal P buffers. Train CLoRA-k2048. **CHECKPOINT C:** reproduce ≈83.7 / 38.67 / 20.59 — stop if not.
+5. Run the rest of the CLoRA k-sweep.
+6. Harmonize + run UIOrthoLoRA sweep through the *same* trainer and eval.
+7. Add F∆ measurement; reproduce LoRA/CLoRA Table-4 values.
+8. Produce the frontier plot + F∆ table + verdict.
+
+Do not run UIOrthoLoRA (step 6) until Checkpoints A–C pass. A UIOrthoLoRA number is only meaningful once the harness provably reproduces the anchor.
+
+---
+
+## 8. Analysis & deliverable
+
+1. **Frontier plot** (in-domain CS avg vs mean out-domain), three methods, both as the headline figure.
+2. **F∆ / ‖ΔW‖ table** for LoRA, best-CLoRA, best-UIOrthoLoRA (+ reproduce CLoRA's Table 4 rows as a check).
+3. **Reproduction-check table:** target vs achieved for the three gates, so reviewers (and you) trust the harness.
+4. **Verdict paragraph:** GO / NO-GO per §1, with the specific frontier comparison and whether UIOrthoLoRA beats LoRA and approaches/beats base on retention.
+5. **Param-count column** on everything.
+
+---
+
+## 9. Deferred to Phase 2 (do not start until GO)
+- Init-only family: MiLoRA, LoRA-Null, SC-LoRA (+ optional CorDA).
+- LLaMA-3-8B secondary model.
+- Native-config robustness block for LoRA-Null / SC-LoRA.
+- LR-sweep axis (your RQ1 angle: CLoRA fixes LR; you vary it).
+- The full ablation study (rotations on/off etc. — separate spec).
+- Optional: your negative-shift dual-axis metric as a supplementary, more-sensitive retention measure.
+
+---
+
+## 10. Verify-against-repo list (Phase 1)
+- **[VERIFY]** In-domain CS eval harness = the LLM-Adapters/MiLoRA generation-MC eval (gate: LoRA ≈79.9); not lm-eval.
+- **[VERIFY]** lm-eval BBH + MMLU-Pro task names + few-shot (gate: base 34.91/18.56).
+- **[VERIFY]** CLoRA's A/B index convention and the exact orthogonal-loss second term; P = random orthonormal, λ=1, summed over the 5 target modules.
+- **[VERIFY]** target modules = q,k,v,up,down (Table 6), resolving the Figure-2-caption discrepancy via the repo config.
+- **[VERIFY]** max sequence length and MetaMathQA 395K specifics (not in Table 6).
+- **[VERIFY]** F∆ averaging convention and the Table-4 "reference row" definition.
+- Log trainable-param count for every run; bf16 everywhere; fixed seed (CLoRA/your prior work used 42).

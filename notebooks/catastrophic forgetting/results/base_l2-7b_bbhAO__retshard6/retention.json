@@ -1,0 +1,55 @@
+{
+  "run_name": "base_l2-7b_bbhAO__retshard6",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "bbh_fewshot_geometric_shapes",
+    "bbh_fewshot_object_counting",
+    "bbh_fewshot_tracking_shuffled_objects_five_objects"
+  ],
+  "scores": {
+    "bbh_fewshot_geometric_shapes": 0.108,
+    "bbh_fewshot_object_counting": 0.4,
+    "bbh_fewshot_tracking_shuffled_objects_five_objects": 0.18
+  },
+  "results": {
+    "bbh_fewshot_geometric_shapes": {
+      "name": "bbh_fewshot_geometric_shapes",
+      "alias": "bbh_fewshot_geometric_shapes",
+      "sample_len": 250,
+      "exact_match,none": 0.108,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_object_counting": {
+      "name": "bbh_fewshot_object_counting",
+      "alias": "bbh_fewshot_object_counting",
+      "sample_len": 250,
+      "exact_match,none": 0.4,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_tracking_shuffled_objects_five_objects": {
+      "name": "bbh_fewshot_tracking_shuffled_objects_five_objects",
+      "alias": "bbh_fewshot_tracking_shuffled_objects_five_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.18,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "bbh_fewshot_geometric_shapes": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_object_counting": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_tracking_shuffled_objects_five_objects": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 127.7,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T00:08:45+03:00"
+}

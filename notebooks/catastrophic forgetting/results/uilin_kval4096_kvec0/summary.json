@@ -1,0 +1,40 @@
+{
+  "run_name": "uilin_kval4096_kvec0",
+  "method": "uiortholora",
+  "config": {
+    "k_val": 4096,
+    "k_vec": 0,
+    "use_de": true
+  },
+  "trainable_params": 2408448,
+  "trainable_pct": 0.0173,
+  "train_loss": 1.0664818052028533,
+  "train_s": 11583.4,
+  "per_dataset": {
+    "boolq": 61.59,
+    "piqa": 64.47,
+    "social_i_qa": 49.95,
+    "hellaswag": 18.94,
+    "winogrande": 51.14,
+    "ARC-Easy": 58.59,
+    "ARC-Challenge": 41.64,
+    "openbookqa": 40.2
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.0486,
+    "dw_sv_mean": 0.219,
+    "dw_sv_max": 1.0462,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 48.32,
+    "bbh": 32.27,
+    "mmlu_pro": 17.91,
+    "retention_mean": 25.09,
+    "fdelta": 0.0486,
+    "dw_sv_max": 1.0462,
+    "dw_sv_mean": 0.219
+  },
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-11T06:42:17+03:00"
+}

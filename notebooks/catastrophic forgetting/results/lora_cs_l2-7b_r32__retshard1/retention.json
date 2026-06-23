@@ -1,0 +1,198 @@
+{
+  "run_name": "lora_cs_l2-7b_r32__retshard1",
+  "adapter": "models/lora_cs_l2-7b_r32",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_physics",
+    "mmlu_pro_engineering",
+    "mmlu_pro_health",
+    "mmlu_pro_philosophy",
+    "mmlu_pro_computer_science",
+    "bbh_fewshot_causal_judgement",
+    "bbh_fewshot_dyck_languages",
+    "bbh_fewshot_hyperbaton",
+    "bbh_fewshot_logical_deduction_three_objects",
+    "bbh_fewshot_navigate",
+    "bbh_fewshot_reasoning_about_colored_objects",
+    "bbh_fewshot_snarks",
+    "bbh_fewshot_tracking_shuffled_objects_five_objects",
+    "bbh_fewshot_web_of_lies"
+  ],
+  "scores": {
+    "mmlu_pro_physics": 0.1100846805234796,
+    "mmlu_pro_engineering": 0.09391124871001032,
+    "mmlu_pro_health": 0.16992665036674817,
+    "mmlu_pro_philosophy": 0.1402805611222445,
+    "mmlu_pro_computer_science": 0.1024390243902439,
+    "bbh_fewshot_causal_judgement": 0.5294117647058824,
+    "bbh_fewshot_dyck_languages": 0.06,
+    "bbh_fewshot_hyperbaton": 0.5,
+    "bbh_fewshot_logical_deduction_three_objects": 0.368,
+    "bbh_fewshot_navigate": 0.516,
+    "bbh_fewshot_reasoning_about_colored_objects": 0.208,
+    "bbh_fewshot_snarks": 0.5056179775280899,
+    "bbh_fewshot_tracking_shuffled_objects_five_objects": 0.18,
+    "bbh_fewshot_web_of_lies": 0.488
+  },
+  "results": {
+    "mmlu_pro_physics": {
+      "name": "mmlu_pro_physics",
+      "alias": "physics",
+      "sample_len": 1299,
+      "exact_match,custom-extract": 0.1100846805234796,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_engineering": {
+      "name": "mmlu_pro_engineering",
+      "alias": "engineering",
+      "sample_len": 969,
+      "exact_match,custom-extract": 0.09391124871001032,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_health": {
+      "name": "mmlu_pro_health",
+      "alias": "health",
+      "sample_len": 818,
+      "exact_match,custom-extract": 0.16992665036674817,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_philosophy": {
+      "name": "mmlu_pro_philosophy",
+      "alias": "philosophy",
+      "sample_len": 499,
+      "exact_match,custom-extract": 0.1402805611222445,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_computer_science": {
+      "name": "mmlu_pro_computer_science",
+      "alias": "computer_science",
+      "sample_len": 410,
+      "exact_match,custom-extract": 0.1024390243902439,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_fewshot_causal_judgement": {
+      "name": "bbh_fewshot_causal_judgement",
+      "alias": "bbh_fewshot_causal_judgement",
+      "sample_len": 187,
+      "exact_match,none": 0.5294117647058824,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_dyck_languages": {
+      "name": "bbh_fewshot_dyck_languages",
+      "alias": "bbh_fewshot_dyck_languages",
+      "sample_len": 250,
+      "exact_match,none": 0.06,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_hyperbaton": {
+      "name": "bbh_fewshot_hyperbaton",
+      "alias": "bbh_fewshot_hyperbaton",
+      "sample_len": 250,
+      "exact_match,none": 0.5,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_logical_deduction_three_objects": {
+      "name": "bbh_fewshot_logical_deduction_three_objects",
+      "alias": "bbh_fewshot_logical_deduction_three_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.368,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_navigate": {
+      "name": "bbh_fewshot_navigate",
+      "alias": "bbh_fewshot_navigate",
+      "sample_len": 250,
+      "exact_match,none": 0.516,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_reasoning_about_colored_objects": {
+      "name": "bbh_fewshot_reasoning_about_colored_objects",
+      "alias": "bbh_fewshot_reasoning_about_colored_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.208,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_snarks": {
+      "name": "bbh_fewshot_snarks",
+      "alias": "bbh_fewshot_snarks",
+      "sample_len": 178,
+      "exact_match,none": 0.5056179775280899,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_tracking_shuffled_objects_five_objects": {
+      "name": "bbh_fewshot_tracking_shuffled_objects_five_objects",
+      "alias": "bbh_fewshot_tracking_shuffled_objects_five_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.18,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_web_of_lies": {
+      "name": "bbh_fewshot_web_of_lies",
+      "alias": "bbh_fewshot_web_of_lies",
+      "sample_len": 250,
+      "exact_match,none": 0.488,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_physics": {
+      "original": 1299,
+      "effective": 1299
+    },
+    "mmlu_pro_engineering": {
+      "original": 969,
+      "effective": 969
+    },
+    "mmlu_pro_health": {
+      "original": 818,
+      "effective": 818
+    },
+    "mmlu_pro_philosophy": {
+      "original": 499,
+      "effective": 499
+    },
+    "mmlu_pro_computer_science": {
+      "original": 410,
+      "effective": 410
+    },
+    "bbh_fewshot_causal_judgement": {
+      "original": 187,
+      "effective": 187
+    },
+    "bbh_fewshot_dyck_languages": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_hyperbaton": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_logical_deduction_three_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_navigate": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_reasoning_about_colored_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_snarks": {
+      "original": 178,
+      "effective": 178
+    },
+    "bbh_fewshot_tracking_shuffled_objects_five_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_web_of_lies": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 9559.3,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T11:58:13+03:00"
+}

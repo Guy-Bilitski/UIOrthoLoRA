@@ -1,0 +1,68 @@
+{
+  "run_name": "base_l2-7b_bbhAO__retshard2",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "bbh_fewshot_date_understanding",
+    "bbh_fewshot_logical_deduction_three_objects",
+    "bbh_fewshot_salient_translation_error_detection",
+    "bbh_fewshot_word_sorting"
+  ],
+  "scores": {
+    "bbh_fewshot_date_understanding": 0.38,
+    "bbh_fewshot_logical_deduction_three_objects": 0.344,
+    "bbh_fewshot_salient_translation_error_detection": 0.224,
+    "bbh_fewshot_word_sorting": 0.316
+  },
+  "results": {
+    "bbh_fewshot_date_understanding": {
+      "name": "bbh_fewshot_date_understanding",
+      "alias": "bbh_fewshot_date_understanding",
+      "sample_len": 250,
+      "exact_match,none": 0.38,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_logical_deduction_three_objects": {
+      "name": "bbh_fewshot_logical_deduction_three_objects",
+      "alias": "bbh_fewshot_logical_deduction_three_objects",
+      "sample_len": 250,
+      "exact_match,none": 0.344,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_salient_translation_error_detection": {
+      "name": "bbh_fewshot_salient_translation_error_detection",
+      "alias": "bbh_fewshot_salient_translation_error_detection",
+      "sample_len": 250,
+      "exact_match,none": 0.224,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_word_sorting": {
+      "name": "bbh_fewshot_word_sorting",
+      "alias": "bbh_fewshot_word_sorting",
+      "sample_len": 250,
+      "exact_match,none": 0.316,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "bbh_fewshot_date_understanding": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_logical_deduction_three_objects": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_salient_translation_error_detection": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_word_sorting": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 191.6,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T00:09:49+03:00"
+}

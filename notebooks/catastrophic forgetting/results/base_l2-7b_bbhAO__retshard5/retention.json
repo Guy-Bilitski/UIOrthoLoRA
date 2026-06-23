@@ -1,0 +1,55 @@
+{
+  "run_name": "base_l2-7b_bbhAO__retshard5",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "bbh_fewshot_formal_fallacies",
+    "bbh_fewshot_navigate",
+    "bbh_fewshot_temporal_sequences"
+  ],
+  "scores": {
+    "bbh_fewshot_formal_fallacies": 0.464,
+    "bbh_fewshot_navigate": 0.44,
+    "bbh_fewshot_temporal_sequences": 0.08
+  },
+  "results": {
+    "bbh_fewshot_formal_fallacies": {
+      "name": "bbh_fewshot_formal_fallacies",
+      "alias": "bbh_fewshot_formal_fallacies",
+      "sample_len": 250,
+      "exact_match,none": 0.464,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_navigate": {
+      "name": "bbh_fewshot_navigate",
+      "alias": "bbh_fewshot_navigate",
+      "sample_len": 250,
+      "exact_match,none": 0.44,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_temporal_sequences": {
+      "name": "bbh_fewshot_temporal_sequences",
+      "alias": "bbh_fewshot_temporal_sequences",
+      "sample_len": 250,
+      "exact_match,none": 0.08,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "bbh_fewshot_formal_fallacies": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_navigate": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_temporal_sequences": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 128.1,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T00:08:45+03:00"
+}

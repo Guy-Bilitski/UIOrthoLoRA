@@ -1,0 +1,32 @@
+{
+  "run_name": "clora_k512_fast",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/clora_cs_k512",
+  "per_dataset": {
+    "boolq": 63.24,
+    "piqa": 66.32,
+    "social_i_qa": 52.2,
+    "hellaswag": 89.16,
+    "winogrande": 80.27,
+    "ARC-Easy": 67.34,
+    "ARC-Challenge": 51.02,
+    "openbookqa": 70.6
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.5137,
+    "dw_sv_mean": 11.1986,
+    "dw_sv_max": 25.8854,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 67.52,
+    "bbh": 32.58,
+    "mmlu_pro": 16.85,
+    "retention_mean": 24.72,
+    "fdelta": 0.5137,
+    "dw_sv_max": 25.8854,
+    "dw_sv_mean": 11.1986
+  },
+  "git_commit": "39054358a8169075e07f13e6ab4361947830230d",
+  "evaluated_at": "2026-06-15T14:34:52+03:00"
+}

@@ -1,0 +1,32 @@
+{
+  "run_name": "lora_r128",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/lora_r128",
+  "per_dataset": {
+    "boolq": 66.48,
+    "piqa": 77.91,
+    "social_i_qa": 75.74,
+    "hellaswag": 71.04,
+    "winogrande": 75.93,
+    "ARC-Easy": 70.58,
+    "ARC-Challenge": 55.03,
+    "openbookqa": 67.8
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 1.2679,
+    "dw_sv_mean": 20.3318,
+    "dw_sv_max": 164.2672,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 70.06,
+    "bbh": 25.75,
+    "mmlu_pro": 6.7,
+    "retention_mean": 16.23,
+    "fdelta": 1.2679,
+    "dw_sv_max": 164.2672,
+    "dw_sv_mean": 20.3318
+  },
+  "git_commit": "a61d6796685e1ec44c0ef79759feb8137a361fac",
+  "evaluated_at": "2026-06-16T09:51:16+03:00"
+}

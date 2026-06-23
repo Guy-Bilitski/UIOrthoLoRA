@@ -5,7 +5,11 @@
 UILinLoRA as controllable instruments. See 00 for the current thesis (3 threads).
 
 ## Read in this order
-1. **00_OPERATING_STATE.md** — READ FIRST. Current thesis (3 threads) + guardrails + env + scripts +
+0. **12_STATE_DUMP.md** — ⚡ LIVE STATE (2026-06-17): findings ledger, running pools, open gates,
+   SC-LoRA/CorDA pointers, data-bug, how to resume. **READ THIS FIRST.**
+0b. **11_WEIGHT_DECAY.md** — the active campaign: "are forgetting adapters necessary vs regularized LoRA?"
+   (headline deflated dominate→TIE; universal-curve test; SC-LoRA/CorDA plan).
+1. **00_OPERATING_STATE.md** — env, scripts, durable findings/bugs. Current thesis (3 threads) + guardrails + env + scripts +
    durable findings/bugs + what's running. [CURRENT]
 2. **08_FORWARD_PLAN.md** — the live plan: T1 Frobenius-magnitude law, T2 rank-beyond-Frobenius
    (kingmaker E2b), T3 data-basis leakage frontier. [CURRENT — the plan]

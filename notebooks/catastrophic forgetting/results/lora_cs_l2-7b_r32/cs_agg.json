@@ -1,0 +1,18 @@
+{
+  "run_name": "lora_cs_l2-7b_r32",
+  "adapter": "models/lora_cs_l2-7b_r32",
+  "kind": "cs_agg",
+  "per_dataset": {
+    "boolq": 70.31,
+    "piqa": 82.59,
+    "social_i_qa": 78.81,
+    "hellaswag": 81.09,
+    "winogrande": 82.87,
+    "ARC-Easy": 81.73,
+    "ARC-Challenge": 66.98,
+    "openbookqa": 80.4
+  },
+  "cs_avg": 78.1,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T08:22:40+03:00"
+}

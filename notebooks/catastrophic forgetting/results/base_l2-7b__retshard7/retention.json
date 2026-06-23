@@ -1,0 +1,81 @@
+{
+  "run_name": "base_l2-7b__retshard7",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_health",
+    "mmlu_pro_psychology",
+    "bbh_cot_fewshot_hyperbaton",
+    "bbh_cot_fewshot_penguins_in_a_table",
+    "bbh_cot_fewshot_tracking_shuffled_objects_seven_objects"
+  ],
+  "scores": {
+    "mmlu_pro_health": 0.22249388753056235,
+    "mmlu_pro_psychology": 0.32957393483709274,
+    "bbh_cot_fewshot_hyperbaton": 0.516,
+    "bbh_cot_fewshot_penguins_in_a_table": 0.3150684931506849,
+    "bbh_cot_fewshot_tracking_shuffled_objects_seven_objects": 0.14
+  },
+  "results": {
+    "mmlu_pro_health": {
+      "name": "mmlu_pro_health",
+      "alias": "health",
+      "sample_len": 818,
+      "exact_match,custom-extract": 0.22249388753056235,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "mmlu_pro_psychology": {
+      "name": "mmlu_pro_psychology",
+      "alias": "psychology",
+      "sample_len": 798,
+      "exact_match,custom-extract": 0.32957393483709274,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_cot_fewshot_hyperbaton": {
+      "name": "bbh_cot_fewshot_hyperbaton",
+      "alias": "bbh_cot_fewshot_hyperbaton",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.516,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_penguins_in_a_table": {
+      "name": "bbh_cot_fewshot_penguins_in_a_table",
+      "alias": "bbh_cot_fewshot_penguins_in_a_table",
+      "sample_len": 146,
+      "exact_match,get-answer": 0.3150684931506849,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_tracking_shuffled_objects_seven_objects": {
+      "name": "bbh_cot_fewshot_tracking_shuffled_objects_seven_objects",
+      "alias": "bbh_cot_fewshot_tracking_shuffled_objects_seven_objects",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.14,
+      "exact_match_stderr,get-answer": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_health": {
+      "original": 818,
+      "effective": 818
+    },
+    "mmlu_pro_psychology": {
+      "original": 798,
+      "effective": 798
+    },
+    "bbh_cot_fewshot_hyperbaton": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_penguins_in_a_table": {
+      "original": 146,
+      "effective": 146
+    },
+    "bbh_cot_fewshot_tracking_shuffled_objects_seven_objects": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 2250.1,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-09T23:39:38+03:00"
+}

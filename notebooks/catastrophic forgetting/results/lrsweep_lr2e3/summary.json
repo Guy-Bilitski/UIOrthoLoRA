@@ -1,0 +1,40 @@
+{
+  "run_name": "lrsweep_lr2e3",
+  "method": "uiortholora",
+  "config": {
+    "k_val": 2048,
+    "k_vec": 410,
+    "use_de": true
+  },
+  "trainable_params": 55872768,
+  "trainable_pct": 0.3998,
+  "train_loss": 0.7856796588897705,
+  "train_s": 1737.7,
+  "per_dataset": {
+    "boolq": 70.0,
+    "piqa": 70.0,
+    "social_i_qa": 20.0,
+    "hellaswag": 0.0,
+    "winogrande": 12.0,
+    "ARC-Easy": 25.0,
+    "ARC-Challenge": 16.0,
+    "openbookqa": 6.0
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.0395,
+    "dw_sv_mean": 0.146,
+    "dw_sv_max": 0.3106,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 27.38,
+    "bbh": null,
+    "mmlu_pro": null,
+    "retention_mean": null,
+    "fdelta": 0.0395,
+    "dw_sv_max": 0.3106,
+    "dw_sv_mean": 0.146
+  },
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-11T11:59:43+03:00"
+}

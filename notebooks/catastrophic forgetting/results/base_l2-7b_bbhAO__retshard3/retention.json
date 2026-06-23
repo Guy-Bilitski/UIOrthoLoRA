@@ -1,0 +1,55 @@
+{
+  "run_name": "base_l2-7b_bbhAO__retshard3",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "bbh_fewshot_disambiguation_qa",
+    "bbh_fewshot_movie_recommendation",
+    "bbh_fewshot_snarks"
+  ],
+  "scores": {
+    "bbh_fewshot_disambiguation_qa": 0.468,
+    "bbh_fewshot_movie_recommendation": 0.46,
+    "bbh_fewshot_snarks": 0.47752808988764045
+  },
+  "results": {
+    "bbh_fewshot_disambiguation_qa": {
+      "name": "bbh_fewshot_disambiguation_qa",
+      "alias": "bbh_fewshot_disambiguation_qa",
+      "sample_len": 250,
+      "exact_match,none": 0.468,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_movie_recommendation": {
+      "name": "bbh_fewshot_movie_recommendation",
+      "alias": "bbh_fewshot_movie_recommendation",
+      "sample_len": 250,
+      "exact_match,none": 0.46,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_snarks": {
+      "name": "bbh_fewshot_snarks",
+      "alias": "bbh_fewshot_snarks",
+      "sample_len": 178,
+      "exact_match,none": 0.47752808988764045,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "bbh_fewshot_disambiguation_qa": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_movie_recommendation": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_snarks": {
+      "original": 178,
+      "effective": 178
+    }
+  },
+  "runtime_s": 124.3,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T00:08:41+03:00"
+}

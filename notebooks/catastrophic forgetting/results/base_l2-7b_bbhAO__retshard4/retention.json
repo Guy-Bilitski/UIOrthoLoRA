@@ -1,0 +1,55 @@
+{
+  "run_name": "base_l2-7b_bbhAO__retshard4",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "bbh_fewshot_dyck_languages",
+    "bbh_fewshot_multistep_arithmetic_two",
+    "bbh_fewshot_sports_understanding"
+  ],
+  "scores": {
+    "bbh_fewshot_dyck_languages": 0.236,
+    "bbh_fewshot_multistep_arithmetic_two": 0.004,
+    "bbh_fewshot_sports_understanding": 0.676
+  },
+  "results": {
+    "bbh_fewshot_dyck_languages": {
+      "name": "bbh_fewshot_dyck_languages",
+      "alias": "bbh_fewshot_dyck_languages",
+      "sample_len": 250,
+      "exact_match,none": 0.236,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_multistep_arithmetic_two": {
+      "name": "bbh_fewshot_multistep_arithmetic_two",
+      "alias": "bbh_fewshot_multistep_arithmetic_two",
+      "sample_len": 250,
+      "exact_match,none": 0.004,
+      "exact_match_stderr,none": "N/A"
+    },
+    "bbh_fewshot_sports_understanding": {
+      "name": "bbh_fewshot_sports_understanding",
+      "alias": "bbh_fewshot_sports_understanding",
+      "sample_len": 250,
+      "exact_match,none": 0.676,
+      "exact_match_stderr,none": "N/A"
+    }
+  },
+  "n_samples": {
+    "bbh_fewshot_dyck_languages": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_multistep_arithmetic_two": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_fewshot_sports_understanding": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 149.1,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-10T00:09:06+03:00"
+}

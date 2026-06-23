@@ -1,0 +1,81 @@
+{
+  "run_name": "base_l2-7b__retshard0",
+  "adapter": "(base)",
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "tasks": [
+    "mmlu_pro_math",
+    "bbh_cot_fewshot_causal_judgement",
+    "bbh_cot_fewshot_geometric_shapes",
+    "bbh_cot_fewshot_object_counting",
+    "bbh_cot_fewshot_tracking_shuffled_objects_five_objects"
+  ],
+  "scores": {
+    "mmlu_pro_math": 0.08734270910436713,
+    "bbh_cot_fewshot_causal_judgement": 0.5240641711229946,
+    "bbh_cot_fewshot_geometric_shapes": 0.376,
+    "bbh_cot_fewshot_object_counting": 0.504,
+    "bbh_cot_fewshot_tracking_shuffled_objects_five_objects": 0.172
+  },
+  "results": {
+    "mmlu_pro_math": {
+      "name": "mmlu_pro_math",
+      "alias": "math",
+      "sample_len": 1351,
+      "exact_match,custom-extract": 0.08734270910436713,
+      "exact_match_stderr,custom-extract": "N/A"
+    },
+    "bbh_cot_fewshot_causal_judgement": {
+      "name": "bbh_cot_fewshot_causal_judgement",
+      "alias": "bbh_cot_fewshot_causal_judgement",
+      "sample_len": 187,
+      "exact_match,get-answer": 0.5240641711229946,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_geometric_shapes": {
+      "name": "bbh_cot_fewshot_geometric_shapes",
+      "alias": "bbh_cot_fewshot_geometric_shapes",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.376,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_object_counting": {
+      "name": "bbh_cot_fewshot_object_counting",
+      "alias": "bbh_cot_fewshot_object_counting",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.504,
+      "exact_match_stderr,get-answer": "N/A"
+    },
+    "bbh_cot_fewshot_tracking_shuffled_objects_five_objects": {
+      "name": "bbh_cot_fewshot_tracking_shuffled_objects_five_objects",
+      "alias": "bbh_cot_fewshot_tracking_shuffled_objects_five_objects",
+      "sample_len": 250,
+      "exact_match,get-answer": 0.172,
+      "exact_match_stderr,get-answer": "N/A"
+    }
+  },
+  "n_samples": {
+    "mmlu_pro_math": {
+      "original": 1351,
+      "effective": 1351
+    },
+    "bbh_cot_fewshot_causal_judgement": {
+      "original": 187,
+      "effective": 187
+    },
+    "bbh_cot_fewshot_geometric_shapes": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_object_counting": {
+      "original": 250,
+      "effective": 250
+    },
+    "bbh_cot_fewshot_tracking_shuffled_objects_five_objects": {
+      "original": 250,
+      "effective": 250
+    }
+  },
+  "runtime_s": 3323.1,
+  "git_commit": "7561e27238a4aab5f5a5d4e9e858b2c1a5c66837",
+  "evaluated_at": "2026-06-09T23:57:31+03:00"
+}
