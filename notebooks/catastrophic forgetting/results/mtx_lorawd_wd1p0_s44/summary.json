@@ -1,0 +1,37 @@
+{
+  "run_name": "mtx_lorawd_wd1p0_s44",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/mtx_lorawd_wd1p0_s44",
+  "per_dataset": {
+    "boolq": 73.73,
+    "piqa": 55.28,
+    "social_i_qa": 55.63,
+    "hellaswag": 61.83,
+    "winogrande": 84.85,
+    "ARC-Easy": 56.1,
+    "ARC-Challenge": 38.23,
+    "openbookqa": 72.6
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.1776,
+    "dw_sv_mean": 2.722,
+    "dw_sv_max": 8.037,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 62.28,
+    "adapt_task": "cs",
+    "bbh": 34.79,
+    "mmlu_pro": 20.44,
+    "mmlu": 47.46,
+    "arc_c": 41.13,
+    "truthfulqa": 37.59,
+    "retention_mean": 27.62,
+    "retention_broad": 36.28,
+    "fdelta": 0.1776,
+    "dw_sv_max": 8.037,
+    "dw_sv_mean": 2.722
+  },
+  "git_commit": "2464793134542f3471befdb0f7e02b80a90e0ac1",
+  "evaluated_at": "2026-06-23T19:12:39+03:00"
+}
