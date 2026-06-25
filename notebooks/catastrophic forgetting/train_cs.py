@@ -144,6 +144,11 @@ def main():
     ap.add_argument("--sclora", type=int, default=0, help="SC-LoRA data-aware init (D+/D- covariance). sclora_init.py. Needs --lora_alpha==--lora_r.")
     ap.add_argument("--sclora_beta", type=float, default=0.5, help="SC-LoRA balance: top-r eigvecs of (1-beta)Cov+ - beta*Cov- (swept knob).")
     ap.add_argument("--sclora_calib_size", type=int, default=256)
+    # LoRA-Null (null-space init; lora_null_init.py). Needs --lora_alpha==--lora_r.
+    ap.add_argument("--lora_null", type=int, default=0, help="LoRA-Null: init adapter in the null space of knowledge-input activations (calib=nq_open). lora_null_init.py.")
+    ap.add_argument("--lora_null_calib_size", type=int, default=256)
+    ap.add_argument("--lora_null_dim", type=int, default=0, help="Null-space dimensionality; 0 -> rank-matched (=lora_r). See fidelity flag in lora_null_init.py.")
+    ap.add_argument("--lora_null_freeze_a", type=int, default=0, help="Freeze A during training (paper's best-preservation variant); default 0 trains both (head-to-head fairness).")
     ap.add_argument("--lora_r", type=int, default=32)
     ap.add_argument("--lora_alpha", type=int, default=64)
     # CLoRA
@@ -238,9 +243,34 @@ def main():
         print(f"[sclora] beta={args.sclora_beta} (output-side, NQ-open D-) init applied; "
               f"loss-preserving err={err:.2e}", flush=True)
 
-    # CorDA/MiLoRA/SC-LoRA overwrite base.weight=W_res but PEFT saves only the adapter ->
+    if getattr(args, "lora_null", 0):
+        import lora_null_init as Ni
+        from datasets import load_dataset as _ld
+        assert args.lora_alpha == args.lora_r, "LoRA-Null needs scaling=1 -> set --lora_alpha == --lora_r"
+        # Null space of KNOWLEDGE-input activations to preserve (repo default: nq_open, 256 samples).
+        try:
+            nq = _ld("google-research-datasets/nq_open", split="validation")
+            kprompts = [q for q in nq["question"][:args.lora_null_calib_size]]
+        except Exception as e:
+            print(f"[lora_null] nq_open load failed ({e}); falling back to wikitext calib", flush=True)
+            wt = _ld("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
+            kprompts = [t for t in wt["text"] if len(t.strip()) > 50][:args.lora_null_calib_size]
+        cov = Ni.collect_lora_null_cov(model, kprompts, tokenizer, calib_size=args.lora_null_calib_size,
+                                       max_len=args.cutoff_len)
+        nd = args.lora_null_dim if args.lora_null_dim > 0 else None
+        err = Ni.apply_lora_null(model, cov, r=args.lora_r, null_dim=nd)
+        if args.lora_null_freeze_a:
+            for _n, _m in model.named_modules():
+                if "default" in getattr(_m, "lora_A", {}):
+                    _m.lora_A["default"].weight.requires_grad_(False)
+        print(f"[lora_null] null-space init applied to {len(cov)} layers "
+              f"(null_dim={nd or args.lora_r}, freeze_a={bool(args.lora_null_freeze_a)}); "
+              f"loss-preserving err={err:.2e}", flush=True)
+
+    # CorDA/MiLoRA/SC-LoRA/LoRA-Null overwrite base.weight=W_res but PEFT saves only the adapter ->
     # snapshot the init adapter now so we can persist a W0-relative (rank-2r) adapter at save.
-    residual_method = bool(getattr(args, "corda", 0) or getattr(args, "milora", 0) or getattr(args, "sclora", 0))
+    residual_method = bool(getattr(args, "corda", 0) or getattr(args, "milora", 0)
+                           or getattr(args, "sclora", 0) or getattr(args, "lora_null", 0))
     init_adapter = None
     if residual_method:
         import residual_save as Rs
