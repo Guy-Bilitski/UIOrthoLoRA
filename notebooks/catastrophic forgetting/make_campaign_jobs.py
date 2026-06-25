@@ -26,7 +26,9 @@ ARMS = {
 }
 LRS = [("2e5", "2e-05"), ("5e5", "5e-05"), ("1e4", "1e-04"), ("2e4", "0.0002"),
        ("3e4", "0.0003"), ("5e4", "0.0005"), ("1e3", "0.001"), ("2e3", "0.002"), ("5e3", "0.005")]
-SEEDS = ["42", "43", "44"]
+# ONE seed for full breadth first (2 models x 2 domains); add 43/44 later only where it matters.
+# To restore multi-seed: SEEDS = ["42", "43", "44"]  (orchestrator regenerates remaining cells).
+SEEDS = ["42"]
 
 
 def main():
@@ -58,7 +60,8 @@ def main():
 
     with open(a.out, "w") as f:
         f.write("\n".join(lines) + ("\n" if lines else ""))
-    print(f"[{a.prefix}] target=216  done={skipped}  remaining={len(lines)} -> {a.out}")
+    target = len(ARMS) * len(LRS) * len(SEEDS)
+    print(f"[{a.prefix}] target={target} (seeds={','.join(SEEDS)})  done={skipped}  remaining={len(lines)} -> {a.out}")
 
 
 if __name__ == "__main__":
