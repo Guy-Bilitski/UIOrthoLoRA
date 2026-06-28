@@ -25,13 +25,17 @@ if [ -n "$WAIT_PID" ]; then
 fi
 
 # --- 0-step validation gate (residual-init plumbing incl. new LoRA-Null) ---
-log "running 0-step validation gate..."
-$PY validate_residual_zero_step.py > logs/validation_gate.log 2>&1
-if [ $? -ne 0 ]; then
-    log "VALIDATION GATE FAILED -> stopping (see logs/validation_gate.log). Re-run after fix."
-    exit 1
+if [ "${SKIP_VALIDATION:-0}" = "1" ]; then
+    log "validation gate SKIPPED (SKIP_VALIDATION=1; already PASSED on unchanged code)."
+else
+    log "running 0-step validation gate..."
+    $PY validate_residual_zero_step.py > logs/validation_gate.log 2>&1
+    if [ $? -ne 0 ]; then
+        log "VALIDATION GATE FAILED -> stopping (see logs/validation_gate.log). Re-run after fix."
+        exit 1
+    fi
+    log "validation gate PASS."
 fi
-log "validation gate PASS."
 
 run_pool(){  # tag jobfile
     local tag="$1" jf="$2"

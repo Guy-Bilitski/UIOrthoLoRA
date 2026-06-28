@@ -53,9 +53,12 @@ def main():
                     continue
                 train = (f"{PY} train_cs.py {flags} --learning_rate {val} --seed {s} "
                          f"--base_model {a.base_model}{data_arg} --run_name {run}")
+                # math-tuned models don't emit EOS on retention gen -> cap ret_max_gen so eval
+                # stays tractable (~halves math eval); consistent within the math domain.
+                rmg = 256 if a.adapt_task == "gsm8k" else 512
                 ev = (f"{PY} eval_one_gpu.py --adapter /scratch/cf_models/{run} --run_name {run} "
                       f"--base_model {a.base_model} --adapt_task {a.adapt_task} "
-                      f"--ret_suite broad --ret_limit 0 --ret_max_gen 512")
+                      f"--ret_suite broad --ret_limit 0 --ret_max_gen {rmg}")
                 lines.append(f"{train} && {ev}")
 
     with open(a.out, "w") as f:
