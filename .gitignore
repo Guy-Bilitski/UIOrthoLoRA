@@ -193,3 +193,5 @@ notebooks/tuner_knowledge/notebooks/results
 run_state/
 
 # **/results/*
+
+.claude/
