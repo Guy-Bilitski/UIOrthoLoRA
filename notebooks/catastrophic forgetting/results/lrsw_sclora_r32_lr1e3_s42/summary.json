@@ -1,0 +1,37 @@
+{
+  "run_name": "lrsw_sclora_r32_lr1e3_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/lrsw_sclora_r32_lr1e3_s42",
+  "per_dataset": {
+    "boolq": 62.26,
+    "piqa": 49.18,
+    "social_i_qa": 33.11,
+    "hellaswag": 12.81,
+    "winogrande": 49.33,
+    "ARC-Easy": 25.0,
+    "ARC-Challenge": 25.17,
+    "openbookqa": 26.8
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 3.0763,
+    "dw_sv_mean": 34.8047,
+    "dw_sv_max": 109.9312,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 35.46,
+    "adapt_task": "cs",
+    "bbh": 6.37,
+    "mmlu_pro": 0.01,
+    "mmlu": 23.5,
+    "arc_c": 26.79,
+    "truthfulqa": 39.48,
+    "retention_mean": 3.19,
+    "retention_broad": 19.23,
+    "fdelta": 3.0763,
+    "dw_sv_max": 109.9312,
+    "dw_sv_mean": 34.8047
+  },
+  "git_commit": "f32145557e59b91858687e5fa224f6b589c3edb2",
+  "evaluated_at": "2026-06-26T05:31:12+03:00"
+}

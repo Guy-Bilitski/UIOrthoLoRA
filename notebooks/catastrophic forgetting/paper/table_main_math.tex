@@ -1,0 +1,10 @@
+\begin{tabular}{l l c c c c c}
+\toprule
+Method & Config & GSM8K $\uparrow$ & Ret-core $\uparrow$ & Ret-broad $\uparrow$ & $\|\Delta W\|_F$ $\downarrow$ & $\sigma_{\max}$ \\
+\midrule
+\textit{Base (no-FT)} & -- & -- & \textit{26.0} & -- & \textit{0} & -- \\
+\midrule
+LoRA$\star$ & lora r16 lr2e5 & 33.9 & 26.1 & 33.9 & 0.330 & 7.0 \\
+LoRA+wd$\star$ & lorawd wd0p3 lr2e5 & 35.1 & 26.2 & 34.0 & 0.320 & 8.0 \\
+\bottomrule
+\end{tabular}
