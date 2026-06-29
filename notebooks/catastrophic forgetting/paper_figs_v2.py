@@ -57,7 +57,10 @@ plt.rcParams.update({
 })
 
 # Colorblind-safe palette (Okabe-Ito derived), distinct markers per method.
-METHODS = ["lora", "lorawd", "milora", "clora", "dora", "corda", "sclora"]
+# CorDA EXCLUDED from the active set (data under re-validation; see handoff/14). Its style entries
+# are kept below so any stale reference fails loud rather than KeyError-ing silently, but it is NOT
+# in METHODS and never plotted/tabulated.
+METHODS = ["lora", "lorawd", "milora", "clora", "dora", "sclora"]   # 6 active methods (CorDA omitted)
 PRETTY = {"lora": "LoRA", "lorawd": "LoRA+wd(0.3)", "milora": "MiLoRA", "clora": "CLoRA",
           "dora": "DoRA", "corda": "CorDA", "sclora": "SC-LoRA"}
 COL = {"lora": "#0072B2", "lorawd": "#56B4E9", "milora": "#009E73", "clora": "#E69F00",
@@ -150,7 +153,7 @@ def legend_handles(methods):
     return h
 
 def watermark(fig):
-    fig.text(0.006, 0.004, "Llama-2-7B  ·  LoRA-family  ·  s42 LR-sweep  ·  n=49 (7 methods × 7 LRs)",
+    fig.text(0.006, 0.004, "Llama-2-7B  ·  LoRA-family  ·  s42 LR-sweep  ·  n=42 (6 methods × 7 LRs)",
              ha="left", va="bottom", fontsize=7, color="0.55", style="italic")
 
 CAVEAT = ("Caveat: single seed (s42), n=7 per method. CorDA OMITTED (under re-validation: calibration "
@@ -161,22 +164,25 @@ def caveat_footer(fig, y=0.004):
              color="#7a3b1d", style="italic",
              bbox=dict(boxstyle="round,pad=0.3", fc="#fdf1e7", ec="#d9a877", lw=0.8))
 
-# Methods that fall ON the magnitude law vs the data-aware-init OUTLIERS that forget more than budget predicts.
+# Methods that fall ON the magnitude law vs the single PROVISIONAL below-curve outlier.
+# With CorDA omitted, SC-LoRA is the only below-curve method, and its deviation is PROVISIONAL —
+# pending a calibration-distribution sensitivity test (nq_open vs eval-matched) + seeds 43/44 (handoff/14).
 ON_CURVE = ["lora", "lorawd", "milora", "clora", "dora"]
-OFF_CURVE = ["corda", "sclora"]
+OFF_CURVE = ["sclora"]
 
 # Training-collapse outliers (degenerate adaptation; valid retention). run -> (adapt, note)
+# (CorDA's collapse run dropped with CorDA's exclusion.)
 COLLAPSE = {
     "lrsw_clora_k1024_lr1e4_s42": "CLoRA k1024 @ lr1e-4",
-    "lrsw_corda_r16_lr2e5_s42":   "CorDA r16 @ lr2e-5",
     "lrsw_dora_r16_lr2e5_s42":    "DoRA r16 @ lr2e-5",
 }
 
 # ================================================================ FIG 0  (HERO)
 def fig0_hero():
     """THE figure that carries the paper. Single clean panel: retention vs ||dW||_F (log-x),
-    pooled fit on the 5 on-curve adapters + bootstrap CI, all 7 methods by color/marker,
-    CorDA & SC-LoRA called out as below-curve outliers. Annotate r/R2, base ceiling, outliers."""
+    pooled fit on the 5 on-curve adapters + bootstrap CI, all 6 active methods by color/marker.
+    SC-LoRA is the single below-curve point, called out as PROVISIONAL (pending calib-distribution
+    sensitivity; see handoff/14). Annotate r/R2, base ceiling, the provisional outlier."""
     rows = SWEEP
     x = arr(rows, "F"); y = arr(rows, "ret")
     g = np.isfinite(x) & np.isfinite(y) & (x > 0)
@@ -187,7 +193,7 @@ def fig0_hero():
     on = np.array([r["method"] in ON_CURVE for r in rows])
     xon, yon = x[on], y[on]
     fit = fit_line_logx(xon, yon)
-    # full-pool fit (all 7) for reference in the annotation
+    # full-pool fit (all 6 active methods) for reference in the annotation
     fit_all = fit_line_logx(x, y)
     # robustness: on-curve law excluding the 3 training-collapse outliers (degenerate adaptation)
     keep = np.array([r["run"] not in COLLAPSE for r in rows]) & on
@@ -233,20 +239,22 @@ def fig0_hero():
     ax.text(ax.get_xlim()[1], BASE_CORE + 0.4, "base retention ceiling (no fine-tune)  ",
             color="green", fontsize=10, va="bottom", ha="right", fontweight="bold")
 
-    # call-out boxes for the two outliers, parked in the open lower-MIDDLE, arrows pointing right to clusters
+    # call-out box for the single PROVISIONAL below-curve outlier (SC-LoRA), parked in open lower-middle.
     annot = {
-        "corda":  dict(tx=0.40, ty=0.135),
-        "sclora": dict(tx=0.40, ty=0.045),
+        "sclora": dict(tx=0.36, ty=0.07),
     }
     for m in OFF_CURVE:
         mr = [r for r in rows if r["method"] == m]
         mx = arr(mr, "F"); my = arr(mr, "ret")
+        if len(mx) == 0:
+            continue
         # anchor on the lowest-retention (largest-deviation) point of this method
         j = int(np.argmin(my)); ax_x, ax_y = mx[j], my[j]
         cx = 10**np.mean(np.log10(mx))
         pred = fit["pred"](cx); cy = np.mean(my)
-        a = annot[m]
-        ax.annotate(f"{PRETTY[m]} (data-aware init):\nforgets ~{pred-cy:.0f} pp MORE than the law predicts",
+        a = annot.get(m, dict(tx=0.36, ty=0.07))
+        ax.annotate(f"{PRETTY[m]}: sits ~{pred-cy:.0f} pp below the law\n"
+                    f"(provisional — pending calib-distribution\nsensitivity, see handoff/14)",
                     xy=(ax_x, ax_y),
                     xytext=(a["tx"], a["ty"]), textcoords="axes fraction",
                     fontsize=9.5, color=COL[m], fontweight="bold", ha="left", va="bottom",
@@ -266,9 +274,9 @@ def fig0_hero():
     on_h = [Line2D([0],[0], marker=MARK[m], color=COL[m], lw=0, ms=11, markeredgecolor="k",
                    markeredgewidth=0.8, label=PRETTY[m]) for m in ON_CURVE]
     off_h = [Line2D([0],[0], marker=MARK[m], color=COL[m], lw=0, ms=12, markeredgecolor="k",
-                    markeredgewidth=1.0, label=PRETTY[m]+" (off-curve)") for m in OFF_CURVE]
+                    markeredgewidth=1.0, label=PRETTY[m]+" (below, provisional)") for m in OFF_CURVE]
     ax.legend(handles=on_h + off_h, loc="lower left", ncol=2, fontsize=9.2,
-              title="on the law  vs  below it", title_fontsize=9.5, framealpha=0.95)
+              title="on the law  vs  below it (provisional)", title_fontsize=9.5, framealpha=0.95)
 
     caveat_footer(fig, y=0.012)
     fig.subplots_adjust(left=0.085, right=0.975, top=0.93, bottom=0.115)
@@ -328,9 +336,9 @@ def fig1_magnitude_law():
         ax.text(10**(np.log10(x0) + 0.04*(np.log10(x1)-np.log10(x0))), BASE_CORE+0.35,
                 "base ceiling (no FT)", color="green", fontsize=8.2, va="bottom", ha="left")
     # one global method legend on top
-    fig.legend(handles=legend_handles(METHODS), loc="upper center", ncol=7,
+    fig.legend(handles=legend_handles(METHODS), loc="upper center", ncol=len(METHODS),
                bbox_to_anchor=(0.5, 1.005), fontsize=9.5, columnspacing=1.1, handletextpad=0.3)
-    fig.suptitle("Choosing a fair magnitude axis: $\\|\\Delta W\\|_F$ fits retention best across all 7 adapters "
+    fig.suptitle("Choosing a fair magnitude axis: $\\|\\Delta W\\|_F$ fits retention best across all 6 adapters "
                  "(Llama-2-7B, commonsense)", y=1.075, fontsize=14)
     watermark(fig)
     fig.tight_layout(rect=[0, 0.05, 1, 0.98])
@@ -398,7 +406,7 @@ def fig2_fairness_residuals():
     axL.set_xscale("log"); clean_logx(axL); axL.set_xlabel(r"$\|\Delta W\|_F$  (log scale)")
     axL.set_ylabel("Retention (BBH, MMLU-Pro mean) [%]")
     axL.axhline(BASE_CORE, ls=":", color="green", lw=1.3)
-    axL.set_title("5 adapters trace one curve; CorDA & SC-LoRA sit below it")
+    axL.set_title("5 adapters trace one curve; SC-LoRA sits below it (provisional)")
     axL.legend(loc="upper right", fontsize=8.8)
 
     # RIGHT: per-method residual strip+box
@@ -430,7 +438,7 @@ def fig2_fairness_residuals():
         if m in OFF_CURVE:
             tick.set_fontweight("bold"); tick.set_color(COL[m])
     axR.set_xlabel("Retention residual from pooled curve  [pp]   (> 0 = above the law)")
-    axR.set_title("5 adapters straddle 0;  CorDA & SC-LoRA forget significantly more (p<0.05)")
+    axR.set_title("5 adapters straddle 0;  SC-LoRA below 0 (provisional, see caveat)")
     # widen x so annotations have room on the right
     x0, x1 = axR.get_xlim(); axR.set_xlim(x0, x1 + 0.28*(x1-x0))
     lab_x = axR.get_xlim()[1] - 0.01*(axR.get_xlim()[1]-axR.get_xlim()[0])
@@ -439,12 +447,16 @@ def fig2_fairness_residuals():
         axR.text(lab_x, i+1, f"μ={mu:+.1f}{sig}", va="center", ha="right",
                  fontsize=8.5, color=cols[i], fontweight="bold")
 
-    fig.suptitle("5 of 7 adapters lie on the $\\|\\Delta W\\|$ law; the data-aware inits (CorDA, SC-LoRA) "
-                 "forget MORE than their budget predicts",
+    # SC-LoRA's residual mean (the single below-curve outlier), pulled live from the per-method stats.
+    scl_mu = next((mu for m, (mu, pv, nn) in zip(methods_here, tstats) if m == "sclora"), None)
+    scl_txt = f"SC-LoRA ($\\mu$={scl_mu:+.1f} pp)" if scl_mu is not None else "SC-LoRA"
+    fig.suptitle("5 of 6 adapters lie on the $\\|\\Delta W\\|$ law; SC-LoRA sits below it — a single "
+                 "PROVISIONAL outlier (under investigation)",
                  y=1.045, fontsize=13.5)
     fig.text(0.5, 0.965, "ANCOVA: adding a per-method intercept improves fit "
              f"($R^2$ {r2_lin:.2f}$\\rightarrow${r2_full:.2f}, $F_{{{df1},{df2}}}$={F_stat:.1f}, "
-             f"p={p_anova:.3f}) — driven entirely by CorDA ($\\mu$=−3.0*) and SC-LoRA ($\\mu$=−3.3*)",
+             f"p={p_anova:.3f}) — driven by {scl_txt}; PROVISIONAL pending calib-distribution "
+             "sensitivity + seeds (handoff/14)",
              ha="center", va="bottom", fontsize=9.5, color="0.3")
     watermark(fig)
     fig.tight_layout(rect=[0, 0.04, 1, 0.95])
@@ -500,7 +512,7 @@ def fig3_pareto():
     fig.suptitle("Adaptation–Retention Pareto frontier  (each point = one learning rate)", y=1.0, fontsize=14)
     fig.text(0.5, 0.005,
              "Red rings = training-collapse outliers (degenerate adaptation, valid retention; "
-             "magnitude law unchanged if excluded): clora k1024@1e-4, corda r16@2e-5, dora r16@2e-5.",
+             "magnitude law unchanged if excluded): clora k1024@1e-4, dora r16@2e-5.",
              ha="center", va="bottom", fontsize=8, color="red", style="italic")
     watermark(fig)
     fig.tight_layout(rect=[0, 0.04, 1, 0.97])
@@ -617,7 +629,7 @@ def fig5_per_benchmark():
     fig.text(0.5, 0.952, "Note: only BBH and MMLU-Pro have a measured base-model ceiling; "
              "MMLU, ARC-Challenge and TruthfulQA are uncalibrated (no base eval).",
              ha="center", va="bottom", fontsize=8.5, color="0.4", style="italic")
-    fig.legend(handles=legend_handles(METHODS), loc="lower center", ncol=7,
+    fig.legend(handles=legend_handles(METHODS), loc="lower center", ncol=len(METHODS),
                bbox_to_anchor=(0.5, 0.005), fontsize=9.5)
     watermark(fig)
     fig.subplots_adjust(left=0.055, right=0.985, top=0.90, bottom=0.10, hspace=0.46, wspace=0.27)
@@ -629,7 +641,7 @@ def fig5_per_benchmark():
 def fig6_extras():
     """Extras that strengthen the story:
     (a) adaptation vs ||dW||_F (adaptation needs magnitude — the tension);
-    (b) spectral structure: sv_max/sv_mean ratio per method (CorDA's spiky init = unfair x-axis warning);
+    (b) spectral structure: sv_max/sv_mean ratio per method (spiky inits = unfair x-axis warning);
     (c) the SAME magnitude buys different adaptation per method (efficiency)."""
     rows = SWEEP
     fig, axes = plt.subplots(1, 3, figsize=(16, 5.0))
@@ -666,7 +678,7 @@ def fig6_extras():
                     edgecolor="k", linewidth=0.4, zorder=5, alpha=0.9)
     axB.set_xticks(range(1, len(labels)+1)); axB.set_xticklabels(labels, rotation=30, ha="right")
     axB.set_ylabel(r"$\sigma_{\max}/\overline{\sigma}$  (spectral spikiness)")
-    axB.set_title("Why $\\sigma_{\\max}$ is an unfair x-axis\n(CorDA/DoRA spike; LoRA flat)")
+    axB.set_title("Why $\\sigma_{\\max}$ is an unfair x-axis\n(DoRA/SC-LoRA spike; LoRA flat)")
     axB.axhline(np.median([np.median(d) for d in data]), ls=":", color="0.5")
 
     # (c) magnitude-efficiency: adaptation at fixed retention budget. Interp adapt @ ret=24 per method
@@ -693,7 +705,7 @@ def fig6_extras():
 
     fig.suptitle("Supporting structure: the adaptation cost of magnitude, spectral fairness, and per-adapter efficiency",
                  y=1.02, fontsize=13)
-    fig.legend(handles=legend_handles(METHODS), loc="upper center", ncol=7,
+    fig.legend(handles=legend_handles(METHODS), loc="upper center", ncol=len(METHODS),
                bbox_to_anchor=(0.5, 0.985), fontsize=9)
     watermark(fig)
     fig.tight_layout(rect=[0, 0, 1, 0.93])
@@ -708,7 +720,7 @@ SAFE_RET = 24.0   # "safe" = retention >= base_ceiling - 2pp  (BASE_CORE ~= 26.0
 
 # Caption note: ranks/secondary configs are NOT matched across methods -> we frame the LAW, not a ranking.
 CFG_NOTE = ("Note: ranks / secondary configs are NOT matched across methods "
-            "(LoRA/DoRA/CorDA r16, MiLoRA/SC-LoRA r32, CLoRA k1024) — cross-method gaps are partly "
+            "(LoRA/DoRA r16, MiLoRA/SC-LoRA r32, CLoRA k1024) — cross-method gaps are partly "
             "config effects. We frame around the magnitude law, not a method ranking.")
 def cfg_note_footer(fig, y=0.028):
     fig.text(0.5, y, CFG_NOTE, ha="center", va="bottom", fontsize=8, color="0.35", style="italic")
@@ -767,12 +779,12 @@ def fig7_lr_is_the_proxy():
     axA.set_xlabel("learning rate (log scale)")
     axA.set_ylabel(r"resulting  $\|\Delta W\|_F$  (token-weighted, log scale)")
     axA.set_title("A.  Same LR → different $\\|\\Delta W\\|$")
-    # call out the data-aware inits sitting ABOVE the pack (more magnitude per LR).
+    # call out SC-LoRA (data-aware init) sitting ABOVE the pack (more magnitude per LR).
     # anchor on SC-LoRA's lowest-LR point; use a neutral-gray, near-straight arrow so it does NOT
     # read as part of the (purple) SC-LoRA line — the curved colored arrow looked like a data hook.
     _scl0 = min(_msorted(rows, "sclora"), key=lambda r: r["lr"])
-    axA.annotate("data-aware inits (CorDA, SC-LoRA)\nturn the same LR into a LARGER update\n"
-                 "→ the mechanism behind their extra forgetting",
+    axA.annotate("SC-LoRA (data-aware init)\nturns the same LR into a LARGER update\n"
+                 "→ candidate mechanism for its extra forgetting (provisional)",
                  xy=(_scl0["lr"], _scl0["F"]),
                  xytext=(0.05, 0.97), textcoords="axes fraction",
                  fontsize=8.6, color="0.15", ha="left", va="top",
@@ -908,7 +920,7 @@ def fig8_magnitude_budget():
     axB.text(axB.get_xlim()[1], SAFE_RET - 0.5, "safe threshold (base − 2pp)  ",
              color="0.4", fontsize=8.3, va="top", ha="right")
 
-    fig.legend(handles=legend_handles(METHODS), loc="upper center", ncol=7,
+    fig.legend(handles=legend_handles(METHODS), loc="upper center", ncol=len(METHODS),
                bbox_to_anchor=(0.5, 1.005), fontsize=9.2, columnspacing=1.0, handletextpad=0.3)
     fig.suptitle(r"The magnitude budget: one axis ($\|\Delta W\|_F$) sets both adaptation and forgetting",
                  y=1.052, fontsize=14)
@@ -1084,7 +1096,7 @@ if __name__ == "__main__":
     print("\n=== FIG0 HERO: magnitude law fit on 5 on-curve adapters ===")
     print(f"  on-curve (n={hero['n_on']}): r={hero['on_curve']['r']:+.3f}  R2={hero['on_curve']['r2']:.3f}  "
           f"slope={hero['on_curve']['slope']:.2f} pp/decade")
-    print(f"  all-7 pooled:            r={hero['all']['r']:+.3f}  R2={hero['all']['r2']:.3f}")
+    print(f"  all-6 pooled:            r={hero['all']['r']:+.3f}  R2={hero['all']['r2']:.3f}")
     print(f"  robustness (on-curve, excl. 3 collapse outliers): r={hero['robust']['r']:+.3f}  "
           f"R2={hero['robust']['r2']:.3f}  slope={hero['robust']['slope']:.2f}  -> law unchanged")
     p1, fits = fig1_magnitude_law(); paths.append(p1)
