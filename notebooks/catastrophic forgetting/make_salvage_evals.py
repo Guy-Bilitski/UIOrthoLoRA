@@ -18,6 +18,8 @@ for d in sorted(glob.glob(os.path.join(SCRATCH, "*"))):
         continue  # training didn't finish -> nothing to salvage
     if os.path.exists(os.path.join(HERE, f"results/{n}/summary.json")):
         continue  # already evaluated
+    if "_lr2e3_" in n or "_lr5e3_" in n:
+        continue  # diverged-to-NaN at extreme LR -> eval crashes (inf/nan); not recoverable
     bm = "Qwen/Qwen2.5-7B" if is_qwen(n) else "meta-llama/Llama-2-7b-hf"
     task = "gsm8k" if is_math(n) else "cs"
     rmg = 256 if is_math(n) else 512

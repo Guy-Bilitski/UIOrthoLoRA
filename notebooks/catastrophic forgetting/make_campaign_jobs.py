@@ -24,8 +24,11 @@ ARMS = {
     "sclora_r32":    "--method lora --sclora 1 --sclora_beta 0.5 --lora_r 32 --lora_alpha 32",
     "lora_null_r16": "--method lora --lora_null 1 --lora_r 16 --lora_alpha 16",
 }
+# LRs 2e-3/5e-3 DROPPED: adapters diverge to NaN at those rates for all methods -> eval crashes
+# (inf/nan) and the pool retries forever (wasted compute). The collapse end of the frontier is
+# already captured at 1e-3 (retention craters, ||dW|| explodes).
 LRS = [("2e5", "2e-05"), ("5e5", "5e-05"), ("1e4", "1e-04"), ("2e4", "0.0002"),
-       ("3e4", "0.0003"), ("5e4", "0.0005"), ("1e3", "0.001"), ("2e3", "0.002"), ("5e3", "0.005")]
+       ("3e4", "0.0003"), ("5e4", "0.0005"), ("1e3", "0.001")]
 # ONE seed for full breadth first (2 models x 2 domains); add 43/44 later only where it matters.
 # To restore multi-seed: SEEDS = ["42", "43", "44"]  (orchestrator regenerates remaining cells).
 SEEDS = ["42"]
