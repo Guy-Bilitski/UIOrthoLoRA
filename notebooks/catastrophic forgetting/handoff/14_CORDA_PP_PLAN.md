@@ -68,5 +68,43 @@ covariance-collection pass. Components (fill exact math from §1 fetch), each an
 - [ ] Parity: effective trainable params reported; CorDA++ matched to the shared budget.
 
 ## 7. Open confirmations (from §1 fetch)
-exact compactness formula · candidate-pool size · dynamic-rank budget rule · their KPM calib set/N ·
-whether an official CorDA++ code release exists (separate from iboing/CorDA static).
+candidate-pool size N (experiment appendix) · whether an official CorDA++ code release exists.
+
+---
+
+## 8. REVISIONS before building (expert review 2026-06-29) — these OVERRIDE §0/§2/§5 where they conflict
+
+### §1 BLOCKER CLEARED — CorDA++ algorithms (arXiv:2506.13187 §IV), implement exactly:
+- **Compactness metric:** π(C) = √(d_out · σ_max(C)) / σ_min(C). Lower = more compact. Bound ‖ΔY‖₁ ≤ π(C)·σ₋ᵣ.
+- **Dynamic covariance selection (Eq 7–8):** sample N batches → per-layer candidates C_i^(l). Score
+  s(C_i^(l)) = log(π(C_i^(l))) · Σ_{r=1}^{R} (σ₋ᵣ/σ_max). Per layer pick **argmin** (lowest wins), independently per layer.
+- **Dynamic rank allocation (Eq 9–10):** all layers start r^(l)=1; score s^(l) = log(π(C^(l))) · σ₋_{r^(l)} /
+  Σ_{k=1}^{R^(l)−r^(l)} σ_k; each step **increment the lowest-scoring layer**. KPM: filtered (bottom) comps =
+  adapters; accumulate τ′ = Σ(d_in+d_out)·r^(l); stop when τ′ > τ (overshoots by one → **report REALIZED
+  param count**). IPM: remaining comps = adapters; τ′ = Σ(d_in+d_out)·(R^(l)−r^(l)); stop when τ′ < τ.
+- **Paper KPM setup:** NQ-open, 256 samples; LoRA/CorDA **r=128**; CorDA++ matched to equiv budget → all three
+  **320M trainable**. Confirms param-budget parity is correct. **OUR budget = r16-equivalent = 28,049,408
+  (avg rank 16 over 160 target matrices), NOT 320M** — match CorDA++ to our arms, report realized count.
+- STILL OPEN: candidate-pool size **N** (experiment appendix, not method §) — fetch before finalizing dynamic_covariance.
+
+### FIX 1 (HIGH) — calibration distribution must MATCH our retention eval (supersedes the nq_open guidance in §0/§5)
+KPM only protects directions the covariance exercises; paper §III-C: covariance from the eval distribution
+works best. Our eval = BBH/MMLU/MMLU-Pro/ARC/TruthfulQA (academic/reasoning), NOT factoid QA → **nq_open is a
+poor proxy**, handicapping the calibration-using arms (CorDA/CorDA++/SC-LoRA/CLoRA/LoRA-Null) vs the
+calibration-free arms (LoRA/MiLoRA/PiSSA) → risks a false "data-aware inits don't retain" conclusion.
+→ Switch KPM calibration to **eval-distribution-matched** questions (MMLU/ARC auxiliary-train, DISJOINT from
+  test), 256, **shared across all calibration-using arms**. Add a **sensitivity arm** (nq_open vs eval-matched).
+→ ⚠️ **IMPLICATION:** this likely confounds the current **off-curve finding for BOTH CorDA AND SC-LoRA** —
+  "forget more than budget" may just be "preserved the wrong (nq_open) knowledge for our eval." The off-curve
+  claim is now pending the eval-matched calibration for ALL data-aware arms, not just CorDA's nq_open recal.
+
+### FIX 2 (HIGH) — do NOT drop residual handling for PEFT CorDA (corrects §2's "drops residual_save")
+CorDA mutates the base (W′ = W − BA). `save_pretrained` → reload onto the ORIGINAL base is silently wrong.
+Use PEFT's **`path_initial_model_for_weight_conversion`** at save (or persist the mutated base). VERIFY the
+save→reload round-trip; run the init-output-invariance check **AFTER reload, not in-memory** (in-memory passes
+even when the reloaded model is corrupt — the residual_save bug class we already hit).
+
+### FIX 3 — verify two PEFT behaviors BEFORE building Path C
+(a) `preprocess_corda` must slice bottom-r using the per-layer rank from **`rank_pattern`**, NOT global
+`LoraConfig.r` — confirm in `src/peft/tuners/lora/corda.py`, else dynamic_rank gives inconsistent inits.
+(b) confirm **`covariance_file` is load-if-exists** (so we can inject per-layer-selected covariances), not write-only.
