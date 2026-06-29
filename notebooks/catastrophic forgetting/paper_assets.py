@@ -144,8 +144,12 @@ def build_table(cells, domain):
                    f'{fmt(c["broad"]):>9s} {(("%.3f"%c["F"]) if c["F"] else "--"):>8s} '
                    f'{(("%.1f"%c["svmax"]) if c["svmax"] else "--"):>7s} {c["n"]:>2d}')
     L += [r"\bottomrule", r"\end{tabular}"]
-    open(os.path.join(OUT, f"table_main_{domain}.tex"), "w").write("\n".join(L) + "\n")
-    open(os.path.join(OUT, f"table_main_{domain}.txt"), "w").write("\n".join(txt) + "\n")
+    # DEPRECATED OUTPUT: this rep-selection pools the old 3-seed matrix WITH the LR sweep, which
+    # produced an inconsistent/collapse-inflated main table. The canonical main tables are now
+    # written by paper_figs_v2.py (sweep-only, best-adapt-LR). Write to *_LEGACY so we never
+    # clobber the canonical paper/table_main_{domain}.tex.
+    open(os.path.join(OUT, f"table_main_{domain}_LEGACY.tex"), "w").write("\n".join(L) + "\n")
+    open(os.path.join(OUT, f"table_main_{domain}_LEGACY.txt"), "w").write("\n".join(txt) + "\n")
     return "\n".join(txt)
 
 

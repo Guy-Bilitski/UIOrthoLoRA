@@ -4,12 +4,13 @@ Method & Config & CS-8 $\uparrow$ & Ret-core $\uparrow$ & Ret-broad $\uparrow$ &
 \midrule
 \textit{Base (no-FT)} & -- & -- & \textit{26.0} & -- & \textit{0} & -- \\
 \midrule
-LoRA$\star$ & lora r16 lr1e4 & 78.3 & 26.7 & 35.4 & 0.310 & 19.2 \\
-LoRA+wd$\star$ & lorawd wd0p5 & 71.6$\pm$14.7 & 27.5$\pm$0.3 & 35.2 & 0.260 & 15.3 \\
-CLoRA & clora k1024 & 72.9$\pm$8.0 & 24.8$\pm$0.4 & 33.2 & 0.440 & 20.7 \\
-DoRA & dora r16 lr2e4 & 78.3 & 24.8 & 32.9 & 0.450 & 38.8 \\
-CorDA & corda r16 lr5e5 & 73.4 & 23.1 & 33.2 & 0.280 & 107.7 \\
-MiLoRA & milora r32 lr2e5 & 70.2 & 26.2 & 36.6 & 0.170 & 3.0 \\
-SC-LoRA & sclora r32 lr2e5 & 79.5 & 25.3 & 34.3 & 0.330 & 7.1 \\
+LoRA+wd(0.3) & lorawd wd0p3, lr5e-4 & 81.6 & 25.6 & 33.2 & 0.394 & 34.3 \\
+SC-LoRA & sclora r32, lr5e-5 & 80.1 & 22.5 & 32.5 & 0.559 & 11.3 \\
+MiLoRA & milora r32, lr3e-4 & 79.9 & 24.7 & 33.6 & 0.543 & 48.5 \\
+LoRA & lora r16, lr3e-4 & 79.1 & 24.4 & 32.7 & 0.623 & 40.7 \\
+CLoRA & clora k1024, lr5e-4 & 78.4 & 21.9 & 30.1 & 0.643 & 29.8 \\
+DoRA & dora r16, lr2e-4 & 78.3 & 24.8 & 32.9 & 0.445 & 38.8 \\
+CorDA & corda r16, lr1e-4 & 77.9 & 19.9 & 30.6 & 0.419 & 204.4 \\
 \bottomrule
 \end{tabular}
+% single seed s42; ranks/configs not matched across methods; each method shown at its best-adapt LR (sweep-only).

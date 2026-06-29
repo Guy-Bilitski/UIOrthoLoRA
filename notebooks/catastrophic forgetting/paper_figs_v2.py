@@ -28,6 +28,7 @@ def clean_logx(ax):
 
 HERE = "/home/guy/UIOrthoLoRA/notebooks/catastrophic forgetting"
 RES = os.path.join(HERE, "results")
+PAPER = os.path.join(HERE, "paper")            # LaTeX tables live here
 OUT = os.path.join(HERE, "paper", "figs_v2")
 os.makedirs(OUT, exist_ok=True)
 
@@ -697,6 +698,381 @@ def fig6_extras():
     fig.savefig(p, bbox_inches="tight"); plt.close(fig)
     return p
 
+# ================================================================ shared LR-sweep helpers (figs 7/8/table)
+# The 7 swept learning rates, in order; used as the shared categorical axis where LR is the predictor.
+LR_GRID = [2e-5, 5e-5, 1e-4, 2e-4, 3e-4, 5e-4, 1e-3]
+SAFE_RET = 24.0   # "safe" = retention >= base_ceiling - 2pp  (BASE_CORE ~= 26.0)
+
+# Caption note: ranks/secondary configs are NOT matched across methods -> we frame the LAW, not a ranking.
+CFG_NOTE = ("Note: ranks / secondary configs are NOT matched across methods "
+            "(LoRA/DoRA/CorDA r16, MiLoRA/SC-LoRA r32, CLoRA k1024) — cross-method gaps are partly "
+            "config effects. We frame around the magnitude law, not a method ranking.")
+def cfg_note_footer(fig, y=0.028):
+    fig.text(0.5, y, CFG_NOTE, ha="center", va="bottom", fontsize=8, color="0.35", style="italic")
+
+def _msorted(rows, m):
+    """method rows with finite lr/F/adapt/ret, sorted by LR."""
+    mr = [r for r in rows if r["method"] == m and r["lr"] is not None
+          and r["F"] is not None and r["adapt"] is not None and r["ret"] is not None]
+    return sorted(mr, key=lambda r: r["lr"])
+
+def op_points_data():
+    """Per-method operating points: best-LR (max adaptation), safe-LR (max adapt with ret>=SAFE_RET),
+    and robustness count (#LRs with ret>=SAFE_RET)."""
+    rows = SWEEP
+    out = []
+    for m in METHODS:
+        mr = _msorted(rows, m)
+        if not mr:
+            continue
+        best = max(mr, key=lambda r: r["adapt"])
+        safe_cands = [r for r in mr if r["ret"] >= SAFE_RET]
+        safe = max(safe_cands, key=lambda r: r["adapt"]) if safe_cands else None
+        nrob = sum(1 for r in mr if r["ret"] >= SAFE_RET)
+        out.append(dict(method=m,
+                        best_lr=best["lr"], best_adapt=best["adapt"], best_ret=best["ret"],
+                        safe_lr=(safe["lr"] if safe else None),
+                        safe_adapt=(safe["adapt"] if safe else None),
+                        safe_ret=(safe["ret"] if safe else None),
+                        nrobust=nrob))
+    return out
+
+# ================================================================ FIG 7  (LR is a proxy; ||dW|| is the cause)
+def fig7_lr_is_the_proxy():
+    """Panel A: LR -> ||dW||_F transmission per method (data-aware inits reach larger ||dW|| per LR).
+    Panel B: retention vs LR (loose) beside retention vs ||dW||_F (tight) — the R^2 contrast IS the message."""
+    rows = SWEEP
+    fig = plt.figure(figsize=(15.5, 5.6))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.12, 1, 1], wspace=0.30)
+    axA = fig.add_subplot(gs[0, 0])
+    axL = fig.add_subplot(gs[0, 1])      # retention vs LR
+    axF = fig.add_subplot(gs[0, 2], sharey=axL)  # retention vs ||dW||
+
+    # ---- Panel A: LR (log x) -> ||dW||_F (log y), one line per method
+    for m in METHODS:
+        mr = _msorted(rows, m)
+        if not mr:
+            continue
+        lrs = [r["lr"] for r in mr]; fs = [r["F"] for r in mr]
+        off = m in OFF_CURVE
+        axA.plot(lrs, fs, "-", color=COL[m], lw=2.4 if off else (2.0 if m in SIMPLE else 1.3),
+                 marker=MARK[m], ms=9 if off else (8 if m in SIMPLE else 6),
+                 markeredgecolor="k", markeredgewidth=0.9 if off else 0.55,
+                 alpha=0.97, zorder=6 if off else (5 if m in SIMPLE else 4))
+    axA.set_xscale("log"); axA.set_yscale("log"); clean_logx(axA)
+    axA.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{v:g}"))
+    axA.set_xlabel("learning rate (log scale)")
+    axA.set_ylabel(r"resulting  $\|\Delta W\|_F$  (token-weighted, log scale)")
+    axA.set_title("A.  Same LR → different $\\|\\Delta W\\|$")
+    # call out the data-aware inits sitting ABOVE the pack (more magnitude per LR).
+    # anchor on SC-LoRA's lowest-LR point; use a neutral-gray, near-straight arrow so it does NOT
+    # read as part of the (purple) SC-LoRA line — the curved colored arrow looked like a data hook.
+    _scl0 = min(_msorted(rows, "sclora"), key=lambda r: r["lr"])
+    axA.annotate("data-aware inits (CorDA, SC-LoRA)\nturn the same LR into a LARGER update\n"
+                 "→ the mechanism behind their extra forgetting",
+                 xy=(_scl0["lr"], _scl0["F"]),
+                 xytext=(0.05, 0.97), textcoords="axes fraction",
+                 fontsize=8.6, color="0.15", ha="left", va="top",
+                 arrowprops=dict(arrowstyle="-|>", color="0.35", lw=1.4, shrinkA=4, shrinkB=7,
+                                 connectionstyle="arc3,rad=0.08"),
+                 bbox=dict(boxstyle="round,pad=0.34", fc="white", ec=COL["sclora"], lw=1.1, alpha=0.95))
+    axA.legend(handles=legend_handles(METHODS), loc="lower right", ncol=2, fontsize=8.0,
+               columnspacing=0.9, handletextpad=0.3)
+
+    # ---- Panels B(left/right): retention vs LR  vs  retention vs ||dW||_F
+    def _scatter_fit(ax, key, xlabel, logx=True, title=""):
+        x = arr(rows, key); y = arr(rows, "ret")
+        g = np.isfinite(x) & np.isfinite(y) & (x > 0)
+        x, y = x[g], y[g]
+        fit = fit_line_logx(x, y)
+        xx = np.logspace(np.log10(x.min()), np.log10(x.max()), 200)
+        ax.plot(xx, fit["pred"](xx), color="0.2", lw=2.4, ls="--", zorder=3)
+        for m in METHODS:
+            mr = [r for r in rows if r["method"] == m]
+            mx = arr(mr, key); my = arr(mr, "ret")
+            gg = np.isfinite(mx) & np.isfinite(my) & (mx > 0)
+            off = m in OFF_CURVE
+            ax.scatter(mx[gg], my[gg], s=95 if off else (80 if m in SIMPLE else 50),
+                       c=COL[m], marker=MARK[m],
+                       edgecolor="k", linewidth=0.9 if off else (0.7 if m in SIMPLE else 0.4),
+                       alpha=0.95, zorder=6 if off else (5 if m in SIMPLE else 4))
+        ax.axhline(BASE_CORE, ls=":", color="green", lw=1.4, zorder=1)
+        if logx:
+            ax.set_xscale("log"); clean_logx(ax)
+        ax.set_xlabel(xlabel)
+        ax.set_title(title)
+        # R^2 badge
+        ax.text(0.04, 0.06, f"$R^2$ = {fit['r2']:.2f}\n$r$ = {fit['r']:.2f}",
+                transform=ax.transAxes, fontsize=12, fontweight="bold", va="bottom", ha="left",
+                bbox=dict(boxstyle="round,pad=0.35", fc="#f3f6fb", ec="0.6", lw=1.0))
+        return fit
+
+    fitL = _scatter_fit(axL, "lr", "learning rate (log scale)", title="B.  Retention vs LR  (loose)")
+    fitF = _scatter_fit(axF, "F", r"$\|\Delta W\|_F$  (log scale)",
+                        title=r"C.  Retention vs $\|\Delta W\|_F$  (tight)")
+    axL.set_ylabel("Retention (BBH, MMLU-Pro mean) [%]")
+    plt.setp(axF.get_yticklabels(), visible=False)
+    # green base-ceiling label on the LR panel (open top-left? use right where curve has dropped)
+    axL.text(axL.get_xlim()[1], BASE_CORE + 0.3, "base ceiling ", color="green", fontsize=8.3,
+             va="bottom", ha="right", fontweight="bold")
+    # emphasize the winning panel (||dW|| -> tightest)
+    for spine in axF.spines.values():
+        spine.set_visible(True); spine.set_color("#0072B2"); spine.set_linewidth(2.2)
+    # the contrast headline, between the two right panels
+    dR2 = fitF["r2"] - fitL["r2"]
+    fig.suptitle("Learning rate is only a proxy: it predicts forgetting loosely; "
+                 r"the $\|\Delta W\|$ it produces predicts it tightly "
+                 f"($R^2$ {fitL['r2']:.2f} $\\rightarrow$ {fitF['r2']:.2f})",
+                 y=1.0, fontsize=13.5)
+    watermark(fig)
+    fig.subplots_adjust(left=0.06, right=0.985, top=0.86, bottom=0.30, wspace=0.30)
+    cfg_note_footer(fig, y=0.105)
+    caveat_footer(fig, y=0.020)
+    p = os.path.join(OUT, "fig7_lr_is_the_proxy.png")
+    fig.savefig(p); plt.close(fig)
+    return p, dict(lr=fitL, F=fitF, dR2=dR2)
+
+# ================================================================ FIG 8  (the magnitude budget)
+def fig8_magnitude_budget():
+    """adaptation (top) and retention (bottom) vs ||dW||_F on a SHARED x-axis. ||dW|| buys adaptation
+    and costs retention; lightly shade a sweet-spot band (near-max adapt while retention near base)."""
+    rows = SWEEP
+    x = arr(rows, "F"); g0 = np.isfinite(x) & (x > 0)
+    fig, (axT, axB) = plt.subplots(2, 1, figsize=(10.5, 8.6), sharex=True,
+                                   gridspec_kw={"hspace": 0.10})
+
+    # ---- sweet-spot band: ||dW|| where retention still >= SAFE_RET, intersected with high adaptation.
+    # Use the on-curve, non-collapse runs to find the largest ||dW|| that keeps ret>=SAFE_RET (right edge),
+    # and the smallest ||dW|| reaching >=95% of the max adaptation (left edge).
+    onc = [r for r in rows if r["method"] in ON_CURVE and r["run"] not in COLLAPSE
+           and r["F"] and r["adapt"] is not None and r["ret"] is not None]
+    a_max = max(r["adapt"] for r in onc)
+    left_band = min((r["F"] for r in onc if r["adapt"] >= 0.95 * a_max), default=None)
+    right_band = max((r["F"] for r in onc if r["ret"] >= SAFE_RET), default=None)
+    has_band = left_band is not None and right_band is not None and left_band < right_band
+
+    # ---- TOP: adaptation vs ||dW||  (rises)
+    for m in METHODS:
+        mr = [r for r in rows if r["method"] == m]
+        mx = arr(mr, "F"); my = arr(mr, "adapt")
+        g = np.isfinite(mx) & np.isfinite(my) & (mx > 0)
+        off = m in OFF_CURVE
+        axT.scatter(mx[g], my[g], s=95 if off else (80 if m in SIMPLE else 50), c=COL[m], marker=MARK[m],
+                    edgecolor="k", linewidth=0.9 if off else (0.7 if m in SIMPLE else 0.4),
+                    alpha=0.95, zorder=6 if off else (5 if m in SIMPLE else 4))
+    # pooled monotone trend (log-x linear fit on adaptation, for the eye)
+    xa = arr(rows, "adapt"); gA = g0 & np.isfinite(xa)
+    fitA = fit_line_logx(x[gA], xa[gA])
+    xx = np.logspace(np.log10(x[g0].min()), np.log10(x[g0].max()), 200)
+    axT.plot(xx, fitA["pred"](xx), color="0.3", lw=2.0, ls="--", zorder=2)
+    axT.set_ylabel("Adaptation\nCommonsense-8 accuracy [%]")
+    axT.set_title(r"More $\|\Delta W\|$ buys adaptation …", loc="left", fontsize=12.5)
+    axT.text(0.985, 0.08, "rises ↗", transform=axT.transAxes, ha="right", va="bottom",
+             fontsize=11, color="0.35", style="italic")
+
+    # ---- BOTTOM: retention vs ||dW||  (falls), base ceiling marked
+    for m in METHODS:
+        mr = [r for r in rows if r["method"] == m]
+        mx = arr(mr, "F"); my = arr(mr, "ret")
+        g = np.isfinite(mx) & np.isfinite(my) & (mx > 0)
+        off = m in OFF_CURVE
+        axB.scatter(mx[g], my[g], s=95 if off else (80 if m in SIMPLE else 50), c=COL[m], marker=MARK[m],
+                    edgecolor="k", linewidth=0.9 if off else (0.7 if m in SIMPLE else 0.4),
+                    alpha=0.95, zorder=6 if off else (5 if m in SIMPLE else 4))
+    yb = arr(rows, "ret"); gB = g0 & np.isfinite(yb)
+    fitR = fit_line_logx(x[gB], yb[gB])
+    axB.plot(xx, fitR["pred"](xx), color="0.3", lw=2.0, ls="--", zorder=2)
+    axB.axhline(BASE_CORE, ls=":", color="green", lw=1.6, zorder=2)
+    axB.axhline(SAFE_RET, ls="--", color="0.5", lw=1.1, zorder=1)
+    axB.set_ylabel("Retention\nBBH, MMLU-Pro mean [%]")
+    axB.set_title(r"… and costs retention", loc="left", fontsize=12.5)
+    axB.text(0.985, 0.50, "falls ↘", transform=axB.transAxes, ha="right", va="top",
+             fontsize=11, color="0.35", style="italic")
+
+    # sweet-spot band on BOTH panels
+    if has_band:
+        for ax in (axT, axB):
+            ax.axvspan(left_band, right_band, color="#2ca02c", alpha=0.10, zorder=0)
+        axT.text(10**(0.5*(np.log10(left_band)+np.log10(right_band))), axT.get_ylim()[0]+1.0,
+                 "sweet-spot band\n(near-max adaptation,\nretention ≈ base)",
+                 ha="center", va="bottom", fontsize=8.6, color="#1d6b1d", fontweight="bold")
+
+    axB.set_xscale("log"); clean_logx(axB)
+    axB.set_xlabel(r"Weight-update magnitude  $\|\Delta W\|_F$  (token-weighted, log scale)  →")
+    # ceiling/safe labels (parked on the right, in open space below the descending cloud)
+    axB.text(axB.get_xlim()[1], BASE_CORE + 0.3, "base retention ceiling (no fine-tune)  ",
+             color="green", fontsize=9, va="bottom", ha="right", fontweight="bold")
+    axB.text(axB.get_xlim()[1], SAFE_RET - 0.5, "safe threshold (base − 2pp)  ",
+             color="0.4", fontsize=8.3, va="top", ha="right")
+
+    fig.legend(handles=legend_handles(METHODS), loc="upper center", ncol=7,
+               bbox_to_anchor=(0.5, 1.005), fontsize=9.2, columnspacing=1.0, handletextpad=0.3)
+    fig.suptitle(r"The magnitude budget: one axis ($\|\Delta W\|_F$) sets both adaptation and forgetting",
+                 y=1.052, fontsize=14)
+    watermark(fig)
+    fig.tight_layout(rect=[0, 0.075, 1, 0.97])
+    cfg_note_footer(fig, y=0.038)
+    caveat_footer(fig, y=0.006)
+    p = os.path.join(OUT, "fig8_magnitude_budget.png")
+    fig.savefig(p, bbox_inches="tight"); plt.close(fig)
+    return p, dict(band=(left_band, right_band) if has_band else None,
+                   adapt_slope=fitA["slope"], ret_slope=fitR["slope"])
+
+# ================================================================ OPERATING-POINT TABLE
+def op_points_table():
+    """Clean table figure: per method best-LR (adapt/ret), safe-LR (max adapt with ret>=24), robustness count.
+    Also returns the numeric rows for stdout printing."""
+    data = op_points_data()
+    # sort by robustness desc, then best adaptation desc (widest, strongest first)
+    data = sorted(data, key=lambda d: (-d["nrobust"], -d["best_adapt"]))
+
+    cols = ["Method",
+            "Best LR", "Adapt", "Ret",
+            "Safe LR", "Adapt", "Ret",
+            "Robust\n(ret≥24, /7)"]
+    fig, ax = plt.subplots(figsize=(12.2, 0.62 * (len(data) + 2.4)))
+    ax.axis("off")
+
+    def lrfmt(v):
+        return "—" if v is None else f"{v:g}"
+    def numfmt(v, suff=""):
+        return "—" if v is None else f"{v:.1f}{suff}"
+
+    cell_text = []; cell_colours = []
+    for d in data:
+        safe_collapse = (d["safe_adapt"] is not None and d["safe_adapt"] < 40)  # degenerate "safe" point
+        row = [PRETTY[d["method"]],
+               lrfmt(d["best_lr"]), numfmt(d["best_adapt"]), numfmt(d["best_ret"]),
+               lrfmt(d["safe_lr"]),
+               numfmt(d["safe_adapt"]) + (" ⚠" if safe_collapse else ""),
+               numfmt(d["safe_ret"]),
+               f"{d['nrobust']}"]
+        cell_text.append(row)
+        # color cues: robustness column shaded green(wide)->red(brittle); off-curve method name tinted
+        rob = d["nrobust"]
+        rob_c = "#cdebcd" if rob >= 5 else ("#fce9cf" if rob >= 3 else "#f6cccc")
+        name_c = "#f7e9ec" if d["method"] in OFF_CURVE else "white"
+        rc = [name_c, "white", "white", "white", "white",
+              "#f6e3cc" if safe_collapse else "white", "white", rob_c]
+        cell_colours.append(rc)
+
+    tbl = ax.table(cellText=cell_text, colLabels=cols, cellColours=cell_colours,
+                   loc="center", cellLoc="center")
+    tbl.auto_set_font_size(False); tbl.set_fontsize(10.5)
+    tbl.scale(1.0, 1.7)
+    # header styling + group separators
+    ncol = len(cols)
+    for (r, c), cell in tbl.get_celld().items():
+        cell.set_edgecolor("0.82"); cell.set_linewidth(0.8)
+        if r == 0:
+            cell.set_facecolor("#2b3a55"); cell.set_text_props(color="white", fontweight="bold")
+            cell.set_height(cell.get_height() * 1.35)
+        if c == 0 and r > 0:
+            cell.set_text_props(fontweight="bold")
+        # thicker vertical rules separating the Best / Safe / Robust groups
+        if c in (1, 4, 7):
+            cell.set_linewidth(0.8)
+    # set sensible column widths
+    widths = [0.18, 0.10, 0.085, 0.075, 0.10, 0.10, 0.075, 0.12]
+    for (r, c), cell in tbl.get_celld().items():
+        cell.set_width(widths[c])
+
+    ax.set_title("Operating points per adapter: peak adaptation vs. the safest high-adaptation setting",
+                 fontsize=13.5, fontweight="bold", pad=18)
+    # legend / reading guide
+    fig.text(0.5, 0.135,
+             "Best LR = max adaptation (any retention).   Safe LR = highest-adaptation run with retention ≥ 24 "
+             "(= base − 2pp).   Robust = how many of the 7 LRs keep retention ≥ 24 (wide vs. brittle).",
+             ha="center", va="top", fontsize=8.6, color="0.3")
+    fig.text(0.5, 0.092,
+             "⚠ = the only “safe” setting forces adaptation to collapse (data-aware inits transmit "
+             "too much $\\|\\Delta W\\|$ at every usable LR).",
+             ha="center", va="top", fontsize=8.6, color="#9a3b1d", style="italic")
+    cfg_note_footer(fig, y=0.040)
+    caveat_footer(fig, y=0.004)
+    p = os.path.join(OUT, "op_points.png")
+    fig.savefig(p, bbox_inches="tight"); plt.close(fig)
+    return p, data
+
+# ================================================================ MAIN LATEX TABLES (sweep-only)
+def _arm_cfg(run):
+    """Pretty 'arm + lr' config string from a sweep run_name, e.g. 'lora r16, lr3e-4'."""
+    r = run
+    for p in ("lrswm_", "lrsw_"):
+        if r.startswith(p):
+            r = r[len(p):]; break
+    parts = r.split("_")
+    if parts and parts[-1].startswith("s") and parts[-1][1:].isdigit():
+        parts = parts[:-1]
+    lr_tok = next((t for t in parts if re.fullmatch(r"lr[0-9]+e[0-9]+", t)), None)
+    arm = " ".join(t for t in parts if not re.fullmatch(r"lr[0-9]+e[0-9]+", t))
+    lr = parse_lr(run)
+    # consistent scientific LR label (e.g. 5e-5, 3e-4, 1e-3) — matches the swept-LR token set
+    if lr is not None:
+        exp = int(np.floor(np.log10(lr)))
+        mant = round(lr / 10**exp)
+        if mant == 10:
+            mant, exp = 1, exp + 1
+        lr_str = f"lr{mant}e{exp}"
+    elif lr_tok is not None:
+        # fall back to the raw token: 'lr5e5' -> 'lr5e-5'
+        lr_str = re.sub(r"lr([0-9]+)e([0-9]+)", r"lr\1e-\2", lr_tok)
+    else:
+        lr_str = ""
+    return f"{arm}, {lr_str}" if lr_str else arm
+
+def _tex_escape(s):
+    return s.replace("_", "\\_").replace("%", "\\%")
+
+def _build_main_table(rows, adapt_label, preliminary=False):
+    """Return a LaTeX tabular string. One row per method at its BEST-ADAPT LR (same selection as
+    op_points). Single seed -> no +- std. Rows sorted by adaptation descending."""
+    # best-adapt run per method
+    best = []
+    for m in METHODS:
+        mr = [r for r in rows if r["method"] == m and r["adapt"] is not None]
+        if not mr:
+            continue
+        best.append(max(mr, key=lambda r: r["adapt"]))
+    best.sort(key=lambda r: -r["adapt"])
+
+    L = []
+    L.append("\\begin{tabular}{l l c c c c c}")
+    L.append("\\toprule")
+    L.append(f"Method & Config & {adapt_label} $\\uparrow$ & Ret-core $\\uparrow$ & "
+             "Ret-broad $\\uparrow$ & $\\|\\Delta W\\|_F$ $\\downarrow$ & $\\sigma_{\\max}$ \\\\")
+    L.append("\\midrule")
+    L.append("\\textit{Base (no-FT)} & -- & -- & \\textit{%.1f} & -- & \\textit{0} & -- \\\\" % BASE_CORE)
+    L.append("\\midrule")
+    for r in best:
+        cfg = _tex_escape(_arm_cfg(r["run"]))
+        adapt = "--" if r["adapt"] is None else f"{r['adapt']:.1f}"
+        rc = "--" if r["ret"] is None else f"{r['ret']:.1f}"
+        rb = "--" if r["broad"] is None else f"{r['broad']:.1f}"
+        F = "--" if r["F"] is None else f"{r['F']:.3f}"
+        sv = "--" if r["svmax"] is None else f"{r['svmax']:.1f}"
+        name = PRETTY[r["method"]].replace("&", "\\&")
+        L.append(f"{name} & {cfg} & {adapt} & {rc} & {rb} & {F} & {sv} \\\\")
+    L.append("\\bottomrule")
+    L.append("\\end{tabular}")
+    note = ("% single seed s42; ranks/configs not matched across methods; "
+            "each method shown at its best-adapt LR (sweep-only)."
+            + (" Preliminary: math sweep currently only covers LoRA / LoRA+wd." if preliminary else ""))
+    return "\n".join(L) + "\n" + note + "\n"
+
+def write_main_tables():
+    """Overwrite paper/table_main_cs.tex and paper/table_main_math.tex from the LIVE LR-sweep registry.
+    Each method at its best-adapt LR; single seed (s42), no std; sorted by adaptation desc."""
+    cs_tex = _build_main_table(SWEEP, "CS-8", preliminary=False)
+    math_tex = _build_main_table(SWEEP_M, "GSM8K", preliminary=True)
+    pcs = os.path.join(PAPER, "table_main_cs.tex")
+    pmath = os.path.join(PAPER, "table_main_math.tex")
+    with open(pcs, "w") as f:
+        f.write(cs_tex)
+    with open(pmath, "w") as f:
+        f.write(math_tex)
+    return pcs, pmath, cs_tex, math_tex
+
 # ================================================================ run
 if __name__ == "__main__":
     print(f"Loaded {len(ROWS)} campaign rows; CS sweep={len(SWEEP)}, math sweep={len(SWEEP_M)}")
@@ -731,6 +1107,40 @@ if __name__ == "__main__":
     for nm, (sl, r, base) in sorted(slopes.items(), key=lambda t: t[1][0]):
         print(f"  {nm:18s} slope={sl:+.2f}  r={r:+.2f}  base={base}")
     p6 = fig6_extras(); paths.append(p6)
+
+    p7, f7 = fig7_lr_is_the_proxy(); paths.append(p7)
+    print("\n=== FIG7 LR-is-a-proxy (CS, retention vs predictor) ===")
+    print(f"  retention ~ log(LR)      : R2={f7['lr']['r2']:.3f}  r={f7['lr']['r']:+.3f}")
+    print(f"  retention ~ log(||dW||_F): R2={f7['F']['r2']:.3f}  r={f7['F']['r']:+.3f}")
+    print(f"  R2 gain (||dW|| over LR) : +{f7['dR2']:.3f}")
+
+    p8, f8 = fig8_magnitude_budget(); paths.append(p8)
+    print("\n=== FIG8 magnitude budget (CS) ===")
+    print(f"  adaptation slope = {f8['adapt_slope']:+.1f} pp / decade of ||dW||_F")
+    print(f"  retention slope  = {f8['ret_slope']:+.1f} pp / decade of ||dW||_F")
+    if f8["band"]:
+        print(f"  sweet-spot ||dW||_F band = [{f8['band'][0]:.3f}, {f8['band'][1]:.3f}]")
+    else:
+        print("  sweet-spot band: none (no clean overlap)")
+
+    pt, optab = op_points_table(); paths.append(pt)
+    print("\n=== OPERATING-POINT TABLE (CS, s42) ===")
+    hdr = f"  {'method':14s} | {'best-LR':>8s} {'adapt':>6s} {'ret':>5s} | {'safe-LR':>8s} {'adapt':>6s} {'ret':>5s} | {'robust/7':>8s}"
+    print(hdr); print("  " + "-" * (len(hdr) - 2))
+    for d in optab:
+        sl = "—" if d["safe_lr"] is None else f"{d['safe_lr']:g}"
+        sa = "—" if d["safe_adapt"] is None else f"{d['safe_adapt']:.1f}"
+        sr = "—" if d["safe_ret"] is None else f"{d['safe_ret']:.1f}"
+        print(f"  {PRETTY[d['method']]:14s} | {d['best_lr']:>8g} {d['best_adapt']:>6.1f} {d['best_ret']:>5.1f} "
+              f"| {sl:>8s} {sa:>6s} {sr:>5s} | {d['nrobust']:>8d}")
+
+    pcs, pmath, cs_tex, math_tex = write_main_tables()
+    print("\n=== MAIN LATEX TABLES (sweep-only, best-adapt LR per method) ===")
+    print(f"  wrote {pcs}")
+    print(f"  wrote {pmath}")
+
     print("\n=== FIGURES WRITTEN ===")
     for p in paths:
         print(" ", p)
+    print(" ", pcs)
+    print(" ", pmath)
