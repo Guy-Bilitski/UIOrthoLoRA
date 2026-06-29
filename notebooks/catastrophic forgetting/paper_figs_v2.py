@@ -112,6 +112,9 @@ def load():
         dom, method = classify(rn)
         if method not in METHODS:
             continue
+        if method == "corda":
+            continue  # CorDA EXCLUDED: data invalid (wikitext-calib bug, fixed->nq_open re-running) AND
+                      # calib<->eval distribution question (Fix 1). Under re-validation; see handoff/14.
         rows.append(dict(
             run=rn, domain=dom, method=method, lr=parse_lr(rn), seed=parse_seed(rn),
             cfg=parse_cfg(rn), is_sweep=rn.startswith(("lrsw_", "lrswm_")),
@@ -150,8 +153,8 @@ def watermark(fig):
     fig.text(0.006, 0.004, "Llama-2-7B  ·  LoRA-family  ·  s42 LR-sweep  ·  n=49 (7 methods × 7 LRs)",
              ha="left", va="bottom", fontsize=7, color="0.55", style="italic")
 
-CAVEAT = ("Caveat: single seed (s42), n=7 per method; CorDA/SC-LoRA off-curve deviation "
-          "pending seed replication (43, 44).")
+CAVEAT = ("Caveat: single seed (s42), n=7 per method. CorDA OMITTED (under re-validation: calibration "
+          "fidelity, see handoff/14). SC-LoRA off-curve pending calib-distribution sensitivity + seeds 43/44.")
 def caveat_footer(fig, y=0.004):
     """Visible under-power / preliminary-deviation caveat for fig0/fig1/fig2."""
     fig.text(0.5, y, CAVEAT, ha="center", va="bottom", fontsize=8,
