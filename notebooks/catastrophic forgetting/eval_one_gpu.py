@@ -29,6 +29,18 @@ def main():
     ap.add_argument("--eval_limit", type=int, default=0)
     ap.add_argument("--ret_max_gen", type=int, default=0)
     ap.add_argument("--ret_limit", type=int, default=0)
+    ap.add_argument("--gen_cap", type=int, default=512,
+                    help="Hard ceiling on generated tokens for ALL generate_until evals "
+                         "(retention + gsm8k adapt), set via generation_config.max_new_tokens. "
+                         "Bounds runaway base-model generations (e.g. Qwen2.5 ships "
+                         "max_new_tokens=2048, making ~17%% of questions ramble to the limit "
+                         "without producing a parseable answer). 512 leaves genuine CoT intact.")
+    ap.add_argument("--max_len", type=int, default=4096,
+                    help="HFLM max_length (context+gen budget). Default 4096 = Llama-2's window. "
+                         "Qwen2.5's native 32768 makes lm-eval's auto batch-sizer reserve memory "
+                         "for 32k-token seqs -> picks batch=1 -> ~10x slower eval. Capping to 4096 "
+                         "matches Llama-2 (better cross-model comparability) and lets the batcher "
+                         "use ~32x batch; mmlu_pro/bbh 5-shot contexts (~2.5k tok) fit in 4096-512.")
     ap.add_argument("--ret_suite", choices=["core", "broad"], default="core",
                     help="core=BBH+MMLU-Pro (backward-comparable retention_mean); "
                          "broad adds MMLU+ARC-c+TruthfulQA -> retention_broad.")
@@ -43,8 +55,18 @@ def main():
     tokenizer.pad_token_id = 0
     tokenizer.padding_side = "left"
     model = AutoModelForCausalLM.from_pretrained(args.base_model, dtype=torch.bfloat16, device_map="cuda:0")
+    # Hard generation ceiling (set on the BASE model before the PEFT wrap, so the
+    # base generation_config that .generate() actually uses is the one we cap).
+    # Qwen2.5 ships generation_config.max_new_tokens=2048, which overrides HFLM's
+    # max_length so ~17%% of generate_until questions ramble to 2048 tokens (~8x
+    # slower, ~24h/cell) without ever emitting a parseable answer. Capping bounds
+    # those ramblers (they score 0 either way) while leaving genuine CoT (mean
+    # ~140-240 tok) untouched. No-op for models that already stop early
+    # (Llama-2: max_new_tokens=None). Verified: bio 0.75->0.75, math 0.42->0.44.
+    model.generation_config.max_new_tokens = args.gen_cap
     model = PeftModel.from_pretrained(model, args.adapter, device_map={"": 0})
     model.eval()
+    print(f"==== generation cap: max_new_tokens={args.gen_cap} ====", flush=True)
     method = "unknown"
     try:
         import json
@@ -57,9 +79,10 @@ def main():
     if args.adapt_task == "gsm8k":
         from lm_eval import simple_evaluate
         from lm_eval.models.huggingface import HFLM
-        _lm = HFLM(pretrained=model, tokenizer=tokenizer, batch_size="auto")
+        _lm = HFLM(pretrained=model, tokenizer=tokenizer, batch_size="auto", max_length=args.max_len)
         _r = simple_evaluate(model=_lm, tasks=["gsm8k"], bootstrap_iters=0,
-                             limit=(args.eval_limit or None))
+                             limit=(args.eval_limit or None),
+                             gen_kwargs=f"max_gen_toks={args.gen_cap}")
         _row = _r["results"].get("gsm8k", {})
         _em = next((v for k, v in _row.items() if k.startswith("exact_match") and "stderr" not in k), None)
         cs = {"gsm8k": round(100 * _em, 2) if _em is not None else None}
@@ -84,13 +107,16 @@ def main():
     # (MMLU, ARC-challenge, TruthfulQA-mc2) reported individually + as retention_broad.
     from lm_eval import simple_evaluate
     from lm_eval.models.huggingface import HFLM
-    lm = HFLM(pretrained=model, tokenizer=tokenizer, batch_size="auto")
+    lm = HFLM(pretrained=model, tokenizer=tokenizer, batch_size="auto", max_length=args.max_len)
     _rl = args.ret_limit if args.ret_limit > 0 else (args.eval_limit if args.eval_limit > 0 else None)
     CORE = ["bbh_fewshot", "mmlu_pro"]
     EXTRA = ["mmlu", "arc_challenge", "truthfulqa_mc2"]
     tasks = CORE + (EXTRA if args.ret_suite == "broad" else [])
+    # max_gen_toks here keeps HFLM's context-budgeting (max_ctx_len = max_length -
+    # max_gen_toks) consistent with the generation_config.max_new_tokens cap above;
+    # the cap is what actually bounds generation (group-task gen_kwargs don't bind).
     res = simple_evaluate(model=lm, tasks=tasks, bootstrap_iters=0, limit=_rl,
-                          gen_kwargs=(f"max_gen_toks={args.ret_max_gen}" if args.ret_max_gen > 0 else None))
+                          gen_kwargs=f"max_gen_toks={args.gen_cap}")
 
     def _metric(task):
         row = res["results"].get(task, {})
