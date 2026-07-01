@@ -29,7 +29,7 @@ def main():
     ap.add_argument("--eval_limit", type=int, default=0)
     ap.add_argument("--ret_max_gen", type=int, default=0)
     ap.add_argument("--ret_limit", type=int, default=0)
-    ap.add_argument("--gen_cap", type=int, default=512,
+    ap.add_argument("--gen_cap", type=int, default=1024,
                     help="Hard ceiling on generated tokens for ALL generate_until evals "
                          "(retention + gsm8k adapt), set via generation_config.max_new_tokens. "
                          "Bounds runaway base-model generations (e.g. Qwen2.5 ships "
@@ -51,8 +51,20 @@ def main():
     args = ap.parse_args()
     run_name = args.run_name or os.path.basename(os.path.normpath(args.adapter))
 
+    # Self-heal the bbh_fewshot exact_match normalization (idempotent). Without it a
+    # base model's leading-space answers score 0 on BBH (Qwen bbh 0.00 -> 0.54); no-op
+    # for Llama-2. See bbh_metric_fix.py / handoff/16.
+    import bbh_metric_fix
+    bbh_metric_fix.ensure_bbh_fewshot_metric_fix()
+
     tokenizer = AutoTokenizer.from_pretrained(args.base_model)
-    tokenizer.pad_token_id = 0
+    # Only fall back to id 0 when the tokenizer has no declared pad token.
+    # Llama-2 has pad=None -> 0 (=<unk>, harmless). Qwen2.5 DOES declare a pad
+    # (<|endoftext|>=151643); its token 0 decodes to "!", so forcing pad=0 made
+    # batch-padding of finished sequences render as "!!!!" in the decoded response,
+    # which corrupted BBH's greedy answer regex ("the answer is 24.!!!!") -> bbh=0.
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token_id = 0
     tokenizer.padding_side = "left"
     model = AutoModelForCausalLM.from_pretrained(args.base_model, dtype=torch.bfloat16, device_map="cuda:0")
     # Hard generation ceiling (set on the BASE model before the PEFT wrap, so the
