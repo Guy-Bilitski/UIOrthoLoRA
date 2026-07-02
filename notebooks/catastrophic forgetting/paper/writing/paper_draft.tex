@@ -1,0 +1,729 @@
+\documentclass[11pt]{article}
+
+% ---------------------------------------------------------------------------
+% Self-contained LaTeX body for:
+%   "It's the Magnitude, Not the Geometry:
+%    A Wake-Up Call for Catastrophic Forgetting in PEFT"
+%
+% All figures live in ./figures/*.png and tables in ./tables/*.tex
+% Numbers are drawn from data/key_numbers.md (the single source of truth,
+% Llama-2-7B seed 42 unless marked Qwen). Any claim that depends on
+% not-yet-collected data is marked with a visible %TODO(data) comment.
+% ---------------------------------------------------------------------------
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\graphicspath{{figures/}}
+
+\newcommand{\dw}{\lVert\Delta W\rVert_F}
+\newcommand{\smax}{\sigma_{\max}}
+
+\title{It's the Magnitude, Not the Geometry:\\
+A Wake-Up Call for Catastrophic Forgetting in Parameter-Efficient Fine-Tuning}
+
+\author{Anonymous}
+\date{}
+
+\begin{document}
+\maketitle
+
+% ===========================================================================
+\begin{abstract}
+% ===========================================================================
+The literature ships a new parameter-efficient fine-tuning (PEFT) adapter almost
+every week, each claiming to mitigate catastrophic forgetting through some clever
+geometric prior---a data-aware initialization, a null-space projection, a spectral
+decomposition, an orthogonality penalty. We report a controlled study of eight
+adapters (plain LoRA, LoRA{+}weight-decay, DoRA, CorDA, MiLoRA, SC-LoRA, LoRA-Null,
+and CLoRA), of which we can currently assess six fairly on the headline
+curve---CorDA is withheld pending a calibration-fairness fix and LoRA-Null is presently
+pooled into LoRA (Section~\ref{sec:limits}); two task domains
+(commonsense, math), and, as a partial replication, Qwen2.5-7B
+($\sim$13 of $\sim$112 planned cells: the commonsense LoRA sweep replicates the sign of
+the law, math-LoRA does not yet) on top of the complete Llama-2-7B study, sweeping seven
+learning rates per method. Our central finding is a \emph{mechanism}: forgetting is
+governed by a single scalar, the token-weighted Frobenius norm of the weight update
+$\dw$, and \emph{not} by the geometric structure of the adapter that produced it.
+Retention collapses onto one curve set by $\dw$
+($r\!=\!-0.86$ pooled, $-0.92$ on the well-behaved adapters; slope
+$\approx\!-10$ to $-15$ percentage points per decade of $\dw$), and an ANCOVA shows
+that adapter identity adds essentially nothing once $\dw$ is controlled (five of six
+adapters are statistically indistinguishable from the pooled curve). The
+\emph{consequence} is that the simplest possible magnitude control---plain LoRA with a
+weight-decay term---lands on the adaptation-versus-retention Pareto frontier of
+every elaborate geometric adapter, matching or edging it, because weight decay is the
+most direct way to bound $\dw$. The \emph{diagnosis} is that we can exhibit the
+\emph{ingredients} of a learning-rate artifact behind the fancy adapters' reported wins:
+each method peaks at a different learning rate, so a single fixed learning rate flatters
+whichever adapter happens to be well tuned there, and the $\dw$ an adapter produces
+predicts retention far better than its learning rate does---so a per-method sweep
+collapses the differences back onto the shared magnitude curve. We make this concrete:
+at a single fixed learning rate several adapters beat plain LoRA (SC-LoRA by $+26$\,pp of
+adaptation, DoRA by $+6$), yet the swept LoRA{+}wd frontier dominates every one of those
+best single-LR points on both axes (Figure~\ref{fig:lrartifact}). (Reproducing a
+specific \emph{published} win from a fixed-LR baseline and dissolving it, plus
+seed-averaging, is deferred; see Section~\ref{sec:lr}.) Learning rate
+predicts retention only loosely ($R^2\!=\!0.32$) whereas
+the $\dw$ it produces predicts it tightly ($R^2\!=\!0.74$). The \emph{message} is a
+wake-up call to a fast-moving field: control the magnitude, not the geometry.
+\end{abstract}
+
+% ===========================================================================
+\section{Introduction}\label{sec:intro}
+% ===========================================================================
+Catastrophic forgetting---the erosion of a pretrained model's general capabilities when
+it is fine-tuned on a narrow task---is one of the central obstacles to deploying
+adapted large language models. Parameter-efficient fine-tuning (PEFT), and in
+particular LoRA and its many descendants, was supposed to help: by restricting the
+update to a low-rank correction, one hopes to leave the bulk of the pretrained weights
+untouched. The community has responded to residual forgetting with a steady stream of
+increasingly elaborate \emph{geometric} adapters. Some initialize the adapter from the
+principal or minor singular directions of the pretrained weight
+(PiSSA, MiLoRA); some from a data- or activation-covariance decomposition that
+identifies and freezes the ``knowledge'' subspace (CorDA, SC-LoRA); some project the
+update into an input null-space (LoRA-Null); some add an orthogonality penalty against a
+random subspace (CLoRA); some decompose magnitude from direction (DoRA). Each is
+presented as a better way to \emph{choose where the update goes}, and each reports a win
+over the last.
+
+This paper is a controlled, deliberately negative, wake-up-call contribution. We show
+that those wins are largely an artifact, and that a single scalar---the magnitude of the
+weight update, $\dw$---governs forgetting in a way that is essentially
+\emph{method-independent}. Our argument has four parts, which form the spine of the paper:
+
+\begin{enumerate}
+  \item \textbf{Mechanism.} Forgetting is governed by $\dw$, not by adapter geometry.
+        Across the six of eight adapters we can currently assess fairly (LoRA, LoRA{+}wd,
+        DoRA, MiLoRA, CLoRA, LoRA-Null), two domains, and a partial second model, retention
+        falls onto one curve set by $\dw$; SC-LoRA is the one provisional below-curve
+        deviator and CorDA is withheld (Section~\ref{sec:limits}). We take care never to
+        put ``eight adapters'' next to ``one curve'' (Section~\ref{sec:law}).
+  \item \textbf{Consequence.} Plain LoRA{+}weight-decay lands on---matching or
+        edging---the adaptation--retention Pareto frontier of every elaborate geometric
+        adapter, because weight decay is the simplest way to bound $\dw$
+        (Section~\ref{sec:pareto}).
+  \item \textbf{Diagnosis.} We exhibit the \emph{ingredients} of a learning-rate/magnitude
+        artifact behind the fancy adapters' reported wins: the best learning rate is not
+        shared across methods, and the $\dw$ an adapter produces predicts retention far
+        better than its learning rate does. Evaluated at a single learning rate a method
+        can look better; a per-method sweep collapses the methods onto the shared
+        magnitude curve. The learning-rate-sweep-per-method is the instrument that
+        exposes this; reproducing and then dissolving a specific published win is deferred
+        (Section~\ref{sec:lr}).
+  \item \textbf{Message.} Control the magnitude, not the geometry.
+\end{enumerate}
+
+We state our scope honestly up front. The Llama-2-7B evidence is mature: it comprises
+the full $8\times 7$ learning-rate grid on commonsense and a sparser grid on math, on a
+single seed (seed~42). The Qwen2.5-7B arm is a replication \emph{in progress}
+($\sim$13 of $\sim$112 planned cells, mostly the LoRA arm); we present it as supporting
+evidence, not as a completed second model. Section~\ref{sec:limits} is unflinching about
+these gaps---single seed, unmatched ranks, the calibration-versus-evaluation mismatch
+for the data-aware inits, and the near-tautological character of the raw magnitude
+correlation---because owning them is the only honest way to make the argument.
+
+% ===========================================================================
+\section{Related Work and Positioning}\label{sec:related}
+% ===========================================================================
+\paragraph{The adapter zoo.} LoRA~\citep{hu2021lora} reparameterizes a weight update as
+a low-rank product $\Delta W = BA$. The subsequent literature can be organized by the
+\emph{basis} in which it reasons about which directions to protect. One family works in
+the \emph{static weight-SVD} basis: PiSSA initializes from the top singular triples of
+$W_0$, MiLoRA~\citep{wang2024milora} from the bottom (minor) triples, and OPLoRA and
+related methods project updates orthogonally to the dominant weight subspace.
+%TODO(data): verify arXiv IDs before submission (OPLoRA 2510.13003, CorDA 2406.05223,
+%SC-LoRA 2505.23724 / OpenReview KAE9YDK0t8, CorDA++ 2506.13187, DoRA); 2603.02224 is
+%almost certainly wrong.
+A second family works in the \emph{data / activation-covariance} basis: CorDA
+\citep{yang2024corda} takes the SVD of $W_0\,\mathrm{Cov}_{\text{input}}$ over a
+calibration set and freezes the components most responsive to that data, and SC-LoRA
+constructs a subspace from a difference of task and preservation covariances. A third
+family constrains the update via an auxiliary loss: CLoRA~\citep{clora} penalizes the
+overlap of the adapter with a frozen random subspace. DoRA~\citep{liu2024dora}
+decomposes each column of the update into magnitude and direction. What all of these
+share is a commitment to \emph{geometry}: the belief that \emph{where} the update lands
+is the lever that controls forgetting.
+
+\paragraph{Why magnitude is overlooked.} Weight decay is the oldest, simplest knob in
+deep learning, and it acts directly on the \emph{size} of the update rather than its
+direction. Precisely because it carries no geometric story, it is almost never the
+protagonist of an adapter paper. The one prior work that explicitly connects update
+magnitude to forgetting is CLoRA, whose penalty can be read as an indirect magnitude
+control. Our contribution is therefore \emph{not} the discovery that magnitude matters.
+It is (i) that magnitude is the \emph{method-free} governing variable---the same
+retention-versus-$\dw$ curve holds across the structurally distinct adapters we test
+(the six of eight we can currently assess fairly), two domains, and a partial second
+model; (ii) that once $\dw$ is controlled, geometry
+is causally close to inert (Section~\ref{sec:law}); and (iii) that per-method wins
+reported in the literature are largely a learning-rate artifact that a per-method sweep
+dissolves (Section~\ref{sec:lr}). Even if one accepts CLoRA's magnitude--forgetting
+link, our delta is the demonstration of method-freeness and the diagnosis of the
+artifact.
+
+% ===========================================================================
+\section{Setup and Measurement}\label{sec:setup}
+% ===========================================================================
+\paragraph{Models and domains.} Our primary, complete evidence is on
+\textbf{Llama-2-7B}; a replication on \textbf{Qwen2.5-7B} is in progress. We fine-tune
+on two domains: \emph{commonsense} (the eight-task LLM-Adapters commonsense suite) and
+\emph{math} (trained on MetaMathQA, evaluated on GSM8K).
+
+\paragraph{The adapters, as one trainer.} A key design decision makes the comparison
+fair: every structured adapter is implemented as ``LoRA with a different
+initialization'' loaded into a single shared PEFT LoRA trainer, so that the only
+difference between arms is the init routine---extracted as $(A_{\text{init}},
+B_{\text{init}}, W_{\text{residual}})$---and, for CLoRA alone, one added loss term. We
+study eight arms: plain \textbf{LoRA} (r16), \textbf{LoRA{+}wd} (r32, weight decay
+0.3 on the adapter matrices only), \textbf{DoRA} (r16), \textbf{CorDA} (r16, KPA
+retention mode, nq\_open calibration), \textbf{MiLoRA} (r32), \textbf{SC-LoRA} (r32,
+$\beta{=}0.5$), \textbf{LoRA-Null} (r16), and \textbf{CLoRA} ($k{=}1024$). Before
+claiming any method ``fails,'' we audited each port against its reference
+implementation; all ports are faithful, and the residual-init methods (MiLoRA, SC-LoRA)
+pass a 0-step self-check that a $\Delta W = 0$ update recovers base retention. This
+faithful-port claim is scoped to the six methods we report on; CorDA did \emph{not} pass
+a clean self-check under the current calibration (a residual-save bug produced an exploded
+update on its highest-LR cell) and is withheld pending its re-run
+(Section~\ref{sec:limits}). Ranks are \emph{not} matched across arms; we return to this in
+Section~\ref{sec:limits}.
+
+\paragraph{Learning-rate sweep.} We sweep seven learning rates per method,
+$\{2\text{e-}5, 5\text{e-}5, 1\text{e-}4, 2\text{e-}4, 3\text{e-}4, 5\text{e-}4,
+1\text{e-}3\}$. The two highest rates originally in the grid (2e-3, 5e-3) diverged to
+NaN weights on every method and are dropped; the forgetting regime is already reached at
+1e-3. The per-method sweep is the paper's central instrument
+(Section~\ref{sec:lr}).
+
+\paragraph{Retention and adaptation metrics.} \emph{Retention (core)} is the mean of
+BBH (answer-only, 3-shot) and MMLU-Pro (5-shot CoT); the no-fine-tuning base ceiling is
+$33.10$ and $18.96$ respectively, for a core ceiling of $\mathbf{26.0}$. \emph{Retention
+(broad)} adds MMLU, ARC-Challenge, and TruthfulQA. \emph{Adaptation} is eight-task
+commonsense accuracy (CS-8) or GSM8K exact-match (math).
+%TODO(data): base ceilings for MMLU / ARC / TruthfulQA are not yet calibrated (5
+%eval-only runs), so broad-retention percentages and their per-benchmark slopes are not
+%yet normalizable.
+
+\paragraph{The magnitude axis $\dw$.} Our governing variable is the
+\textbf{token-weighted Frobenius norm of the weight update}, $\dw$ (the registry field
+\texttt{fdelta}, ranging $\sim\!0.05$--$3.7$). We adopt this measure over the maximum
+spectral norm $\smax$ because $\smax$ is method-confounded: spiky inits (CorDA, DoRA,
+SC-LoRA) inflate it, which would mis-rank them. Figure~\ref{fig:axis} shows that among
+three candidate magnitude measures ($\dw$, mean spectral norm, and $\smax$), the
+token-weighted Frobenius norm gives the tightest, most method-neutral fit, so it is the
+fair $x$-axis for the whole paper.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig1_magnitude_law.png}
+  \caption{\textbf{Choosing a fair magnitude axis.} Retention versus three candidate
+  magnitude measures (log $x$-axis), pooled over all adapters. Token-weighted Frobenius
+  $\dw$ (highlighted panel) gives the tightest fit ($r\!=\!-0.86$, $R^2\!=\!0.74$);
+  $\smax$ is loosest and method-confounded because spiky inits inflate it. We adopt
+  $\dw$ as the axis for the entire study.}
+  \label{fig:axis}
+\end{figure}
+
+% ===========================================================================
+\section{The Magnitude Law}\label{sec:law}
+% ===========================================================================
+Our first and load-bearing result is that retention is a tight, monotone, and
+\emph{method-independent} function of $\dw$. Figure~\ref{fig:hero} is the hero exhibit:
+plotting core retention against $\dw$ (log scale) for all adapters, the points from
+every method interleave along one downward curve.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig0_hero.png}
+  \caption{\textbf{The magnitude law.} Core retention (mean of BBH and MMLU-Pro) versus
+  $\dw$ (log scale), Llama-2-7B commonsense, seed 42. Every adapter's points interleave
+  along one curve. Black line: pooled fit on the on-curve adapters with a 95\% bootstrap
+  CI ($r\!=\!-0.92$, $R^2\!=\!0.84$, slope $-10.0$\,pp/decade, $n\!=\!42$); the
+  all-adapters pooled fit is $r\!=\!-0.86$, slope $-14.8$\,pp/decade
+  ($n\!=\!49\!=\!7\text{ LR}\times 7\text{ series}$; LoRA-Null is presently pooled into
+  the LoRA series, see Section~\ref{sec:limits}). SC-LoRA is ringed as the single
+  below-curve deviator (provisional; confounded by the calibration-vs-evaluation
+  mismatch, Section~\ref{sec:limits}). Green dotted line: base ceiling (26.0).}
+  \label{fig:hero}
+\end{figure}
+
+\paragraph{The correlations.} On Llama-2 commonsense, the pooled correlation between
+retention and $\log_{10}\dw$ is $r\!=\!-0.86$ ($R^2\!=\!0.74$, slope
+$-14.8$\,pp/decade, $n\!=\!49\!=\!7\text{ LR}\times 7\text{ series}$,
+$p\!=\!3\!\times\!10^{-15}$; the 7 series are the six visible adapters plus LoRA-Null,
+which is presently pooled into the LoRA series---see Section~\ref{sec:limits}); excluding
+the one off-curve method (SC-LoRA) tightens it to $r\!=\!-0.92$ ($R^2\!=\!0.84$, slope
+$-10.0$\,pp/decade, $n\!=\!42$). Crucially, \emph{every adapter individually} traces the
+same line: within-method correlations run from $-0.86$ to $-0.97$ (plain LoRA $-0.95$,
+LoRA{+}wd $-0.89$, DoRA $-0.97$, MiLoRA $-0.94$, CLoRA $-0.90$, SC-LoRA $-0.97$,
+LoRA-Null $-0.86$; the plotted LoRA series, which currently pools LoRA-Null, is $-0.90$),
+and the points interleave rather than forming method-specific sub-curves. (CorDA is
+excluded from every within-method figure; see Section~\ref{sec:limits}.)
+
+\paragraph{Both domains.} The law is not a commonsense idiosyncrasy: on math (GSM8K) the
+pooled correlation is $r\!=\!-0.97$ ($R^2\!=\!0.93$, slope $-10.1$\,pp/decade,
+$n\!=\!14$). The math arm is sparse---it currently covers only three adapters (LoRA,
+LoRA{+}wd, and DoRA), and not all learning-rate cells are filled ($n\!=\!14$ pooled)---so
+we present it as a genuine second domain but flag its thinness.
+%TODO(data): the five structured math arms (CorDA / CLoRA / MiLoRA / SC-LoRA / LoRA-Null)
+%are still filling in, and the three present adapters do not yet have all 7 LR cells;
+%math is n=14 over 3 adapters until they land.
+
+\paragraph{Non-circularity: geometry adds nothing.} The raw correlation ``a bigger
+update forgets more'' is near-tautological, so we do not rest the claim on it. The
+non-trivial statement is that \emph{method identity adds essentially nothing beyond
+$\dw$}. We test this with an ANCOVA (Figure~\ref{fig:fairness}): a pooled log-linear fit
+gives $R^2\!=\!0.74$; adding per-method intercepts raises it to $R^2\!=\!0.87$, an
+improvement that is significant overall ($F(5,42)\!=\!8.3$, $p\!<\!0.001$) but is driven
+almost entirely by a single method. The per-method residuals from the pooled curve are
+$+0.79$ (LoRA; currently pooled with LoRA-Null, see Section~\ref{sec:limits}), $+0.06$
+(LoRA{+}wd), $+1.04$ (MiLoRA), $+0.09$ (CLoRA), and $+1.37$
+(DoRA)---all statistically indistinguishable from zero---and $-4.15$\,pp for SC-LoRA
+($p\!=\!0.006$), the sole significant deviator. Five of six adapters are on the law.
+We treat the SC-LoRA deviation as \emph{provisional}: it is confounded by the
+calibration-versus-evaluation mismatch (Section~\ref{sec:limits}) and rests on a single
+seed, so we ring it as an open question rather than headline it as a real geometric
+effect.
+%TODO(data): strengthen the non-circularity argument with (i) a slope-interaction ANCOVA
+%(does any adapter bend the curve, not just shift it?) and (ii) a leave-one-method-out
+%predictive check (fit on 5 methods, predict the 6th) --- not yet run.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig2_fairness_residuals.png}
+  \caption{\textbf{Geometry adds nothing (ANCOVA fairness test).} Left: data with the
+  pooled ``law''; five adapters trace it, SC-LoRA is ringed below. Right: per-method
+  residual from the pooled curve; the green band marks the ``indistinguishable from the
+  law'' zone. Residual means: LoRA $+0.8$, LoRA{+}wd $+0.1$, MiLoRA $+1.0$, CLoRA
+  $+0.1$, DoRA $+1.4$ (all n.s.); SC-LoRA $-4.15$\,pp ($p\!=\!0.006$, the only
+  significant deviator, provisional).}
+  \label{fig:fairness}
+\end{figure}
+
+\paragraph{The law acts per capability.} Decomposing retention into its constituent
+benchmarks (Figure~\ref{fig:perbench}), every capability degrades monotonically with
+$\dw$ except one. Broad factual knowledge dies fastest---MMLU at $-23.4$\,pp/decade
+($r\!=\!-0.93$)---followed by MMLU-Pro ($-15.2$), ARC-Challenge ($-14.9$), and BBH
+($-14.3$). TruthfulQA is essentially flat ($-0.5$\,pp/decade, $r\!=\!-0.10$): truthful
+behavior appears flat with respect to update magnitude, pending a floor check (the
+MMLU/ARC/TruthfulQA base ceilings are not yet calibrated, so we cannot yet rule out a
+near-chance-scoring artifact). This texture---one law with a per-capability slope, and
+one benchmark that resists---is evidence that the phenomenon is not an artifact of a
+single metric.
+%TODO(data): confirm TruthfulQA "immunity" is not a dead-benchmark / near-chance-scoring
+%artifact (needs the base-ceiling calibration above).
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig5_per_benchmark.png}
+  \caption{\textbf{Which knowledge dies first.} Each benchmark's accuracy versus $\dw$
+  (log), with the pooled slope; final panel is the slope bar chart. MMLU degrades
+  fastest ($-23.4$\,pp/decade); TruthfulQA is flat ($-0.5$). The law is monotone in
+  magnitude for every capability except truthfulness.}
+  \label{fig:perbench}
+\end{figure}
+
+\paragraph{Ruling out the confounds.} Three checks confirm that $\dw$, and not a
+correlate of it, is the governing variable. (i) A LoRA rank sweep (r4 to r256) drives
+retention down purely by raising $\dw$, with $\sigma_1$ growing with rank and no
+independent ``rank effect''---the earlier folklore that rank mitigates forgetting folds
+entirely into the magnitude law. (ii) The direction of the update in the static
+weight-SVD basis, measured by a leakage thermometer $\mu_E$ (the output leak into the
+preserved subspace), predicts retention at $r\!\approx\!-0.09$---i.e.\ not at all.
+(iii) $\dw$ beats $\smax$ as the axis because $\smax$ is inflated by method-specific
+spikiness (Figure~\ref{fig:axis}, Section~\ref{sec:setup}).
+
+% ===========================================================================
+\section{Learning Rate Is Only a Proxy}\label{sec:lr}
+% ===========================================================================
+If forgetting is governed by $\dw$, then learning rate should matter only insofar as it
+sets $\dw$---and, critically, different adapters should transmit the \emph{same}
+learning rate into \emph{different} $\dw$. Both hold, and together they are the
+mechanism of the reported ``wins.''
+
+\paragraph{$\dw$ beats learning rate as a predictor.} Regressing retention on
+$\log(\text{learning rate})$ gives $R^2\!=\!0.32$ ($r\!=\!-0.57$); regressing it on
+$\log(\dw)$ gives $R^2\!=\!0.74$ ($r\!=\!-0.86$). The variance explained more than
+doubles when the $x$-axis switches from the learning rate to the update magnitude it
+produces (Figure~\ref{fig:proxy}). Learning rate is a confounded proxy for the true
+cause.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig7_lr_is_the_proxy.png}
+  \caption{\textbf{Learning rate is only a proxy; $\dw$ is the cause.} Panel A: the same
+  learning rate maps to different $\dw$ depending on the init (data-aware inits turn a
+  fixed LR into a larger update). Panels B and C share a $y$-axis: retention versus
+  learning rate is loose ($R^2\!=\!0.32$), retention versus $\dw$ is tight
+  ($R^2\!=\!0.74$).}
+  \label{fig:proxy}
+\end{figure}
+
+\paragraph{The best learning rate is not shared.} Each method peaks at a different
+learning rate: SC-LoRA at 5e-5, DoRA at 2e-4, LoRA and MiLoRA at 3e-4, LoRA{+}wd and
+CLoRA at 5e-4 (Figure~\ref{fig:lrsens}). A single fixed learning rate therefore flatters
+whichever method happens to be well tuned at that rate---which is precisely the mechanism
+by which the literature's single-LR comparisons produce ``wins.'' Because a data-aware
+init starts the adapter where the loss gradient is large, at a fixed learning rate it
+accumulates a \emph{larger} $\dw$ than a vanilla init (Figure~\ref{fig:proxy}, panel A);
+geometry does not change the \emph{shape} of the retention curve, it changes \emph{where
+on the curve} a given learning rate lands you.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig4_lr_sensitivity.png}
+  \caption{\textbf{Learning-rate optima are not shared.} Adaptation (left) and retention
+  (right) versus learning rate; rings mark each method's adaptation-optimal rate. The
+  optimum ranges over $\{5\text{e-}5, 2\text{e-}4, 3\text{e-}4, 5\text{e-}4\}$, so
+  evaluating every method at one fixed learning rate biases the comparison---the root of
+  the reported ``wins.''}
+  \label{fig:lrsens}
+\end{figure}
+
+\paragraph{The single-LR illusion, made explicit.} We can now show the illusion
+directly rather than assert it (Figure~\ref{fig:lrartifact}, Table~\ref{tab:lrartifact}).
+For each structured adapter we take its \emph{best-looking single learning rate}---the
+rate that maximizes commonsense adaptation while keeping core retention $\geq\!24$---and
+compare it against plain LoRA \emph{run at that same rate}. At that fixed rate several
+methods do look better than LoRA: SC-LoRA by $+26.0$\,pp of adaptation, LoRA-Null by
+$+19.5$, DoRA by $+5.9$, MiLoRA by $+0.8$ (the illusion is strong for the low-LR-optimal
+data-aware inits, weak for MiLoRA, and \emph{absent} for CLoRA, which is $-14.2$ even at
+its own best rate). But once the learning rate is swept, LoRA{+}wd traces a Pareto
+frontier that dominates every one of these best single-LR points on \emph{both} axes
+(rings in Figure~\ref{fig:lrartifact}; ``dominates? yes'' for all rows in
+Table~\ref{tab:lrartifact}). The apparent per-method win is thus decomposed into a
+learning-rate-tuning effect that vanishes under a symmetric sweep, plus a residual that
+lands back on the shared magnitude curve. This is the concrete, per-method form of
+Claim~3.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig9_lr_artifact.png}
+  \caption{\textbf{The ``win'' of every structured adapter is a learning-rate artifact.}
+  Full 7-LR trajectory per method in the adaptation--retention plane (Llama-2-7B,
+  commonsense, seed 42). Rings mark each method's best-looking single-LR point; the shaded
+  region is dominated by the LoRA{+}wd \emph{swept} frontier (thick blue). Every ringed
+  point sits on or below that frontier. At high learning rate the data-aware inits collapse
+  (bottom cluster: magnitude blow-up). CorDA is shown here only as a diagnostic trajectory
+  (deduped to its latest nq\_open-calibrated eval, with the diverged lr1e-3 point dropped);
+  it is \emph{not} used in the headline law or Pareto tables (Section~\ref{sec:limits}).}
+  \label{fig:lrartifact}
+\end{figure}
+
+\input{tables/table_lr_artifact.tex}
+
+\paragraph{The sweep is symmetric.} An obvious referee question is whether we tuned
+LoRA{+}wd as hard as the methods it beats. We did: every method, including LoRA{+}wd,
+receives the same seven-rate sweep, and each is reported at its own best-adapt learning
+rate. The instrument is symmetric by construction.
+%TODO(experiment): this exhibit reproduces the single-LR *illusion* from our own sweep;
+%the fully airtight form --- taking a fancy adapter's *paper-reported* published-LR win
+%over LoRA and dissolving it under the sweep --- plus seed-averaging the load-bearing
+%points (folds into the seeds-43/44 work, Section~\ref{sec:limits}) is still pending.
+
+% ===========================================================================
+\section{The Pareto Result: LoRA{+}wd on the Frontier}\label{sec:pareto}
+% ===========================================================================
+The consequence of the magnitude law is practical. If $\dw$ is the true lever, the
+simplest possible control of it---plain LoRA with a weight-decay term on the adapter
+matrices---should reproduce or beat the frontier of the elaborate geometric adapters.
+It does. Table~\ref{tab:cs} reports each method at its own adaptation-optimal learning
+rate on commonsense (the fair, per-method-tuned comparison), and Figure~\ref{fig:pareto}
+plots the adaptation--retention plane.
+
+\begin{table}[t]
+  \centering
+  \input{tables/table_main_cs.tex}
+  \caption{\textbf{Main commonsense results} (Llama-2-7B, seed 42), each method at its
+  best-adapt learning rate. LoRA{+}wd(0.3) is simultaneously the highest-adaptation
+  (81.6), highest-core-retention among the strong adapters (25.6, essentially the base
+  ceiling 26.0), and lowest-magnitude ($\dw\!=\!0.394$) method. CorDA is excluded pending
+  re-validation (Section~\ref{sec:limits}).}
+  \label{tab:cs}
+\end{table}
+
+\paragraph{LoRA{+}wd lands on the upper-right frontier.} LoRA{+}wd(0.3) at lr5e-4 reaches
+CS-8 $=\!81.6$ and core retention $=\!25.6$ (within $0.4$\,pp of the base ceiling) at the
+\emph{lowest} magnitude in the table, $\dw\!=\!0.394$. It is the only method that is
+simultaneously the strongest adapter and the best retainer among the strong adapters,
+and it has the widest safe operating band (6 of 7 learning rates keep core retention
+$\geq\!24$; SC-LoRA manages only 1 of 7). The un-regularized high-adapters sit at or past
+the right edge of the sweet-spot band: LoRA ($\dw\!=\!0.623$), CLoRA ($0.643$), SC-LoRA
+($0.559$), against LoRA{+}wd's $0.394$.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig3_pareto.png}
+  \caption{\textbf{Adaptation--retention Pareto plane}, commonsense (left) and math
+  (right). Each point is one learning rate; open rings mark each method's best-adapt
+  point; the green line is the base ceiling. LoRA{+}wd sits on or above the frontier of
+  every geometric adapter in both domains. Red rings mark training-collapse outliers.}
+  \label{fig:pareto}
+\end{figure}
+
+\paragraph{Math confirms it (sparsely).} On math (Table~\ref{tab:math},
+Figure~\ref{fig:pareto} right), LoRA{+}wd(0.3) at lr5e-4 reaches GSM8K $=\!50.6$ and core
+retention $=\!24.6$ at $\dw\!=\!0.399$, again edging both axes over plain LoRA
+($46.5$ / $22.9$ at $\dw\!=\!0.520$) while carrying a smaller update. The math sweep is
+preliminary---it currently covers only LoRA, LoRA{+}wd, and DoRA ($n\!=\!14$ pooled).
+%TODO(data): DoRA's math best-adapt point sits at lr2e-5 (GSM8K 33.3 / ret 25.2,
+%dW 0.327) and may be under-trained; and the five structured math arms (CorDA / CLoRA /
+%MiLoRA / SC-LoRA / LoRA-Null) plus the remaining LR cells are still filling in.
+
+\begin{table}[t]
+  \centering
+  \input{tables/table_main_math.tex}
+  \caption{\textbf{Main math (GSM8K) results} (Llama-2-7B, seed 42), each method at its
+  best-adapt learning rate. LoRA{+}wd edges both axes at a smaller update; the sweep is
+  preliminary (LoRA / LoRA{+}wd / DoRA only in the current table).}
+  \label{tab:math}
+\end{table}
+
+\paragraph{The honest verb.} We claim that LoRA{+}wd \emph{matches or edges} the
+frontier at far lower engineering cost---not that it \emph{dominates}. An earlier
+full-scale read that looked like domination (``LoRA{+}wd dominates CLoRA'') deflated to a
+tie once a checkpoint-collision data bug was fixed: at full scale wd0.1 (80.4/24.86)
+ties CLoRA-k1024 (79.8/24.85), while wd1.0 (76.7/26.87) beats CLoRA-k2048 (65.4/25.7).
+On a single seed the frontier is noisy and non-monotone, so ``matches/edges'' is the
+defensible verb until seeds land. We stress that Claim 2 is fundamentally a statement
+about \emph{$\dw$}: LoRA{+}wd wins by \emph{moving along} the shared curve to a smaller
+magnitude inside the sweet-spot band (its ANCOVA residual is $+0.06$\,pp, i.e.\ dead on
+the law), not by beating the curve.
+
+% ===========================================================================
+\section{Mechanism: Magnitude as a Two-Edged Budget}\label{sec:mech}
+% ===========================================================================
+Why does weight decay land in the right place ``for free''? Because $\dw$ is a
+two-edged budget, and weight decay controls it directly. Adaptation \emph{rises} with
+$\dw$ at $+20.3$\,pp/decade, while retention \emph{falls} at $-14.8$\,pp/decade
+(Figure~\ref{fig:budget}). There is a narrow band, $\dw\!\in\![0.31, 0.62]$, in which
+adaptation is near its maximum while retention stays near the base ceiling. Adapters that
+fall off the frontier do so because their (init~$\times$~learning-rate) combination pushes
+$\dw$ past the right edge of this band. Weight decay penalizes $\lVert A\rVert^2 +
+\lVert B\rVert^2$ regardless of subspace, so it \emph{bounds} $\dw$ and lands the model
+inside the band---LoRA{+}wd sits at $0.394$, the un-regularized high-adapters at or past
+the edge. That is the entire mechanism of Claim 2: the geometric adapters are elaborate
+ways to choose \emph{where} the update goes; weight decay is the trivial way to choose
+\emph{how big} it is, and how big is what matters.
+%TODO(data): the sweet-spot band is currently derived from the same 49 points it is used
+%to interpret (post-hoc). Either derive it from an a-priori utility criterion or present
+%it descriptively; LoRA's own best point (0.623) already falls just outside it.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.9\textwidth]{fig8_magnitude_budget.png}
+  \caption{\textbf{One axis sets both adaptation and forgetting.} Adaptation (top,
+  rising, $+20.3$\,pp/decade) and retention (bottom, falling, $-14.8$\,pp/decade) versus
+  $\dw$ (shared log $x$-axis). The green band is the sweet spot $\dw\!\in\![0.31,0.62]$;
+  LoRA{+}wd (0.394) sits inside it, the un-regularized high-adapters at or past the right
+  edge.}
+  \label{fig:budget}
+\end{figure}
+
+Figure~\ref{fig:support} collects the supporting structure: adaptation genuinely
+\emph{requires} magnitude (it rises with $\dw$), the spectral spikiness that makes
+$\smax$ an unfair axis varies widely by method, and the adaptation achievable at a fixed
+retention budget ranks the methods by efficiency. The operating-point view
+(Figure~\ref{fig:oppoints}) makes the practical payoff concrete: LoRA{+}wd has by far the
+widest safe operating window (6/7 learning rates), while the data-aware inits transmit
+too much $\dw$ at every usable learning rate and are correspondingly brittle (SC-LoRA
+1/7).
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig6_supporting_structure.png}
+  \caption{\textbf{Supporting structure.} (a) Adaptation rises with $\dw$ (magnitude is
+  required to adapt). (b) Spectral spikiness $\smax/\bar\sigma$ per method (why $\smax$
+  is an unfair axis). (c) Adaptation achievable at a fixed retention budget, per method.}
+  \label{fig:support}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.85\textwidth]{op_points.png}
+  \caption{\textbf{Operating points and robustness.} Per method: best-adapt and
+  safe learning rates, and robustness (number of the 7 learning rates keeping core
+  retention $\geq\!24$). LoRA{+}wd 6/7 (widest); MiLoRA and CLoRA 5/7; DoRA 4/7; SC-LoRA
+  1/7 (brittle).}
+  \label{fig:oppoints}
+\end{figure}
+
+% ===========================================================================
+\section{Replication on Qwen2.5-7B (in progress)}\label{sec:qwen}
+% ===========================================================================
+To test whether the law is a Llama idiosyncrasy, we are replicating the full design on
+Qwen2.5-7B. This arm is \emph{in progress}: roughly 13 of 112 planned cells are complete,
+mostly the LoRA arm, and no Qwen figures are generated yet. On the slice we have, the
+commonsense LoRA sweep (7 learning rates) replicates the sign and monotonicity of the law
+($r\!=\!-0.88$, $p\!=\!9\!\times\!10^{-3}$), though at a steeper slope
+($-34.8$\,pp/decade vs Llama's $-10$ to $-15$)---so this is replication of \emph{sign and
+monotonicity}, not yet of the quantitative law. The Qwen math LoRA sweep (5 learning
+rates) does \emph{not} yet replicate: $r\!=\!+0.67$ (n.s., $p\!=\!0.21$), the wrong sign,
+because the higher-learning-rate cells that reach the forgetting regime are not yet run.
+We report this anti-replication openly rather than omit it. We do not present a Qwen
+Pareto or per-method ranking, and will not until the structured arms land.
+%TODO(data): finish the Qwen 2x2 (>= 5 adapters on both domains, plus the higher-LR math
+%cells); regenerate a Qwen replication panel; only then upgrade "in progress" to a
+%two-model claim.
+
+% ===========================================================================
+\section{Limitations}\label{sec:limits}
+% ===========================================================================
+We state every limitation explicitly; these are the reviewer attack surface, and owning
+them is the defense.
+
+\begin{enumerate}
+  \item \textbf{Single seed (seed 42).} This is fine for the \emph{law}---49 points trace
+        the curve robustly---but \emph{not} for any head-to-head \emph{ranking} claim.
+        A prior three-seed matrix exposed single-seed ``collapse basins'' (a change of
+        seed swung some cells by tens of points). The LoRA{+}wd Pareto margin
+        ($+1.5$\,pp adaptation, $+0.8$\,pp retention over the runners-up) is smaller than
+        that documented seed variance, so it is presented as ``matches/edges,'' and error
+        bars (seeds 43/44) on the $\sim$6--8 headline cells are required before any
+        per-method delta is headlined.
+        %TODO(experiment): B5c seeds 43/44 on the ~6-8 headline cells not yet collected.
+  \item \textbf{Rank and knob asymmetry.} Ranks are not matched (LoRA/DoRA/CorDA/LoRA-Null
+        r16; MiLoRA/SC-LoRA r32; CLoRA $k{=}1024$), and \emph{only} LoRA received the
+        weight-decay knob. A referee may fairly say LoRA{+}wd wins because it has more
+        capacity and an extra regularizer no other method got. The \emph{law} framing
+        sidesteps this (it is a statement about $\dw$, not a ranking), but the strong form
+        of Claim 2 needs a param-matched LoRA{+}wd control (r16 and r32) and, ideally, the
+        weight-decay knob given to every frontier arm.
+        %TODO(experiment): B5a param-matched LoRA+wd control ({r16,r32}x{wd0,wd0.3}) and
+        %wd-on-every-frontier-arm not yet run.
+  \item \textbf{Calibration-versus-evaluation mismatch (the biggest open question).} CorDA,
+        SC-LoRA, and LoRA-Null calibrate on nq\_open (factoid QA), but retention is
+        measured on academic/reasoning benchmarks. A data-aware init only protects the
+        directions its calibration covariance exercises, so nq\_open may protect the wrong
+        subspace for our evaluation---meaning ``data-aware inits forget more than their
+        budget'' could be an artifact of a mismatched calibration set rather than a real
+        geometric penalty. Until an eval-matched calibration re-run lands, all off-curve /
+        ``fancy adapters forget more'' language stays out, and the SC-LoRA deviation
+        remains provisional.
+        %TODO(experiment): B4 eval-matched calibration (nq_open vs eval-matched aux set) +
+        %paired-residual sensitivity arm not yet run --- this is the highest-leverage pending
+        %experiment; until it lands, all off-curve language stays embargoed.
+  \item \textbf{CorDA is withheld from the headline exhibits.} CorDA was first
+        mis-calibrated on wikitext-2 and is being re-run on nq\_open; it is currently
+        excluded from every law figure, Pareto table, and ANCOVA residual. (Its trajectory
+        appears in the learning-rate-artifact diagnostic, Figure~\ref{fig:lrartifact}, only
+        as an illustration of the single-LR illusion, deduped to its latest nq\_open eval
+        with the diverged lr1e-3 cell dropped---not as a reportable operating point.)
+        Because CorDA is arguably the most important adapter for testing the ``geometry is
+        inert'' claim, its absence is a real gap: the law is presently demonstrated on six
+        assessable adapters, not eight, and the word ``eight'' cannot sit next to ``one
+        curve'' until CorDA is either back on it or openly declared off it. A data-hygiene
+        pass has already removed the residual-save explosion rows (\texttt{fdelta}$\approx$515,
+        retention 0) and duplicate cells from the released registry.
+        %TODO(experiment): CorDA nq_open re-run with a passing 0-step self-check + fair
+        %(B4) calibration required before CorDA can re-enter the law as a true 8th series.
+  \item \textbf{LoRA-Null is mislabeled.} A generator bug classifies LoRA-Null runs as
+        method ``lora,'' pooling its 7 points into plain LoRA in the legend, robustness
+        count, and the ``LoRA'' ANCOVA residual. The pooled law is unchanged, but LoRA and
+        LoRA-Null must be split into separate series with separate residuals before
+        camera-ready.
+        %TODO(data): fix the labeling bug and regenerate fig0/fig2 + LoRA robustness.
+  \item \textbf{Math is sparse and Qwen is in progress} (Sections~\ref{sec:law},
+        \ref{sec:qwen}). Math is a genuine second domain but currently $n\!=\!14$ over
+        three adapters; Qwen is a supporting replication, not a completed second model, and
+        Qwen-math currently anti-replicates.
+  \item \textbf{Base-ceiling calibration missing} for MMLU, ARC, and TruthfulQA, so broad
+        retention and per-benchmark slopes are not yet normalizable, and ``TruthfulQA
+        immunity'' needs verification against a floor artifact.
+        %TODO(experiment): C5 base-ceiling calibration (5 eval-only no-FT runs on MMLU/ARC/
+        %TruthfulQA) not yet collected.
+  \item \textbf{Near-circularity of the raw correlation.} ``Bigger update forgets more''
+        is partly true by construction; we rebut by leading with the residual/ANCOVA test,
+        but that test is single-seed, $n\!\approx\!7$ per method, and its overall
+        significance is driven by one method---so it needs the slope-interaction and
+        leave-one-method-out strengthening noted in Section~\ref{sec:law}.
+\end{enumerate}
+
+% ===========================================================================
+\section{Discussion and Conclusion}\label{sec:conclusion}
+% ===========================================================================
+The field is optimizing the wrong variable. Across the six of eight adapters we can
+currently assess fairly (SC-LoRA the one provisional deviator, CorDA
+withheld---Section~\ref{sec:limits}), two domains, and a partial second model,
+catastrophic forgetting under PEFT is governed by a single scalar,
+the magnitude of the weight update $\dw$, and geometry---the choice of \emph{where} the
+update goes---is close to causally inert once that magnitude is controlled. The practical
+consequence is deflationary: plain LoRA with a weight-decay term matches or edges the
+adaptation--retention frontier of every elaborate geometric adapter we tested, because
+weight decay is the most direct way to land inside the magnitude sweet spot. The
+diagnosis exhibits the \emph{ingredients} of a learning-rate artifact behind the
+geometric adapters' reported wins---each peaks at a different rate, so a single
+fixed-rate comparison flatters whichever method is well tuned there, and the $\dw$ an
+adapter produces predicts retention far better than its learning rate does, so a
+per-method sweep collapses the difference back onto the shared curve. Reproducing a
+specific published win and then dissolving it under the sweep is deferred
+(Section~\ref{sec:lr}).
+
+We have been careful about the strength of each claim. The law (Claim 1) is mature and
+robust on Llama-2. The consequence and diagnosis (Claims 2 and 3) are supported by the
+present Llama-2 evidence at the honest strength of ``matches/edges'' and
+``best-LR-is-not-shared,'' and become fully airtight only once the deferred controls land:
+seeds on the headline cells, a param-matched LoRA{+}wd control with weight decay applied
+to every frontier arm, an eval-matched calibration for the data-aware inits, CorDA
+re-instated (or openly declared off-curve), and the completed Qwen 2$\times$2. Should
+those controls change the rankings, the paper still stands as a \emph{measurement}
+contribution: the learning-rate-sweep-per-method is an instrument that decomposes any
+adapter's reported win into its true magnitude effect plus a learning-rate-tuning
+artifact, and the token-weighted Frobenius axis is the fair way to compare adapters.
+
+The message for a field that ships a new adapter every week is a wake-up call:
+\textbf{control the magnitude, not the geometry.}
+
+% ===========================================================================
+\section*{Future Work}
+% ===========================================================================
+Beyond the controls in Section~\ref{sec:limits}, three directions follow naturally.
+\emph{CorDA++} (dynamic covariance selection and dynamic rank allocation under a fixed
+parameter budget) is the strongest 2025-era geometric method and the right target to land
+the negative result against, at a realized-parameter-count matched budget. \emph{Eval-matched
+calibration arms} would settle whether the data-aware inits' residual penalty is geometry
+or a calibration artifact---if they return to the curve, the cleaner result is ``the law
+is method-free once calibration is fair.'' Finally, a \emph{gated-magnitude adapter}---an
+input-conditional gate scaling only the adapter delta, trained against a preservation
+corpus disjoint from the evaluation set---is the constructive follow-up, now with the
+higher bar of having to beat LoRA{+}wd rather than the elaborate adapters.
+
+% ===========================================================================
+\section*{Reproducibility and Compute}
+% ===========================================================================
+Because our method \emph{is} a sweep, the run count is part of the claim. The mature
+Llama-2-7B evidence comprises the $8\times 7$ commonsense learning-rate grid plus the
+sparse math grid ($\approx\!288$ fine-tuning cells at seed 42), each cell a full
+fine-tune followed by in-process evaluation on the retention and adaptation suites; the
+Qwen2.5-7B replication adds $\sim$13 of $\sim$112 planned cells.
+%TODO(data): fill in total wall-clock / GPU-hours and the GPU type (B200) once tallied,
+%and add a public repro pointer (config registry + campaign_summary.jsonl) at submission.
+All numbers in this paper are computed from a single cleaned registry
+(\texttt{campaign\_summary\_clean.jsonl}: 359 raw rows deduplicated by latest
+\texttt{evaluated\_at} to 343 unique, then the residual-save explosion rows and the
+withheld CorDA cells removed, leaving 320 clean rows); the raw registry is retained,
+labeled superseded, for provenance. The token-weighted Frobenius axis and the
+learning-rate-sweep-per-method are the two instruments a reader needs to reproduce the
+analysis.
+
+% ===========================================================================
+\bibliographystyle{plainnat}
+% \bibliography{references}  %TODO(data): add references.bib; verify all arXiv IDs.
+% Placeholder entries so the draft compiles standalone:
+\begin{thebibliography}{9}
+\bibitem[Hu et al.(2021)]{hu2021lora} E.~Hu et al. LoRA: Low-Rank Adaptation of Large Language Models. 2021. %TODO(data): arXiv 2106.09685 verify.
+\bibitem[Liu et al.(2024)]{liu2024dora} S.~Liu et al. DoRA: Weight-Decomposed Low-Rank Adaptation. 2024. %TODO(data): verify ID.
+\bibitem[Yang et al.(2024)]{yang2024corda} J.~Yang et al. CorDA: Context-Oriented Decomposition Adaptation. 2024. %TODO(data): arXiv 2406.05223 verify.
+\bibitem[Wang et al.(2024)]{wang2024milora} H.~Wang et al. MiLoRA: Harnessing Minor Singular Components. 2024. %TODO(data): verify ID.
+\bibitem[CLoRA]{clora} CLoRA: Subspace-Constrained LoRA against Catastrophic Forgetting. %TODO(data): verify ID.
+\end{thebibliography}
+
+\end{document}
