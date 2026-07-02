@@ -4,7 +4,8 @@ Method & Config & GSM8K $\uparrow$ & Ret-core $\uparrow$ & Ret-broad $\uparrow$ 
 \midrule
 \textit{Base (no-FT)} & -- & -- & \textit{26.0} & -- & \textit{0} & -- \\
 \midrule
-LoRA$\star$ & lora r16 lr2e5 & 33.9 & 26.1 & 33.9 & 0.330 & 7.0 \\
-LoRA+wd$\star$ & lorawd wd0p3 lr2e5 & 35.1 & 26.2 & 34.0 & 0.320 & 8.0 \\
+LoRA+wd(0.3) & lorawd wd0p3, lr3e-4 & 49.1 & 24.4 & 33.5 & 0.359 & 18.1 \\
+LoRA & lora r16, lr3e-4 & 46.5 & 22.9 & 31.5 & 0.520 & 35.3 \\
 \bottomrule
 \end{tabular}
+% single seed s42; ranks/configs not matched across methods; each method shown at its best-adapt LR (sweep-only). Preliminary: math sweep currently only covers LoRA / LoRA+wd.

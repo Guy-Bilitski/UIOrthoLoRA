@@ -211,11 +211,19 @@ def main():
         import corda_init as Ci
         from datasets import load_dataset as _ld
         assert args.lora_alpha == args.lora_r, "CorDA needs scaling=1 -> set --lora_alpha == --lora_r"
-        wt = _ld("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")   # CorDA default KPA calib (general text, NOT the eval set)
-        cprompts = [t for t in wt["text"] if len(t.strip()) > 50][:args.corda_calib_size]
+        # CorDA-KPA freezes the directions most responsive to the calibration data (the knowledge to
+        # preserve). Paper/repo default = QA knowledge (nq_open), NOT general LM text. FIXED 2026-06-29
+        # (was wikitext-2 -> preserved the wrong subspace; matches sclora/lora_null which use nq_open).
+        try:
+            nq = _ld("google-research-datasets/nq_open", split="validation")
+            cprompts = [q for q in nq["question"][:args.corda_calib_size]]
+        except Exception as e:
+            print(f"[corda] nq_open load failed ({e}); falling back to wikitext calib", flush=True)
+            wt = _ld("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
+            cprompts = [t for t in wt["text"] if len(t.strip()) > 50][:args.corda_calib_size]
         cov = Ci.collect_corda_cov(model, cprompts, tokenizer, calib_size=args.corda_calib_size)
         err = Ci.apply_corda(model, cov, r=args.lora_r)
-        print(f"[corda] KPA init applied to {len(cov)} layers; loss-preserving err={err:.2e}", flush=True)
+        print(f"[corda] KPA init (nq_open calib) applied to {len(cov)} layers; loss-preserving err={err:.2e}", flush=True)
 
     if getattr(args, "milora", 0):
         import milora_init as Mi

@@ -33,7 +33,7 @@ def collect_lora_null_cov(model, prompts, tokenizer, calib_size=256, max_len=102
     def mk(name):
         def h(mod, inp):
             x = inp[0].reshape(-1, inp[0].shape[-1]).float()
-            m = x.abs().max()
+            m = x.max().abs()                       # abs-of-max: matches repo torch.max(x).abs() (audit 2026-06-29)
             if m > 0:
                 x = x / m
             c = x.transpose(-1, -2) @ x / 256.0
