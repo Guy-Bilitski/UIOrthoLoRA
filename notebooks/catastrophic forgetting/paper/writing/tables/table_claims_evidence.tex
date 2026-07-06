@@ -1,0 +1,27 @@
+% Claims x evidence x pending-control map (E6). Hand-maintained; keep in sync with
+% Limitations. Experiment codes: B4 = eval-matched calibration + sensitivity arm;
+% B5a = param-matched LoRA+wd control; B5c = seeds 43/44 on headline cells;
+% C5 = base-ceiling calibration (5 eval-only runs); Qwen 2x2 = complete the
+% Qwen2.5-7B commonsense+math grid.
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\caption{\textbf{What each claim rests on, and the named experiment that closes its
+gap.} Evidence strength is stated at the level the current data supports.}
+\label{tab:claims}
+\begin{tabular}{p{0.30\textwidth} p{0.34\textwidth} p{0.28\textwidth}}
+\toprule
+Claim & Evidence strength & Pending control \\
+\midrule
+1. Magnitude law (mechanism) & complete 49-cell grid; $r\!=\!-0.86$/$-0.92$; LOMO-predictive & seeds (B5c); Qwen $2\times 2$ \\
+\quad geometry inert given $\dw$ & on-curve intercepts and slopes jointly n.s. & B4; B5c \\
+\quad SC-LoRA deviation & provisional ($-4.15$\,pp, $p\!=\!0.006$, single seed) & B4 (calibration), then B5c \\
+2. LR-artifact diagnosis & ingredients shown from our own sweep & reproduce-a-published-win + B5c \\
+3. LoRA{+}wd corollary & matches/edges on both domains; 6/7 safe rates & B5a (param-match); B5c \\
+\quad CorDA placement & withheld (calibration bug; re-run in progress) & CorDA nq\_open re-run + B4; CorDA++ \\
+Broad-retention texture & uncalibrated; direction only & C5 base ceilings \\
+Second model (Qwen2.5-7B) & partial: CS sign replicates; math does not yet & Qwen $2\times 2$ completion \\
+\bottomrule
+\end{tabular}
+\end{table}
