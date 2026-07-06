@@ -1,0 +1,24 @@
+% PAPER-LOCAL variant of table_main_cs.tex (the generated asset is left untouched).
+% Changes vs the generated table (provenance: analysis_a1_a4.py, split LoRA-Null
+% convention, 2026-07-02):
+%   (1) LoRA-Null added as its own row (78.9 / 23.6 / 31.0 / 0.696 / 54.6 @ lr5e-4).
+%   (2) Robustness column added: # of the 7 swept LRs keeping core retention >= 24
+%       (= base ceiling - 2pp). Source: key_numbers.md section 14.
+% Do NOT regenerate via the canonical generator; it would drop these edits.
+\begin{tabular}{l l c c c c c c}
+\toprule
+Method & Config & CS-8 $\uparrow$ & Ret-core $\uparrow$ & Ret-broad $\uparrow$ & $\|\Delta W\|_F$ $\downarrow$ & $\sigma_{\max}$ & Safe LRs (/7) $\uparrow$ \\
+\midrule
+\textit{Base (no-FT)} & -- & -- & \textit{26.0} & -- & \textit{0} & -- & -- \\
+\midrule
+LoRA+wd(0.3) & lorawd wd0p3, lr5e-4 & \textbf{81.6} & \textbf{25.6} & 33.2 & \textbf{0.394} & 34.3 & \textbf{6/7} \\
+SC-LoRA & sclora r32, lr5e-5 & 80.1 & 22.5 & 32.5 & 0.559 & 11.3 & 1/7 \\
+MiLoRA & milora r32, lr3e-4 & 79.9 & 24.7 & 33.6 & 0.543 & 48.5 & 5/7 \\
+LoRA & lora r16, lr3e-4 & 79.1 & 24.4 & 32.7 & 0.623 & 40.7 & 5/7 \\
+LoRA-Null & lora\_null r16, lr5e-4 & 78.9 & 23.6 & 31.0 & 0.696 & 54.6 & 5/7 \\
+CLoRA & clora k1024, lr5e-4 & 78.4 & 21.9 & 30.1 & 0.643 & 29.8 & 5/7 \\
+DoRA & dora r16, lr2e-4 & 78.3 & 24.8 & 32.9 & 0.445 & 38.8 & 4/7 \\
+\bottomrule
+\end{tabular}
+% single seed s42; ranks/configs not matched across methods; each method at its
+% best-adapt LR (sweep-only). Safe LRs = # of 7 rates with core retention >= 24.

@@ -227,3 +227,62 @@ The pooled law (49 points) and the best-adapt LoRA point (79.1/24.4, a plain-LoR
 - CorDA excluded entirely (wikitext-calib bug fixed→nq_open re-running; calib↔eval fairness open, B4).
 - SC-LoRA off-curve deviation is provisional.
 - LoRA-Null labeling bug (§10).
+
+---
+
+## 14. LoRA-Null SPLIT-CONVENTION RECOMPUTE `[RECOMPUTED 2026-07-02, second pass]`
+
+**Supersedes** the pooled-convention parts of §1a/§3/§5/§9/§10 wherever they conflict. Scripts:
+`writing/analysis_a1_a4.py` (stats) and `writing/make_figs_split_lora_null.py` (figures; a patched
+copy of `paper_figs_v2.py` — the canonical generator is untouched). Registry:
+`writing/data/campaign_summary_clean.jsonl`. Convention: `lrsw_lora_null_*` is its **own series**;
+the sweep is **7 adapters × 7 LRs = 49 cells** (CorDA withheld). The labeling bug of §10 is thereby
+resolved at the analysis level; figures fig0–fig8 + op_points regenerated 2026-07-02 under this
+convention.
+
+- **Pooled law (n=49): numerically IDENTICAL** to §1 (same 49 points, relabeled only):
+  r=−0.858, R²=0.736, slope −14.8 pp/dec, p=3.4e-15.
+- **On-curve law now = 6 series** (LoRA, LoRA-Null, LoRA+wd, DoRA, MiLoRA, CLoRA; n=42, same points
+  as the old "excl. SC-LoRA" fit): r=−0.92, R²=0.84, slope −10.0. Identical to §1 row 2.
+- **Within-method r (split):** LoRA (plain) −0.95, LoRA-Null −0.86, LoRA+wd −0.89, DoRA −0.97,
+  MiLoRA −0.94, CLoRA −0.90, SC-LoRA −0.97. Range −0.86…−0.97. (Matches §1a.)
+- **Spline residuals (7 series):** LoRA +0.99 (p=0.21), LoRA-Null +0.60 (p=0.27), LoRA+wd +0.06
+  (p=0.83), MiLoRA +1.04 (p=0.14), CLoRA +0.09 (p=0.80), DoRA +1.37 (p=0.23), **SC-LoRA −4.15
+  (p=0.006, only significant deviator)**. The old pooled "LoRA +0.79 (n=14)" splits into the first
+  two rows. Six of seven assessed adapters are on the law.
+- **Intercept ANCOVA (7 series):** R² 0.736 → 0.870, ΔR²=0.134, **F(6,41)=7.05, p=3.3e-5** —
+  significant overall but driven almost entirely by SC-LoRA. (Replaces F(5,42)=8.34.)
+- **Robustness (ret_core≥24, /7):** LoRA+wd **6/7**; LoRA (plain) 5/7; **LoRA-Null 5/7**; MiLoRA
+  5/7; CLoRA 5/7; DoRA 4/7; SC-LoRA **1/7**. (The 10/14 pooled figure is retired.)
+- **LoRA-Null best-adapt point (CS):** lr5e-4, CS-8 78.9 / ret-core 23.6 / ret-broad 31.0 /
+  ‖ΔW‖_F 0.696 / σmax 54.6. Safe point (ret≥24): lr2e-5, 73.0/26.2.
+- **Coverage sentence (updated, use this):** "Across the **seven of eight** adapters we can assess
+  (LoRA, LoRA-Null, LoRA+wd, DoRA, MiLoRA, CLoRA, SC-LoRA), six lie on a single ‖ΔW‖_F curve;
+  SC-LoRA is the one provisional below-curve deviator, and CorDA is withheld pending a
+  calibration-fairness fix."
+
+## 15. A1–A3 LAW-STRENGTHENING TESTS `[RECOMPUTED 2026-07-02, second pass]`
+
+Script: `writing/analysis_a1_a4.py` (split convention, n=49). These close the old
+"intercept-only, in-sample" hedge.
+
+- **A1 slope-interaction ANCOVA.** Adding per-method **slopes** on top of per-method intercepts:
+  full 7 series **F(6,35)=9.32, p<0.001** (significant) — but **restricted to the six on-curve
+  series: F(5,30)=0.28, p=0.92** (slopes statistically indistinguishable). Per-method slopes
+  (pp/dec): LoRA −11.7, LoRA-Null −9.1, LoRA+wd −8.1, DoRA −10.3, MiLoRA −10.4, CLoRA −10.2,
+  **SC-LoRA −26.0** — SC-LoRA alone bends the curve; the six on-curve adapters share ONE slope.
+- **A2 leave-one-method-out predictive check.** Pooled linear law fit on 6 series predicting the
+  7th: held-out RMSE LoRA 2.25, LoRA-Null 2.52, LoRA+wd 1.74, DoRA 3.58, MiLoRA 2.24, CLoRA 2.41
+  (mean **2.46 pp** over the six on-curve) vs in-sample RMSE 3.07 (pooled) / **2.16 (method-aware,
+  7 intercepts)**. Held-out **SC-LoRA: RMSE 9.05, mean error −7.40 pp** (consistent with its
+  provisional below-curve status).
+- **A3 joint F-test on the six on-curve intercepts** (n=42, excl. SC-LoRA): R² 0.838 → 0.871,
+  **F(5,35)=1.79, p=0.14 — not significant**; on-curve intercepts are statistically
+  indistinguishable.
+
+**Approved summary sentence:** "Among the six on-curve adapters, neither the intercepts
+(F(5,35)=1.79, p=0.14) nor the slopes (F(5,30)=0.28, p=0.92) differ statistically, and the pooled
+law fit with any one of them held out predicts that adapter's seven points to within 2.5 pp RMSE —
+about the in-sample accuracy of a method-aware model (2.2 pp). The full-pool tests
+(F(6,41)=7.05 intercepts; F(6,35)=9.32 slopes; both p<0.001) are significant, driven almost
+entirely by SC-LoRA (provisional)."

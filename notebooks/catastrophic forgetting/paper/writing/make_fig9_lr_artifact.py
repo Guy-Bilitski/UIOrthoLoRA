@@ -12,7 +12,7 @@ plt.rcParams.update({
     "figure.facecolor": "white", "axes.facecolor": "white",
 })
 
-SUMMARY="paper/writing/data/campaign_summary.jsonl"
+SUMMARY="paper/writing/data/campaign_summary_clean.jsonl"  # clean 320-row registry (no CorDA, deduped)
 OUT="paper/writing/figures/fig9_lr_artifact.png"
 
 # ---- load + dedup by latest evaluated_at (CorDA old-wikitext vs new-nq_open dup rows) ----
@@ -43,11 +43,13 @@ PRETTY={"dora_r16":"DoRA","corda_r16":"CorDA","milora_r32":"MiLoRA","sclora_r32"
         "lora_null_r16":"LoRA-Null","clora_k1024":"CLoRA","lora_r16":"LoRA (plain)","lorawd_wd0p3":"LoRA + wd 0.3"}
 def ck(arm): return arm.replace("_r16","").replace("_r32","").replace("_k1024","").replace("_wd0p3","")
 
-fancy=["dora_r16","corda_r16","milora_r32","sclora_r32","lora_null_r16","clora_k1024"]
+# CorDA is EMBARGOED: excluded pending its nq_open re-run + calibration-fairness fix.
+# It must not render as a series or a ringed operating point (matches the paper-local table).
+fancy=["dora_r16","milora_r32","sclora_r32","lora_null_r16","clora_k1024"]
 
-def dominates(a,b): return a["adapt"]>=b["adapt"] and a["ret"]>=b["ret"] and (a["adapt"]>b["adapt"] or a["ret"]>b["ret"])
+def pareto_ge(a,b): return a["adapt"]>=b["adapt"] and a["ret"]>=b["ret"] and (a["adapt"]>b["adapt"] or a["ret"]>b["ret"])
 def pareto(pts):
-    fr=[p for p in pts if not any(dominates(q,p) for q in pts if q is not p)]
+    fr=[p for p in pts if not any(pareto_ge(q,p) for q in pts if q is not p)]
     return sorted(fr,key=lambda p:p["adapt"])
 lorawd_fr=pareto([lorawd[l] for l in lrorder if l in lorawd])
 
@@ -107,7 +109,7 @@ for arm,bp in annot:
 # a single explanatory callout
 ax.annotate("Rings = each method's best-looking single-LR point.\n"
             "Every one sits on or below the LoRA+wd swept frontier\n"
-            "(shaded region is dominated by that frontier).\n"
+            "(shaded region is on or below that frontier).\n"
             "Low points = same methods at high LR: magnitude blow-up → collapse.",
             xy=(0.015,0.025), xycoords="axes fraction", ha="left", va="bottom",
             fontsize=9, color="#333",
@@ -115,8 +117,8 @@ ax.annotate("Rings = each method's best-looking single-LR point.\n"
 
 ax.set_xlabel(r"Adaptation  —  commonsense accuracy [%]   $\rightarrow$ better")
 ax.set_ylabel(r"Retention  —  mean(BBH, MMLU-Pro) [%]   $\rightarrow$ better")
-ax.set_title("Claim 3: fancy adapters' 'wins' are a learning-rate artifact\n"
-             "sweep the LR and LoRA+wd's frontier matches or dominates every method",
+ax.set_title("Claim 2 (diagnosis): structured adapters' 'wins' carry the ingredients of a learning-rate artifact\n"
+             "sweep the LR and LoRA+wd's frontier sits on or above every method",
              fontsize=13.5, pad=12)
 ax.grid(True, alpha=0.18)
 ax.set_xlim(5, 88)
@@ -138,7 +140,7 @@ ax.legend(handles=handles, loc="center left", bbox_to_anchor=(0.005,0.42),
 
 fig.text(0.5, 0.005,
     "Llama-2-7B, commonsense fine-tuning, seed 42, 7 LRs per method (2e-5…1e-3). "
-    "CorDA deduped to latest nq_open-calibrated eval; diverged lr1e-3 point dropped.",
+    "CorDA withheld (calibration-fairness fix pending). Single seed; illustrative.",
     ha="center", va="bottom", fontsize=7.5, color="0.5", style="italic")
 
 fig.tight_layout(rect=[0,0.02,1,1])
