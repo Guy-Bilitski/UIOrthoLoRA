@@ -1,0 +1,103 @@
+--- a/train_cs.py
++++ b/train_cs.py
+@@ -118,13 +118,19 @@
+     """Return peft-wrapped model + a dict describing the adapter config (for logging)."""
+     targets = args.target_modules.split(",")
+     if method in ("lora", "clora"):
++        # CorDA++ per-layer dynamic ranks: rank_pattern/alpha_pattern were precomputed on the raw model
++        # (before this wrap) and stashed on args by main(); they hold scaling=alpha/r at every layer.
++        _cpp = getattr(args, "_cordapp_patterns", None)
++        _kw = dict(rank_pattern=_cpp[0], alpha_pattern=_cpp[1]) if _cpp else {}
+         cfg = LoraConfig(r=args.lora_r, lora_alpha=args.lora_alpha, target_modules=targets,
+                          lora_dropout=args.dropout, bias="none", task_type="CAUSAL_LM",
+-                         use_dora=bool(getattr(args, "use_dora", 0)))
++                         use_dora=bool(getattr(args, "use_dora", 0)), **_kw)
+         desc = {"r": args.lora_r, "lora_alpha": args.lora_alpha, "lora_dropout": args.dropout,
+                 "use_dora": bool(getattr(args, "use_dora", 0))}
+         if method == "clora":
+             desc.update({"clora_k": args.clora_k, "clora_lambda": args.clora_lambda})
++        if _cpp:
++            desc.update({"cordapp": 1, "cordapp_layers": len(_cpp[0])})
+     elif method == "uiortholora":
+         from peft import UIOrthoLoRAConfig
+         cfg = UIOrthoLoRAConfig(
+@@ -179,6 +185,15 @@
+     ap.add_argument("--lora_null_calib_size", type=int, default=256)
+     ap.add_argument("--lora_null_dim", type=int, default=0, help="Null-space dimensionality; 0 -> rank-matched (=lora_r). See fidelity flag in lora_null_init.py.")
+     ap.add_argument("--lora_null_freeze_a", type=int, default=0, help="Freeze A during training (paper's best-preservation variant); default 0 trains both (head-to-head fairness).")
++    # CorDA++ (dynamic Context-oriented Decomposition; cordapp_init.py). OPTIONAL-APPLY: Tier-B, gated
++    # (PI decision P6 = controlled-only, contingent on validate_cordapp_cpu.py + a 1-GPU 0-step gate PASS).
++    ap.add_argument("--cordapp", type=int, default=0, help="CorDA++ dynamic cov-selection + per-layer rank "
++                    "allocation KPM init (reuses corda_init decomposition). Residual method -> "
++                    "residual_save + finalize_dynamic_rank_config. cordapp_init.py.")
++    ap.add_argument("--cordapp_n", type=int, default=5, help="CorDA++ candidate covariance pool size N "
++                    "(paper value unresolved; consortium default 5). One covariance per calib round.")
++    ap.add_argument("--cordapp_calib_size", type=int, default=0, help="Total calib prompts for CorDA++ "
++                    "(0 -> cordapp_n*256, i.e. ~256 windows per round).")
+     ap.add_argument("--lora_r", type=int, default=32)
+     ap.add_argument("--lora_alpha", type=int, default=64)
+     # CLoRA
+@@ -231,6 +246,22 @@
+ 
+     model = AutoModelForCausalLM.from_pretrained(args.base_model, dtype=torch.bfloat16,
+                                                  device_map="cuda:0")
++    cordapp_res = None
++    if getattr(args, "cordapp", 0):
++        import cordapp_init as Cpp
++        _targets = args.target_modules.split(",")
++        _csz = args.cordapp_calib_size or (args.cordapp_n * 256)
++        # Precompute on the RAW model (BEFORE the PEFT wrap): stream N calib rounds -> per layer pick the
++        # best covariance (Eq 8) -> allocate per-layer ranks to a tau param-matched to the fixed-rank arm
++        # (Eq 9-10). Windowed nq_open calib (repo-faithful, full-rank C) as for corda/lora_null.
++        _cpp_prompts = _nq_train_windows(_csz)
++        cordapp_res = Cpp.precompute_cordapp(model, _cpp_prompts, tokenizer, _targets,
++                                             fixed_rank=args.lora_r, N=args.cordapp_n,
++                                             calib_size=_csz, max_len=2048, bs=1,
++                                             scaling=args.lora_alpha / args.lora_r)
++        args._cordapp_patterns = (cordapp_res["rank_pattern"], cordapp_res["alpha_pattern"])
++        print(f"[cordapp] N={args.cordapp_n} calib={_csz} tau(nominal)={cordapp_res['nominal_tau']} "
++              f"realized={cordapp_res['realized_tau']} over {len(cordapp_res['ranks'])} layers", flush=True)
+     model, adapter_desc = build_adapter(args.method, model, args)
+     trainable, total = run_lib.count_trainable(model)
+     model.config.use_cache = False
+@@ -314,11 +345,21 @@
+               f"(null_dim={nd or args.lora_r}, freeze_a={bool(args.lora_null_freeze_a)}); "
+               f"loss-preserving err={err:.2e}", flush=True)
+ 
+-    # CorDA/MiLoRA/SC-LoRA/LoRA-Null/PiSSA overwrite base.weight=W_res but PEFT saves only the adapter ->
+-    # snapshot the init adapter now so we can persist a W0-relative (rank-2r) adapter at save.
++    if getattr(args, "cordapp", 0):
++        import cordapp_init as Cpp
++        # Inject KPM init at each layer's ALLOCATED rank (PEFT resolved r^l from rank_pattern); folds
++        # scaling into B and overwrites base.weight=W_res -> residual_save compatible (like corda).
++        err = Cpp.apply_cordapp(model, cordapp_res["chosen_covs"], cordapp_res["ranks"])
++        INIT_ERR_TOL = 1e-2   # bf16 loss-preserving round-trip (A1 init-error gate; abort loudly if not)
++        assert err < INIT_ERR_TOL, f"[cordapp] init not loss-preserving: err={err:.2e} >= {INIT_ERR_TOL}"
++        print(f"[cordapp] dynamic-rank KPM init applied to {len(cordapp_res['ranks'])} layers; "
++              f"loss-preserving err={err:.2e}", flush=True)
++
++    # CorDA/MiLoRA/SC-LoRA/LoRA-Null/PiSSA/CorDA++ overwrite base.weight=W_res but PEFT saves only the
++    # adapter -> snapshot the init adapter now so we can persist a W0-relative (rank-2r) adapter at save.
+     residual_method = bool(getattr(args, "corda", 0) or getattr(args, "milora", 0)
+                            or getattr(args, "sclora", 0) or getattr(args, "lora_null", 0)
+-                           or getattr(args, "pissa", 0))
++                           or getattr(args, "pissa", 0) or getattr(args, "cordapp", 0))
+     init_adapter = None
+     if residual_method:
+         import residual_save as Rs
+@@ -354,6 +395,15 @@
+         n, r0 = Rs.convert_saved_to_w0_relative(out_dir, init_adapter)
+         print(f"[residual_save] converted {n} layers to W0-relative rank-{2*r0} adapter "
+               f"(was rank-{r0}); eval now uses correct W0 base", flush=True)
++        if getattr(args, "cordapp", 0):
++            # MANDATORY for CorDA++: residual_save only doubled the GLOBAL r/alpha; the per-layer
++            # rank_pattern/alpha_pattern in adapter_config.json still hold the ORIGINAL r^l. Double them
++            # so a reload rebuilds each layer at 2r^l (scaling preserved). Without this the reload rebuilds
++            # each layer at the wrong per-layer rank and eval explodes. MUST run AFTER the conversion.
++            import cordapp_init as Cpp
++            nrp = Cpp.finalize_dynamic_rank_config(out_dir)
++            print(f"[cordapp] finalized {nrp} per-layer rank_pattern/alpha_pattern entries "
++                  f"(doubled to rank-2r^l to match the residual stacking)", flush=True)
+ 
+     cfg = {
+         "run_name": run_name, "method": args.method, "task": "commonsense_170k",

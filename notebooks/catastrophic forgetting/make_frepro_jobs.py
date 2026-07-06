@@ -71,6 +71,86 @@ LORAWD_WDS = [("wd0", "0.0"), ("wd0p1", "0.1"), ("wd0p2", "0.2"), ("wd0p3", "0.3
 CORE_LRS = {"2e4", "3e4", "5e4"}
 CORE_WDS = {"wd0p1", "wd0p2", "wd0p3"}
 
+# ================================================================================================
+# RESTART (frepro4) ADDITIONS — consortium Tier-A/B cells beyond the two original tables.
+# All resumable (add() skips any run with results/<run>/summary.json). See handoff/21 sec 2-3.
+# ================================================================================================
+# LR token -> value lookup (LORAWD_LRS + the R3 low-LR "2e-5" anchor + B4's 5e-5).
+LR_TOKENS = dict(LORAWD_LRS + [("2e5", "0.00002"), ("5e5", "0.00005")])
+
+# CorDA++ arms (PI 2026-07-06: CorDA++ REPLACES CorDA as the paper's data-aware-SVD representative;
+# old-CorDA re-run cells stay excluded). LR-swept over LORAWD_LRS + the 2e-5 native-LR cell.
+# REQUIRES train_cs_cordapp.patch applied (now MANDATORY) and gates PASSED before dispatch:
+# validate_cordapp_cpu.py (14/14) then validate_frepro_residual.py --cordapp (1 GPU). Emitted LAST
+# in each table so the earlier CLoRA/lorawd cells run while the gates complete.
+MATH_CORDAPP = {"cordapp": "--method lora --cordapp 1 --cordapp_n 5 --lora_r 64 --lora_alpha 128"}
+CS_CORDAPP   = {"cordapp": "--method lora --cordapp 1 --cordapp_n 5 --lora_r 32 --lora_alpha 64"}
+CORDAPP_LR_TOKS = [t for t, _ in LORAWD_LRS] + ["2e5"]
+
+# B4 eval-matched calibration arm (PI approved ~35 GPU-h): tests whether SC-LoRA's below-curve
+# deviation in the n=49 CS registry is a calibration artifact. Cells MATCH THE REGISTRY (lrsw)
+# CONFIGS (sclora r32/a32 s=1, lora_null r16/a16 s=1 -- NOT the frepro r32/a64 recipe) with
+# --calib_source eval_matched (windowed MMLU auxiliary_train text instead of nq_open train).
+# REQUIRES b4.patch (adds --calib_source to train_cs.py). Emitted only via --b4 1 (CS table).
+B4_CELLS = [
+    ("b4_sclora_r32",    "--method lora --sclora 1 --sclora_beta 0.5 --calib_source eval_matched "
+                         "--lora_r 32 --lora_alpha 32", ["5e5", "1e4", "3e4", "5e4"]),
+    ("b4_lora_null_r16", "--method lora --lora_null 1 --calib_source eval_matched "
+                         "--lora_r 16 --lora_alpha 16", ["2e5", "1e4", "3e4"]),
+    ("b4_cordapp_r32",   "--method lora --cordapp 1 --cordapp_n 5 --calib_source eval_matched "
+                         "--lora_r 32 --lora_alpha 64", ["1e4", "3e4"]),
+]
+
+# C2/R2: within-harness math CLoRA LR-sweep. Published-best k = k128, swept over LORAWD_LRS
+# (the lr3e4 cell dedupes against the done fixed-3e-4 baseline). CLoRA needs --method clora --clora_k.
+MATH_CLORA_SWEEP = {"clora_k128": "--method clora --clora_k 128 --lora_r 64 --lora_alpha 128"}
+
+# R1: MiLoRA native-alpha (s=1, alpha==r) APPENDIX arm — labeled distinct from the PRIMARY alpha=2r
+# `milora` arm (which keeps its name/config); LR-swept over LORAWD_LRS at the primary cutoff.
+MATH_MILORA_A1R = {"milora_a1r": "--method lora --milora 1 --lora_r 64 --lora_alpha 64"}
+CS_MILORA_A1R   = {"milora_a1r": "--method lora --milora 1 --lora_r 32 --lora_alpha 32"}
+
+# Targeted EXTRA cells: (arm_name, flags, [lr_tokens]) at the primary cutoff, over --seeds.
+#   - C5 SC-LoRA beta arms (math only): beta ENCODED in the run name so they never collide with the
+#     primary beta=0.5 `sclora` sweep. sclora_b0p8 at {2e-5,1e-4,3e-4}; b0p9 + b0p5 at 2e-5.
+#   - R3 low-LR (2e-5) disclaimer cells for lora_null + milora, one each per table.
+MATH_EXTRA = [
+    ("sclora_b0p8", "--method lora --sclora 1 --sclora_beta 0.8 --lora_r 64 --lora_alpha 128", ["2e5", "1e4", "3e4"]),
+    ("sclora_b0p9", "--method lora --sclora 1 --sclora_beta 0.9 --lora_r 64 --lora_alpha 128", ["2e5"]),
+    ("sclora_b0p5", "--method lora --sclora 1 --sclora_beta 0.5 --lora_r 64 --lora_alpha 128", ["2e5"]),
+    ("milora",      "--method lora --milora 1 --lora_r 64 --lora_alpha 128", ["2e5"]),
+    ("lora_null",   "--method lora --lora_null 1 --lora_r 64 --lora_alpha 128", ["2e5"]),
+]
+CS_EXTRA = [
+    ("milora",    "--method lora --milora 1 --lora_r 32 --lora_alpha 64", ["2e5"]),
+    ("lora_null", "--method lora --lora_null 1 --lora_r 32 --lora_alpha 64", ["2e5"]),
+]
+
+# Cutoff-2048 sensitivity anchors (math only): lora / clora_k128 / milora at lr3e4, cutoff 2048.
+# REPLACES the planned c512 anchors — new finding: MiLoRA's released config = max_len 2048, which CLoRA
+# follows (handoff/23 sec 2). The c512 lorawd cells already in the live pool stay as bonus data.
+MATH_CUTOFF_ANCHORS = [
+    ("lora",       "--method lora --lora_r 64 --lora_alpha 128"),
+    ("clora_k128", "--method clora --clora_k 128 --lora_r 64 --lora_alpha 128"),
+    ("milora",     "--method lora --milora 1 --lora_r 64 --lora_alpha 128"),
+]
+
+# R7: 3-seed headline cells (seeds 43,44; s42 already in the tables). (arm, flags, lr_token, table).
+# The two LoRA+wd WINNERS are filled AFTER the LR sweep completes (see the commented placeholders).
+HEADLINE_SEEDS = ["43", "44"]
+HEADLINE_CELLS = [
+    ("lorawd_wd0",  "--method lora --lora_r 64 --lora_alpha 128 --weight_decay 0.0", "1e4", "math"),
+    ("clora_k2048", "--method clora --clora_k 2048 --lora_r 32 --lora_alpha 64",     "3e4", "cs"),
+    # FILL AFTER SWEEP (uncomment + set winner wd/lr token):
+    # ("lorawd_<wd>", "--method lora --lora_r 64 --lora_alpha 128 --weight_decay <wval>", "<lr>", "math"),
+    # ("lorawd_<wd>", "--method lora --lora_r 32 --lora_alpha 64 --weight_decay <wval>",  "<lr>", "cs"),
+]
+
+# P2/#8: PiSSA math re-run — distinct 'frm2' prefix so it does NOT collide with the existing
+# frm_pissa results dir (diagnose the collapse offline first, then this one clean re-run).
+PISSA_RERUN = ("frm2_pissa_lr3e4_c256_s42",
+               "--method lora --pissa 1 --lora_r 64 --lora_alpha 128", "0.0003")
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -84,6 +164,8 @@ def main():
     ap.add_argument("--baselines", type=int, default=1, help="0 = skip fixed-3e-4 baselines "
                     "(CLoRA uses published numbers; DoRA/PiSSA dropped; LoRA anchor already reproduced).")
     ap.add_argument("--core", type=int, default=0, help="1 = depth-first core lorawd grid only (3x3)")
+    ap.add_argument("--b4", type=int, default=0, help="1 = emit ONLY the B4 eval-matched calibration "
+                    "cells (CS table; needs b4.patch applied to train_cs.py). Ignores --prefix.")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
 
@@ -102,8 +184,13 @@ def main():
 
     lines = []
     stats = {"target": 0, "skipped": 0}
+    emitted = set()   # dedup: the same run may be requested by >1 block (e.g. clora_k128 lr3e4
+                      # appears in both the baseline block and the CLoRA LR-sweep) -> emit once.
 
     def add(run, flags, val, seed, cut):
+        if run in emitted:
+            return
+        emitted.add(run)
         stats["target"] += 1
         if run in done:
             stats["skipped"] += 1
@@ -113,6 +200,20 @@ def main():
         ev = (f"{PY} eval_one_gpu.py --adapter /scratch/cf_models/{run} --run_name {run} "
               f"--base_model {a.base_model} --adapt_task {adapt} --ret_suite broad --ret_limit 0 --ret_max_gen {rmg}")
         lines.append(f"{train} && {ev}")
+
+    if a.b4:
+        # B4 eval-matched calibration arm ONLY (9 cells @ 1 seed): separate file, appended to the
+        # lean queue AFTER the CS grid. Resumable like everything else (skips done).
+        assert a.table == "cs", "--b4 cells are CS-table (registry-matched) only"
+        for name, flags, toks in B4_CELLS:
+            for tok in toks:
+                for s in seeds:
+                    add(f"{name}_lr{tok}_s{s}", flags, LR_TOKENS[tok], s, primary)
+        with open(a.out, "w") as f:
+            f.write("\n".join(lines) + ("\n" if lines else ""))
+        print(f"[b4/{a.table}] target={stats['target']} seeds={a.seeds}  done={stats['skipped']}  "
+              f"remaining={len(lines)} -> {a.out}")
+        return
 
     for cut in cutoffs:
         sens = (cut != primary)   # non-primary cutoff = sensitivity: only lora baseline + lorawd core
@@ -138,6 +239,57 @@ def main():
         for tok, val in LORAWD_LRS:
             for s in seeds:
                 add(f"{a.prefix}_{arm}_lr{tok}_c{primary}_s{s}", flags, val, s, primary)
+
+    # ===================== RESTART (frepro4) additions — consortium Tier-A/B =====================
+    if a.table == "math":
+        # C2/R2: within-harness math CLoRA LR-sweep (published-best k=k128); lr3e4 dedupes vs baseline.
+        for arm, flags in MATH_CLORA_SWEEP.items():
+            for tok, val in LORAWD_LRS:
+                for s in seeds:
+                    add(f"{a.prefix}_{arm}_lr{tok}_c{primary}_s{s}", flags, val, s, primary)
+        # R1: MiLoRA native-alpha (s=1) appendix arm, LR-swept.
+        for arm, flags in MATH_MILORA_A1R.items():
+            for tok, val in LORAWD_LRS:
+                for s in seeds:
+                    add(f"{a.prefix}_{arm}_lr{tok}_c{primary}_s{s}", flags, val, s, primary)
+        # C5 SC-LoRA beta arms + R3 low-LR (2e-5) disclaimer cells (targeted LR lists).
+        for arm, flags, toks in MATH_EXTRA:
+            for tok in toks:
+                for s in seeds:
+                    add(f"{a.prefix}_{arm}_lr{tok}_c{primary}_s{s}", flags, LR_TOKENS[tok], s, primary)
+        # C6 (superseded to c2048): cutoff-2048 sensitivity anchors at lr3e4.
+        for arm, flags in MATH_CUTOFF_ANCHORS:
+            for s in seeds:
+                add(f"{a.prefix}_{arm}_lr3e4_c2048_s{s}", flags, "0.0003", s, "2048")
+        # P2/#8: PiSSA math re-run (distinct frm2 prefix -> no results-dir collision).
+        prun, pflags, pval = PISSA_RERUN
+        add(prun, pflags, pval, "42", primary)
+    else:  # cs
+        # R1: MiLoRA native-alpha (s=1) appendix arm, LR-swept.
+        for arm, flags in CS_MILORA_A1R.items():
+            for tok, val in LORAWD_LRS:
+                for s in seeds:
+                    add(f"{a.prefix}_{arm}_lr{tok}_c{primary}_s{s}", flags, val, s, primary)
+        # R3 low-LR (2e-5) disclaimer cells (lora_null + milora).
+        for arm, flags, toks in CS_EXTRA:
+            for tok in toks:
+                for s in seeds:
+                    add(f"{a.prefix}_{arm}_lr{tok}_c{primary}_s{s}", flags, LR_TOKENS[tok], s, primary)
+
+    # R7: 3-seed headline cells (seeds 43,44) for THIS table's headline cells.
+    for arm, flags, tok, tbl in HEADLINE_CELLS:
+        if tbl != a.table:
+            continue
+        for s in HEADLINE_SEEDS:
+            add(f"{a.prefix}_{arm}_lr{tok}_c{primary}_s{s}", flags, LR_TOKENS[tok], s, primary)
+
+    # CorDA++ arm — EMITTED LAST on purpose: the earlier CLoRA/lorawd cells give the cordapp gates
+    # (validate_cordapp_cpu.py 14/14 -> validate_frepro_residual.py --cordapp) time to complete
+    # before any cordapp cell dispatches. If a gate FAILS, comment these lines out and relaunch.
+    for arm, flags in (MATH_CORDAPP if a.table == "math" else CS_CORDAPP).items():
+        for tok in CORDAPP_LR_TOKS:
+            for s in seeds:
+                add(f"{a.prefix}_{arm}_lr{tok}_c{primary}_s{s}", flags, LR_TOKENS[tok], s, primary)
 
     with open(a.out, "w") as f:
         f.write("\n".join(lines) + ("\n" if lines else ""))

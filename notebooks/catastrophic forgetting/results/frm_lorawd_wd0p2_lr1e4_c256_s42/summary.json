@@ -1,0 +1,33 @@
+{
+  "run_name": "frm_lorawd_wd0p2_lr1e4_c256_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/frm_lorawd_wd0p2_lr1e4_c256_s42",
+  "per_dataset": {
+    "gsm8k": 67.4,
+    "math": 13.88
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.2849,
+    "dw_sv_mean": 5.516,
+    "dw_sv_max": 16.6524,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 67.4,
+    "adapt_task": "math_faithful",
+    "bbh": 32.53,
+    "mmlu_pro": 17.06,
+    "mmlu": 31.16,
+    "arc_c": 41.47,
+    "truthfulqa": 40.59,
+    "gsm8k": 67.4,
+    "math": 13.88,
+    "retention_mean": 24.8,
+    "retention_broad": 32.56,
+    "fdelta": 0.2849,
+    "dw_sv_max": 16.6524,
+    "dw_sv_mean": 5.516
+  },
+  "git_commit": "52b1c1c0f30138b899864137fe9523b3f597944c",
+  "evaluated_at": "2026-07-06T15:00:46+03:00"
+}

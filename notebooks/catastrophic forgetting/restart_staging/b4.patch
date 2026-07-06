@@ -1,0 +1,109 @@
+--- a/train_cs.py
++++ b/train_cs.py
+@@ -85,7 +85,7 @@
+ DEFAULT_DATA = os.path.join(HERE, "repro/LLM-Adapters/ft-training_set/commonsense_170k.json")
+ 
+ 
+-def _nq_train_windows(calib_size, seqlen=2048, seed=233):
++def _nq_train_windows(calib_size, seqlen=2048, seed=233, source="nq_open"):
+     """REPO-FAITHFUL calibration text for the data-aware inits (LoRA-Null / CorDA / SC-LoRA D-).
+ 
+     HungerPWAY/LoRA-Null get_calib_data "nqopen" (== iboing/CorDA == CoffeePot1206/SC-LoRA D-;
+@@ -95,17 +95,33 @@
+     Sampling a handful of short individual questions instead (the old loader) leaves C rank-deficient
+     and the extracted subspace an arbitrary basis of the unsampled input space -- verified against
+     LoRA-Null commit 1e6808a / handoff/23 sec 1.5, 3, 4. seed 233 = repo default calib seed;
+-    the wikitext fallback preserves old behavior ONLY if nq_open is unreachable (never observed)."""
++    the wikitext fallback preserves old behavior ONLY if nq_open is unreachable (never observed).
++
++    source="eval_matched" (B4 arm, PI-approved): SAME windowed mechanism, but the text blob is MMLU
++    auxiliary_train (question + choices + answer; disjoint from every MMLU/MMLU-Pro TEST split)
++    instead of nq_open train. Tests whether a data-aware method's retention deviation is a
++    calibration-corpus artifact: the "knowledge to preserve" is drawn from the same distribution
++    the retention eval probes."""
+     import random as _rnd
+     from datasets import load_dataset as _ld
+     _rnd.seed(seed)
+-    try:
+-        nq = _ld("google-research-datasets/nq_open", split="train")
+-        tot_text = "\n\n".join(nq["question"])
+-    except Exception as e:
+-        print(f"[calib] nq_open load failed ({e}); falling back to wikitext calib", flush=True)
+-        wt = _ld("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
+-        tot_text = "\n\n".join(wt["text"])
++    if source == "eval_matched":
++        mm = _ld("cais/mmlu", "auxiliary_train", split="train")
++        rows = []
++        for ex in mm:
++            ch = list(ex["choices"])
++            rows.append(ex["question"] + "\n" + "\n".join(ch) + "\nAnswer: " + ch[int(ex["answer"])])
++        tot_text = "\n\n".join(rows)
++        print(f"[calib] eval_matched source: mmlu auxiliary_train, {len(rows)} rows, "
++              f"{len(tot_text)} chars", flush=True)
++    else:
++        try:
++            nq = _ld("google-research-datasets/nq_open", split="train")
++            tot_text = "\n\n".join(nq["question"])
++        except Exception as e:
++            print(f"[calib] nq_open load failed ({e}); falling back to wikitext calib", flush=True)
++            wt = _ld("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
++            tot_text = "\n\n".join(wt["text"])
+     prompts = []
+     hi = max(0, len(tot_text) - seqlen - 1)
+     for _ in range(calib_size):
+@@ -185,6 +201,12 @@
+     ap.add_argument("--lora_null_calib_size", type=int, default=256)
+     ap.add_argument("--lora_null_dim", type=int, default=0, help="Null-space dimensionality; 0 -> rank-matched (=lora_r). See fidelity flag in lora_null_init.py.")
+     ap.add_argument("--lora_null_freeze_a", type=int, default=0, help="Freeze A during training (paper's best-preservation variant); default 0 trains both (head-to-head fairness).")
++    # B4 eval-matched calibration arm (PI-approved): which corpus feeds the data-aware calibration
++    # loaders (sclora D- / lora_null / cordapp). eval_matched = windowed MMLU auxiliary_train
++    # (disjoint from all test splits) instead of nq_open train; same windowed-2048 mechanism.
++    ap.add_argument("--calib_source", choices=["nq_open", "eval_matched"], default="nq_open",
++                    help="Calibration corpus for the sclora/lora_null/cordapp loaders. eval_matched "
++                         "= MMLU auxiliary_train windows (B4 registry-artifact test).")
+     # CorDA++ (dynamic Context-oriented Decomposition; cordapp_init.py). OPTIONAL-APPLY: Tier-B, gated
+     # (PI decision P6 = controlled-only, contingent on validate_cordapp_cpu.py + a 1-GPU 0-step gate PASS).
+     ap.add_argument("--cordapp", type=int, default=0, help="CorDA++ dynamic cov-selection + per-layer rank "
+@@ -254,7 +276,7 @@
+         # Precompute on the RAW model (BEFORE the PEFT wrap): stream N calib rounds -> per layer pick the
+         # best covariance (Eq 8) -> allocate per-layer ranks to a tau param-matched to the fixed-rank arm
+         # (Eq 9-10). Windowed nq_open calib (repo-faithful, full-rank C) as for corda/lora_null.
+-        _cpp_prompts = _nq_train_windows(_csz)
++        _cpp_prompts = _nq_train_windows(_csz, source=args.calib_source)
+         cordapp_res = Cpp.precompute_cordapp(model, _cpp_prompts, tokenizer, _targets,
+                                              fixed_rank=args.lora_r, N=args.cordapp_n,
+                                              calib_size=_csz, max_len=2048, bs=1,
+@@ -308,12 +330,12 @@
+         # repo "MetaMATH" branch. [CHANGES QUEUED: alters the sclora cells' calibration -> requires the
+         # kill+relaunch to take effect on frm_sclora_* / frc_sclora_*.]
+         dplus = [run_lib.train_prompt(dp) for dp in data.select(range(min(args.sclora_calib_size, len(data))))]
+-        dminus = _nq_train_windows(args.sclora_calib_size)
++        dminus = _nq_train_windows(args.sclora_calib_size, source=args.calib_source)
+         # output-side balanced 2nd-moment with beta+sign folded in (repo-faithful); then eigh top-r.
+         M = Si.collect_sclora_M(model, dplus, dminus, tokenizer, beta=args.sclora_beta,
+                                 max_len=2048)
+         err = Si.apply_sclora(model, M, r=args.lora_r)
+-        print(f"[sclora] beta={args.sclora_beta} (output-side, windowed nq_open D-) init applied; "
++        print(f"[sclora] beta={args.sclora_beta} (output-side, windowed {args.calib_source} D-) init applied; "
+               f"loss-preserving err={err:.2e}", flush=True)
+ 
+     if getattr(args, "lora_null", 0):
+@@ -325,7 +347,8 @@
+         # questions, ~2.5k tok, bs=4 padded) left C rank-deficient and the "null space" an arbitrary basis
+         # of the unsampled input subspace -- so the pre-restart LoRA-Null cells did NOT test LoRA-Null.
+         # This REPLACES the 12 degenerate lora_null cells (math lean 50-55 / CS 98-103).
+-        kprompts = _nq_train_windows(args.lora_null_calib_size)   # seed 233, 2048-token windows
++        kprompts = _nq_train_windows(args.lora_null_calib_size,
++                                     source=args.calib_source)   # seed 233, 2048-token windows
+         cov = Ni.collect_lora_null_cov(model, kprompts, tokenizer,
+                                        calib_size=args.lora_null_calib_size,
+                                        max_len=2048, bs=1)   # bs=1: per-sample max-norm, zero padding
+@@ -341,7 +364,7 @@
+             for _n, _m in model.named_modules():
+                 if "default" in getattr(_m, "lora_A", {}):
+                     _m.lora_A["default"].weight.requires_grad_(False)
+-        print(f"[lora_null] null-space init applied to {len(cov)} layers "
++        print(f"[lora_null] null-space init (calib={args.calib_source}) applied to {len(cov)} layers "
+               f"(null_dim={nd or args.lora_r}, freeze_a={bool(args.lora_null_freeze_a)}); "
+               f"loss-preserving err={err:.2e}", flush=True)
+ 

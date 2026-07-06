@@ -1,0 +1,21 @@
+--- a/build_lean.py
++++ b/build_lean.py
+@@ -29,7 +29,7 @@
+ 
+ 
+ out, evalonly, full, skip = [], 0, 0, 0
+-for f in ["jobs/frepro_math.txt", "jobs/frepro_cs.txt"]:
++for f in ["jobs/frepro4_math.txt", "jobs/frepro4_cs.txt"]:
+     for line in open(f):
+         line = line.rstrip("\n")
+         if not line.strip():
+@@ -46,7 +46,7 @@
+             out.append(line.strip())
+             full += 1
+ 
+-with open("jobs/frepro_lean.txt", "w") as fh:
++with open("jobs/frepro4_lean.txt", "w") as fh:
+     fh.write("\n".join(out) + "\n")
+ print(f"eval-only (preserved trained): {evalonly}  full train+eval: {full}  "
+-      f"skipped(done): {skip}  total: {len(out)} -> jobs/frepro_lean.txt")
++      f"skipped(done): {skip}  total: {len(out)} -> jobs/frepro4_lean.txt")

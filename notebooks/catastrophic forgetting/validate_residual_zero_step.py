@@ -78,9 +78,12 @@ def main():
             torch.cuda.empty_cache()
             dmax = reload_delta_max(td, R)
         results[method] = (err, dmax)
+        # init-error gate (MiLoRA expert): require BOTH a loss-preserving init (err < TOL) and a
+        # correct 0-step reload (dmax < TOL) -- an exploded/degenerate init now FAILS the gate.
+        passed = (dmax < TOL) and (err < TOL)
         print(f"[{method:10s}] init loss-preserve err={err:.2e}  "
-              f"0-step reloaded |delta|max={dmax:.2e}  {'PASS' if dmax < TOL else 'FAIL'}", flush=True)
-    ok = all(d < TOL for _e, d in results.values())
+              f"0-step reloaded |delta|max={dmax:.2e}  {'PASS' if passed else 'FAIL'}", flush=True)
+    ok = all((d < TOL and e < TOL) for e, d in results.values())
     print("VALIDATION GATE:", "PASS" if ok else "FAIL", flush=True)
     sys.exit(0 if ok else 1)
 
