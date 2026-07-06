@@ -1,0 +1,33 @@
+{
+  "run_name": "frm_clora_k128_lr3e4_c256_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/frm_clora_k128_lr3e4_c256_s42",
+  "per_dataset": {
+    "gsm8k": 59.59,
+    "math": 14.5
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 1.0793,
+    "dw_sv_mean": 15.2187,
+    "dw_sv_max": 27.0206,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 59.59,
+    "adapt_task": "math_faithful",
+    "bbh": 27.55,
+    "mmlu_pro": 9.49,
+    "mmlu": 23.74,
+    "arc_c": 29.78,
+    "truthfulqa": 45.84,
+    "gsm8k": 59.59,
+    "math": 14.5,
+    "retention_mean": 18.52,
+    "retention_broad": 27.28,
+    "fdelta": 1.0793,
+    "dw_sv_max": 27.0206,
+    "dw_sv_mean": 15.2187
+  },
+  "git_commit": "ec6bfea2ce1aa66da0dd60fb295b66dc8e57d8f6",
+  "evaluated_at": "2026-07-05T22:08:49+03:00"
+}

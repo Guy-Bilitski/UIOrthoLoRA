@@ -140,7 +140,8 @@ def main():
     ap.add_argument("--use_dora", type=int, default=0, help="DoRA: decouple magnitude (m) from direction. Test the adaptation-per-||dW|| frontier vs retention (DoRA never eval'd for retention).")
     ap.add_argument("--corda", type=int, default=0, help="CorDA-KPA data-aware init (faithful port; needs --lora_alpha==--lora_r). corda_init.py.")
     ap.add_argument("--corda_calib_size", type=int, default=256)
-    ap.add_argument("--milora", type=int, default=0, help="MiLoRA minor (bottom-r) SVD init; no calib. milora_init.py. Needs --lora_alpha==--lora_r.")
+    ap.add_argument("--milora", type=int, default=0, help="MiLoRA minor (bottom-r) SVD init; no calib. milora_init.py.")
+    ap.add_argument("--pissa", type=int, default=0, help="PiSSA major (top-r) SVD init; no calib. data_aware_init.pissa_BAR. Residual method; residual_save preserves any scaling (alpha!=r OK).")
     ap.add_argument("--sclora", type=int, default=0, help="SC-LoRA data-aware init (D+/D- covariance). sclora_init.py. Needs --lora_alpha==--lora_r.")
     ap.add_argument("--sclora_beta", type=float, default=0.5, help="SC-LoRA balance: top-r eigvecs of (1-beta)Cov+ - beta*Cov- (swept knob).")
     ap.add_argument("--sclora_calib_size", type=int, default=256)
@@ -210,7 +211,7 @@ def main():
     if getattr(args, "corda", 0):
         import corda_init as Ci
         from datasets import load_dataset as _ld
-        assert args.lora_alpha == args.lora_r, "CorDA needs scaling=1 -> set --lora_alpha == --lora_r"
+        # scaling!=1 OK: residual_save preserves any alpha/r (validated); loss-preservation checked by err.
         # CorDA-KPA freezes the directions most responsive to the calibration data (the knowledge to
         # preserve). Paper/repo default = QA knowledge (nq_open), NOT general LM text. FIXED 2026-06-29
         # (was wikitext-2 -> preserved the wrong subspace; matches sclora/lora_null which use nq_open).
@@ -227,14 +228,21 @@ def main():
 
     if getattr(args, "milora", 0):
         import milora_init as Mi
-        assert args.lora_alpha == args.lora_r, "MiLoRA needs scaling=1 -> set --lora_alpha == --lora_r"
+        # residual_save preserves any scaling (alpha!=r OK, e.g. faithful CLoRA r64/alpha128);
+        # loss-preservation is checked by the returned err + validate_residual_zero_step.py.
         err = Mi.apply_milora(model, r=args.lora_r)
-        print(f"[milora] minor-SVD init applied; loss-preserving err={err:.2e}", flush=True)
+        print(f"[milora] minor-SVD init applied (alpha={args.lora_alpha},r={args.lora_r}); loss-preserving err={err:.2e}", flush=True)
+
+    if getattr(args, "pissa", 0):
+        import data_aware_init as Di
+        # PiSSA = major (top-r) SVD init; residual method (residual_save preserves scaling).
+        err = Di.inject_lora_init(model, Di.pissa_BAR(args.lora_r))
+        print(f"[pissa] major-SVD init applied (alpha={args.lora_alpha},r={args.lora_r}); loss-preserving err={err:.2e}", flush=True)
 
     if getattr(args, "sclora", 0):
         import sclora_init as Si
         from datasets import load_dataset as _ld
-        assert args.lora_alpha == args.lora_r, "SC-LoRA needs scaling=1 -> set --lora_alpha == --lora_r"
+        # scaling!=1 OK: residual_save preserves any alpha/r (validated); loss-preservation checked by err.
         # D+ = the finetuning task; D- = world knowledge to preserve. Repo uses NQ-open (nq_open).
         dplus = [run_lib.train_prompt(dp) for dp in data.select(range(min(args.sclora_calib_size, len(data))))]
         try:
@@ -254,7 +262,7 @@ def main():
     if getattr(args, "lora_null", 0):
         import lora_null_init as Ni
         from datasets import load_dataset as _ld
-        assert args.lora_alpha == args.lora_r, "LoRA-Null needs scaling=1 -> set --lora_alpha == --lora_r"
+        # scaling!=1 OK: residual_save preserves any alpha/r (validated); loss-preservation checked by err.
         # Null space of KNOWLEDGE-input activations to preserve (repo default: nq_open, 256 samples).
         try:
             nq = _ld("google-research-datasets/nq_open", split="validation")
@@ -275,10 +283,11 @@ def main():
               f"(null_dim={nd or args.lora_r}, freeze_a={bool(args.lora_null_freeze_a)}); "
               f"loss-preserving err={err:.2e}", flush=True)
 
-    # CorDA/MiLoRA/SC-LoRA/LoRA-Null overwrite base.weight=W_res but PEFT saves only the adapter ->
+    # CorDA/MiLoRA/SC-LoRA/LoRA-Null/PiSSA overwrite base.weight=W_res but PEFT saves only the adapter ->
     # snapshot the init adapter now so we can persist a W0-relative (rank-2r) adapter at save.
     residual_method = bool(getattr(args, "corda", 0) or getattr(args, "milora", 0)
-                           or getattr(args, "sclora", 0) or getattr(args, "lora_null", 0))
+                           or getattr(args, "sclora", 0) or getattr(args, "lora_null", 0)
+                           or getattr(args, "pissa", 0))
     init_adapter = None
     if residual_method:
         import residual_save as Rs

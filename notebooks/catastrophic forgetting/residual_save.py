@@ -4,14 +4,17 @@ in memory, but PEFT save_pretrained persists ONLY the adapter -> at eval PeftMod
 ORIGINAL W0 and adds the trained adapter on top of the WRONG base (the -B_init@A_init cancellation
 is lost). Symptom: healthy training loss but exploded evaluated ||dW||_F and ~0 retention.
 
-Fix = standard PiSSA->LoRA residual conversion. We require scaling==1 (alpha==r) for these methods,
-so the W0-relative update is exactly
-    dW = B_trained@A_trained - B_init@A_init
-which is rank <= 2r. Stack it into a rank-2r LoRA adapter (scaling still 1):
+Fix = standard PiSSA->LoRA residual conversion. The init methods fold the LoRA scaling
+s=alpha/r into B (they store B/s, validated loss-preserving), so the W0-relative update
+after training is
+    dW = s * (B_trained@A_trained - B_init@A_init)
+which is rank <= 2r. Stack it into a rank-2r LoRA adapter, keeping the SAME scaling s:
     A'' = [A_trained ; A_init]   (2r, in)
     B'' = [B_trained , -B_init]  (out, 2r)
-so that  1 * B''@A'' = B_trained@A_trained - B_init@A_init = dW  relative to the ORIGINAL W0.
-The eval/forensics harness (which reloads W0) is then correct and UNCHANGED.
+so that  s * B''@A'' = s*(B_trained@A_trained - B_init@A_init) = dW  relative to the ORIGINAL W0.
+We keep s by setting r'=2r, alpha'=2*alpha_old. Works for ANY scaling (incl. the faithful
+CLoRA math alpha=128,r=64 -> s=2); reduces to the old alpha==r (s=1) case. The eval/forensics
+harness (which reloads W0) is then correct and UNCHANGED.
 
 Self-check property: a 0-step run converts to dW=0 (B_init cancels itself) -> eval == base model.
 """
@@ -56,9 +59,14 @@ def convert_saved_to_w0_relative(out_dir, init):
     save_file(out, path)
     cfgp = os.path.join(out_dir, "adapter_config.json")
     cfg = json.load(open(cfgp))
-    assert cfg.get("lora_alpha") == cfg.get("r"), \
-        f"residual conversion assumes scaling==1 (alpha==r); got alpha={cfg.get('lora_alpha')} r={cfg.get('r')}"
+    alpha_old = cfg.get("lora_alpha")
+    # Preserve the ORIGINAL scaling s = alpha/r through the rank-2r stacking. With r'=2r,
+    # alpha'=2*alpha_old keeps s' = alpha'/r' = alpha_old/r_old = s, so
+    # s'*B''@A'' = s*(B_tr@A_tr - B_init@A_init) = dW relative to W0. Both trained and init
+    # factors are already stored at this same scaling (init methods fold s into B), so this
+    # is exact for ANY scaling (e.g. faithful CLoRA math alpha=128,r=64 -> s=2). The 0-step
+    # self-check (dW=0) still holds. Validate per-arm with validate_residual_zero_step.py.
     cfg["r"] = 2 * r_old
-    cfg["lora_alpha"] = 2 * r_old                        # keep scaling = alpha/r = 1
+    cfg["lora_alpha"] = 2 * alpha_old                    # keep scaling = alpha/r unchanged
     json.dump(cfg, open(cfgp, "w"), indent=2)
     return n, r_old

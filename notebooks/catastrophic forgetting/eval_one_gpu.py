@@ -44,10 +44,13 @@ def main():
     ap.add_argument("--ret_suite", choices=["core", "broad"], default="core",
                     help="core=BBH+MMLU-Pro (backward-comparable retention_mean); "
                          "broad adds MMLU+ARC-c+TruthfulQA -> retention_broad.")
-    ap.add_argument("--adapt_task", choices=["cs", "gsm8k"], default="cs",
+    ap.add_argument("--adapt_task",
+                    choices=["cs", "gsm8k", "gsm8k_faithful", "math", "math_faithful"], default="cs",
                     help="in-domain adaptation metric: cs=8-task commonsense (default); "
-                         "gsm8k=math (lm-eval gsm8k exact_match) for the 2nd adaptation domain. "
-                         "cs_avg holds whichever is selected so the adapt axis stays uniform.")
+                         "gsm8k=math via lm-eval (5-shot, legacy); gsm8k_faithful=LLM-Adapters "
+                         "0-shot instruction-template GSM8K (last-number); math=Hendrycks MATH "
+                         "(is_equiv); math_faithful=BOTH GSM8K+MATH faithful (CLoRA Table 3 repro). "
+                         "cs_avg holds the primary (gsm8k) so the adapt axis stays uniform.")
     args = ap.parse_args()
     run_name = args.run_name or os.path.basename(os.path.normpath(args.adapter))
 
@@ -87,7 +90,7 @@ def main():
         pass
     print(f"==== EVAL {run_name} (method={method}) ====", flush=True)
 
-    # in-domain adaptation: commonsense (8-task) or math (gsm8k)
+    # in-domain adaptation: commonsense (8-task) or math (gsm8k lm-eval / faithful GSM8K+MATH)
     if args.adapt_task == "gsm8k":
         from lm_eval import simple_evaluate
         from lm_eval.models.huggingface import HFLM
@@ -99,6 +102,20 @@ def main():
         _em = next((v for k, v in _row.items() if k.startswith("exact_match") and "stderr" not in k), None)
         cs = {"gsm8k": round(100 * _em, 2) if _em is not None else None}
         cs_avg = cs["gsm8k"]
+    elif args.adapt_task in ("gsm8k_faithful", "math", "math_faithful"):
+        # Faithful CLoRA/LLM-Adapters math eval: 0-shot instruction template (== training
+        # template) + answer extraction. See math_eval.py / handoff/20.
+        import math_eval as ME
+        cs = {}
+        if args.adapt_task in ("gsm8k_faithful", "math_faithful"):
+            g_acc, g_c, g_t = ME.run_gsm8k_faithful(model, tokenizer, limit=args.eval_limit)
+            cs["gsm8k"] = round(100 * g_acc, 2)
+            print(f"[{run_name}] GSM8K(faithful)={cs['gsm8k']} ({g_c}/{g_t})", flush=True)
+        if args.adapt_task in ("math", "math_faithful"):
+            m_acc, m_c, m_t, m_pf = ME.run_math_hendrycks(model, tokenizer, limit=args.eval_limit)
+            cs["math"] = round(100 * m_acc, 2)
+            print(f"[{run_name}] MATH={cs['math']} ({m_c}/{m_t}, parse_fail={m_pf})", flush=True)
+        cs_avg = cs.get("gsm8k", cs.get("math"))
     else:
         cs = {}
         for ds in CS_DATASETS:
@@ -145,6 +162,7 @@ def main():
     ret_broad = round(sum(bvals) / len(bvals), 2) if (args.ret_suite == "broad" and bvals) else None
 
     headline = {"cs_avg": cs_avg, "adapt_task": args.adapt_task, **ret,
+                **{k: cs[k] for k in ("gsm8k", "math") if k in cs},
                 "retention_mean": ret_mean, "retention_broad": ret_broad,
                 "fdelta": fd.get("fdelta_token_weighted"),
                 "dw_sv_max": fd.get("dw_sv_max"), "dw_sv_mean": fd.get("dw_sv_mean")}
