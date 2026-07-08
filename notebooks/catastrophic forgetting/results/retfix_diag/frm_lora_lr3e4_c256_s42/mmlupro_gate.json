@@ -1,0 +1,10 @@
+{
+  "n": 140,
+  "stock_hit": 96,
+  "tolerant_hit": 111,
+  "tolerant_correct": 7,
+  "has_answer_is_colon": 83,
+  "letter_never_emitted": 22,
+  "stock_score_pct": 3.57,
+  "tolerant_score_pct": 5.0
+}

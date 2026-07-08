@@ -1,0 +1,9 @@
+{
+  "base_model": "meta-llama/Llama-2-7b-hf",
+  "bbh_fewshot_fullset": 32.96,
+  "gen_cap": 1024,
+  "max_len": 4096,
+  "paper_ceiling": 33.1,
+  "spotcheck_lim40": 36.57,
+  "metric_fix_applied": true
+}

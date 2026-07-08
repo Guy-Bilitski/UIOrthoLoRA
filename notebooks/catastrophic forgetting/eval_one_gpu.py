@@ -158,12 +158,18 @@ def main():
              "arc_challenge": "arc_c", "truthfulqa_mc2": "truthfulqa"}
     ret = {LABEL[t]: _metric(t) for t in tasks}
     ret_mean = round(((ret.get("bbh") or 0) + (ret.get("mmlu_pro") or 0)) / 2, 2)
+    # Format-robust math retention axis (P1, handoff/22): BBH answer-only alone.
+    # MMLU-Pro's letter-regex cannot parse MetaMath-style answers ("The answer
+    # is: 42"), so retention_mean is broken for math-trained cells. Base ceiling
+    # (Llama-2, full set, answer-only) = 33.10.
+    ret_bbh = ret.get("bbh")
     bvals = [v for v in ret.values() if v is not None]
     ret_broad = round(sum(bvals) / len(bvals), 2) if (args.ret_suite == "broad" and bvals) else None
 
     headline = {"cs_avg": cs_avg, "adapt_task": args.adapt_task, **ret,
                 **{k: cs[k] for k in ("gsm8k", "math") if k in cs},
-                "retention_mean": ret_mean, "retention_broad": ret_broad,
+                "retention_mean": ret_mean, "retention_bbh": ret_bbh,
+                "retention_broad": ret_broad,
                 "fdelta": fd.get("fdelta_token_weighted"),
                 "dw_sv_max": fd.get("dw_sv_max"), "dw_sv_mean": fd.get("dw_sv_mean")}
     summary = {"run_name": run_name, "method": method, "adapter": args.adapter,

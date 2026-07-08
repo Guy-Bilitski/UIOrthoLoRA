@@ -1,0 +1,8 @@
+{
+  "n": 270,
+  "exact_match": 24,
+  "target_in_gen": 37,
+  "empty_gen": 60,
+  "metamath_style": 3,
+  "verdict": "REAL-FORGETTING: generations do not contain the targets"
+}
