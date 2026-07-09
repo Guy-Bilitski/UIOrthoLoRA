@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>8, fair LR sweep</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-09 16:25 IDT</b></span>
+      <span>Last updated · <b>2026-07-09 16:55 IDT</b></span>
     </div>
   </header>
 
@@ -110,7 +110,7 @@
     <p class="lead">All nine methods share the same form — a trainable low-rank update ΔW = A·B added on top of the frozen pretrained weights. What distinguishes them is only <em>how that update is initialized or constrained</em>, not the A·B form itself.</p>
     <h3>Baselines</h3>
     <p><strong>LoRA</strong> — the standard low-rank adapter; A random, B zero, so the update starts at zero and grows freely. No geometric constraint; its size is governed by learning rate, rank and training length.<br>
-    <strong>LoRA + weight decay</strong> <span class="tag ours">ours</span> — plain LoRA with an L2/weight-decay penalty that directly shrinks the update size ‖ΔW‖. Geometrically identical to LoRA, but with one knob that trades a little task fit for less forgetting, at essentially zero extra cost.<br>
+    <strong>LoRA + weight decay</strong> <span class="tag ours">ours</span> — plain LoRA trained with AdamW weight decay on the adapter factors A, B. The decay shrinks the L2 (Frobenius) norm of those trainable factors; since ΔW is built from A·B, this <em>indirectly</em> reduces the effective update's functional magnitude (our measured F<sub>Δ</sub>) — it does not penalize ΔW directly. It imposes <em>no</em> geometric structure (unlike the SVD-init methods below): the same rank-<em>r</em> LoRA parametrization plus one scalar knob that trades a little task fit for less forgetting, at essentially zero extra cost.<br>
     <strong>DoRA</strong> — splits each weight into a magnitude and a direction, applying the LoRA update to the direction and learning the magnitude separately; designed to close the gap to full fine-tuning, not specifically to reduce forgetting.</p>
     <h3>SVD-initialized</h3>
     <p><strong>PiSSA</strong> — initializes the adapter from the base weight's <em>principal</em> (largest) singular directions; training begins on the most influential directions, so updates tend to be large and, in our study, forget the most.<br>
@@ -228,20 +228,20 @@
     <p class="lead">The fancy methods are not free. Beyond the accuracy–retention picture, they add initialization work, training-time memory, or wall-clock — for the same trainable-parameter budget. <strong>LoRA+wd sits on the efficiency frontier at zero added cost.</strong></p>
     <div class="tbl-scroll">
       <table>
-        <caption>Per-method cost (Llama-2-7B, all 160 target modules, r=64 = 112M trainable params for every method). Init = one-time precompute before training; extras are relative to plain LoRA.</caption>
-        <thead><tr><th>Adapter</th><th>Init precompute</th><th>Train-time extra memory</th><th>Wall-clock</th></tr></thead>
+        <caption>Per-method cost (Llama-2-7B, all 160 target modules, r=64 = 112M trainable params for every method). "Init" = one-time precompute before training. "Extra memory" and "wall-clock" are stated <strong>relative to plain LoRA</strong>: the shared baseline is ~55 GB GPU memory (7B in bf16 + activations + optimizer state) and a ~5 GPU-h train+eval run per cell. Extra memory is <strong>ADDITIONAL to that 55 GB baseline</strong>, not a total; "—" means nothing beyond it.</caption>
+        <thead><tr><th>Adapter</th><th>Init precompute (one-time)</th><th>Extra train memory (on top of ~55 GB)</th><th>Train wall-clock</th></tr></thead>
         <tbody>
-          <tr class="hi"><td>LoRA + wd</td><td>none <span class="dim">(wd is a free flag)</span></td><td>none</td><td class="win">1.00×</td></tr>
-          <tr><td>LoRA</td><td>none</td><td>none</td><td>1.00×</td></tr>
-          <tr><td>MiLoRA / PiSSA</td><td>160 base-weight SVDs</td><td>none</td><td>1.00×</td></tr>
-          <tr><td>DoRA</td><td>none</td><td>small</td><td class="bad">2.13×</td></tr>
-          <tr><td>CLoRA</td><td>none</td><td class="bad">frozen matrices, 0.42–6.7 GB (by k)</td><td>1.14×</td></tr>
-          <tr><td>SC-LoRA / LoRA-Null</td><td>256–512 calib forward passes + eigendecomp <span class="dim">(~22 GB transient)</span></td><td>none</td><td>~1.0×</td></tr>
-          <tr><td>CorDA++</td><td>1,280 calib forward passes + 5× per-layer decomp</td><td>none</td><td>~1.0×</td></tr>
+          <tr class="hi"><td>LoRA + wd</td><td>none <span class="dim">(wd is a free flag)</span></td><td>—</td><td class="win">1.00×</td></tr>
+          <tr><td>LoRA</td><td>none</td><td>—</td><td>1.00×</td></tr>
+          <tr><td>MiLoRA / PiSSA</td><td>160 base-weight SVDs, ~minutes</td><td>—</td><td>1.00×</td></tr>
+          <tr><td>DoRA</td><td>none</td><td>small (norm buffers)</td><td class="bad">2.13×</td></tr>
+          <tr><td>CLoRA</td><td>none</td><td class="bad">+0.42–6.7 GB frozen matrices (by k)</td><td>1.14×</td></tr>
+          <tr><td>SC-LoRA / LoRA-Null</td><td>256 calib fwd passes + eigendecomp, ~few min <span class="dim">(+22 GB transient, init only)</span></td><td>—</td><td>1.00×</td></tr>
+          <tr><td>CorDA++</td><td>1,280 calib fwd passes (5 rounds) + per-layer decomp, <strong>~1 GPU-h</strong></td><td>—</td><td>1.00×</td></tr>
         </tbody>
       </table>
     </div>
-    <p>CLoRA's cost is memory: it holds a frozen regularization block whose size scales with its subspace k — <strong>0.42 GB at k=128 rising to 6.7 GB at k=2048</strong>, which at the default k=512 (1.7 GB) is already 8× the trainable LoRA weights, for no added capacity. The data-aware methods pay their bill at initialization (hundreds to &gt;1,000 full 7B forward passes plus a ~22 GB transient covariance buffer); DoRA pays 2.1× at every step. LoRA+wd pays none of these.</p>
+    <p><strong>Reading the costs concretely.</strong> The SVD-init methods (MiLoRA, PiSSA) factor all 160 base matrices in a few minutes — negligible. The calibration methods run real 7B forward passes before training: SC-LoRA / LoRA-Null need ~256 (a few minutes) and hold a ~22 GB covariance buffer during init only; CorDA++ needs 1,280 (5 sampling rounds) and, per its own paper (Table IX), spends <strong>~1 GPU-h precomputing — roughly 20% on top of the ~5 GPU-h training run</strong>. DoRA instead pays <strong>2.1× the wall-clock at every step</strong>. CLoRA's cost is memory, and it is <strong>additional</strong> to the shared ~55 GB footprint: a frozen regularization block of <strong>+0.42 GB at k=128 rising to +6.7 GB at k=2048</strong> (at the default k=512, +1.7 GB — already 8× the trainable LoRA weights) for no added capacity. LoRA and LoRA+wd pay <em>none</em> of these — zero init, no extra memory, plain-LoRA wall-clock.</p>
   </section>
 
   <!-- 6 CE FORGETTING -->

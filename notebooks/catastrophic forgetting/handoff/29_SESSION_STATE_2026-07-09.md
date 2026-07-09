@@ -77,12 +77,25 @@ adversarial-critic, data-verifier.
 - fleet_findings.md → paper/writing/fleet_findings.md (all 9 expert digests + efficiency + geometry + CE).
 - integration_notes.md → paper/writing/integration_notes.md (reviewer B1/M/m fixes + section clarity content).
 
-## GPU HEALTH (17:09 check): both nodes' 16 GPUs saturated. Node A had 2 B200s (GPU1,2) HUNG 7.5h on
-frm_milora_lr2e4/lr5e4_c256_s42 BBH eval — deadlocked at lm-eval BBH init (154 threads sleeping, CPU frozen,
-0% util, MATH/CS already computed=64.44/14.6 but no summary.json). Killed both (rc=-9); frepro4 pool
-immediately relaunched SC-LoRA cells on the freed slots. WATCH: the milora BBH-init hang may recur; if new
-evals stall at "generation_kwargs: {'max_gen_toks': 1024}" with 0% util for >20min, kill+re-queue.
-RE-EVAL OWED (non-headline, MiLoRA math competitor): frm_milora_lr2e4_c256_s42, frm_milora_lr5e4_c256_s42.
+## GPU HEALTH / INCIDENTS (2026-07-09 evening):
+1. Node A GPU1,2 HUNG 7.5h on frm_milora_lr2e4/lr5e4_c256_s42 BBH eval — deadlocked at lm-eval BBH init
+   (154 threads sleeping, CPU frozen, 0% util, MATH/CS computed=64.44/14.6 but no summary.json). Killed both.
+   WATCH: if new evals stall at "generation_kwargs: {'max_gen_toks': 1024}" 0% util >20min, kill+re-queue.
+2. **POOL-KILLER (RESOLVED, committed e3e3f7b2):** repo-cleanup archived norm_trace.py into archive/analysis/
+   but train_cs.py:410 + uio_inprocess.py:171 import it → EVERY train_cs.py launch died rc=1
+   (ModuleNotFoundError). Burned ~36 frepro4_main5 pool cells over the ~2.5h session-limit window (agents +
+   I were blocked). FIX: cp archive/analysis/norm_trace.py ./ (restored to live cwd), verified import+compile,
+   committed+pushed. Node B (d002) UNAFFECTED (kept its rsync'd copy of norm_trace.py). VENV PATH: use
+   /home/guy/UIOrthoLoRA/.venv/bin/python (NOT ./.venv). Legacy uio_inprocess.py also imports missing
+   forensics/leakage but is NOT on the live eval path (eval_one_gpu works on both nodes) — leave noted-only.
+3. **RECOVERY (committed 549ebe3d):** rebuilt Node A auto_dispatch queue jobs/master_dispatch.txt: dropped the
+   57 Qwen cells (d002 owns them = dedup) + added the 36 norm_trace-orphaned CLoRA-k-grid/math cells (no
+   competing owner) + the 2 hung milora cells → now 103 cells (65 frc_ CS reservoir + 36 recovery + 2 milora).
+   Restarted auto_dispatch via setsid (pid ~1468389, --jobs master_dispatch.txt --gpus 0-7 --tag disp); it
+   read 101 at restart (the 2 milora were appended after) → do ONE consolidated restart later to also pick up
+   the 2 milora + the 7 new cells (handoff/28). Detached trains survive dispatcher restarts. Both nodes' 16
+   GPUs saturated after recovery. d002 dispatcher = auto_dispatch.py --jobs frepro4_qwen_B_keep.txt (44 Qwen,
+   0 done yet — evals are long ~4-5h each; watch throughput vs deadline).
 
 ## GOTCHAS: setsid-not-run_in_background (above); gitignore ignores **/*.md,**/*.txt,.claude/ (negations
 added — verify new file types with `git check-ignore`); commit+push every milestone.
