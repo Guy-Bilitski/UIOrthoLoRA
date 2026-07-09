@@ -207,3 +207,6 @@ run_state/
 !.claude/
 .claude/*
 !.claude/agents/
+
+# geometry-drift regenerable intermediate (3.4GB of base-W SVD tensors)
+notebooks/catastrophic forgetting/results/geo_drift/base_svd/
