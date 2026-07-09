@@ -1,0 +1,32 @@
+{
+  "run_name": "qwswm_SMOKE_lorawd_lr5e4_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/qwswm_SMOKE_lorawd_lr5e4_s42",
+  "per_dataset": {
+    "gsm8k": 43.75
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.0011,
+    "dw_sv_mean": 0.0253,
+    "dw_sv_max": 0.0898,
+    "n_matrices": 140
+  },
+  "headline": {
+    "cs_avg": 43.75,
+    "adapt_task": "gsm8k",
+    "bbh": 47.92,
+    "mmlu_pro": 44.64,
+    "mmlu": 75.11,
+    "arc_c": 56.25,
+    "truthfulqa": 66.58,
+    "gsm8k": 43.75,
+    "retention_mean": 46.28,
+    "retention_bbh": 47.92,
+    "retention_broad": 58.1,
+    "fdelta": 0.0011,
+    "dw_sv_max": 0.0898,
+    "dw_sv_mean": 0.0253
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-09T16:59:15+03:00"
+}
