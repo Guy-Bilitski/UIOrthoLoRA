@@ -83,25 +83,26 @@
   <header>
     <div class="eyebrow">Magnitude-law campaign · results summary</div>
     <h1>What governs forgetting in parameter-efficient fine-tuning</h1>
-    <p class="dek">A controlled study of eight LoRA-family adapters on commonsense reasoning and math. The size of the weight update predicts forgetting; the popular geometric methods do not beat a tuned plain-LoRA baseline once that size is controlled, and they cost more to run.</p>
+    <p class="dek">A controlled study of nine LoRA-family adapters on commonsense reasoning and math. The size of the weight update predicts forgetting; at matched update size the geometric methods land on the same curve as a tuned plain-LoRA baseline, and they cost more to run — so LoRA + weight-decay is the best <em>efficient</em> operating point.</p>
     <div class="byline">
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
-      <span>Adapters · <b>8, fair LR sweep</b></span>
+      <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-09 16:55 IDT</b></span>
+      <span>Last updated · <b>2026-07-09 19:57 IDT</b></span>
     </div>
   </header>
 
   <div class="tiles">
-    <div class="tile accent"><div class="k">Magnitude law</div><div class="v">r = −0.86</div><div class="s">Retention vs update size; holds within every one of the 7 assessed adapters (r −0.86 to −0.97) and on a second model.</div></div>
-    <div class="tile good"><div class="k">Best CS operating point</div><div class="v">81.6<small> / 25.6</small></div><div class="s">LoRA+weight-decay — top accuracy and retention at the smallest update; no adapter beats it on both.</div></div>
+    <div class="tile accent"><div class="k">Magnitude law</div><div class="v">r = −0.86</div><div class="s">Retention vs update size; holds within every one of the 7 assessed adapters (r −0.86 to −0.97) and on a second architecture (Qwen-2.5-7B, LoRA, commonsense: r = −0.88).</div></div>
+    <div class="tile good"><div class="k">Best CS operating point</div><div class="v">81.6<small> / 25.6</small></div><div class="s">LoRA+weight-decay — best retention at the smallest update; task accuracy statistically tied with the field (78–82 band).</div></div>
     <div class="tile good"><div class="k">Best math (GSM8K)</div><div class="v">67.3<small> vs 64.6</small></div><div class="s">LoRA+wd edges CLoRA's best published number, at a far smaller update.</div></div>
     <div class="tile accent"><div class="k">Efficiency</div><div class="v">0 <small>init cost</small></div><div class="s">LoRA+wd adds nothing; CLoRA holds up to 6.7 GB of frozen matrices, DoRA runs 2.1× slower.</div></div>
   </div>
 
   <div class="gloss">
     <div><b>update size (F<sub>Δ</sub>)</b> — how much the weight change alters layer outputs on real inputs (mean ‖ΔW·x‖/‖x‖ over adapted layers). The same metric CLoRA reports in its Table 4, so our axis is directly comparable to theirs. Smaller = gentler edit.</div>
-    <div><b>retention</b> — absolute mean accuracy (%) on held-out tasks the model was never trained on (BBH + MMLU-Pro). Higher = less forgetting. The untouched base model scores <b>26.0</b> — that is the ceiling.</div>
+    <div><b>retention</b> — absolute mean accuracy (%) on held-out tasks the model was never trained on (BBH + MMLU-Pro). Higher = less forgetting. The untouched base model scores <b>26.0</b> — the base-model reference (under heavy regularization retention can nudge slightly above it).</div>
+    <div><b>seeds</b> — mature single-model operating points are seed-42 point estimates. The magnitude law (retention vs F<sub>Δ</sub>) additionally holds across a 3-seed rank/weight-decay matrix (retention seed-SD ≈ 0.3); task <em>accuracy</em> is the seed-sensitive axis, so accuracy comparisons below are stated as "tied within the band," not ranked.</div>
   </div>
 
   <!-- 0 ADAPTERS -->
@@ -128,21 +129,21 @@
     <p class="lead">Plot retention against the learning rate and the adapters look different — they peak at different rates. Re-plot the same runs against the weight-update size they actually produced and <strong>they collapse onto one descending curve.</strong> Update size, not the choice of adapter, is what predicts forgetting.</p>
     <div class="chart">
       <div class="panels">
-        <div class="panel plot" id="panelLR"><div class="pt-title">Retention vs learning rate</div><div class="pt-sub">One line per adapter across 7 rates. They cross and separate — LR is a weak, method-specific proxy (R² = 0.32).</div></div>
+        <div class="panel plot" id="panelLR"><div class="pt-title">Retention vs learning rate</div><div class="pt-sub">One line per adapter across the 7 swept rates (2e-5, 5e-5, 1e-4, 2e-4, 3e-4, 5e-4, 1e-3). They cross and separate — LR is a weak, method-specific proxy (R² = 0.32).</div></div>
         <div class="panel plot" id="panelDW"><div class="pt-title">Retention vs update size (F<sub>Δ</sub>)</div><div class="pt-sub">Same runs, x-axis swapped. One descending trend across adapters (r = −0.86, R² = 0.74).</div></div>
       </div>
       <div class="legend" id="legend"></div>
     </div>
-    <p>The relationship is not an artifact of one setting or a few points. It reproduces <strong>within every one of the seven assessed adapters</strong> (r −0.86 to −0.97), on a <strong>second architecture</strong> (Qwen2.5-7B commonsense, r = −0.88), and — decisively — the update size is a far better predictor of retention than the learning rate that produced it (R² 0.74 vs 0.32).</p>
+    <p>The relationship is not an artifact of one setting or a few points. It reproduces <strong>within every one of the seven assessed adapters</strong> (r −0.86 to −0.97), on a <strong>second architecture</strong> (Qwen2.5-7B commonsense, LoRA arm, r = −0.88; other adapters and the math axis are not part of the assessed set on this model), and — decisively — the update size is a far better predictor of retention than the learning rate that produced it (R² 0.74 vs 0.32).</p>
 
     <div class="callout">
       <h3>The curve is ceiling-shaped, and the robust statistics are stronger than the straight line</h3>
-      <p>Retention cannot exceed the base model's ceiling (26.0), so the left of the curve flattens. Accounting for that only strengthens the result: rank correlation <strong>Spearman ρ = −0.90</strong>; a saturating fit beats both a line and a parabola on cross-validation, with its knee at update size ≈ 0.36 — essentially LoRA+wd's operating point; and below the ceiling the true slope is <strong>≈ −21 pp per decade</strong> of update size (vs −15 for the ceiling-attenuated linear fit). The law survives controlling for adapter identity (partial r = −0.87) and a permutation test (p &lt; 5×10⁻⁵).</p>
+      <p>Retention cannot exceed the base model's ceiling (26.0), so the left of the curve flattens. Accounting for that only strengthens the result: rank correlation <strong>Spearman ρ = −0.90</strong>; a saturating fit beats both a line and a parabola on cross-validation, with its knee at update size ≈ 0.37 — essentially LoRA+wd's operating point; and below the ceiling the true slope is <strong>≈ −21 pp per decade</strong> of update size (vs −15 for the ceiling-attenuated linear fit). The law survives controlling for adapter identity (partial r = −0.87) and a permutation test (p &lt; 5×10⁻⁵).</p>
     </div>
 
     <div class="callout good">
       <h3>The same law appears in CLoRA's own published table</h3>
-      <p>CLoRA's Table 4 reports an update-size metric (F<sub>Δ</sub>, identical to ours) and out-of-domain accuracy per method. Fitting the law to <em>their ten published rows</em> gives <strong>r = −0.98, slope −14.7 pp/decade — against our −14.8</strong>. Two independent datasets, two pipelines, one line.</p>
+      <p>CLoRA's Table 4 reports an update-size metric (F<sub>Δ</sub>, identical to ours) and out-of-domain accuracy per method. Fitting the law to <em>their ten published rows</em> gives <strong>r = −0.98, slope −14.7 pp/decade — against our −14.8</strong>. Two independent datasets, two pipelines, the same slope (their F<sub>Δ</sub> levels run ~2× lower, so it is a parallel law rather than one literal line).</p>
     </div>
   </section>
 
@@ -153,7 +154,7 @@
 
     <h3>Two levers, ranked</h3>
     <p><strong>What we measured.</strong> For all 320 saved adapters we reconstruct the trained update ΔW = (α/r)·B·A directly from the stored weights (no retraining), take an SVD of the corresponding <em>base</em> weight, and measure — layer by layer — how much of the update's energy lands in that base matrix's own top (principal) vs bottom (minor) singular directions, on both the output and input sides. Two questions: does each method's advertised geometry actually survive into the trained weights, and does it predict forgetting beyond update size?</p>
-    <p><strong>First lever — size.</strong> Retention tracks update size within every method (r −0.75 to −0.94 across the battery). <strong>Second — rank.</strong> At matched update size, higher-rank (more spread-out) updates forget somewhat more (partial r = −0.56); this is largely the adapter rank <em>r</em> itself, so we state it as "size first, rank second," not a hidden axis. <strong>Subspace alignment adds essentially nothing measurable beyond these</strong> (controlling for size and method, ΔR² ≈ 0.0002): among the on-curve adapters, magnitude rather than subspace alignment sets where a run lands.</p>
+    <p><strong>First lever — size.</strong> Retention tracks update size within every method (r −0.75 to −0.94 across the battery). <strong>Second — rank.</strong> At matched update size, higher-rank (more spread-out) updates forget somewhat more (partial r ≈ −0.56, and −0.5 to −0.6 across alternative rank measures); this is largely the adapter rank <em>r</em> itself, so we state it as "size first, rank second," not a hidden axis. <strong>Subspace alignment adds essentially nothing measurable beyond these</strong> (controlling for size and method, ΔR² ≈ 0.0002): among the on-curve adapters, magnitude rather than subspace alignment sets where a run lands.</p>
 
     <h3>Geometry as a fingerprint — recovering each method's design from its trained weights</h3>
     <p>The alignment metrics cleanly recover what each method was designed to do, and the design <em>persists</em> through three epochs of training. This is the constructive payoff: it identifies each method and explains, mechanistically, why the two methods with the strongest input-side alignment spikes (SC-LoRA, CorDA) are the two that fall below the magnitude law.</p>
@@ -174,16 +175,16 @@
       </table>
     </div>
     <p>MiLoRA is the only method that puts more energy in the base weights' <em>minor</em> directions (its stated design), and it retains slightly above the law. SC-LoRA concentrates on the input-side <em>principal</em> directions (ein_top 0.41) and sits 5.7 pp <em>below</em> the law — the mechanism behind its poor retention — and that concentration measurably <strong>erodes as its learning rate rises</strong> (0.70 → 0.21), matching its own paper's stated limitation. CorDA shows the opposite spike, on the input-side <em>minor</em> directions (ein_bot 0.49), together with a very large update. Plain LoRA, LoRA+wd, CLoRA and DoRA sit near the neutral baseline: their retention is set by size, not a special subspace.</p>
-    <p class="dim" style="font-size:12.5px">* CorDA's retention is not yet calibration-matched to the others (a fairness fix is pending), so its law residual is shown only alongside its geometry signature, not as an assessed on/off-law result.</p>
+    <p class="dim" style="font-size:12.5px">* CorDA's retention is not calibration-matched to the other methods, so its value is reported only as a geometry fingerprint, not as an assessed on/off-law result.</p>
   </section>
 
   <!-- 3 COMMONSENSE -->
   <section>
     <div class="sec-head"><span class="sec-num">3</span><h2>Commonsense — adaptation &amp; retention</h2></div>
-    <p class="lead">Each adapter at its own best learning rate (its most favourable single-rate snapshot). The field is flat on accuracy; retention broadly tracks update size; and <strong>plain LoRA+weight-decay is at least as good as every adapter on both axes, at the smallest update and the widest safe learning-rate band.</strong></p>
+    <p class="lead">Each adapter at its own best learning rate (its most favourable single-rate snapshot, seed 42). The field is flat on accuracy; retention broadly tracks update size; and <strong>plain LoRA+weight-decay is indistinguishable from the field on accuracy and best on retention, at the smallest update and the widest safe learning-rate band.</strong></p>
     <div class="tbl-scroll">
       <table>
-        <caption>Per-adapter best operating point — Commonsense-170K, Llama-2-7B. Each row is the adapter at <b>its own highest-accuracy learning rate</b> (best LR). <b>CS acc</b>: mean accuracy over the 8 commonsense tasks. <b>Retention</b>: held-out accuracy on tasks never trained on (BBH + MMLU-Pro); base model = 26.0, the ceiling; higher = less forgetting. <b>update F<sub>Δ</sub></b>: effective size of the weight edit (lower = gentler). <b>Safe band</b>: of the 7 swept learning rates, how many keep retention ≥ 24 (within ~2 pts of the ceiling) — i.e. how forgiving the method is to LR choice (6/7 robust, 1/7 fragile). Note: Retention is at the best-accuracy LR, while Safe band counts across all 7 LRs — which is why SC-LoRA can show retention 22.5 yet safe band 1/7.</caption>
+        <caption>Per-adapter best operating point — Commonsense-170K, Llama-2-7B. Each row is the adapter at <b>its own highest-accuracy learning rate</b> (best LR). <b>CS acc</b>: mean accuracy over the 8 commonsense tasks. <b>Retention</b>: held-out accuracy on tasks never trained on (BBH + MMLU-Pro); base model = 26.0, the base-model reference; higher = less forgetting. <b>update F<sub>Δ</sub></b>: effective size of the weight edit (lower = gentler). <b>Safe band</b>: of the 7 swept learning rates, how many keep retention ≥ 24 (within ~2 pts of the ceiling) — i.e. how forgiving the method is to LR choice (6/7 robust, 1/7 fragile). Note: Retention is at the best-accuracy LR, while Safe band counts across all 7 LRs — which is why SC-LoRA can show retention 22.5 yet safe band 1/7.</caption>
         <thead><tr><th>Adapter</th><th>best LR</th><th>CS acc ↑</th><th>Retention ↑</th><th>update F<sub>Δ</sub> ↓</th><th>Safe band</th></tr></thead>
         <tbody>
           <tr class="ref"><td>Base (no fine-tuning)</td><td>—</td><td>—</td><td>26.0</td><td>0</td><td>—</td></tr>
@@ -197,9 +198,10 @@
         </tbody>
       </table>
     </div>
-    <p>All seven adapters cluster in a tight 78–82 accuracy band; LoRA+wd tops both axes at the smallest update, and also wins the robustness measures (highest mean retention across all rates, widest safe band). Its retention (25.6) is within noise of the base ceiling (26.0) — essentially no measurable forgetting at full task accuracy.</p>
+    <p>All seven adapters cluster in a tight 78–82 accuracy band (single-seed, s42; on adaptation the methods are within seed noise, so the robust claims here are retention, update size, and safe-band width — not the accuracy ordering). At its best LR, LoRA+wd has the highest retention at the smallest update, and also wins the robustness measures (highest mean retention across all rates, widest safe band). Its retention (25.6) is within noise of the base reference (26.0) — essentially no measurable forgetting at full task accuracy.</p>
+    <p class="dim" style="font-size:12.5px">† Operating points are single-seed (s42). In the 3-seed rank/wd matrix, retention is stable (seed-SD ≈ 0.3) but adaptation accuracy is not: MiLoRA (r32) and SC-LoRA (r32) in particular are seed-fragile (MiLoRA cs 79.9→58.7→34.6 across seeds), so their <em>relative</em> accuracy rank should not be over-read. The seed-robust signal is the retention / update-size / safe-band picture.</p>
     <div class="callout warn">
-      <h3>Honest boundary — high-rank CLoRA on commonsense</h3>
+      <h3>Boundary condition — high-rank CLoRA on commonsense</h3>
       <p>In CLoRA's published results, its k1024/k2048 configurations reach 82.6/83.7 accuracy at BBH 36.5/38.7 — above our LoRA+wd, and their k2048 even exceeds the base model out-of-domain. What keeps this a boundary rather than a refutation: high-k CLoRA sits <em>on</em> the magnitude law — it achieves that retention by shrinking the update (their own Table 4 shows k2048 at the smallest F<sub>Δ</sub> in their study). So the defensible statement is narrow: <em>at high rank, CLoRA's null-space constraint buys adaptation-efficiency per unit of update that pure size control does not</em> — while the magnitude law still governs both.</p>
     </div>
   </section>
@@ -211,7 +213,7 @@
     <div class="chart">
       <div class="ct">GSM8K accuracy — our LoRA+wd vs each method's best published number</div>
       <div class="cs">Blue = value reported in each method's own paper (LoRA, MiLoRA, PiSSA, CLoRA). Green = our LoRA+wd run. Grey = our in-pipeline reproduction of CLoRA-k128. CLoRA-k128 appears twice (published 64.6, ours 59.6); the gap is a harness/recipe difference — our in-pipeline LoRA reproduces the published LoRA (60.2 vs 60.6), so the pipeline is sound. All in-pipeline cells matched at 256-token cutoff.</div>
-      <div class="bar-row"><div class="name">LoRA+wd <small>ours · F_Δ 0.28 · BBH 33.1</small></div><div class="bar-track"><div class="bar-fill ours" style="width:89.7%"></div></div><div class="val" style="color:var(--good)">67.3</div></div>
+      <div class="bar-row"><div class="name">LoRA+wd (wd0.3) <small>ours · F_Δ 0.28 · BBH 33.1</small></div><div class="bar-track"><div class="bar-fill ours" style="width:89.7%"></div></div><div class="val" style="color:var(--good)">67.3</div></div>
       <div class="bar-row"><div class="name">CLoRA-k128 <small>published (their best)</small></div><div class="bar-track"><div class="bar-fill pub" style="width:86.1%"></div></div><div class="val">64.6</div></div>
       <div class="bar-row"><div class="name">MiLoRA <small>published</small></div><div class="bar-track"><div class="bar-fill pub" style="width:84.7%"></div></div><div class="val">63.5</div></div>
       <div class="bar-row"><div class="name">LoRA <small>published</small></div><div class="bar-track"><div class="bar-fill pub" style="width:80.8%"></div></div><div class="val">60.6</div></div>
@@ -219,7 +221,7 @@
       <div class="bar-row"><div class="name">PiSSA <small>published · collapses in ours</small></div><div class="bar-track"><div class="bar-fill pub" style="width:77.6%"></div></div><div class="val">58.2</div></div>
       <div class="axis"><div></div><div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span></div><div></div></div>
     </div>
-    <p>Retention on math is measured on BBH only (base ceiling 33.1); MMLU-Pro is dropped here because math-tuned models emit chain-of-thought its answer parser cannot score reliably, so including it would penalize adaptation rather than forgetting. On this axis LoRA+wd retains at 33.1 — zero measurable forgetting — while the highest-update runs collapse (PiSSA to BBH 7.2). CLoRA's math table carries <em>no</em> weight-decay baseline at all; our reproduction supplies it. These are cross-harness comparisons (each published bar uses its own paper's evaluation code), so the honest verb is "matches / edges," not "beats."</p>
+    <p>Retention on math is measured on BBH only (base ceiling 33.1); MMLU-Pro is dropped here because math-tuned models emit chain-of-thought its answer parser cannot score reliably, so including it would penalize adaptation rather than forgetting. On this axis LoRA+wd retains at 33.1 — zero measurable forgetting — while the highest-update runs collapse (PiSSA to BBH 7.2). CLoRA's math table carries <em>no</em> weight-decay baseline at all; our reproduction supplies it. These are cross-harness comparisons (each published bar uses its own paper's evaluation code), so the honest verb is "matches / edges," not "beats." The 67.3 is a single-seed (s42) point; its s43 sibling is 65.88 — still edging the 64.6 published best.</p>
   </section>
 
   <!-- 5 EFFICIENCY -->
@@ -228,20 +230,21 @@
     <p class="lead">The fancy methods are not free. Beyond the accuracy–retention picture, they add initialization work, training-time memory, or wall-clock — for the same trainable-parameter budget. <strong>LoRA+wd sits on the efficiency frontier at zero added cost.</strong></p>
     <div class="tbl-scroll">
       <table>
-        <caption>Per-method cost (Llama-2-7B, all 160 target modules, r=64 = 112M trainable params for every method). "Init" = one-time precompute before training. "Extra memory" and "wall-clock" are stated <strong>relative to plain LoRA</strong>: the shared baseline is ~55 GB GPU memory (7B in bf16 + activations + optimizer state) and a ~5 GPU-h train+eval run per cell. Extra memory is <strong>ADDITIONAL to that 55 GB baseline</strong>, not a total; "—" means nothing beyond it.</caption>
+        <caption>Per-method cost (Llama-2-7B, all 160 target modules, r=64 = 112M trainable params for every method). "Init" = one-time precompute before training. "Extra memory" and "wall-clock" are stated <strong>relative to plain LoRA</strong>: the shared baseline is ~55 GB GPU memory (7B in bf16 + activations + optimizer state) and a ~5 GPU-h train+eval run per cell. Extra memory is <strong>ADDITIONAL to that 55 GB baseline</strong>, not a total; "—" means nothing beyond it. Memory figures are analytical resident-size / incidental-trace estimates (peak GPU memory was not instrumented); wall-clock is from training logs.</caption>
         <thead><tr><th>Adapter</th><th>Init precompute (one-time)</th><th>Extra train memory (on top of ~55 GB)</th><th>Train wall-clock</th></tr></thead>
         <tbody>
           <tr class="hi"><td>LoRA + wd</td><td>none <span class="dim">(wd is a free flag)</span></td><td>—</td><td class="win">1.00×</td></tr>
           <tr><td>LoRA</td><td>none</td><td>—</td><td>1.00×</td></tr>
           <tr><td>MiLoRA / PiSSA</td><td>160 base-weight SVDs, ~minutes</td><td>—</td><td>1.00×</td></tr>
-          <tr><td>DoRA</td><td>none</td><td>small (norm buffers)</td><td class="bad">2.13×</td></tr>
-          <tr><td>CLoRA</td><td>none</td><td class="bad">+0.42–6.7 GB frozen matrices (by k)</td><td>1.14×</td></tr>
-          <tr><td>SC-LoRA / LoRA-Null</td><td>256 calib fwd passes + eigendecomp, ~few min <span class="dim">(+22 GB transient, init only)</span></td><td>—</td><td>1.00×</td></tr>
+          <tr><td>DoRA</td><td>none</td><td>small (norm buffers)</td><td class="bad">2.14×</td></tr>
+          <tr><td>CLoRA</td><td>none</td><td class="bad">+0.42–6.7 GB frozen matrices (by k)</td><td>1.17×</td></tr>
+          <tr><td>SC-LoRA</td><td>512 calib fwd passes (256 preserve + 256 target) + eigendecomp, ~few min <span class="dim">(+22 GB transient, init only)</span></td><td>—</td><td>1.00×</td></tr>
+          <tr><td>LoRA-Null</td><td>256 calib fwd passes + eigendecomp, ~few min <span class="dim">(+22 GB transient, init only)</span></td><td>—</td><td>1.00×</td></tr>
           <tr><td>CorDA++</td><td>1,280 calib fwd passes (5 rounds) + per-layer decomp, <strong>~1 GPU-h</strong></td><td>—</td><td>1.00×</td></tr>
         </tbody>
       </table>
     </div>
-    <p><strong>Reading the costs concretely.</strong> The SVD-init methods (MiLoRA, PiSSA) factor all 160 base matrices in a few minutes — negligible. The calibration methods run real 7B forward passes before training: SC-LoRA / LoRA-Null need ~256 (a few minutes) and hold a ~22 GB covariance buffer during init only; CorDA++ needs 1,280 (5 sampling rounds) and, per its own paper (Table IX), spends <strong>~1 GPU-h precomputing — roughly 20% on top of the ~5 GPU-h training run</strong>. DoRA instead pays <strong>2.1× the wall-clock at every step</strong>. CLoRA's cost is memory, and it is <strong>additional</strong> to the shared ~55 GB footprint: a frozen regularization block of <strong>+0.42 GB at k=128 rising to +6.7 GB at k=2048</strong> (at the default k=512, +1.7 GB — already 8× the trainable LoRA weights) for no added capacity. LoRA and LoRA+wd pay <em>none</em> of these — zero init, no extra memory, plain-LoRA wall-clock.</p>
+    <p><strong>Reading the costs concretely.</strong> The SVD-init methods (MiLoRA, PiSSA) factor all 160 base matrices in a few minutes — negligible. The calibration methods run real 7B forward passes before training: LoRA-Null needs ~256 and SC-LoRA ~512 (256 preserve + 256 target), a few minutes each, holding a ~22 GB covariance buffer during init only; CorDA++ needs 1,280 (5 sampling rounds) and, per its own paper (Table IX), spends <strong>~1 GPU-h precomputing — roughly 20% on top of the ~5 GPU-h training run</strong>. DoRA instead pays <strong>2.1× the wall-clock at every step</strong>. CLoRA's cost is memory, and it is <strong>additional</strong> to the shared ~55 GB footprint: a frozen regularization block of <strong>+0.42 GB at k=128 rising to +6.7 GB at k=2048</strong> (at the default k=512, +1.7 GB — already 8× the trainable LoRA weights) for no added capacity. LoRA and LoRA+wd pay <em>none</em> of these — zero init, no extra memory, plain-LoRA wall-clock.</p>
   </section>
 
   <!-- 6 CE FORGETTING -->
@@ -253,14 +256,14 @@
         <caption>Forgetting (CE-to-base) vs update size, measured on the faithful math-recipe adapters (MetaMathQA, r64/α128). Lower CE = less forgetting. Our numbers reproduce MiLoRA's published Table 8 (their LoRA 3.24, PiSSA 6.07, MiLoRA 2.54). Rank correlation of CE with update size = 0.94. Note: F<sub>Δ</sub> here is on the α=2r math scale — about 2× the α=r commonsense values in §3, so read these against each other, not across sections.</caption>
         <thead><tr><th>Run</th><th>update F<sub>Δ</sub></th><th>CE-to-base ↓</th></tr></thead>
         <tbody>
-          <tr class="hi"><td>LoRA+wd (math, small update)</td><td>0.20</td><td class="win">2.00</td></tr>
+          <tr class="hi"><td>LoRA+wd (math, wd0.5)</td><td>0.20</td><td class="win">2.00</td></tr>
           <tr><td>LoRA (math, 3e-4)</td><td>1.28</td><td>3.57</td></tr>
           <tr><td>MiLoRA (math, 3e-4)</td><td>1.26</td><td>3.66</td></tr>
           <tr class="bad"><td>PiSSA (math, 3e-4)</td><td>2.21</td><td>6.31</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The load-bearing comparison: at matched learning rate and rank, <strong>MiLoRA (3.66) forgets essentially the same as plain LoRA (3.57)</strong> on this metric — its published advantage came from running at a lower-magnitude operating point, not from its geometry. A third, independent forgetting axis therefore points to the same conclusion as the retention suite and CLoRA's own table: update size is what governs forgetting.</p>
+    <p>The load-bearing comparison: at matched learning rate and rank, <strong>MiLoRA (3.66) forgets essentially the same as plain LoRA (3.57)</strong> on this metric — its published advantage came from running at a lower-magnitude operating point, not from its geometry. A third, independent forgetting axis therefore points to the same conclusion as the retention suite and CLoRA's own table: update size is what governs forgetting. (The LoRA+wd row here is the heavier-decay wd0.5 run, F<sub>Δ</sub> 0.20 — a smaller update than the wd0.3 run headlined for GSM8K in §4, F<sub>Δ</sub> 0.28; heavier weight decay trades a little GSM8K, 67→66, for a smaller update and lower CE.)</p>
   </section>
 
   <!-- 7 CORRECTNESS -->
