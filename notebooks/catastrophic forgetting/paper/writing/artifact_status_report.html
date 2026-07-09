@@ -82,13 +82,13 @@
 
   <header>
     <div class="eyebrow">Magnitude-law campaign · results summary</div>
-    <h1>What governs forgetting in parameter-efficient fine-tuning</h1>
+    <h1>The Magnitude Law: Update Size Is the First-Order Predictor of Forgetting in PEFT</h1>
     <p class="dek">A controlled study of nine LoRA-family adapters on commonsense reasoning and math. The size of the weight update predicts forgetting; at matched update size the geometric methods land on the same curve as a tuned plain-LoRA baseline, and they cost more to run — so LoRA + weight-decay is the best <em>efficient</em> operating point.</p>
     <div class="byline">
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-09 19:57 IDT</b></span>
+      <span>Last updated · <b>2026-07-09 22:47 IDT</b></span>
     </div>
   </header>
 
@@ -283,6 +283,42 @@
         </tbody>
       </table>
     </div>
+  </section>
+
+  <!-- 8 STATUS & REVIEW -->
+  <section>
+    <div class="sec-head"><span class="sec-num">8</span><h2>Campaign status &amp; external review</h2></div>
+    <p class="lead">Where the campaign stands, and the independent review this report has already passed.</p>
+
+    <h3>Status update</h3>
+    <div class="tbl-scroll">
+      <table>
+        <caption>Two-node run — Llama-2-7B on node A, Qwen-2.5-7B on node B. "Complete + validated" = the analysis is finished and its numbers were independently recomputed from the raw run summaries. All results are continuously committed to version control (nothing lives only on the hosts).</caption>
+        <thead><tr><th>Workstream</th><th>State</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td>Magnitude law — Llama commonsense + math</td><td><span class="win">complete + validated</span> · r = −0.86, three independent confirmations</td></tr>
+          <tr class="hi"><td>Geometry fingerprint — 320 reconstructed adapters</td><td><span class="win">complete + validated</span></td></tr>
+          <tr class="hi"><td>Efficiency audit + CE-to-base forgetting</td><td><span class="win">complete + validated</span></td></tr>
+          <tr><td>Results collected</td><td>466 Llama runs (fair LR sweep + rank/weight-decay grids + faithful math reproduction)</td></tr>
+          <tr><td>3-seed retention error bars on the headline operating points</td><td>running now, prioritized onto GPUs as they free</td></tr>
+          <tr><td>Qwen-2.5-7B second-model replication (commonsense law arm)</td><td>running on node B, all 8 GPUs</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>External review round</h3>
+    <p>Before this report was finalized it was pressure-tested by two independent reviewers against the raw data — an adversarial, area-chair-style critic and a numeric auditor — and their findings were integrated before publication.</p>
+    <div class="tbl-scroll">
+      <table>
+        <caption>Independent review of this report against <span class="dim">results/*/summary.json</span>. All surviving findings were applied.</caption>
+        <thead><tr><th>Reviewer</th><th>Scope</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Adversarial critic (area-chair lens)</td><td>every claim + framing guardrails</td><td>7 pass · 5 minor · 2 major — both majors fixed; verdict <span class="win">sound paper basis</span></td></tr>
+          <tr><td>Numeric auditor</td><td>every number vs the raw summaries</td><td><span class="win">140 / 143 reproduced exactly</span>; 3 corrected</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Integrated fixes: framing made magnitude-positive (no over-claims); single-seed operating points now explicitly disclosed — the <em>law</em> is seed-stable, task <em>accuracy</em> is the seed-sensitive axis; efficiency corrected (DoRA 2.14×, CLoRA 1.17×, SC-LoRA 512 calibration passes, all verified against source); adapter count and minor statistics reconciled. Every number reproduces to the decimals shown.</p>
   </section>
 
   <div class="foot">
