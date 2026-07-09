@@ -106,7 +106,9 @@ def parse_cfg(run):
 PREF = ("mtx_", "mtxm_", "lrsw_", "lrswm_")
 def load():
     recs = {}
-    for line in open("/home/guyb/UIOrthoLoRA/notebooks/catastrophic forgetting/paper/writing/data/campaign_summary_clean.jsonl"):
+    _data = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         "data", "campaign_summary_clean.jsonl")
+    for line in open(_data):
         try:
             d = json.loads(line)
         except Exception:
@@ -283,10 +285,10 @@ def fig0_hero():
                     bbox=dict(boxstyle="round,pad=0.35", fc="white", ec=COL["lorawd"], lw=1.3, alpha=0.96))
     # (E2) slope annotated directly on the law line
     mid = 10**(0.5*(np.log10(x.min()) + np.log10(x.max())))
-    ax.text(mid, fit["pred"](mid) + 1.1, f"{fit['slope']:.0f} pp per decade of $\\|\\Delta W\\|_F$",
+    ax.text(mid, fit["pred"](mid) + 1.1, f"{fit['slope']:.0f} pp per decade of $F_{{\\Delta}}$",
             fontsize=10, color="#222", fontweight="bold", ha="center", va="bottom", rotation=-14)
 
-    ax.set_xlabel(r"Weight-update magnitude  $\|\Delta W\|_F$  (token-weighted, log scale)  →", fontsize=12.5)
+    ax.set_xlabel(r"Weight-update magnitude  $F_{\Delta}$  (log scale)  →", fontsize=12.5)
     ax.set_ylabel("Retention  (mean of BBH, MMLU-Pro)  [%]  →", fontsize=12.5)
     ax.set_title("Retention is governed by the size of the weight update, not the adapter",
                  fontsize=15.5, pad=14)
@@ -319,7 +321,7 @@ def fig1_magnitude_law():
     axMain = fig.add_subplot(gs[:, 0])
     axS1 = fig.add_subplot(gs[0, 1])
     axS2 = fig.add_subplot(gs[1, 1])
-    panels = [(axMain, "F", "our magnitude measure  $\\|\\Delta W\\|_F$  (token-weighted Frobenius, log scale)", True),
+    panels = [(axMain, "F", "our magnitude measure  $F_{{\\Delta}}$  (CLoRA Eq. 3, log scale)", True),
               (axS1, "svmean", r"mean spectral norm  $\overline{\sigma}(\Delta W)$", False),
               (axS2, "svmax", r"max spectral norm  $\sigma_{\max}(\Delta W)$", False)]
     fits = {}
@@ -360,7 +362,7 @@ def fig1_magnitude_law():
     axMain.set_ylabel("Retention  (mean of BBH, MMLU-Pro)  [%]")
     fig.legend(handles=legend_handles(METHODS), loc="upper center", ncol=len(METHODS),
                bbox_to_anchor=(0.5, 0.945), fontsize=8.6, columnspacing=0.9, handletextpad=0.3)
-    fig.suptitle("Choosing a fair magnitude axis: token-weighted Frobenius fits retention tightest",
+    fig.suptitle("Choosing a fair magnitude axis: effective update magnitude fits retention tightest",
                  y=0.985, fontsize=13)
     watermark(fig)
     fig.subplots_adjust(left=0.065, right=0.985, top=0.855, bottom=0.24, hspace=0.42, wspace=0.22)
@@ -604,7 +606,7 @@ def fig5_per_benchmark():
                     fontsize=7.5, color="0.45", style="italic", ha="right", va="bottom")
         ax.set_xscale("log"); clean_logx(ax)
         ax.set_title(title)
-        ax.set_xlabel(r"$\|\Delta W\|_F$")
+        ax.set_xlabel(r"$F_{\Delta}$")
         ax.set_ylabel("accuracy [%]")
         ax.legend(loc="best", fontsize=8.2)
     # 6th cell: normalized degradation slopes bar (which dies fastest)
@@ -622,7 +624,7 @@ def fig5_per_benchmark():
         ax6.text(s - off if s < 0 else s + off, b.get_y()+b.get_height()/2, f"{s:.1f}",
                  va="center", ha="right" if s < 0 else "left", fontsize=9.5, fontweight="bold")
     ax6.axvline(0, color="0.3", lw=1)
-    ax6.set_xlabel("degradation slope  [pp accuracy per decade of $\\|\\Delta W\\|_F$]")
+    ax6.set_xlabel("degradation slope  [pp accuracy per decade of $F_{{\\Delta}}$]")
     ax6.set_title("Which knowledge dies fastest?", fontsize=12)
     ax6.grid(axis="y", alpha=0)
     fig.suptitle("Per-benchmark retention vs weight-update magnitude  (Llama-2-7B, commonsense LR-sweep)",
@@ -658,7 +660,7 @@ def fig6_extras():
                     edgecolor="k" if m in SIMPLE else "0.3", linewidth=0.7 if m in SIMPLE else 0.4,
                     alpha=0.92, zorder=4)
     axA.axhline(70, ls="--", color="0.6", lw=1)
-    axA.set_xscale("log"); clean_logx(axA); axA.set_xlabel(r"$\|\Delta W\|_F$"); axA.set_ylabel("Commonsense-8 accuracy [%]")
+    axA.set_xscale("log"); clean_logx(axA); axA.set_xlabel(r"$F_{\Delta}$"); axA.set_ylabel("Commonsense-8 accuracy [%]")
     axA.set_title("Adaptation needs magnitude\n(the tension behind the tradeoff)")
 
     # (b) spectral spikiness sv_max/sv_mean per method (boxplot)
@@ -778,8 +780,8 @@ def fig7_lr_is_the_proxy():
     axA.set_xscale("log"); axA.set_yscale("log"); clean_logx(axA)
     axA.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{v:g}"))
     axA.set_xlabel("learning rate (log scale)")
-    axA.set_ylabel(r"resulting  $\|\Delta W\|_F$  (token-weighted, log scale)")
-    axA.set_title("A.  Same LR → different $\\|\\Delta W\\|$")
+    axA.set_ylabel(r"resulting  $F_{\Delta}$  (log scale)")
+    axA.set_title("A.  Same LR → different $F_{{\\Delta}}$")
     # call out SC-LoRA (data-aware init) sitting ABOVE the pack (more magnitude per LR).
     # anchor on SC-LoRA's lowest-LR point; use a neutral-gray, near-straight arrow so it does NOT
     # read as part of the (purple) SC-LoRA line — the curved colored arrow looked like a data hook.
@@ -824,8 +826,8 @@ def fig7_lr_is_the_proxy():
         return fit
 
     fitL = _scatter_fit(axL, "lr", "learning rate (log scale)", title="B.  Retention vs LR  (loose)")
-    fitF = _scatter_fit(axF, "F", r"$\|\Delta W\|_F$  (log scale)",
-                        title=r"C.  Retention vs $\|\Delta W\|_F$  (tight)")
+    fitF = _scatter_fit(axF, "F", r"$F_{\Delta}$  (log scale)",
+                        title=r"C.  Retention vs $F_{\Delta}$  (tight)")
     axL.set_ylabel("Retention (BBH, MMLU-Pro mean) [%]")
     plt.setp(axF.get_yticklabels(), visible=False)
     # green base-ceiling label on the LR panel (open top-left? use right where curve has dropped)
@@ -837,7 +839,7 @@ def fig7_lr_is_the_proxy():
     # the contrast headline, between the two right panels
     dR2 = fitF["r2"] - fitL["r2"]
     fig.suptitle("Learning rate is only a proxy: it predicts forgetting loosely; "
-                 r"the $\|\Delta W\|$ it produces predicts it tightly "
+                 r"the $F_{\Delta}$ it produces predicts it tightly "
                  f"($R^2$ {fitL['r2']:.2f} $\\rightarrow$ {fitF['r2']:.2f})",
                  y=1.0, fontsize=13.5)
     watermark(fig)
@@ -882,7 +884,7 @@ def fig8_magnitude_budget():
     xx = np.logspace(np.log10(x[g0].min()), np.log10(x[g0].max()), 200)
     axT.plot(xx, fitA["pred"](xx), color="0.3", lw=2.0, ls="--", zorder=2)
     axT.set_ylabel("Adaptation\nCommonsense-8 accuracy [%]")
-    axT.set_title(r"More $\|\Delta W\|$ buys adaptation …", loc="left", fontsize=12.5)
+    axT.set_title(r"More $F_{\Delta}$ buys adaptation …", loc="left", fontsize=12.5)
     axT.text(0.985, 0.08, "rises ↗", transform=axT.transAxes, ha="right", va="bottom",
              fontsize=11, color="0.35", style="italic")
 
@@ -914,7 +916,7 @@ def fig8_magnitude_budget():
                  ha="center", va="bottom", fontsize=8.6, color="#1d6b1d", fontweight="bold")
 
     axB.set_xscale("log"); clean_logx(axB)
-    axB.set_xlabel(r"Weight-update magnitude  $\|\Delta W\|_F$  (token-weighted, log scale)  →")
+    axB.set_xlabel(r"Weight-update magnitude  $F_{\Delta}$  (log scale)  →")
     # ceiling/safe labels (parked on the right, in open space below the descending cloud)
     axB.text(axB.get_xlim()[1], BASE_CORE + 0.3, "base retention ceiling (no fine-tune)  ",
              color="green", fontsize=9, va="bottom", ha="right", fontweight="bold")
@@ -923,7 +925,7 @@ def fig8_magnitude_budget():
 
     fig.legend(handles=legend_handles(METHODS), loc="upper center", ncol=len(METHODS),
                bbox_to_anchor=(0.5, 1.005), fontsize=9.2, columnspacing=1.0, handletextpad=0.3)
-    fig.suptitle(r"The magnitude budget: one axis ($\|\Delta W\|_F$) sets both adaptation and forgetting",
+    fig.suptitle(r"The magnitude budget: one axis ($F_{\Delta}$) sets both adaptation and forgetting",
                  y=1.052, fontsize=14)
     watermark(fig)
     fig.tight_layout(rect=[0, 0.105, 1, 0.97])
@@ -1002,7 +1004,7 @@ def op_points_table():
              ha="center", va="top", fontsize=8.6, color="0.3")
     fig.text(0.5, 0.092,
              "⚠ = the only “safe” setting forces adaptation to collapse (data-aware inits transmit "
-             "too much $\\|\\Delta W\\|$ at every usable LR).   LoRA and LoRA-Null are separate "
+             "too much $F_{{\\Delta}}$ at every usable LR).   LoRA and LoRA-Null are separate "
              "series (n=7 each).",
              ha="center", va="top", fontsize=8.6, color="#9a3b1d", style="italic")
     cfg_note_footer(fig, y=0.040)
@@ -1057,7 +1059,7 @@ def _build_main_table(rows, adapt_label, preliminary=False):
     L.append("\\begin{tabular}{l l c c c c c}")
     L.append("\\toprule")
     L.append(f"Method & Config & {adapt_label} $\\uparrow$ & Ret-core $\\uparrow$ & "
-             "Ret-broad $\\uparrow$ & $\\|\\Delta W\\|_F$ $\\downarrow$ & $\\sigma_{\\max}$ \\\\")
+             "Ret-broad $\\uparrow$ & $F_{{\\Delta}}$ $\\downarrow$ & $\\sigma_{\\max}$ \\\\")
     L.append("\\midrule")
     L.append("\\textit{Base (no-FT)} & -- & -- & \\textit{%.1f} & -- & \\textit{0} & -- \\\\" % BASE_CORE)
     L.append("\\midrule")

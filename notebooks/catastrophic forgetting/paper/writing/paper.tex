@@ -1,8 +1,8 @@
 \documentclass[11pt]{article}
 
 % ---------------------------------------------------------------------------
-% "It's the Magnitude, Not the Geometry:
-%  Weight-Update Norm Governs Catastrophic Forgetting in PEFT"
+% "The Magnitude Law: Update Size Is the First-Order Predictor of Forgetting
+%  in PEFT" (geometry = second-order fingerprint; rank = modest second lever)
 %
 % Round-4 manuscript. Derived from the verified baseline paper_draft.tex; DO NOT
 % overwrite that file. Numbers from data/key_numbers.md (single source of truth,
@@ -47,9 +47,11 @@
 \newcommand{\dw}{F_{\Delta}}
 \newcommand{\smax}{\sigma_{\max}}
 
-\title{It's the Magnitude, Not the Geometry:\\
-Weight-Update Norm Governs Catastrophic Forgetting in\\
-Parameter-Efficient Fine-Tuning}
+\title{The Magnitude Law: Update Size Is the First-Order Predictor of\\
+Forgetting in Parameter-Efficient Fine-Tuning\\[6pt]
+{\large\normalfont\itshape Adapter geometry is a second-order fingerprint---it sets
+\emph{where} on the magnitude axis a method starts, not an independent lever---and
+rank is only a modest second effect.}}
 
 \author{Anonymous}
 \date{}
@@ -63,14 +65,17 @@ Parameter-Efficient Fine-Tuning}
 The literature ships a new parameter-efficient fine-tuning (PEFT) adapter almost
 every week, each promising to mitigate catastrophic forgetting through a clever
 \emph{geometric} prior: a data-aware initialization, a null-space projection, a
-spectral decomposition, an orthogonality penalty. We argue that the governing
-variable is not geometry but magnitude, and we make the case with two instruments
+spectral decomposition, an orthogonality penalty. We argue that the
+\emph{first-order} governing variable is the magnitude of the update, and that
+geometry acts largely \emph{through} that magnitude rather than beside it, and we
+make the case with two instruments
 any adapter comparison needs: a method-neutral magnitude axis---the effective
 update magnitude $\dw$ (the mean normalized output displacement the update induces,
 CLoRA's $\mathbb{F}$ diagnostic), chosen over the spectral norm, which spiky
 initializations inflate---and a per-method learning-rate sweep. Three claims
-and a message follow. \textbf{(1) Mechanism:} forgetting is governed by $\dw$, not
-by adapter geometry---retention collapses onto a single empirical curve
+and a message follow. \textbf{(1) Mechanism:} forgetting is governed, to first
+order, by $\dw$ rather than by adapter geometry---retention collapses onto a single
+empirical curve
 ($r\!=\!-0.86$ pooled, $-0.92$ on the on-curve adapters), and adapter identity adds
 essentially nothing once $\dw$ is controlled, with one provisional exception
 (SC-LoRA, pending a calibration control). \textbf{(2) Diagnosis:} the elaborate
@@ -83,7 +88,9 @@ term---the simplest possible magnitude control---lands on the
 adaptation--retention Pareto frontier of every elaborate geometric adapter,
 matching or edging it by moving \emph{along} the shared curve, and does so with the
 widest safe operating band in the study (6 of 7 learning rates versus SC-LoRA's 1
-of 7). \textbf{Message:} control the magnitude, not the geometry. The evidence is a
+of 7). \textbf{Message:} control the size of the update first; adapter geometry
+mostly sets \emph{where} on the magnitude curve a method starts, not a separate
+axis of forgetting. The evidence is a
 complete Llama-2-7B commonsense learning-rate grid (8 adapters $\times$ 7 rates
 $=$ 56 cells, 49 clean after withholding CorDA), a sparse math grid, and a partial
 Qwen2.5-7B replication (commonsense-LoRA replicates the law's sign; math-LoRA does
@@ -140,14 +147,16 @@ controls (seeds, matched capacity, eval-matched calibration, a second model) can
 shift the rankings; they cannot unmake the protocol or the curve.
 
 With the two instruments in hand, the empirical spine of the paper is three claims
-and a message: \textbf{(1) Mechanism} --- forgetting is governed by $\dw$, not
-adapter geometry (Section~\ref{sec:law}); \textbf{(2) Diagnosis} --- the reported
+and a message: \textbf{(1) Mechanism} --- forgetting is governed to first order by
+$\dw$, with adapter geometry acting largely through it (Section~\ref{sec:law},
+Section~\ref{sec:geometry}); \textbf{(2) Diagnosis} --- the reported
 per-method wins carry the ingredients of a learning-rate artifact that a
 per-method sweep dissolves (Section~\ref{sec:lr}); \textbf{(3) Consequence} ---
 plain LoRA{+}weight-decay lands on the adaptation--retention Pareto frontier of
 every elaborate geometric adapter, as a corollary of the law
-(Section~\ref{sec:pareto}); and the \textbf{message} --- control the magnitude,
-not the geometry. For coverage: across the seven of eight adapters we can assess
+(Section~\ref{sec:pareto}); and the \textbf{message} --- control the size of the
+update first; geometry is a fingerprint, not a separate lever. For coverage:
+across the seven of eight adapters we can assess
 (LoRA, LoRA-Null, LoRA{+}wd, DoRA, MiLoRA, CLoRA, SC-LoRA), six lie on a single
 $\dw$ curve; SC-LoRA is the one provisional below-curve deviator, and CorDA is
 withheld pending a calibration-fairness fix (Section~\ref{sec:limits}).
@@ -156,9 +165,10 @@ withheld pending a calibration-fairness fix (Section~\ref{sec:limits}).
 codebase, \citet{lee2026lr} show that the peak \emph{adaptation} of nine LoRA
 variants converges once each is tuned at its own learning rate. We establish the
 retention-side counterpart: forgetting is governed by the magnitude that the
-learning rate produces, and geometry is inert once that magnitude is
-controlled---corroborating their adaptation finding while extending it to the axis
-that the forgetting-mitigation literature actually cares about.
+learning rate produces, and geometry adds essentially nothing beyond that magnitude
+among the on-curve adapters (subspace alignment $\Delta R^2\!\approx\!0.0002$,
+Section~\ref{sec:geometry})---corroborating their adaptation finding while extending
+it to the axis that the forgetting-mitigation literature actually cares about.
 
 \paragraph{Scope, stated once.} The Llama-2-7B commonsense evidence is complete:
 the full $8\times 7$ learning-rate grid (49 clean cells; CorDA's 7 cells withheld,
@@ -241,8 +251,9 @@ PEFT-adapter literature, the prior work that most explicitly connects update
 magnitude to forgetting is CLoRA, whose penalty can be read as an indirect
 magnitude control. Our contribution is therefore \emph{not} the discovery that
 magnitude matters. It is (i) that magnitude is the \emph{method-free} governing
-variable; (ii) that once $\dw$ is controlled, geometry is statistically inert
-(Section~\ref{sec:ancova})---a claim no single-method paper such as CLoRA, no
+variable; (ii) that once $\dw$ is controlled, subspace geometry adds essentially
+nothing measurable ($\Delta R^2\!\approx\!0.0002$; Section~\ref{sec:geometry})---a
+claim no single-method paper such as CLoRA, no
 regularization study such as \citet{biderman2024lora} or
 \citet{kalajdzievski2024scaling} (neither of which places competing geometries on
 a controlled-$\dw$ axis), and no adaptation-only study such as \citet{lee2026lr}
@@ -482,7 +493,57 @@ numbers up one-to-one: CLoRA's base BBH ($34.91$) exceeds our answer-only base
 triangulation---relative degradation from each paper's own base points the same
 way---rather than as a shared coordinate system (Appendix~\ref{app:clora}).
 
-\subsection{Geometry Adds Nothing Once Magnitude Is Controlled}\label{sec:ancova}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_cross_literature}
+  \caption{\textbf{The same law appears in a competitor's own published table.}
+  Retention (BBH) versus $\dw$ on a log axis, plotted on a \emph{BBH-to-BBH} basis
+  so the two datasets are directly comparable. Both point clouds fall with $\dw$ in
+  the same direction: CLoRA's Table~4 (their published rows) at $r\!=\!-0.98$ and
+  ours at $r\!=\!-0.79$, and the association is robust---dropping any single CLoRA
+  row leaves $r\!\le\!-0.95$. The two fits are drawn separately (\emph{parallel
+  slopes, not one shared line}): our BBH-to-BBH slope is $-14.3$\,pp/decade, and
+  CLoRA's pooled slope is $-14.7$\,pp/decade, itself a blend of a
+  $-12.7$\,pp/decade baseline family and a steeper $-18.9$\,pp/decade $k$-series.
+  Absolute $\dw$ levels are comparable where the recipes match---CLoRA's LoRA
+  baseline sits at $\mathbb{F}\!=\!0.79$, essentially our own LoRA magnitude---and
+  only their null-space-\emph{constrained} $k$-series runs lower. CLoRA's $k$1024 and
+  $k$2048 configurations exceed their own base BBH ($34.91$), i.e.\ they \emph{gain}
+  out-of-domain accuracy by shrinking the update, which is the magnitude law read
+  from the other end. Two independent datasets and pipelines, one direction and one
+  slope band (Appendix~\ref{app:clora}).}
+  \label{fig:crosslit}
+\end{figure}
+
+\paragraph{The law acts per capability.} Decomposing retention into its constituent
+benchmarks (Figure~\ref{fig:perbench}, Appendix~\ref{app:figs}), every capability
+degrades monotonically with $\dw$ except one: broad factual knowledge dies fastest
+(MMLU at $-23.4$\,pp/decade, $r\!=\!-0.93$; MMLU-Pro $-15.2$, ARC-Challenge
+$-14.9$, BBH $-14.3$), while TruthfulQA is essentially flat ($-0.5$\,pp/decade,
+$r\!=\!-0.10$). We read the TruthfulQA flatness cautiously: its base ceiling is not
+yet calibrated, so we cannot rule out a near-chance-scoring floor artifact
+(Section~\ref{sec:limits}). This texture---one law with a per-capability
+slope---is evidence that the phenomenon is not an artifact of a single metric.
+%TODO(data): confirm TruthfulQA flatness is not a dead-benchmark artifact.
+
+% ===========================================================================
+\section{Geometry Is a Second-Order Fingerprint, Not a Separate Lever}
+\label{sec:geometry}\label{sec:ancova}
+% ===========================================================================
+The central negative result of this paper is that adapter \emph{geometry}---the
+subspace an initialization or penalty steers the update into---adds essentially
+nothing to retention once the update magnitude $\dw$ is held fixed. A subspace
+alignment term buys $\Delta R^2\!\approx\!0.0002$ ($p\!=\!0.53$) beyond $\dw$ and
+method identity, and the strongest candidate ``geometric axis''---concentration of
+the update in the base weight's principal singular directions---\emph{flips sign}
+the moment its two principal-space-init outliers are removed
+(Section~\ref{sec:fingerprint}). We report this as \emph{rigor, not retraction}: we
+looked hard for a second, geometric axis of forgetting, testing it directly on
+all 320 saved adapters, and did not find one. What survives is constructive---the
+same measurements that rule geometry out as a \emph{lever} make it an excellent
+\emph{fingerprint}, one that recovers each method's advertised design from its
+trained weights and explains the study's two below-curve outliers mechanistically.
+
 This is the result that separates our claim from everything prior. The raw
 correlation ``a bigger update forgets more'' is near-tautological, so we do not rest
 the claim on it; the non-trivial, falsifiable statement is that \emph{adapter
@@ -531,14 +592,35 @@ plain LoRA's ($3.57$): MiLoRA does not forget less once magnitude is held fixed,
 its reported advantage traces to a lower-magnitude operating point rather than to the
 minor-singular subspace---the magnitude law confirmed on a metric we did not design.
 
-Six of the seven assessed adapters are on the law. We treat the SC-LoRA deviation
-as \emph{provisional}: it is confounded by the calibration-versus-evaluation
-mismatch and rests on a single seed (Section~\ref{sec:limits}), so we ring it as
-an open question rather than headline it as a geometric effect. The summary
-measurement stands: an in-sample $R^2$ gain of only $0.13$ from six free
-per-method intercepts---with intercepts, slopes, and out-of-sample prediction all
-indistinguishable across the on-curve adapters---is the direct measurement of how
-little geometry buys once magnitude is held fixed.
+\paragraph{No residual geometric axis survives the stress test.} A natural worry is
+that some \emph{direction} of the update---not just its size---carries retention. We
+tested the strongest candidate: the concentration of the update in the base weight's
+top (principal) singular directions, via an SVD-alignment battery over all 320 saved
+adapters (Section~\ref{sec:fingerprint}). The preliminary partial correlations
+looked promising ($-0.48$ to $-0.58$ between principal alignment and retention once
+$\dw$ is regressed out), but they are carried \emph{entirely} by two
+principal-space-init methods (PiSSA and SC-LoRA): drop those two and the correlation
+\emph{flips sign} (to $+0.3$ to $+0.4$ across the alignment metrics), and among the
+on-curve adapters alone it is near zero ($-0.06$ to $-0.14$, n.s.). Added to a model that already contains $\dw$ and method identity,
+the alignment term buys $\Delta R^2\!=\!0.0002$ ($p\!=\!0.53$). The independent
+CE-to-base check agrees: MiLoRA (minor-space init) forgets like plain LoRA at matched
+magnitude (above). There is no second, geometric axis of forgetting once magnitude
+is controlled.
+
+\paragraph{Resolving the tension: geometry sets \emph{where} on the axis, not a
+second axis.} Two facts sit side by side---geometry adds nothing measurable among
+magnitude-matched adapters, yet the two most geometrically distinctive methods
+(PiSSA, SC-LoRA) are exactly the ones that fall below the curve---and they are not in
+conflict. Geometry acts by setting \emph{where on the magnitude axis a method
+starts}, not by adding a dimension orthogonal to it. A principal-space
+initialization begins training aligned with the directions the loss gradient most
+excites, so at a fixed learning rate it accumulates a \emph{larger, more
+mis-allocated} update: it forgets more because it moves further, not because
+``principal'' is intrinsically fragile. Among adapters that reach the same $\dw$,
+the subspace they occupy is immaterial to retention. This is the load-bearing
+reconciliation of the paper: the axis worth controlling is a \emph{magnitude}, and
+geometry is a \emph{fingerprint} of how a method lands on it---which the rest of this
+section makes quantitative.
 
 \begin{figure}[t]
   \centering
@@ -554,35 +636,86 @@ little geometry buys once magnitude is held fixed.
   \label{fig:fairness}
 \end{figure}
 
-\paragraph{The law acts per capability.} Decomposing retention into its constituent
-benchmarks (Figure~\ref{fig:perbench}, Appendix~\ref{app:figs}), every capability
-degrades monotonically with $\dw$ except one: broad factual knowledge dies fastest
-(MMLU at $-23.4$\,pp/decade, $r\!=\!-0.93$; MMLU-Pro $-15.2$, ARC-Challenge
-$-14.9$, BBH $-14.3$), while TruthfulQA is essentially flat ($-0.5$\,pp/decade,
-$r\!=\!-0.10$). We read the TruthfulQA flatness cautiously: its base ceiling is not
-yet calibrated, so we cannot rule out a near-chance-scoring floor artifact
-(Section~\ref{sec:limits}). This texture---one law with a per-capability
-slope---is evidence that the phenomenon is not an artifact of a single metric.
-%TODO(data): confirm TruthfulQA flatness is not a dead-benchmark artifact.
+\subsection{Geometry as a fingerprint}\label{sec:fingerprint}
+The same SVD-alignment metrics that fail as a \emph{predictor} succeed as a
+\emph{diagnostic}. Reconstructing each trained update $\Delta W=(\alpha/r)BA$ from the
+320 saved adapters (no retraining) and projecting it onto the base weight's own
+singular subspaces recovers, layer by layer, what each method was designed to
+do---and the signature persists through three epochs of training
+(Figure~\ref{fig:geometry}). MiLoRA is the only arm whose update energy leans toward
+the base weight's \emph{minor} singular directions ($e_{\rm bot}\!=\!0.115$ vs.\
+$e_{\rm top}\!=\!0.067$), its stated minor-init design; LoRA-Null concentrates on the
+output-side principal directions ($e_{\rm top}\!=\!0.126$); SC-LoRA spikes on the
+\emph{input-side} principal directions ($e^{\rm in}_{\rm top}\!=\!0.41$ on average,
+exceeding $0.9$ in the early $q/k$ projections at low learning rate); while plain LoRA,
+LoRA{+}wd, CLoRA, and DoRA sit near the $\approx\!0.06$ random-alignment baseline. The
+fingerprint pays off by explaining the study's two below-curve outliers
+mechanistically rather than by positing a geometric law. SC-LoRA's input-principal
+concentration is precisely the erosion its own paper warns of: it \emph{decays} as the
+learning rate rises ($e^{\rm in}_{\rm top}:\,0.70\!\to\!0.21$, $r\!=\!-0.96$;
+Figure~\ref{fig:geometry}D), so at the rate where it finally adapts it has already
+spent its constraint and sits $4.15$\,pp below the law---the very deviation the
+ANCOVA above flags as the one significant residual. PiSSA (principal init) is the
+study's worst forgetter for the same reason.
 
-\paragraph{Ruling out the confounds.} Three further observations are consistent
-with $\dw$, and not a correlate of it, being the governing variable. (i) Rank acts
-largely \emph{through} $\dw$: a LoRA rank sweep shows that raising the rank raises
-$\dw$ (with $\sigma_1$ growing) and drives retention down. A geometry-drift battery
-over all 320 saved adapters confirms magnitude as the first-order lever and finds
-only a \emph{modest} residual rank effect once magnitude is fixed (partial
-correlation $-0.56$ between rank and retention at matched $\dw$, itself largely
-collinear with the update's stable rank)---so magnitude is first and rank a modest
-second, and the folklore that low rank alone mitigates forgetting largely folds into
-the magnitude law.\footnote{The rank sweep in (i) and the leakage measurement in
-(ii) are companion experiments not in the released summary registry; the
-320-adapter drift battery in (i) is computed from the saved adapter weights. See
-Appendix~\ref{app:repro}.} (ii) The direction of the update in the static
-weight-SVD basis, measured by a leakage thermometer $\mu_E$ (the output leak into
-the preserved subspace), predicts retention at $r\!\approx\!-0.09$---i.e.\ not at
-all; this is exactly the basis the static-SVD adapters (PiSSA, MiLoRA, OPLoRA)
-reason in. (iii) $\dw$ beats $\smax$ as the axis because $\smax$ is inflated by
-method-specific spikiness (Figure~\ref{fig:axis}).
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig_geometry_4panel}
+  \caption{\textbf{Geometry: a second-order fingerprint, not a separate lever}
+  (Llama-2, from the reconstructed update $\Delta W=(\alpha/r)BA$ of the 320 saved
+  adapters). \textbf{(A)} Retention vs.\ $\dw$ across methods---magnitude is the
+  first-order lever (CorDA excluded from the fit). \textbf{(B)} Stress test: partial
+  correlation of retention with each candidate geometric metric, controlling for
+  $\log\dw$, computed over [all adapters] / [drop PiSSA{+}SC-LoRA] / [on-curve six].
+  The principal-alignment terms ($e_{\rm top}$, amp$_{\rm top}$,
+  $e^{\rm in}_{\rm top}$) collapse and \emph{flip sign} once the two principal-init
+  outliers are removed; only stable rank (the modest rank lever) survives.
+  \textbf{(C)} Per-method fingerprint (z-scored alignment metrics): each method's
+  advertised design is recovered from its trained weights---MiLoRA minor
+  ($e_{\rm bot}$), SC-LoRA input-principal ($e^{\rm in}_{\rm top}$), CorDA input-minor
+  ($e^{\rm in}_{\rm bot}$), LoRA-Null output-principal. \textbf{(D)} SC-LoRA's
+  input-principal concentration is an early-layer $q/k$ spike (reaching $\sim\!0.9$
+  at low learning rate) whose overall level \emph{erodes} as the learning rate rises
+  (inset, $e^{\rm in}_{\rm top}\!:0.70\!\to\!0.21$, $r\!=\!-0.96$), the mechanism
+  behind its below-curve retention. CorDA is shown as a fingerprint only and is
+  excluded from every quantitative claim (Section~\ref{sec:limits}).}
+  \label{fig:geometry}
+\end{figure}
+
+\paragraph{Rank is a modest second lever; static-SVD direction is not.} Two further
+observations locate what does and does not matter beyond $\dw$. \emph{(i)} Rank acts
+largely \emph{through} $\dw$---raising the LoRA rank raises $\dw$ (with $\sigma_1$
+growing) and drives retention down---but a residual effect survives at matched
+magnitude: the partial correlation of retention with rank given $\dw$ is $-0.56$,
+itself largely collinear with the update's stable rank. So magnitude is first and
+rank a modest second, and the folklore that low rank alone mitigates forgetting
+largely folds into the magnitude law. \emph{(ii)} The direction of the update in the
+static weight-SVD basis---a leakage thermometer $\mu_E$ (the output leak into the
+preserved subspace), exactly the quantity the static-SVD adapters (PiSSA, MiLoRA,
+OPLoRA) reason about---predicts retention at $r\!\approx\!-0.09$, i.e.\ not at all.
+The lever that family optimizes is uninformative for retention once magnitude is
+fixed.\footnote{The LoRA rank sweep and the $\mu_E$ leakage measurement are companion
+experiments not in the released summary registry; the 320-adapter drift battery is
+computed from the saved adapter weights (Appendix~\ref{app:repro}).}
+
+\paragraph{CorDA appears here only as a fingerprint.} CorDA's own signature---an
+input-side \emph{minor}-direction spike ($e^{\rm in}_{\rm bot}\!=\!0.49$, in the MLP
+down-projections) together with a large-magnitude blow-up---is shown in
+Figure~\ref{fig:geometry}C for completeness, but CorDA is \emph{excluded from every
+quantitative claim in this paper} (law fit, Pareto table, ANCOVA residual): it is
+mis-calibrated under the current setup and its $\dw$ explodes, so its position
+carries no on/off-law meaning (Section~\ref{sec:limits}). It is a fingerprint, not an
+assessed data point.
+
+Six of the seven assessed adapters are on the law. We treat the SC-LoRA deviation
+as \emph{provisional}: it is confounded by the calibration-versus-evaluation
+mismatch and rests on a single seed (Section~\ref{sec:limits}), so we ring it as
+an open question rather than headline it as a geometric effect. The summary
+measurement stands: an in-sample $R^2$ gain of only $0.13$ from six free
+per-method intercepts---with intercepts, slopes, and out-of-sample prediction all
+indistinguishable across the on-curve adapters---plus the $\Delta R^2\!=\!0.0002$
+subspace-alignment null, is the direct measurement of how little geometry buys once
+magnitude is held fixed.
 
 % ===========================================================================
 \section{Learning Rate Is Only a Proxy}\label{sec:lr}
@@ -839,15 +972,18 @@ to the named experiment that closes its gap; the items below give the detail.
         the SC-LoRA deviation remains provisional.
         %TODO(experiment): B4 eval-matched calibration + sensitivity arm not run ---
         %highest-leverage pending experiment; off-curve language stays embargoed.
-  \item \textbf{CorDA is withheld from the headline exhibits.} CorDA was first
+  \item \textbf{CorDA is withheld from every quantitative claim.} CorDA was first
         mis-calibrated on wikitext-2 and is being re-run on nq\_open; it is excluded
-        from every law figure, Pareto table, and ANCOVA residual, and its 7 cells are
-        not among the 49 clean cells. It appears in no reported exhibit, including the
-        learning-rate-artifact diagnostic (Figure~\ref{fig:lrartifact}), from which it
-        is likewise excluded. Because CorDA is
-        arguably the most important adapter for the ``geometry is inert'' claim, its
-        absence is a real gap: the study assesses seven of its eight adapters, six
-        of them on-curve, not all eight.
+        from every law figure, Pareto table, ANCOVA residual, and the
+        learning-rate-artifact diagnostic (Figure~\ref{fig:lrartifact}), and its 7
+        cells are not among the 49 clean cells. It appears in only one exhibit, the
+        geometry fingerprint (Figure~\ref{fig:geometry}, Section~\ref{sec:geometry}),
+        and there \emph{only} as a qualitative fingerprint---explicitly labelled as
+        excluded from every quantitative law/table claim---never as an assessed
+        on/off-curve result. Because CorDA is arguably the most important adapter for
+        the ``geometry adds nothing beyond magnitude'' claim, its absence from the
+        quantitative set is a real gap: the study assesses seven of its eight
+        adapters, six of them on-curve, not all eight.
         %TODO(experiment): CorDA nq_open re-run + passing 0-step self-check + fair
         %(B4) calibration required before CorDA can re-enter the law.
   \item \textbf{Math is sparse and Qwen is partial} (Section~\ref{sec:law}). Math is
@@ -887,11 +1023,12 @@ to the named experiment that closes its gap; the items below give the detail.
 % ===========================================================================
 \section{Discussion and Conclusion}\label{sec:conclusion}
 % ===========================================================================
-The field is optimizing the wrong variable. Catastrophic forgetting under PEFT is
-governed by a single scalar, the magnitude of the weight update $\dw$, and
-geometry---the choice of \emph{where} the update goes---is statistically inert
-once that magnitude is controlled: it adds no measurable effect beyond one
-provisional exception (Section~\ref{sec:ancova}). The diagnosis exhibits the
+The field is optimizing a second-order variable. Catastrophic forgetting under PEFT
+is governed to first order by a single scalar, the magnitude of the weight update
+$\dw$; geometry---the choice of \emph{where} the update goes---acts largely
+\emph{through} that magnitude and, once it is controlled, adds essentially nothing
+measurable beyond it ($\Delta R^2\!\approx\!0.0002$ for subspace alignment, with one
+provisional exception; Section~\ref{sec:geometry}). The diagnosis exhibits the
 \emph{ingredients} of a learning-rate artifact behind the reported wins: each
 adapter peaks at a different rate, and the $\dw$ it produces predicts retention
 far better than its learning rate does, so a per-method sweep collapses the
@@ -928,7 +1065,8 @@ evaluation set---is the constructive follow-up, now with the higher bar of havin
 to beat LoRA{+}wd rather than the elaborate adapters.
 
 The message for a field that ships a new adapter every week is a wake-up call:
-\textbf{control the magnitude, not the geometry.}
+\textbf{control the size of the update first---geometry sets where on the magnitude
+curve a method starts, not a separate axis of forgetting.}
 
 % ===========================================================================
 \bibliographystyle{plainnat}

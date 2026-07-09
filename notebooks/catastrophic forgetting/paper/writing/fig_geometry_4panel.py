@@ -75,13 +75,20 @@ fig.subplots_adjust(hspace=0.32, wspace=0.24, left=0.07, right=0.985,
                     top=0.94, bottom=0.09)
 
 # ===== Panel A: magnitude law scatter =====
-F = np.array([r["fdelta"] for r in rows])
-RET = np.array([r["retention"] for r in rows])
+# CorDA is excluded from the quantitative law fit (mis-calibrated, F_Delta blows up
+# to ~500; fingerprint only -> Panel C). It is dropped from Panel A scatter+fit.
+# We also drop diverged/NaN-collapsed cells (F_Delta>10 with retention floored to 0),
+# consistent with the paper's policy of dropping cells that diverged to NaN weights.
+law_rows = [r for r in rows if r["method"] != "CorDA" and r["fdelta"] <= 10.0]
+F = np.array([r["fdelta"] for r in law_rows])
+RET = np.array([r["retention"] for r in law_rows])
 LX = np.log10(F)
 pear = stats.pearsonr(LX, RET)[0]
 spear = stats.spearmanr(F, RET)[0]
 for m in fs.PALETTE:
-    mask = np.array([r["method"] == m for r in rows])
+    if m == "CorDA":
+        continue
+    mask = np.array([r["method"] == m for r in law_rows])
     if not mask.any():
         continue
     axA.scatter(F[mask], RET[mask], s=42, marker=fs.marker(m),
@@ -97,8 +104,9 @@ axA.set_title("A   Magnitude is the 1st-order lever", loc="left")
 axA.set_ylim(-3, 41)
 axA.grid(True, which="both", alpha=0.5)
 axA.text(0.03, 0.05,
-         f"pooled $r$ = {pear:.2f}\nSpearman $\\rho$ = {spear:.2f}\n$n$ = {len(rows)}",
-         transform=axA.transAxes, va="bottom", ha="left", fontsize=10,
+         f"pooled $r$ = {pear:.2f}\nSpearman $\\rho$ = {spear:.2f}\n$n$ = {len(law_rows)}"
+         "\n(CorDA + diverged cells excluded)",
+         transform=axA.transAxes, va="bottom", ha="left", fontsize=9.5,
          bbox=dict(boxstyle="round,pad=0.4", fc="#f7f7f4", ec=fs.GRID))
 axA.legend(loc="upper right", ncol=2, fontsize=8.3, handletextpad=0.25,
            columnspacing=0.8, borderaxespad=0.3)
@@ -220,7 +228,8 @@ plt.close(fig)
 
 # --------------------------------------------------------------- report --------
 print("FIGURE 2  geometry 4-panel")
-print(f"  A  pooled r(ret,logF)={pear:.3f} spearman={spear:.3f} n={len(rows)}")
+print(f"  A  pooled r(ret,logF)={pear:.3f} spearman={spear:.3f} n={len(law_rows)}"
+      f"  (CorDA excluded from fit; n_all={len(rows)})")
 print("  B  partial r(ret, metric | logF)  [all | drop PiSSA+SC-LoRA | on-curve]:")
 for m in METRICS:
     print(f"       {m:14s} " + "  ".join(f"{v:+.2f}" for v in vals[m]))

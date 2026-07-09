@@ -1,20 +1,29 @@
 #!/usr/bin/env python
-"""FIGURE 5 - THE LAW IS ALREADY IN THE 2025 LITERATURE (cross-paper overlay).
+"""CROSS-LITERATURE OVERLAY - the magnitude law in two independent datasets.
 
-Panel A: CLoRA (Kim et al. 2025) Table 4 -- effective update magnitude F_Delta
-         vs BBH retention across THEIR OWN methods (LoRA / LoRA-r8/r16 /
-         LoRA-L2 / MiLoRA / CLoRA-k128..k2048).  One line: r=-0.98, slope
-         ~-14.7 pp/decade -- indistinguishable from our -14.8 (two datasets).
-Panel B: MiLoRA (Wang et al. 2024) Table 7 (||dW||) vs Table 8 (CE-to-base):
-         LoRA->MiLoRA follows the magnitude trend; PiSSA (principal-space init)
-         forgets more than its magnitude predicts -- the same outlier our
-         geometry fingerprints flag.
-Plus a cited note from LoRA-Null (Table 4b): capacity costs retention.
+BBH-to-BBH overlay (both axes are BBH retention, so the two datasets are directly
+comparable; we do NOT mix our BBH+MMLU-Pro core against their BBH-only):
 
-All numbers here are PUBLISHED anchors, each cited in-code and on the figure.
-This is the only figure that hardcodes numbers (published-paper tables).
-Supports paper section: Related work / external replication.
+  * OUR cloud   : the Llama-2 commonsense LR sweep (lrsw_*, CorDA excluded),
+                  per-run (F_Delta, BBH answer-only), n=49.  Own fit line.
+  * CLoRA cloud : CLoRA (Kim et al., 2025) Table 4 published rows,
+                  (F_Delta, BBH).  Own fit line.
+
+Two point clouds, each with its OWN fitted line => PARALLEL slopes, NOT one shared
+line.  Guards baked in per the PI-critic:
+  - lead the annotation with r and direction; CLoRA robust in every subset (r<=-0.95).
+  - report slope as a RANGE (CLoRA pooled -14.7 blends a -12.7 baseline family and a
+    -18.9 k-series; ours -14.3 BBH<->BBH).
+  - CLoRA's LoRA-baseline F_Delta (0.79) ~ ours; only the constrained k-series runs
+    lower  (do NOT claim "~2x lower F_Delta").
+  - annotate that CLoRA k1024/k2048 EXCEED their own base BBH (34.91).
+
+Our numbers are read live from campaign_summary_clean.jsonl; the CLoRA rows are
+published anchors (cited in-code).  F_Delta = CLoRA Eq. 3 (mean ||dW x||/||x||).
+Supports paper section: The Magnitude Law / external replication (Fig. crosslit).
 """
+import re
+import json
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
@@ -22,10 +31,31 @@ import matplotlib.pyplot as plt
 import figstyle as fs
 fs.apply_rc()
 
-# ---- [EXTERNAL] CLoRA Table 4  (F_Delta, BBH); 'reference' row excluded -------
-# source: CLoRA (Kim et al., 2025), Table 4.  (F_Delta = their forgetting metric,
-# lower=better; F = BBH retention.)  Reference/full-FT row (2.42/34.91) is off the
-# adapter trend and excluded from the fit.
+# ---- OUR data: Llama-2 CS LR sweep, per-run (F_Delta, BBH), CorDA excluded -----
+OUR_BASE_BBH = 33.10   # answer-only base ceiling (key_numbers.md sec.0) [EXTERNAL]
+our = []
+for line in open(fs.CAMPAIGN):
+    if not line.strip():
+        continue
+    r = json.loads(line)
+    rn = r.get("run_name", "")
+    if not rn.startswith("lrsw_"):          # Llama-2 commonsense LR sweep only
+        continue
+    if fs.method_from_run(rn) == "CorDA":   # CorDA excluded from every law claim
+        continue
+    f, b = r.get("fdelta"), r.get("bbh")
+    if not f or f <= 0 or b is None or b <= 0:
+        continue
+    our.append((f, b))
+OF = np.array([x[0] for x in our])
+OB = np.array([x[1] for x in our])
+o_lx = np.log10(OF)
+o_r = stats.pearsonr(o_lx, OB)[0]
+o_sl, o_ic, *_ = stats.linregress(o_lx, OB)
+
+# ---- [EXTERNAL] CLoRA Table 4  (F_Delta, BBH) ---------------------------------
+# source: CLoRA (Kim et al., 2025), Table 4.  Reference/full-FT row (2.42/34.91) is
+# the base, drawn as a line, not a fit point.
 CLORA_BASE_BBH = 34.91
 CLORA_T4 = [
     ("LoRA",        0.79, 26.69, "LoRA"),
@@ -39,87 +69,92 @@ CLORA_T4 = [
     ("CLoRA k1024", 0.21, 36.49, "CLoRA"),
     ("CLoRA k2048", 0.14, 38.67, "CLoRA"),
 ]
-# ---- [EXTERNAL] MiLoRA Table 7 (||dW||) & Table 8 (CE-to-base) ----------------
-# source: MiLoRA (Wang et al., 2024), Tables 7 & 8 (CE-to-base = Kalajdzievski 2024).
-MILORA_T78 = [("LoRA", 68.2, 3.24), ("PiSSA", 55.8, 6.07), ("MiLoRA", 44.9, 2.54)]
-
-OUR_SLOPE = -14.8   # our CS pooled magnitude-law slope (key_numbers.md sec.1)
+CF = np.array([r[1] for r in CLORA_T4])
+CB = np.array([r[2] for r in CLORA_T4])
+c_lx = np.log10(CF)
+c_r = stats.pearsonr(c_lx, CB)[0]
+c_sl, c_ic, *_ = stats.linregress(c_lx, CB)
+# subset slopes for the range claim
+base_i = [i for i, r in enumerate(CLORA_T4) if r[3] != "CLoRA"]
+k_i = [i for i, r in enumerate(CLORA_T4) if r[0].startswith("CLoRA k")]
+base_sl = stats.linregress(c_lx[base_i], CB[base_i])[0]
+k_sl = stats.linregress(c_lx[k_i], CB[k_i])[0]
+# robustness: worst drop-one |r|
+drop1 = max(stats.pearsonr(np.delete(c_lx, j), np.delete(CB, j))[0]
+            for j in range(len(CLORA_T4)))
 
 # --------------------------------------------------------------- figure --------
-fig, (axA, axB) = plt.subplots(1, 2, figsize=(12.8, 5.4),
-                               gridspec_kw=dict(width_ratios=[1.7, 1.0],
-                                                wspace=0.26))
+fig, ax = plt.subplots(figsize=(8.6, 6.2))
+OUR_C = "#2a78d6"
+CLO_C = "#4a3aa7"
 
-# ===== Panel A: CLoRA Table 4 =====
-F = np.array([r[1] for r in CLORA_T4])
-B = np.array([r[2] for r in CLORA_T4])
-r_p = stats.pearsonr(np.log10(F), B)[0]
-sl, ic, _, pval, _ = stats.linregress(np.log10(F), B)
-xs = np.logspace(np.log10(F.min()) - 0.06, np.log10(F.max()) + 0.06, 100)
-axA.plot(xs, ic + sl * np.log10(xs), color=fs.FIT_C, lw=2.2, zorder=2)
-LEG = {"LoRA+wd": "LoRA-L2 (=LoRA+wd)"}   # bridge their naming to ours
-seen = set()
+# our cloud + fit
+xs_o = np.logspace(o_lx.min() - 0.03, o_lx.max() + 0.03, 100)
+ax.scatter(OF, OB, s=34, marker="o", facecolor=OUR_C, edgecolor="white",
+           linewidth=0.5, alpha=0.55, zorder=3,
+           label=f"ours: Llama-2 CS sweep (n={len(our)})")
+ax.plot(xs_o, o_ic + o_sl * np.log10(xs_o), color=OUR_C, lw=2.4, ls="--", zorder=4)
+
+# CLoRA cloud + fit
+xs_c = np.logspace(c_lx.min() - 0.05, c_lx.max() + 0.05, 100)
+ax.plot(xs_c, c_ic + c_sl * np.log10(xs_c), color=CLO_C, lw=2.4, zorder=4)
+ax.scatter(CF, CB, s=120, marker="D", facecolor=CLO_C, edgecolor="white",
+           linewidth=1.0, zorder=5, label="CLoRA Table 4 (published)")
+# label only the load-bearing rows to avoid clutter
+LABELPTS = {"CLoRA k2048": (-6, 6), "CLoRA k1024": (7, -2), "LoRA-L2": (-6, -11),
+            "LoRA": (8, -3)}
 for name, f, b, fam in CLORA_T4:
-    lab = LEG.get(fam, fam) if fam not in seen else None
-    seen.add(fam)
-    axA.scatter(f, b, s=110, marker=fs.marker(fam), facecolor=fs.color(fam),
-                edgecolor="white", linewidth=1.0, label=lab, zorder=3)
-# label the CLoRA k-series + the LoRA-L2 anchor
-for name, f, b, fam in CLORA_T4:
-    if name.startswith("CLoRA k") or name == "LoRA-L2":
-        axA.annotate(name.replace("CLoRA ", ""), (f, b),
-                     textcoords="offset points", xytext=(-4, 7), fontsize=7.8,
-                     color=fs.INK2, ha="right")
-axA.axhline(CLORA_BASE_BBH, color=fs.CEILING_C, lw=1.6, ls=(0, (6, 3)), zorder=1)
-axA.text(F.max(), CLORA_BASE_BBH + 0.25, "their base BBH 34.91",
-         color=fs.CEILING_C, ha="right", va="bottom", fontsize=9, fontweight="bold")
-axA.set_xscale("log")
-axA.set_xlabel(r"$F_\Delta$  (CLoRA forgetting metric, log scale)")
-axA.set_ylabel("BBH retention  (published)")
-axA.set_title("A   CLoRA's own Table 4 is the magnitude law", loc="left")
-axA.grid(True, which="both", alpha=0.5)
-axA.legend(loc="lower left", fontsize=9)
-axA.text(0.97, 0.95,
-         f"$r$ = {r_p:.2f}   slope {sl:.1f} pp/decade\n"
-         f"(our sweep: {OUR_SLOPE:.1f} pp/decade)",
-         transform=axA.transAxes, ha="right", va="top", fontsize=10,
-         bbox=dict(boxstyle="round,pad=0.4", fc="#f7f7f4", ec=fs.GRID))
+    if name in LABELPTS:
+        dx, dy = LABELPTS[name]
+        ax.annotate(name.replace("CLoRA ", ""), (f, b),
+                    textcoords="offset points", xytext=(dx, dy), fontsize=7.8,
+                    color=fs.INK2, ha="left" if dx > 0 else "right")
 
-# ===== Panel B: MiLoRA Table 7 vs 8 =====
-nx = np.array([r[1] for r in MILORA_T78])
-ce = np.array([r[2] for r in MILORA_T78])
-# magnitude trend through the two non-principal-init methods (LoRA, MiLoRA)
-on = [i for i, r in enumerate(MILORA_T78) if r[0] in ("LoRA", "MiLoRA")]
-sl2, ic2 = np.polyfit(nx[on], ce[on], 1)
-xr = np.array([nx.min() - 3, nx.max() + 3])
-axB.plot(xr, ic2 + sl2 * xr, color=fs.MUTED, lw=1.8, ls="--", zorder=2)
-for name, x, y in MILORA_T78:
-    axB.scatter(x, y, s=150, marker=fs.marker(name),
-                facecolor=fs.color(name), edgecolor="white", linewidth=1.0,
-                zorder=3)
-    axB.annotate(name, (x, y), textcoords="offset points", xytext=(8, 6),
-                 fontsize=9.5, color=fs.INK)
-axB.annotate("principal-space init:\nforgets above its magnitude\n(our geometry outlier)",
-             xy=(55.8, 6.07), xytext=(46, 4.6), fontsize=8.4, color=fs.INK,
-             arrowprops=dict(arrowstyle="->", color=fs.MUTED, lw=1.0))
-axB.set_xlabel(r"$\|\Delta W\|$  (MiLoRA Table 7)")
-axB.set_ylabel("CE to base  (MiLoRA Table 8)")
-axB.set_title("B   MiLoRA's Tables 7 & 8 agree", loc="left")
-axB.grid(True, alpha=0.5)
+# base BBH reference lines (each dataset its own base; NOT lined up)
+ax.axhline(CLORA_BASE_BBH, color=CLO_C, lw=1.2, ls=(0, (6, 3)), alpha=0.7, zorder=1)
+ax.text(OF.max(), CLORA_BASE_BBH + 0.25, "CLoRA base BBH 34.91",
+        color=CLO_C, ha="right", va="bottom", fontsize=8.2)
+ax.axhline(OUR_BASE_BBH, color=OUR_C, lw=1.2, ls=(0, (2, 2)), alpha=0.7, zorder=1)
+ax.text(OF.max(), OUR_BASE_BBH - 0.35, "our base BBH 33.10",
+        color=OUR_C, ha="right", va="top", fontsize=8.2)
 
-# LoRA-Null cited note (qualitative; no scatter-able points published)
-fig.text(0.5, -0.02,
-         "LoRA-Null (Table 4b): CorDA retention falls 89% -> 73% as rank 4 -> 256"
-         " — more capacity (larger updates) costs retention, same direction.",
-         ha="center", va="top", fontsize=8.6, color=fs.INK2, style="italic")
+# k1024/k2048 exceed their own base -- annotate so it can't be weaponised
+ax.annotate("k1024 & k2048 exceed their own base BBH\n"
+            "(they gain out-of-domain accuracy by shrinking $F_\\Delta$)",
+            xy=(0.17, 37.6), xytext=(0.62, 39.0), fontsize=8.2, color=CLO_C,
+            ha="left", va="center",
+            arrowprops=dict(arrowstyle="->", color=CLO_C, lw=0.9))
+
+ax.set_ylim(4, 41.5)
+ax.set_xscale("log")
+ax.set_xlabel(r"effective update magnitude  $F_\Delta$  (CLoRA Eq. 3, log scale)")
+ax.set_ylabel("BBH retention (%)")
+ax.set_title("The magnitude law in two independent datasets (BBH-to-BBH)",
+             loc="left", pad=10)
+ax.grid(True, which="both", alpha=0.45)
+ax.legend(loc="lower left", fontsize=9.5)
+ax.text(0.975, 0.34,
+        "same direction, parallel slopes (two fits, not one line):\n"
+        f"CLoRA Table 4:  $r$ = {c_r:.2f}   slope {c_sl:.1f} pp/decade\n"
+        f"   (robust: drop-one $r\\leq{drop1:.2f}$; baseline {base_sl:.1f}, "
+        f"$k$-series {k_sl:.1f})\n"
+        f"ours (BBH$\\leftrightarrow$BBH):  $r$ = {o_r:.2f}   slope {o_sl:.1f} pp/decade",
+        transform=ax.transAxes, ha="right", va="top", fontsize=9,
+        bbox=dict(boxstyle="round,pad=0.45", fc="#f7f7f4", ec=fs.GRID))
+
+fig.text(0.5, -0.015,
+         "CLoRA's LoRA baseline sits at $F_\\Delta$=0.79, essentially our own LoRA "
+         "magnitude; only its null-space-constrained $k$-series runs lower.",
+         ha="center", va="top", fontsize=8.4, color=fs.INK2, style="italic")
 
 pdf, png = fs.save(fig, "fig_cross_literature")
 plt.close(fig)
 
 # --------------------------------------------------------------- report --------
-print("FIGURE 5  cross-literature")
-print(f"  A  CLoRA Table 4 (10 adapter rows): r(log F_Delta, BBH) = {r_p:.3f},"
-      f" slope = {sl:.2f} pp/decade (p={pval:.1e}); our sweep slope {OUR_SLOPE}")
-print(f"  B  MiLoRA Tab7 ||dW|| vs Tab8 CE: LoRA(68.2,3.24) MiLoRA(44.9,2.54)"
-      f" on trend; PiSSA(55.8,6.07) above (principal-init outlier)")
+print("FIGURE cross-literature (BBH<->BBH overlay)")
+print(f"  ours : n={len(our)}  r={o_r:.3f}  slope={o_sl:.2f} pp/decade  "
+      f"(F range {OF.min():.2f}-{OF.max():.2f}, BBH {OB.min():.1f}-{OB.max():.1f})")
+print(f"  CLoRA: n={len(CLORA_T4)}  r={c_r:.3f}  slope={c_sl:.2f}  "
+      f"(baseline {base_sl:.2f}, k-series {k_sl:.2f}; drop-one worst r={drop1:.3f})")
+print(f"  CLoRA base BBH 34.91; k1024=36.49 k2048=38.67 exceed base")
 print(f"  wrote {pdf}\n        {png}")
