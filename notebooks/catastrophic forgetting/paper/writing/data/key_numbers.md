@@ -122,6 +122,14 @@ Math sweep is sparse (only LoRA n=7, LoRA+wd n=6, DoRA n=1). LoRA+wd wins both a
 **NOTE:** LoRA+wd math Ret-broad = **33.6** and DoRA math Ret-broad = **33.8** (earlier docs printed
 34.0 and 32.9 respectively — corrected here).
 
+**AUTHORITATIVE MATH HEADLINE `[ADDED 2026-07-10]`:** the table above is the OLDER `lrswm_` sweep
+(50.6 etc.) — the **`frm_` faithful math-recipe block supersedes it as the math headline**:
+LoRA+wd(0.3) lr2e-4 GSM8K **67.25** / Ret-core 25.14 (`frm_lorawd_wd0p3_lr2e4_c256_s42`; seed 43 =
+65.88/26.01 `frm_lorawd_wd0p3_lr2e4_c256_s43`), plain LoRA(wd0) lr1e-4 **64.97** / 22.58
+(`frm_lorawd_wd0_lr1e4_c256_s42`), MiLoRA lr1e-4 62.85/23.94 (`frm_milora_lr1e4_c256_s42`),
+CLoRA-k256 lr3e-4 60.80/19.02 (`frm_clora_k256_lr3e4_c256_s42`), PiSSA lr3e-4 49.66/3.62
+(`frm_pissa_lr3e4_c256_s42`). Quote the frm_ numbers, not the 50.6 row, for the math story.
+
 ## 5. FAIRNESS / ANCOVA (fig2, Llama-2 CS, n=49) `[RECOMPUTED 2026-07-02]`
 
 - Pooled **linear** log-fit R² = **0.74**; adding per-method intercepts → R² = **0.87**.
