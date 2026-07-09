@@ -195,3 +195,15 @@ run_state/
 # **/results/*
 
 .claude/
+# --- Magnitude-law campaign: valuable research artifacts must be backed up (2026-07-09) ---
+# Override the global **/*.md and **/*.txt ignores for the campaign's docs, plans, and job specs.
+!notebooks/catastrophic forgetting/handoff/*.md
+!notebooks/catastrophic forgetting/jobs/*.txt
+!notebooks/catastrophic forgetting/paper/**/*.md
+!notebooks/catastrophic forgetting/paper/**/*.txt
+!notebooks/catastrophic forgetting/papers/*.pdf
+!notebooks/catastrophic forgetting/*.md
+# Re-include the repo agent definitions (parent .claude/ is ignored above)
+!.claude/
+.claude/*
+!.claude/agents/

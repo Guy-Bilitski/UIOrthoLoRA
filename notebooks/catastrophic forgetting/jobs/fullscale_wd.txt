@@ -1,0 +1,7 @@
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/lora_wd0p3 --run_name lora_wd0p3_full --ret_limit 0 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/lora_wd0p1 --run_name lora_wd0p1_full --ret_limit 0 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/lora_wd0p05 --run_name lora_wd0p05_full --ret_limit 0 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/lora_wd0p01 --run_name lora_wd0p01_full --ret_limit 0 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/lora_wd1p0 --run_name lora_wd1p0_full --ret_limit 0 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k1024 --run_name clora_k1024_FULLre --ret_limit 0 --ret_max_gen 512
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter /scratch/cf_models/clora_cs_k2048 --run_name clora_k2048_FULLre --ret_limit 0 --ret_max_gen 512

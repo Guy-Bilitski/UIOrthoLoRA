@@ -1,0 +1,52 @@
+PAPER ASSETS — 159 runs, 93 configs
+
+=== MAIN TABLE [cs] (rep = max core-retention at CS-8>=70) ===
+method    config               CS-8    ret_core ret_broad  ||dW||F   svmax  n
+BASE      (no-FT)                --        26.0        --        0      --
+*LoRA     lora_r16_lr1e4       78.3        26.7      35.4    0.310    19.2  1
+*LoRA+wd  lorawd_wd0p5   71.6$\pm$14.7 27.5$\pm$0.3      35.2    0.260    15.3  3
+ CLoRA    clora_k1024    72.9$\pm$8.0 24.8$\pm$0.4      33.2    0.440    20.7  3
+ DoRA     dora_r16_lr2e4       78.3        24.8      32.9    0.450    38.8  1
+ CorDA    corda_r16_lr5e       73.4        23.1      33.2    0.280   107.7  1
+ MiLoRA   milora_r32_lr2       70.2        26.2      36.6    0.170     3.0  1
+ SC-LoRA  sclora_r32_lr2       79.5        25.3      34.3    0.330     7.1  1
+
+=== MAIN TABLE [math] (rep = max core-retention at GSM8K>=5) ===
+method    config              GSM8K    ret_core ret_broad  ||dW||F   svmax  n
+BASE      (no-FT)                --        26.0        --        0      --
+*LoRA     lora_r16_lr2e5       33.9        26.1      33.9    0.330     7.0  1
+*LoRA+wd  lorawd_wd0p3_l       35.1        26.2      34.0    0.320     8.0  1
+
+=== retention ~ ||dW||_F correlations ===
+[cs] POOLED r(ret, ||dW||_F) = -0.848  (n=85 configs)
+   LoRA      within-method r = -0.970 (n=11)
+   LoRA+wd   within-method r = -0.947 (n=14)
+   CLoRA     within-method r = -0.977 (n=12)
+   DoRA      within-method r = -0.864 (n=11)
+   CorDA     within-method r = -0.910 (n=11)
+   MiLoRA    within-method r = -0.961 (n=11)
+   SC-LoRA   within-method r = -0.879 (n=15)
+[math] POOLED r(ret, ||dW||_F) = -0.951  (n=8 configs)
+   LoRA      within-method r = -0.952 (n=4)
+   LoRA+wd   within-method r = -0.637 (n=4)
+
+=== LR-FAIRNESS: each adapter at its OWN best LR (defensible best-result table) ===
+-- cs -- (best LR chosen by max adaptation per method)
+  method      bestLR  adapt    ret  ||dW||F   sweep(LR:adapt)
+  LoRA        0.0003   79.1   24.4    0.623   2e-05:54 5e-05:38 0.0001:78 0.0002:72 0.0003:79 0.0005:77 0.001:67
+  LoRA+wd     0.0005   81.6   25.6    0.394   2e-05:23 5e-05:45 0.0001:77 0.0002:41 0.0003:81 0.0005:82 0.001:80
+  CLoRA       0.0005   78.4   21.9    0.643   2e-05:50 5e-05:52 0.0001:12 0.0002:52 0.0003:65 0.0005:78 0.001:72
+  DoRA        0.0002   78.3   24.8    0.445   2e-05:31 5e-05:44 0.0001:45 0.0002:78 0.0003:64 0.0005:74 0.001:68
+  CorDA       0.0001   77.9   19.9    0.419   2e-05:11 5e-05:73 0.0001:78 0.0002:76 0.0003:74 0.0005:71 0.001:55
+  MiLoRA      0.0003   79.9   24.7    0.543   2e-05:70 5e-05:48 0.0001:36 0.0002:75 0.0003:80 0.0005:77 0.001:65
+  SC-LoRA      5e-05   80.1   22.5    0.559   2e-05:80 5e-05:80 0.0001:80 0.0002:78 0.0003:74 0.0005:70 0.001:35
+  => best LR is NOT the same across methods ([5e-05, 0.0001, 0.0002, 0.0003, 0.0005]) -> a single fixed LR biases the comparison (the thesis).
+-- math -- (best LR chosen by max adaptation per method)
+  method      bestLR  adapt    ret  ||dW||F   sweep(LR:adapt)
+  LoRA        0.0003   46.5   22.9    0.520   2e-05:34 0.0003:47 0.001:42
+  LoRA+wd     0.0003   49.1   24.4    0.359   2e-05:35 5e-05:41 0.0002:49 0.0003:49
+  [figures] wrote paper/fig4_lr_sensitivity.png
+
+[leakage] forensics files present but no joinable runs yet.
+
+[figures] wrote paper/fig1_pareto_*.png, paper/fig2_magnitude.png
