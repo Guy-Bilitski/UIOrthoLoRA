@@ -8,6 +8,22 @@ sweep** on LLaMA-2-7B (CS + math).
 ## Read in this order (current → historical)
 0. **`../WORKDIR_ALIGNMENT.md`** — ⚡ single onboarding doc: goal/thesis, exact CLoRA settings, LIVE file
    map + pipeline, adapter roster & status, current campaign status, decisions log, gotchas. **START HERE.**
+   (`../README.md` = front door; `../STATUS.md` = live snapshot; `../paper/writing/INTERESTING_INSIGHTS.md`
+   = consolidated findings, DONE-vs-OPEN.)
+
+### LATEST (2026-07-06 → 07-09) — read after WORKDIR_ALIGNMENT
+- **25_SUPERVISION_REPORT_2026-07-09.md** — current supervisor report: thesis, the fair LR sweep, canonical
+  numbers (from key_numbers.md), CLoRA Table 2/3/4 published comparison, honest boundaries. [CURRENT]
+- **26_RESEARCH_PLAN_2026-07-09.md** — post-fleet prioritized plan: injected GPU cells, CPU/eval-only work,
+  paper actions, deferred/dropped items. [CURRENT — the working plan]
+- **27_GEOMETRY_DRIFT_2026-07-09.md** — geometry-drift verdict: magnitude 1st-order / rank modest 2nd-order
+  / **principal-direction 2nd-order axis TESTED & REJECTED**; geometry = fingerprint/measurement tool. [CURRENT]
+- **28_TWO_NODE_PLAN_2026-07-09.md** — 16-GPU two-node fleet plan (saves Qwen + 3-seed + full CE). [CURRENT]
+- **21_CONSORTIUM_SYNTHESIS.md** (07-06) — 9-agent verdict: law flat in the competitor blob → BBH-only,
+  α=2r ruling, Tier-A cell set. [CURRENT — reference] · **22_RETENTION_FIX.md** — BBH-only retention decision
+  + PiSSA real-forgetting gate. · **23_REPO_VERIFICATION.md** — correctness-gate pass. ·
+  **24_PI_STATUS_REPORT_2026-07-07.md** — prior PI status snapshot.
+
 1. **20_FAITHFUL_REPRO_SPEC.md** (2026-07-05) — **the live plan.** CLoRA Table 2 (CS r32/α64) + Table 3
    (math r64/α128) faithful reproduction, faithful math eval (`math_eval.py`), residual_save generalized
    to scaling≠1, PiSSA wired, LoRA+wd LR×wd sweep. [CURRENT — primary track]
@@ -31,8 +47,11 @@ sweep** on LLaMA-2-7B (CS + math).
 Paper writing package: **`../paper/writing/FINALIZATION_PLAN.md`** + **`../paper/writing/data/key_numbers.md`**
 (single source of truth for every quoted number).
 
-## One-line status (2026-07-06)
-Live pool `gpu_pool.py --tag frepro3 --jobs jobs/frepro_lean.txt` (103 cells = 48 CS + 55 math) running
-the faithful CLoRA reproduction. Math: 7 arms complete; CS: just started. Magnitude law confirmed on the
-prior 2×2 (pooled r≈−0.87, on-curve −0.92); CorDA/SC-LoRA off-curve claims embargoed pending fair
-calibration. Memory: `~/.claude/projects/-home-guy-UIOrthoLoRA/memory/`.
+## One-line status (2026-07-09)
+Two-node 16×B200 fleet (`handoff/28`) running the faithful CLoRA reproduction: on Node A, 4 `gpu_pool` pools
+(`frepro4*`) + `auto_dispatch` on `jobs/master_dispatch.txt`; Node B trains fresh + syncs. Math `frm_`
+~46/46 done; CS `frc_` reservoir (paper spine) landing now. Magnitude law confirmed on 2 models
+(CS pooled r=−0.86, on-curve −0.92, Qwen −0.88) + externally in CLoRA Table 4 (r=−0.98); geometry-drift
+verdict done (magnitude 1st / rank 2nd / principal-direction axis rejected). CorDA/SC-LoRA off-curve claims
+still embargoed pending fair calibration. Full snapshot: `../STATUS.md`. Memory:
+`~/.claude/projects/-home-guy-UIOrthoLoRA/memory/`.

@@ -1,7 +1,7 @@
 # WORKDIR ALIGNMENT — single onboarding doc
 
 **Working dir:** `/home/guy/UIOrthoLoRA/notebooks/catastrophic forgetting/` (note the space — quote it).
-**Repo root:** `/home/guy/UIOrthoLoRA`  ·  **Branch:** `ortho_new`  ·  **Written:** 2026-07-06 (repo-hygiene pass).
+**Repo root:** `/home/guy/UIOrthoLoRA`  ·  **Branch:** `ortho_new`  ·  **Written:** 2026-07-06, **updated 2026-07-09** (repo-hygiene pass).
 
 > This file is the current-state onboarding map. Where older docs disagree, this file + `handoff/20_FAITHFUL_REPRO_SPEC.md`
 > win. `README.md` (Phase-1 UIOrthoLoRA go/no-go) and `STATUS.md` (2026-06-29 2×2 campaign) are HISTORICAL —
@@ -84,30 +84,38 @@ LR=3e-4; data-aware arms (milora/sclora/lora_null) are LR-swept at the faithful 
   make_frepro_jobs.py  --table {math,cs} --prefix {frm,frc}
         |   (emits per-arm  "train_cs.py ... && eval_one_gpu.py ..."  cells; resumable)
         v
-  jobs/frepro_math.txt (55) + jobs/frepro_cs.txt (48)
+  jobs/frepro_math.txt + jobs/frepro_cs.txt   (frepro4 wave: jobs/frepro4_{math,cs}.txt)
         |
-  build_lean.py   (merges; already-trained cells -> eval-only so they aren't retrained)
+  build_lean.py   (merges frepro4_{math,cs} -> frepro4_lean; already-trained cells -> eval-only)
         v
-  jobs/frepro_lean.txt  (103 cells)   <-- the RUNNING job file
+  jobs/frepro4_lean.txt + wave-specific lists (frepro4_main5/reservoir/b4/inject/headline_math2)
         |
-  gpu_pool.py --gpus 8 --tag frepro3 --jobs jobs/frepro_lean.txt   [LIVE, pid 2932862]
-        |                         (1 job/GPU; per-job log logs/frepro3_<i>.log)
+  TWO schedulers (single-scheduler-per-GPU discipline):
+   gpu_pool.py --gpu_ids <ids> --tag <t> --jobs jobs/<file>.txt   (fixed GPUs, 1 job/GPU)
+   auto_dispatch.py --jobs jobs/master_dispatch.txt --gpus 0-7     (self-refilling; absorbs freed GPUs)
+        |
         +--> train_cs.py   (shared trainer; --method lora|clora + adapter-init flag)
-        |        imports run_lib; on demand: corda_init / milora_init / data_aware_init(pissa) /
-        |        sclora_init / lora_null_init / residual_save
+        |        imports run_lib; on demand: corda_init / cordapp_init / milora_init /
+        |        data_aware_init(pissa) / sclora_init / lora_null_init / residual_save
         +--> eval_one_gpu.py  (in-process CS or math_faithful adapt + BBH/MMLU-Pro retention + F-delta)
                  imports run_lib, eval_cs, uio_inprocess; on demand: math_eval, bbh_metric_fix
         v
   results/<run>/summary.json  +  results/campaign_summary.jsonl  (one line/run)
 ```
 
-**LIVE files** (running pool + its train/eval import chain — verified by grep, not guessed):
+**LIVE files** (running pools + dispatcher + their train/eval import chain — verified by grep + `ps`, not
+guessed). As of 2026-07-09 the live schedulers are **4 `gpu_pool` pools** (tags `frepro4`, `frepro4b4`,
+`frepro4hs`, `frepro4inj`) + **`auto_dispatch`** on `jobs/master_dispatch.txt` — NOT the old `frepro3`
+pool. Confirm current state with `ps aux | grep -E 'gpu_pool|auto_dispatch'`.
 
 | File | Role |
 |---|---|
-| `gpu_pool.py` | 8-GPU scheduler (running as tag `frepro3`); 1 job/GPU, per-job logs, sets `OMP/MKL_NUM_THREADS=8` |
-| `jobs/frepro_lean.txt` | the 103-cell job list the pool is executing (48 CS + 55 math) |
-| `train_cs.py` | shared trainer; every method = `--method lora|clora` + an init flag (`--milora/--pissa/--sclora/--lora_null/--corda`, `--weight_decay`) |
+| `gpu_pool.py` | fixed-GPU scheduler; 1 job/GPU, per-job logs, sets `OMP/MKL_NUM_THREADS=8` |
+| `auto_dispatch.py` | self-refilling dispatcher; picks up GPUs after their owning pool exits (never collides) |
+| `jobs/master_dispatch.txt` | the master queue `auto_dispatch` drains |
+| `jobs/frepro4_{main5,b4,headline_math2,inject}.txt` | the per-pool job lists currently executing |
+| `jobs/frepro4_{cs,math,lean,reservoir,qwen}.txt`, `jobs/frepro_{lean,cs,math,all}.txt` | source/prior-wave job lists (kept; `build_lean` reads frepro4_{math,cs}) |
+| `train_cs.py` | shared trainer; every method = `--method lora|clora` + an init flag (`--milora/--pissa/--sclora/--lora_null/--corda/--cordapp`, `--weight_decay`) |
 | `eval_one_gpu.py` | in-process evaluator (adapt = CS suite or math_faithful; retention = BBH+MMLU-Pro; F-delta) |
 | `run_lib.py` | shared prompt templates (train==eval), logging, registries |
 | `eval_cs.py` | commonsense gen eval; `run_eval(model,…)` batching reused in-process |
@@ -116,18 +124,20 @@ LR=3e-4; data-aware arms (milora/sclora/lora_null) are LR-swept at the faithful 
 | `bbh_metric_fix.py` | patches lm-eval BBH answer-only metric normalization (imported by `eval_one_gpu`) |
 | `residual_save.py` | rank-2r W0-relative adapter conversion for residual-init methods (scaling-generalized) |
 | `corda_init.py` | static CorDA-KPA init (imported by `train_cs --corda`; reused by `cordapp_init`) |
+| `cordapp_init.py` | CorDA++ init — **now WIRED into `train_cs.py`** (`--cordapp`, 29 refs); no longer pending |
 | `milora_init.py` | MiLoRA bottom-r SVD init |
 | `data_aware_init.py` | PiSSA top-r SVD init (`pissa_BAR`) |
 | `sclora_init.py` | SC-LoRA D+/D− covariance init |
 | `lora_null_init.py` | LoRA-Null null-space init |
 | `results/` | provenance: `campaign_summary.jsonl`, `train_registry.jsonl`, `eval_registry.jsonl`, per-run dirs |
-| `logs/` | per-job logs (pool writes `logs/frepro3_*.log`) |
+| `logs/` | per-job logs (pools write `logs/<tag>_*.log`; dispatcher writes `logs/disp_*.log`) |
 
 **ACTIVE-SUPPORT** (part of the current campaign; run out-of-band, not imported at runtime):
-`make_frepro_jobs.py`, `build_lean.py`, `jobs/frepro_{math,cs,all}.txt`, `validate_frepro_residual.py`,
-`validate_residual_zero_step.py`, `validate_cordapp_cpu.py`, `cordapp_init.py`, `metamath_prep_395k.py`,
-`math_test_prep.py`, `base_retention_check.py`, and the paper generator `paper_figs_v2.py` (+ the
-`paper/writing/` package).
+`make_frepro_jobs.py`, `build_lean.py`, the `jobs/frepro*` job lists, `validate_frepro_residual.py`,
+`validate_residual_zero_step.py`, `validate_cordapp_cpu.py`, `metamath_prep_395k.py`, `math_test_prep.py`,
+`base_retention_check.py`, the analysis scripts `geo_drift_phase{1,2}.py`, `forgetting_ce.py`,
+`retfix_retention_gate.py`, `retfix_bbh_only_report.py`, and the paper generator `paper_figs_v2.py`
+(+ the `paper/writing/` package). Reference PDFs live in `papers/`; vendored method repos + data in `repro/`.
 
 ---
 
@@ -144,22 +154,23 @@ LR=3e-4; data-aware arms (milora/sclora/lora_null) are LR-swept at the faithful 
 | **LoRA-Null** | `--method lora --lora_null 1` | implemented; **sweeping** (calib = nq_open) |
 | **DoRA** | `--method lora --use_dora 1` | implemented; kept as an extra (dropped from headline ~2× train cost) |
 | **CorDA (static KPA)** | `--method lora --corda 1` | implemented + faithful; **excluded from tables** (nq_open calib ≠ academic eval confound, `handoff/18`) |
-| **CorDA++** | (not yet wired) | **implemented in `cordapp_init.py`, CPU-validated 14/14** (`validate_cordapp_cpu.py`); **wiring into `train_cs.py` PENDING**; candidate-pool `DEFAULT_N` is currently **8 and must be changed to 5** at the next pool restart (paper N unresolved, `handoff/17 §8`) |
+| **CorDA++** | `--method lora --cordapp 1` | **WIRED into `train_cs.py`** (2026-07-06 restart; `cordapp_init.py`, CPU-validated 14/14); dynamic-covariance N set for the campaign (`handoff/17 §8`); α=r@2e-5 paper-faithful anchor queued to remove the α=2r confound |
 
 Residual-init methods (MiLoRA, PiSSA, SC-LoRA, LoRA-Null, CorDA, CorDA++) **require** the rank-2r
 W0-relative conversion at save (`residual_save.py`) or eval explodes (see gotchas).
 
 ---
 
-## (e) Current campaign status (parsed 2026-07-06)
+## (e) Current campaign status (parsed 2026-07-09)
 
-- `jobs/frepro_lean.txt` = **103 cells** (48 CS `frc_*` + 55 math `frm_*`); pool `frepro3` started 09:39.
-- **Math (`frm`) complete = 7** (all have `summary.json`): `clora_k64/k128/k256`, `lora`, `lorawd_wd0`,
-  `milora`, `pissa` (all `lr3e4_c256_s42`, except `lorawd_wd0_lr1e4`). **CS (`frc`) complete = 0** (just started).
-- `results/campaign_summary.jsonl` = **430 records / 414 unique run_names** spanning the whole project
-  history (not just frepro). Top prefixes: `mtx` 102, `lrsw` 63, `qwsw` 50, `lora` 36, `lrswm` 36,
-  `uio` 33, `clora` 18, `scl` 18, `grid` 9, `mtxm` 8, `frm` 7, `dora` 6, `corda` 2. (The `fr_*` rows are
-  legacy UIO frontier runs, NOT frepro.) 504 subdirs under `results/`.
+- **Two-node 16×B200 fleet** (`handoff/28`): Node A (this host) owns all adapters + analysis; Node B trains
+  fresh and syncs summary JSON. Live on A: 4 `gpu_pool` pools (`frepro4`/`frepro4b4`/`frepro4hs`/`frepro4inj`)
+  + `auto_dispatch` on `jobs/master_dispatch.txt`.
+- **Math (`frm_`) complete ≈ 46/46** (48 `frm_*` result dirs on disk; + method-row/β cells in flight).
+- **CS (`frc_`) landing now** — the 65-cell reservoir is the paper's spine (0 done at campaign start).
+- `results/campaign_summary.jsonl` ≈ **472 rows** spanning the whole project history (dedup = latest
+  `evaluated_at` per `run_name`, see key_numbers §0); ~482 subdirs under `results/`.
+- **Full current snapshot: `STATUS.md`** (running pools, progress, analysis-done/queued).
 
 ---
 
@@ -174,16 +185,20 @@ W0-relative conversion at save (`residual_save.py`) or eval explodes (see gotcha
 | 2026-07-01 | Eval fixes: gen-cap 512/max-len 4096 (`handoff/15`), BBH metric normalization (`handoff/16`). Rows before commits `fe0f9be3`/`2602f57d` are not comparable to post-fix rows. |
 | 2026-07-02 | Paper package assembled (`paper/writing/`, `campaign_summary_clean.jsonl`); CorDA scrubbed from deliverables → **6-of-8 law**; CorDA++ plan finalized (`handoff/17`); off-curve language **embargoed** pending eval-matched re-run. |
 | 2026-07-05 | **Faithful-repro pivot** (`handoff/20`): rebuild CLoRA's exact CS+math recipe (r32/α64, r64/α128), **faithful math eval** via new `math_eval.py`, **`residual_save.py` generalized to scaling≠1** (α≠r), **PiSSA wired**, MetaMathQA-395K + Hendrycks MATH built. **256-vs-512 math cutoff sensitivity** flagged (256 truncates CoT tail; 512 recommended, disclosed). |
-| 2026-07-06 | camp5 drained; `frepro3` pool launched on `jobs/frepro_lean.txt` (this is the live campaign). |
+| 2026-07-06 | camp5 drained; `frepro3` pool launched on `jobs/frepro_lean.txt`. Retention decision → **BBH-only** (MMLU-Pro broken for math); PiSSA real-forgetting gate (`handoff/22`); repo-verification gates pass (`handoff/23`). |
+| 2026-07-06→ | **Restart to frepro4** (patches in `restart_staging/`): CorDA++ wired into `train_cs.py`; multi-pool + `auto_dispatch` fleet on `frepro4_*` / `master_dispatch.txt`. |
+| 2026-07-09 | **9-agent review fleet** (5 paper experts on the PDFs + 4 section validators): all ports faithful; **`fdelta` = CLoRA's F_Δ, not Frobenius** (metrology fix, key_numbers §0); CLoRA Table 4 = external law replication (r=−0.98); geometry-drift verdict (magnitude 1st / rank 2nd / **principal-direction axis REJECTED**, `handoff/27`); numbers switched to canonical key_numbers.md; framing → "flat field governed by ‖ΔW‖, LoRA+wd Pareto-competitive." **Two-node plan** (`handoff/28`). Repo-hygiene pass: superseded scripts/jobs → `archive/`. |
 
 ---
 
 ## (g) Gotchas (do not relearn the hard way)
 
-- **ONE GPU scheduler at a time.** Two `gpu_pool.py` each grab all 8 GPUs → 2 runs/GPU → OOM (~45h lost
-  twice). `frepro3` (pid 2932862) is live — **never launch a second pool**, and **never edit a live `.py`
-  the pool executes fresh per job** (it would corrupt every not-yet-started cell). Develop code changes in
-  a git worktree/branch and run only after the pool drains.
+- **ONE scheduler per GPU.** Two schedulers claiming the same GPU → 2 runs/GPU → OOM (~45h lost twice).
+  The current fleet coexists safely because each `gpu_pool` owns fixed `--gpu_ids` and `auto_dispatch`
+  **only picks up GPUs after their owning pool exits** (it reads live `gpu_pool` `--gpu_ids` from `ps`).
+  **Never launch a second pool on an already-owned GPU**, and **never edit a live `.py` the pool executes
+  fresh per job** (it would corrupt every not-yet-started cell). Develop code changes in a git
+  worktree/branch and run only after the relevant pool drains.
 - **`pgrep -f "<pat>"` self-matches** its own command line. Use the bracket trick `grep '[g]pu_pool'`
   (or kill by explicit PID).
 - **Residual rank-2r conversion is mandatory** for residual-init methods (MiLoRA/PiSSA/SC-LoRA/LoRA-Null/
@@ -206,7 +221,9 @@ W0-relative conversion at save (`residual_save.py`) or eval explodes (see gotcha
 ## Stale docs — read the current ones
 
 Current canonical order: **this file** → `handoff/20_FAITHFUL_REPRO_SPEC.md` (the live plan) →
-`paper/writing/FINALIZATION_PLAN.md` + `paper/writing/data/key_numbers.md` (paper single-source-of-truth).
-`README.md` (Phase-1 UIO go/no-go) and `handoff/00`–`12` are HISTORICAL; `STATUS.md` (2026-06-29) and
-`handoff/17`/`19` describe the pre-pivot camp5 2×2 / fairness campaign and are superseded in priority by
-`handoff/20`. See `CLEANUP_MANIFEST.md` for the full stale-file list.
+`handoff/25`–`28` (latest supervisor report, research plan, geometry-drift verdict, two-node plan) →
+`paper/writing/data/key_numbers.md` (paper single-source-of-truth) + `paper/writing/INTERESTING_INSIGHTS.md`
+(consolidated findings, DONE-vs-OPEN). `README.md` and `STATUS.md` are now current front-door / snapshot
+docs. `handoff/00`–`12` are HISTORICAL (UIO era); `handoff/17`/`19` describe the pre-pivot camp5 2×2 /
+fairness campaign, superseded in priority by `handoff/20`. Superseded scripts/jobs live in `archive/`
+(see `CLEANUP_MANIFEST.md` + `archive/README.md`).
