@@ -14,8 +14,14 @@ Read this FIRST on resume. Captures all in-flight work, file locations, and next
   defs+CorDA caveat; CS safe-band defined; math grey-bar+retitle+BBH-why; B1 blocker removed = the
   lucky-seed 82.0 in §3; M1 magnitude figure CorDA-excluded + slope −14.78; M2 CE α=2r disclosure; M3/M4
   Qwen −0.88-commonsense / within-method −0.86..−0.97; minors). Timestamp "Last updated" in header.
-- PENDING: efficiency §5 clarity from agent a1c8d3 (init TIMES for calib passes/SVDs + CLoRA memory as
-  ADDITIONAL-not-total) → apply + republish (bump timestamp). Then FINAL holistic "good paper basis?" pass.
+- DONE 16:55: efficiency §5 rewrite — added init TIMES to table cells (MiLoRA/PiSSA "~minutes",
+  SC-LoRA/LoRA-Null "~few min +22GB transient init only", CorDA++ "~1 GPU-h") + caption/paragraph now
+  state CLoRA extra memory is ADDITIONAL to the ~55GB plain-LoRA footprint (not total). Republished (same URL).
+- IN PROGRESS (spawned 17:10): FINAL "proper review round" the PI demanded — two agents on the FULL artifact:
+  adversarial-critic a0668c33096d80385 (verify each original PI comment A–N addressed + framing guardrails +
+  "good paper basis?"; writes paper/writing/artifact_review_round_final.md) and data-verifier a7bd29fbc97bb4353
+  (recompute every artifact number vs summary.json; writes paper/writing/artifact_number_audit_final.md).
+  ON RETURN: apply their fixes, bump timestamp, republish, commit+push.
 
 ## RUNNING AGENTS (check tasks/<id>.output on completion notification)
 - af7d17f49e76fb8e6 — PROVISION d002 (deliver-from-A + netplan-internet option). On return: verify 8 GPUs
@@ -70,6 +76,13 @@ adversarial-critic, data-verifier.
 ## SCRATCHPAD (ephemeral /tmp) — copied to repo:
 - fleet_findings.md → paper/writing/fleet_findings.md (all 9 expert digests + efficiency + geometry + CE).
 - integration_notes.md → paper/writing/integration_notes.md (reviewer B1/M/m fixes + section clarity content).
+
+## GPU HEALTH (17:09 check): both nodes' 16 GPUs saturated. Node A had 2 B200s (GPU1,2) HUNG 7.5h on
+frm_milora_lr2e4/lr5e4_c256_s42 BBH eval — deadlocked at lm-eval BBH init (154 threads sleeping, CPU frozen,
+0% util, MATH/CS already computed=64.44/14.6 but no summary.json). Killed both (rc=-9); frepro4 pool
+immediately relaunched SC-LoRA cells on the freed slots. WATCH: the milora BBH-init hang may recur; if new
+evals stall at "generation_kwargs: {'max_gen_toks': 1024}" with 0% util for >20min, kill+re-queue.
+RE-EVAL OWED (non-headline, MiLoRA math competitor): frm_milora_lr2e4_c256_s42, frm_milora_lr5e4_c256_s42.
 
 ## GOTCHAS: setsid-not-run_in_background (above); gitignore ignores **/*.md,**/*.txt,.claude/ (negations
 added — verify new file types with `git check-ignore`); commit+push every milestone.
