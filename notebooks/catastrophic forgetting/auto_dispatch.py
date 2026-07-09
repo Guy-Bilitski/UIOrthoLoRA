@@ -91,15 +91,19 @@ def main():
         queue = [l.strip() for l in f if l.strip() and not l.startswith("#")]
     print(f"[disp] {len(queue)} jobs; managing GPUs {all_gpus}; pid {my_pid}", flush=True)
 
-    running = {}      # gpu -> (pid, run_name)
+    running = {}      # gpu -> (Popen, run_name)
     launched = 0
     while True:
-        # reap finished children
+        # reap finished children.
+        # CRITICAL: keep the Popen object and use poll(), NOT os.path.exists(/proc/pid).
+        # An exited child stays a ZOMBIE until wait()ed, so /proc/<pid> keeps existing and
+        # the slot sticks as "busy" forever once all GPUs are occupied (no new Popen ->
+        # no interpreter-side reaping). Seen live: d002 GPU4/GPU1 idle with queue remaining.
         for g in list(running):
-            pid, rn = running[g]
-            if not os.path.exists(f"/proc/{pid}"):
+            p, rn = running[g]
+            if p.poll() is not None:
                 del running[g]
-                print(f"[disp] GPU{g} freed (job {rn} exited)", flush=True)
+                print(f"[disp] GPU{g} freed (job {rn} exited rc={p.returncode})", flush=True)
         # remaining work?
         pending = [c for c in queue if not done(run_name(c) or "") and not locked(run_name(c) or "")]
         if not pending and not running:
@@ -130,7 +134,7 @@ def main():
             lf = open(logp, "w"); lf.write(f"# CMD: {cmd}\n# GPU: {g}\n"); lf.flush()
             p = subprocess.Popen(cmd, shell=True, stdout=lf, stderr=subprocess.STDOUT,
                                  cwd=HERE, env=env, executable="/bin/bash")
-            running[g] = (p.pid, rn); launched += 1
+            running[g] = (p, rn); launched += 1
             print(f"[disp] GPU{g} START {rn} (pid {p.pid})", flush=True)
             time.sleep(3)
         time.sleep(a.poll)
