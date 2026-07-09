@@ -47,9 +47,10 @@ Contradictions found and fixed are logged in `06_reconciliation.md`.
 | **Llama-2 CS, pooled (6 active methods)** | **−0.86** | 0.74 | −14.8 | 49 | 3.4e-15 | mature |
 | Llama-2 CS, on-curve (excl. SC-LoRA) | **−0.92** | 0.84 | −10.0 | 42 | 2.1e-17 | mature |
 | **Llama-2 math, pooled** | **−0.97** | 0.93 | −10.1 | 14 | 2.4e-8 | mature (LoRA/LoRA+wd/DoRA only; sparse) |
-| Qwen-2.5 CS, LoRA only (**core**) | **−0.88** | 0.78 | −34.8 | 7 | 8.5e-3 | replication, in progress |
-| Qwen-2.5 CS, LoRA only (**broad**) | −0.92 | 0.85 | −29.1 | 7 | 2.9e-3 | replication, in progress |
-| Qwen-2.5 math, LoRA only (core) | +0.67 | 0.45 | +2.0 | 5 | 0.21 | **does NOT yet replicate** (ns, flat) |
+| **Qwen-2.5 CS, pooled (7 adapters, core)** | **−0.86** | 0.735 | −32.0 | 49 | 3.7e-15 | **replication (2nd model), mature** `[07-10]` |
+| Qwen-2.5 CS, pooled (7 adapters, broad) | **−0.94** | 0.878 | −26.1 | 49 | 4.2e-23 | replication (2nd model), mature `[07-10]` |
+| Qwen-2.5 CS, LoRA only (core) | −0.88 | 0.78 | −34.8 | 7 | 8.5e-3 | (LoRA subset of the pooled sweep) |
+| Qwen-2.5 math, pooled (BBH-only) | −0.05 | 0.00 | ~0 | 10 | ns | **does NOT yet replicate** (low-LR only; "+0.67" core = broken MMLU-Pro parser, §11) |
 
 **Headline to quote:** r ≈ **−0.86 pooled, −0.92 on the 5 well-behaved methods**; slope ≈ −10 to
 −15 pp/decade. **Both** slope conventions are correct depending on which fit: −14.8 = 6-method
@@ -207,14 +208,38 @@ pool **7 LoRA-Null points into plain LoRA** (n=14, robust 10/14; plain LoRA alon
 The pooled law (49 points) and the best-adapt LoRA point (79.1/24.4, a plain-LoRA run) are
 **unaffected**. Fix the legend/robustness/n and the "6 methods" wording before publication.
 
-## 11. Qwen-2.5 replication status (IN PROGRESS) `[RECOMPUTED 2026-07-02]`
+## 11. Qwen-2.5 replication status `[RECOMPUTED 2026-07-10, data-verifier-confirmed — SUPERSEDES the 07-02 block]`
 
-- CS: 7-LR LoRA sweep done → law replicates. **r = −0.88 on core (retention_mean)**, **r = −0.92 on
-  broad (retention_broad)**. Quote **−0.88 (core)** to match the Llama core-based headline; if you
-  cite −0.92 for Qwen, say it is the **broad** metric (this resolves the 01-vs-rest inconsistency).
-  Other 5 adapters NOT yet run; 1 CorDA point excluded per policy.
-- math: 5-LR LoRA sweep → law does NOT yet replicate (core r=+0.67, ns, p=0.21). Needs higher-LR cells.
-- ~13 of ~112 planned Qwen cells complete. Present Qwen as supporting/in-progress only.
+> **STALE (07-02, do NOT cite):** "CS = 7-LR **LoRA-only** sweep; other 5 adapters NOT yet run;
+> ~13 of ~112 cells complete; math LoRA r=+0.67." Between 07-02 and 07-10 the Qwen **CS** arm
+> completed as a **full multi-adapter sweep**, and the Qwen **math** multi-adapter sweep began
+> draining on Node B. The numbers below are authoritative; they supersede the "Qwen … LoRA only"
+> rows in the §1 table (rows updated to match).
+
+- **CS — COMPLETE, full multi-adapter replication (NOT LoRA-only).** 7 adapters × 7 LRs = **49
+  assessed cells** (LoRA, LoRA+wd0.3, LoRA-Null, DoRA, MiLoRA, SC-LoRA, CLoRA-k1024; 1 CorDA point
+  excluded per §8). F_Δ = `headline.fdelta` (== `fdelta_token_weighted`); retention = `retention_mean`.
+  - **Pooled core: r = −0.86, R² = 0.735, slope −31.98 pp/dec (n=49).**
+  - Pooled broad: r = −0.94, R² = 0.878, slope −26.10 (n=49).
+  - LoRA-only core: r = −0.88 (reproduces the prior published value exactly).
+  - Within-method core r: DoRA −0.905, LoRA −0.883, MiLoRA −0.882, SC-LoRA −0.838, CLoRA −0.767,
+    LoRA-Null −0.730, **LoRA+wd −0.165** (flat by construction — wd caps F_Δ so its 7 points do not
+    span the axis; same shallow-slope signature LoRA+wd shows on Llama, not a failure of the law).
+  - **The Qwen pooled core r (−0.86) is numerically indistinguishable from Llama-2's −0.858** — the
+    law transfers across architecture at the same strength. Report r/direction as the headline; the
+    steeper slope (−32 vs −15) is the Qwen retention scale, not a different law. Do NOT merge Qwen and
+    Llama into one fit (different base ceilings).
+- **math — IN PROGRESS, does NOT yet replicate (report on BBH-only).** Assessed union = **10 cells**
+  (LoRA 5 LRs + LoRA+wd0.3 5 LRs), **all low/mid-LR** → F_Δ spans only **0.038–0.159** (~0.6 decade),
+  no high-magnitude points. On the **campaign-correct BBH-only** metric the fit is **FLAT: pooled
+  r = −0.05 (ns), LoRA-only r = −0.24 (ns)**. **The frequently-quoted "+0.67" (and pooled +0.60) is
+  on CORE retention, which includes the KNOWN-BROKEN MMLU-Pro math parser — it is a parser artifact,
+  NOT a positive math law; never report Qwen-math as positively correlated.** Math retention stays
+  **BBH-only** (see §0). The 39 genuinely-new high-LR resolution cells (5e-4/1e-3 × 6 adapters) are
+  in flight on Node B (`jobs/frepro4_qwen_B_keep.txt`); until they land, Qwen-math is "pending", not
+  a result.
+- **Coverage now ≈ 59/112 planned Qwen cells** (49 CS + 10 math). Present CS as a full second-model
+  replication; present math as in-progress/pending.
 
 ## 12. Numbers that are [EXTERNAL] (not recomputable from this registry — cite, don't "fix")
 
