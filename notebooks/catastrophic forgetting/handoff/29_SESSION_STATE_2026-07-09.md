@@ -97,5 +97,21 @@ adversarial-critic, data-verifier.
    GPUs saturated after recovery. d002 dispatcher = auto_dispatch.py --jobs frepro4_qwen_B_keep.txt (44 Qwen,
    0 done yet — evals are long ~4-5h each; watch throughput vs deadline).
 
+## MONITORING + SYNC (set up 2026-07-09 night):
+- **sync_d002.sh** (git-tracked): rsync is ABSENT on both nodes → uses tar-over-ssh to pull d002 qw* JSON
+  (never weights) → commits+pushes to github ONLY when new results arrive. Running as a setsid loop every
+  30min (pgrep -f 'sync_d002.sh loop'; relaunch via setsid if dead). This is the DURABLE gold-data safety net
+  (survives session teardown).
+- **2-hourly agent cron** (job 0b9bf15d, fires :37 every 2h, SESSION-ONLY — dies when this Claude session
+  ends, 7-day expiry): syncs gold data first, then validates both nodes' 8 GPUs, reclaims stuck slots,
+  checks disk + seed3/Qwen progress. If the session ends, the 30-min setsid sync loop still covers backups.
+- **DISPATCHER STUCK-SLOT BUG (recurring):** auto_dispatch sometimes misses a completed job's exit → leaves
+  that GPU slot "busy" in its view while the GPU is idle (0% util, no compute proc) with cells still queued.
+  Seen on d002 GPU4 (qwswm_lorawd_wd0p3_lr2e4_s42 finished + wrote summary, dispatcher never freed the slot).
+  FIX: restart that node's dispatcher (idempotent, skip-done, detached jobs survive) — it reclaims the slot.
+  A: `auto_dispatch.py --jobs jobs/master_dispatch.txt --gpus 0-7 --tag disp`; B: `--jobs
+  jobs/frepro4_qwen_B_keep.txt --tag qwenB` (setsid nice -n 5). Do kill + relaunch as SEPARATE commands
+  (combined kill+setsid truncates with exit 144).
+
 ## GOTCHAS: setsid-not-run_in_background (above); gitignore ignores **/*.md,**/*.txt,.claude/ (negations
 added — verify new file types with `git check-ignore`); commit+push every milestone.
