@@ -109,6 +109,7 @@ def _nq_train_windows(calib_size, seqlen=2048, seed=233, source="nq_open"):
         mm = _ld("cais/mmlu", "auxiliary_train", split="train")
         rows = []
         for ex in mm:
+            ex = ex.get("train", ex)  # cais/mmlu auxiliary_train nests each row under a 'train' key
             ch = list(ex["choices"])
             rows.append(ex["question"] + "\n" + "\n".join(ch) + "\nAnswer: " + ch[int(ex["answer"])])
         tot_text = "\n\n".join(rows)

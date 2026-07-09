@@ -18,10 +18,19 @@ Contradictions found and fixed are logged in `06_reconciliation.md`.
 
 ## 0. Definitions & units
 
-- **Magnitude axis** = `fdelta` field = token-weighted Frobenius norm `‖ΔW‖_F`. There is **no**
-  `fdelta_token_weighted` column in the registry — `fdelta` **is** it. Range ~0.05–3.7 on the clean
-  sweep. The "72–1395" numbers in older handoffs/the brief are an older **unnormalized** scale — do
-  not use them; quote `fdelta` (e.g. LoRA+wd at `‖ΔW‖_F ≈ 0.39`).
+- **Magnitude axis** = `fdelta` field. **CORRECTION (2026-07-09, CLoRA-paper-expert audit against the
+  actual PDF): this is NOT the Frobenius norm ‖ΔW‖_F.** It is CLoRA's **F_Δ metric (their Eq 3)**:
+  mean over tokens of `‖ΔW·x‖/‖x‖` on 100 real eval inputs, averaged over all updated matrices — a
+  data-dependent effective-output-change measure. `fdelta.py`/`uio_inprocess.fdelta_inprocess`
+  implement exactly this; the old "token-weighted Frobenius" label here and in `analyze_matrix.py:9`
+  was WRONG (a CLoRA-reading reviewer would catch it). GOOD NEWS: our axis is therefore **directly
+  comparable to CLoRA Table 4's F_Δ column** (their LoRA 0.79, LoRA-L2 0.29, k2048 0.14), and our
+  `dw_sv_max`/`dw_sv_mean` correspond to their ‖ΔW‖ column (spectral norm). PAPER ACTION: relabel
+  every "‖ΔW‖_F / Frobenius" mention of this axis to "F_Δ (effective update magnitude, CLoRA Eq 3)".
+  Predictive robustness (validator, 2026-07-09): F_Δ R²=0.74 for retention vs dw_sv_mean 0.36 /
+  dw_sv_max 0.33 / log-LR 0.32 — F_Δ is uniquely predictive among available axes. Range ~0.05–3.7 on
+  the clean sweep. The "72–1395" numbers in older handoffs are an older unnormalized scale — do not
+  use them.
 - **Retention (core)** = mean(BBH answer-only 3-shot `bbh_fewshot`, MMLU-Pro 5-shot CoT) = field
   `retention_mean`.
 - **Retention (broad)** = mean(BBH, MMLU-Pro, MMLU, ARC-c, TruthfulQA) = field `retention_broad`.
