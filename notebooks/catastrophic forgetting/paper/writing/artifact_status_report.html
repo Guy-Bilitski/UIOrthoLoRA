@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-10 14:44 IDT</b></span>
+      <span>Last updated · <b>2026-07-10 15:08 IDT</b></span>
     </div>
   </header>
 
@@ -122,6 +122,24 @@
     <p><strong>SC-LoRA</strong> — initializes in output directions that serve the fine-tuning task while avoiding those that carry the knowledge to preserve (two calibration sets; a scalar β sets the task-alignment vs preservation balance); the constraint is set once at init and (per its paper) erodes during training.<br>
     <strong>LoRA-Null</strong> — initializes A in the null space of calibration <em>input</em> activations, so the update initially does nothing (ΔW·x ≈ 0) on inputs drawn from the preserved-knowledge distribution.<br>
     <strong>CorDA++</strong> — a context-oriented SVD weighted by calibration-activation covariance, plus dynamic per-layer rank; can run in a knowledge-preserving mode that adapts the least data-relevant directions.</p>
+    <h3>Configurations assessed, at a glance</h3>
+    <div class="tbl-scroll">
+      <table>
+        <caption>Per-adapter configuration in the commonsense LR sweep (Llama-2-7B, <span class="dim">lrsw_</span> cells; ranks, α and trainable-parameter counts verified against the training registry). PiSSA runs in the math arm only, so its row shows the faithful math recipe (r64/α128). <b>Calibration data</b> = what data the method's initialization or constraint consumes before training: none, the fine-tuning task, a knowledge preserve-set (256 windowed nq_open passages), or both — CLoRA's constrained directions are drawn at <em>random</em>, so no data at all. <b>Claims forgetting-prevention</b> = whether the method's own paper positions it as preventing forgetting / preserving pretrained knowledge. Methods run at their paper-native ranks — r16 / r32 / r64 — so parameter budgets differ; the magnitude law absorbs this because F<sub>Δ</sub> is measured, not assumed.</caption>
+        <thead><tr><th>Adapter</th><th>rank r</th><th>α</th><th style="text-align:left">Special knob</th><th style="text-align:left">Calibration data</th><th>Trainable params</th><th>Claims forgetting-prevention?</th></tr></thead>
+        <tbody>
+          <tr><td>LoRA</td><td>16</td><td>32</td><td style="text-align:left">—</td><td style="text-align:left">none</td><td>28.0 M</td><td>no</td></tr>
+          <tr class="hi"><td>LoRA + wd</td><td>32</td><td>64</td><td style="text-align:left">weight decay 0.3</td><td style="text-align:left">none</td><td>56.1 M</td><td>— (our control)</td></tr>
+          <tr><td>DoRA</td><td>16</td><td>32</td><td style="text-align:left">learned magnitude vector</td><td style="text-align:left">none</td><td>28.9 M</td><td>no</td></tr>
+          <tr><td>PiSSA <span class="dim">(math arm)</span></td><td>64</td><td>128</td><td style="text-align:left">principal-SVD init</td><td style="text-align:left">none</td><td>112.2 M</td><td>no</td></tr>
+          <tr><td>MiLoRA</td><td>32</td><td>32</td><td style="text-align:left">minor-SVD init</td><td style="text-align:left">none</td><td>56.1 M</td><td>yes</td></tr>
+          <tr><td>CLoRA</td><td>32</td><td>64</td><td style="text-align:left">k = 1024, λ = 1</td><td style="text-align:left">none — random directions</td><td>56.1 M</td><td>yes</td></tr>
+          <tr><td>SC-LoRA</td><td>32</td><td>32</td><td style="text-align:left">β = 0.5</td><td style="text-align:left">both (256 preserve + 256 task)</td><td>56.1 M</td><td>yes</td></tr>
+          <tr><td>LoRA-Null</td><td>16</td><td>16</td><td style="text-align:left">input-null-space init</td><td style="text-align:left">preserve-set (256 nq_open)</td><td>28.0 M</td><td>yes</td></tr>
+          <tr><td>CorDA++</td><td>16</td><td>16</td><td style="text-align:left">knowledge-preserving mode</td><td style="text-align:left">preserve-set (256 nq_open)</td><td>28.0 M</td><td>yes</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <!-- 1 MAGNITUDE -->
@@ -145,7 +163,12 @@
 
     <div class="callout good">
       <h3>The same law appears in CLoRA's own published table</h3>
-      <p>CLoRA's Table 4 reports an update-size metric (F<sub>Δ</sub>, identical to ours) and out-of-domain accuracy per method. Fitting the law to <em>their ten published rows</em> gives <strong>r = −0.98, slope −14.7 pp/decade — against our BBH-only slope −14.3</strong> (their table is BBH-based, so this is the like-for-like pairing; our composite BBH+MMLU-Pro slope is −14.8). Two independent datasets, two pipelines, the same slope. Their unconstrained baselines sit at the same F<sub>Δ</sub> levels as ours (their plain-LoRA rows 0.79–1.03 overlap our 0.23–1.42); their k-series extends the law's low-magnitude end.</p>
+      <p>CLoRA's Table 4 reports an update-size metric (F<sub>Δ</sub>, identical to ours) and BBH accuracy per method. The overlay below puts <em>their ten published rows</em> on the same axes as our 49 BBH-scored sweep runs, each cloud with its own fit. The correlation and its direction are what replicate most strongly: <strong>r = −0.98 in their table, r = −0.79 in ours</strong>, both steeply negative. The slope is best stated as a range: their pooled −14.7 pp/decade blends a baseline-only family at −12.7 with a k-series at −18.9, and our BBH↔BBH fit lands at −14.3 inside that range (their table is BBH-based, so this is the like-for-like pairing; our composite BBH+MMLU-Pro slope is −14.8). Their unconstrained baselines sit at the same F<sub>Δ</sub> levels as ours (their plain-LoRA rows 0.79–1.03 overlap our 0.23–1.42); their k-series extends the law's low-magnitude end. Two datasets, two codebases, the same descending law.</p>
+      <div class="panel plot" id="panelXL" style="margin-top:12px">
+        <div class="pt-title">Cross-literature overlay — BBH accuracy vs update size (BBH↔BBH, like-for-like)</div>
+        <div class="pt-sub" style="min-height:0">Circles: our Llama-2 CS sweep, one point per run (n = 49; CorDA excluded, mirroring the F<sub>Δ</sub> panel above). Diamonds: CLoRA's Table 4 rows as published. Each cloud carries its own fit — two parallel slopes, never one shared line — and each dataset is read against its own base-model BBH reference (dashed).</div>
+      </div>
+      <div class="legend"><span><i style="background:#3f7fd0"></i>ours — Llama-2 CS sweep, n = 49 (BBH)</span><span><i style="background:#9b6fd0"></i>CLoRA Table 4, published, n = 10 (BBH)</span></div>
     </div>
   </section>
 
@@ -370,6 +393,39 @@ function frame(W,H,m,xd,yd,xticks,yticks,xlab){
   ORDER.forEach(k=>{if(k==="corda")return; const pts=S[k]; if(!pts)return; pts.forEach(p=>{if(p[1]<xd[0]||p[1]>xd[1])return; s+=`<circle cx="${px(p[1]).toFixed(1)}" cy="${py(p[2]).toFixed(1)}" r="3.3" fill="${COLORS[k]}" opacity="0.85"/>`;});});
   s+=`<text class="fittx" x="${W-m.r-4}" y="${m.t+14}" text-anchor="end">r = −0.86 (7 adapters)</text></svg>`;
   document.getElementById("panelDW").insertAdjacentHTML("beforeend",s);
+})();
+// Cross-literature overlay (sec 1): our 49 lrsw BBH runs vs CLoRA Table 4 published rows.
+// XLO = [log10 F_delta (fdelta_token_weighted), BBH] per lrsw_*_s42 run, CorDA excluded (same rule as panelDW).
+const XLO=[[0.0243,25.34],[-0.6672,33.85],[-0.4903,34.59],[-0.8706,33.65],[-0.3386,32.27],[-0.1919,29.66],[-0.7953,33.96],[0.5712,24.3],[-0.5277,33.85],[-0.3515,32.76],[-0.6379,33.71],[-0.1654,31.45],[0.0843,25.53],[-0.6043,34.5],[0.0648,27.02],[-0.6492,35.65],[-0.4888,34.5],[-0.8564,33.79],[-0.3508,32.28],[-0.1576,33.22],[-0.7298,34.08],[0.1512,26.85],[-0.5082,33.67],[-0.3539,32.78],[-0.6404,33.59],[-0.2055,32.53],[-0.0344,29.78],[-0.5945,34.48],[-0.1996,30.2],[-0.6323,34.51],[-0.5219,35.28],[-0.6684,34.0],[-0.4238,32.97],[-0.4044,32.38],[-0.6603,35.16],[0.1852,27.48],[-0.6057,35.02],[-0.4006,33.42],[-0.7622,33.77],[-0.265,32.5],[-0.0759,29.61],[-0.7075,35.43],[0.488,6.37],[-0.0899,27.2],[0.0577,18.75],[-0.4872,34.05],[0.1498,18.49],[0.2606,7.2],[-0.2526,31.99]];
+// XLC = CLoRA (Kim et al., 2025) Table 4, published: [log10 F_delta, BBH, label].
+const XLC=[[-0.1024,26.69,""],[-0.0223,26.90,""],[0.0128,26.73,""],[-0.5376,32.93,""],[-0.0362,25.14,""],[-0.4437,30.82,""],[-0.4685,31.92,""],[-0.5686,34.32,""],[-0.6778,36.49,"k1024"],[-0.8539,38.67,"k2048"]];
+(function(){
+  const W=880,H=400,m={l:46,r:14,t:12,b:38}, xd=[-0.95,0.65], yd=[0,42];
+  const OC="#3f7fd0", CC="#9b6fd0";
+  const px=x=>m.l+(x-xd[0])/(xd[1]-xd[0])*(W-m.l-m.r);
+  const py=y=>H-m.b-(y-yd[0])/(yd[1]-yd[0])*(H-m.t-m.b);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  [0,10,20,30,40].forEach(t=>{const y=py(t); s+=`<line class="grid" x1="${m.l}" y1="${y}" x2="${W-m.r}" y2="${y}"/><text class="axtx" x="${m.l-6}" y="${y+3}" text-anchor="end">${t}</text>`;});
+  [[-0.699,"0.2"],[-0.301,"0.5"],[0,"1"],[0.301,"2"]].forEach(([xv,lab])=>{const x=px(xv); s+=`<line class="grid" x1="${x}" y1="${m.t}" x2="${x}" y2="${H-m.b}"/><text class="axtx" x="${x}" y="${H-m.b+13}" text-anchor="middle">${lab}</text>`;});
+  // each dataset's own base-model BBH reference
+  const yb1=py(33.1), yb2=py(34.91);
+  s+=`<line x1="${m.l}" y1="${yb1}" x2="${W-m.r}" y2="${yb1}" stroke="${OC}" stroke-dasharray="2 3" opacity="0.55"/><text class="axtx" x="${W-m.r-2}" y="${yb1+11}" text-anchor="end" style="fill:${OC}">our base BBH 33.1</text>`;
+  s+=`<line x1="${m.l}" y1="${yb2}" x2="${W-m.r}" y2="${yb2}" stroke="${CC}" stroke-dasharray="6 3" opacity="0.55"/><text class="axtx" x="${W-m.r-2}" y="${yb2-4}" text-anchor="end" style="fill:${CC}">CLoRA base BBH 34.91</text>`;
+  s+=`<line class="ax" x1="${m.l}" y1="${H-m.b}" x2="${W-m.r}" y2="${H-m.b}"/><line class="ax" x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${H-m.b}"/>`;
+  s+=`<text class="axlbl" x="${m.l+(W-m.l-m.r)/2}" y="${H-3}" text-anchor="middle">update size F_Δ (log) →</text>`;
+  s+=`<text class="axlbl" transform="translate(12,${m.t+(H-m.t-m.b)/2}) rotate(-90)" text-anchor="middle">BBH accuracy (%) →</text>`;
+  // TWO independent fits over each cloud's own x-range — never one shared line
+  const oS=-14.34,oI=25.82,ox0=-0.871,ox1=0.571;
+  s+=`<line x1="${px(ox0)}" y1="${py(oS*ox0+oI)}" x2="${px(ox1)}" y2="${py(oS*ox1+oI)}" stroke="${OC}" stroke-width="1.8" stroke-dasharray="5 3" opacity="0.75"/>`;
+  const cS=-14.65,cI=25.64,cx0=-0.854,cx1=0.013;
+  s+=`<line x1="${px(cx0)}" y1="${py(cS*cx0+cI)}" x2="${px(cx1)}" y2="${py(cS*cx1+cI)}" stroke="${CC}" stroke-width="2" opacity="0.85"/>`;
+  XLO.forEach(p=>{s+=`<circle cx="${px(p[0]).toFixed(1)}" cy="${py(p[1]).toFixed(1)}" r="3.1" fill="${OC}" opacity="0.5"/>`;});
+  XLC.forEach(p=>{const x=px(p[0]),y=py(p[1]); s+=`<path d="M${x.toFixed(1)} ${(y-4.6).toFixed(1)}L${(x+4.6).toFixed(1)} ${y.toFixed(1)}L${x.toFixed(1)} ${(y+4.6).toFixed(1)}L${(x-4.6).toFixed(1)} ${y.toFixed(1)}Z" fill="${CC}" stroke="var(--paper)" stroke-width="0.8"/>`; if(p[2])s+=`<text class="axtx" x="${(x+7).toFixed(1)}" y="${(y+3).toFixed(1)}" style="fill:${CC}">${p[2]}</text>`;});
+  s+=`<text class="axtx" x="${m.l+8}" y="${m.t+12}" style="fill:${CC}">k1024 &amp; k2048 sit above their own base BBH</text>`;
+  s+=`<text class="fittx" x="${m.l+10}" y="${py(10).toFixed(1)}" style="fill:${OC}">ours: r = −0.79 · slope −14.3 pp/decade (n=49)</text>`;
+  s+=`<text class="fittx" x="${m.l+10}" y="${py(6.5).toFixed(1)}" style="fill:${CC}">CLoRA Table 4: r = −0.98 · slope −14.7 (baselines −12.7 · k-series −18.9)</text>`;
+  s+=`</svg>`;
+  document.getElementById("panelXL").insertAdjacentHTML("beforeend",s);
 })();
 document.getElementById("legend").innerHTML = ORDER.map(k=>`<span><i style="background:${COLORS[k]}"></i>${LABELS[k]}</span>`).join("");
 </script>
