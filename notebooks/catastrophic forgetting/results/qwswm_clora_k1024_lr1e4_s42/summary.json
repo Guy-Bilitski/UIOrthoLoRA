@@ -1,0 +1,32 @@
+{
+  "run_name": "qwswm_clora_k1024_lr1e4_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/qwswm_clora_k1024_lr1e4_s42",
+  "per_dataset": {
+    "gsm8k": 63.0
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.0537,
+    "dw_sv_mean": 1.17,
+    "dw_sv_max": 6.1105,
+    "n_matrices": 140
+  },
+  "headline": {
+    "cs_avg": 63.0,
+    "adapt_task": "gsm8k",
+    "bbh": 46.52,
+    "mmlu_pro": 41.19,
+    "mmlu": 72.17,
+    "arc_c": 51.28,
+    "truthfulqa": 56.89,
+    "gsm8k": 63.0,
+    "retention_mean": 43.86,
+    "retention_bbh": 46.52,
+    "retention_broad": 53.61,
+    "fdelta": 0.0537,
+    "dw_sv_max": 6.1105,
+    "dw_sv_mean": 1.17
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-10T21:01:43+03:00"
+}
