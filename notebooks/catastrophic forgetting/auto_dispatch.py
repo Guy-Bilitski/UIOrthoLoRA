@@ -91,6 +91,12 @@ def main():
     ap.add_argument("--gpus", default="0,1,2,3,4,5,6,7")
     ap.add_argument("--tag", default="disp")
     ap.add_argument("--poll", type=int, default=90)
+    ap.add_argument("--hf_offline", type=int, default=0,
+                    help="1 = set HF_HUB_OFFLINE/HF_DATASETS_OFFLINE for children. "
+                         "Kills the BBH-init hang class (simultaneous lm-eval inits "
+                         "stalling on hub checks); requires all data/models cached — "
+                         "an uncached asset then fails FAST (rc!=0 -> requeue) instead "
+                         "of hanging silently.")
     a = ap.parse_args()
     my_pid = os.getpid()
     # SINGLE-INSTANCE GUARD: two dispatchers on the same jobs file both picked GPU1
@@ -164,6 +170,9 @@ def main():
             logp = os.path.join(LOGS, f"{a.tag}_{rn}.log")
             env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(g), PYTHONUNBUFFERED="1",
                        HF_HUB_DISABLE_XET="1", OMP_NUM_THREADS="8", MKL_NUM_THREADS="8")
+            if a.hf_offline:
+                env["HF_HUB_OFFLINE"] = "1"
+                env["HF_DATASETS_OFFLINE"] = "1"
             lf = open(logp, "w"); lf.write(f"# CMD: {cmd}\n# GPU: {g}\n"); lf.flush()
             p = subprocess.Popen(cmd, shell=True, stdout=lf, stderr=subprocess.STDOUT,
                                  cwd=HERE, env=env, executable="/bin/bash")

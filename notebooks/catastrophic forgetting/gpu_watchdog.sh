@@ -61,18 +61,40 @@ hung_proc_heal() {
   done < <(nvidia-smi --query-gpu=index,utilization.gpu,gpu_uuid --format=csv,noheader,nounits 2>/dev/null)
 }
 
+stale_lock_gc() {
+  # ORPHAN-LOCK LEAK (5 cells stuck 2026-07-11 00-02h): every dispatcher restart
+  # orphans its running children; when an orphan dies (crash, hang-kill) NO parent
+  # reaps it, so its dispatch lock stays and the cell is never requeued. GC rule:
+  # lock exists + no summary.json + no live process mentioning the run + lock older
+  # than 15 min (protects the launch window) -> delete lock so dispatcher requeues.
+  local l rn age now
+  now=$(date +%s)
+  for l in results/dispatch_locks/*.lock; do
+    [ -e "$l" ] || continue
+    rn=$(basename "$l" .lock)
+    [ -f "results/$rn/summary.json" ] && continue
+    pgrep -f "$rn" > /dev/null && continue
+    age=$(( now - $(stat -c %Y "$l" 2>/dev/null || echo "$now") ))
+    if [ "$age" -gt 900 ]; then
+      rm -f "$l"
+      echo "$(date '+%F %H:%M') [$TAG] LOCK-GC: $rn (age ${age}s, no proc, no summary) -> cleared for requeue" >> "$LOG"
+    fi
+  done
+}
+
 check_once() {
   local pend idle disp_alive
   pend=$(pending_cells)
   [ "$pend" -eq 0 ] && { echo "$(date '+%F %H:%M') [$TAG] queue drained, nothing to guard" >> "$LOG"; return 0; }
   hung_proc_heal
+  stale_lock_gc
   idle=$(idle_gpus)
   pgrep -f "auto_dispatch.py --jobs $JOBS" > /dev/null && disp_alive=1 || disp_alive=0
   if [ -n "${idle// /}" ] || [ "$disp_alive" -eq 0 ]; then
     echo "$(date '+%F %H:%M') [$TAG] HEAL: idle_gpus='${idle}' disp_alive=$disp_alive pending=$pend -> restart dispatcher" >> "$LOG"
     pkill -f "auto_dispatch.py --jobs $JOBS" 2>/dev/null
     sleep 4
-    setsid nice -n 5 "$PY" auto_dispatch.py --jobs "$JOBS" --gpus 0,1,2,3,4,5,6,7 --tag "$TAG" \
+    setsid nice -n 5 "$PY" auto_dispatch.py --jobs "$JOBS" --gpus 0,1,2,3,4,5,6,7 --tag "$TAG" --hf_offline 1 \
       >> "logs/${TAG}_dispatch_wd.log" 2>&1 < /dev/null &
     sleep 4
     pgrep -f "auto_dispatch.py --jobs $JOBS" > /dev/null \
