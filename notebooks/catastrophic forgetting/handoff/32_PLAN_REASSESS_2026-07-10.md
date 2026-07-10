@@ -219,6 +219,109 @@ mitigated by protecting the 5e-4/1e-3 cells first (B section) and by the ceiling
     on the frozen paper. STATUS: scheduled.
 11. **[POST-deadline] Mistral arm, Qwen 3-seed, CorDA++ full wiring.** STATUS: deferred (unchanged).
 
+---
+
+## EXECUTION LOG — queue surgery applied 2026-07-10 (coordinator order)
+
+**KILL-LIST APPLIED** to `jobs/master_dispatch.txt` (safety-checked: every removed run_name verified
+to have NO `results/<rn>/summary.json` and NO `results/dispatch_locks/<rn>.lock` before removal;
+dispatcher NOT restarted — coordinator does the consolidated restart, which re-reads the file).
+
+- **Jobs before: 159 → after: 125 (34 removed).** ~150–170 GPU-h freed for the frc_ CS spine.
+- **Removed (34), all `frm_` competitor math-table LR-grid tails:**
+  - CLoRA (5): `frm_clora_k128_lr{1e4,2e4,5e4,7e4,1e3}_c256_s42` — best-LR row covered by the DONE
+    k-grid (k64/k128/k256 @lr3e4); kept `frm_clora_k128_lr3e4_c2048_s42` (cutoff diagnostic).
+  - LoRA-Null (5): `frm_lora_null_lr{2e5,3e4,5e4,7e4,1e3}_c256_s42` — kept best-LR pair
+    `frm_lora_null_lr{1e4,2e4}_c256_s42` (no prior LoRA-Null math results existed).
+  - MiLoRA (10): `frm_milora_lr{2e5,2e4,5e4}_c256_s42`, `frm_milora_lr3e4_c2048_s42`,
+    `frm_milora_a1r_lr{1e4,2e4,3e4,5e4,7e4,1e3}_c256_s42` — best-LR pair (lr1e4 62.85 + lr3e4)
+    already DONE; a1r is an off-table alpha sub-study.
+  - SC-LoRA (9): `frm_sclora_lr{3e4,5e4,7e4,1e3}_c256_s42`, `frm_sclora_b0p5_lr2e5_c256_s42`,
+    `frm_sclora_b0p8_lr{2e5,1e4,3e4}_c256_s42`, `frm_sclora_b0p9_lr2e5_c256_s42` — kept best-LR pair
+    `frm_sclora_lr{1e4,2e4}_c256_s42`; beta-variant sweep is off-table.
+  - PiSSA (1): `frm2_pissa_lr3e4_c256_s42` — the extra; DONE `frm_pissa_lr3e4_c256_s42` (49.66/3.62)
+    serves the collapsed-PiSSA row.
+  - CorDA++ (4): `frm_cordapp_lr{5e4,7e4,1e3,2e5}_c256_s42` — trimmed to the 3 DONE labeled cells
+    (`frm_cordapp_lr{1e4,2e4,3e4}_c256_s42`).
+- **NOT touched (protected):** all 14 lrsw_ seeds, 3 frm_ math-headline seeds, 84 frc_ CS-spine
+  lines, 6 b4 cells, 11 ce_chunk lines, every locked/running job. `frc_cordapp` (CS spine) left in
+  place — it is deep in A's queue (dispatcher won't reach it pre-freeze) so killing frees no
+  critical-path hours; leave it rather than risk the protected spine.
+
+**b4 COVERAGE: CONFIRMED.** SC-LoRA eval-matched arm = 3 DONE (`b4_sclora_r32_lr{5e5,1e4,3e4}_s42`)
++ `b4_sclora_r32_lr5e4_s42` running in the live GPU4 pool (`gpu_pool.py --tag frepro4b4`) and also
+queued as backstop. The 5 flagged remainder cells are all in `master_dispatch` (queue backstop):
+`b4_lora_null_r16_lr{2e5,1e4,3e4}_s42` + `b4_cordapp_r32_lr{1e4,3e4}_s42`. Inject re-queue cell
+`frc_lorawd_wd0_lr2e5_c256_s42` verified present. **No b4 cell is uncovered.**
+
+**Node-B reservoir file pre-built:** `jobs/frc_reservoir_B.txt` = **36 frc_ competitor baseline
+cells** (milora/sclora/lora_null/cordapp + a1r/em variants) for the Saturday offload below.
+
+---
+
+## SATURDAY-MORNING NODE-B OFFLOAD RUNBOOK (execute only after Qwen drains; ~10 min)
+
+**Facts verified 2026-07-10:** d002 has **526 GB free on `/`** (12 GB on `/home` — too small for
+Llama weights), **passwordless sudo**, repo + `/home/guy/UIOrthoLoRA/.venv` present, HF cache holds
+only Qwen weights, no `/scratch`, no rsync (tar-over-ssh). Node A Llama-2 weights live at
+`/home/ubuntu/.cache/huggingface/hub/models--meta-llama--Llama-2-7b-hf` (13 GB).
+
+**Precondition:** `jobs/frepro4_qwen_B_keep.txt` drained (or at least the high-LR 5e-4/1e-3 cells
+done). Run `./sync_d002.sh` once to pull final Qwen JSON; confirm the qwenB dispatcher is idle.
+
+**Step 1 — prep B disk (one-time, ~1 min):**
+```
+ssh ubuntu@d002 'sudo mkdir -p /data/hf /data/cf_models /scratch && \
+  sudo chown -R ubuntu:ubuntu /data && \
+  sudo ln -sfn /data/cf_models /scratch/cf_models && sudo chown -h ubuntu:ubuntu /scratch/cf_models'
+```
+(`/scratch/cf_models` → `/data/cf_models` on the 526 GB disk, so the jobs file's `/scratch/...`
+paths work unchanged; adapters land on big disk.)
+
+**Step 2 — ship Llama-2 weights A→B (~13 GB, few min on internal net), symlink into HF cache:**
+```
+cd /home/ubuntu/.cache/huggingface/hub && \
+tar cf - models--meta-llama--Llama-2-7b-hf | \
+  ssh ubuntu@d002 'tar xf - -C /data/hf'
+ssh ubuntu@d002 'ln -sfn /data/hf/models--meta-llama--Llama-2-7b-hf \
+  ~/.cache/huggingface/hub/models--meta-llama--Llama-2-7b-hf'
+```
+(Eval datasets — bbh/mmlu_pro/etc — are already in B's `/home` HF cache; leave them.)
+
+**Step 3 — dedup + sync repo:** remove the 36 reservoir run_names from A's `master_dispatch` so they
+can't double-run (no shared FS), commit, then pull on B:
+```
+# on A:
+grep -vFf <(grep -oP '(?<=--run_name )\S+' jobs/frc_reservoir_B.txt) jobs/master_dispatch.txt \
+  > /tmp/md.new && mv /tmp/md.new jobs/master_dispatch.txt
+git add jobs/master_dispatch.txt jobs/frc_reservoir_B.txt && git commit -m "B-offload dedup" && git push
+ssh ubuntu@d002 'cd "/home/guy/UIOrthoLoRA/notebooks/catastrophic forgetting" && git pull'
+```
+(A's consolidated dispatcher restart then picks up the reduced queue.)
+
+**Step 4 — launch reservoir dispatcher on B (detached):**
+```
+ssh ubuntu@d002 'cd "/home/guy/UIOrthoLoRA/notebooks/catastrophic forgetting" && \
+  nohup setsid nice -n 5 /home/guy/UIOrthoLoRA/.venv/bin/python auto_dispatch.py \
+  --jobs jobs/frc_reservoir_B.txt --gpus 0,1,2,3,4,5,6,7 --tag frcB \
+  >> logs/frcB_dispatch.log 2>&1 < /dev/null &'
+sleep 8; ssh ubuntu@d002 'nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader'
+```
+
+**Step 5 — sync-back (extend the existing loop to pull frc_ too):** edit `sync_d002.sh` line ~15,
+change the find pattern from `-path './qw*'` to `\( -path './qw*' -o -path './frc_*' \)` and the two
+`results/qw*` git-add/status lines to also match `results/frc_*`. Or one-off manual pull:
+```
+ssh ubuntu@d002 'cd "/home/guy/UIOrthoLoRA/notebooks/catastrophic forgetting" && \
+  find . -path "./frc_*" \( -name "*.json" -o -name "*.jsonl" \) | tar czf - -T -' \
+  | tar xzf - -C results/ && git add "results/frc_*" && git commit -m "B frc_ results" && git push
+```
+Adapters stay on B's `/data` (526 GB, no stream-delete needed for 36 cells ≈ 15 GB); only JSON
+returns to A. **Freeze-day fallback unchanged:** any frc_ row that hasn't landed → CLoRA published +
+labeled proxy, never passed off as the faithful recipe.
+
+---
+
 ### Changed since handoff/31
 - **Thesis-completing new result surfaced**: b4 eval-matched SC-LoRA is ON the law (+0.05/+1.8/+2.7
   residuals vs −2.8/−6.3 original) — §5's only deviator explained as a calibration confound.
