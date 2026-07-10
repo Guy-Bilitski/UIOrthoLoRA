@@ -115,6 +115,13 @@ _Retention = BBH only; base model Qwen2.5-7B (no base reference evaluated in thi
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **5e-5** | **42** | **57.92** | **·** | **47.03** | **47.03** | **39.88** | **0.04** | **·** | **·** | **·** | **·** | **·** | **·** | **·** | **·** |
 
+### `qwswm_dora_r16` — DoRA, r=16
+
+| LR | seed | GSM8K | MATH | Retention | BBH | MMLU-Pro | F_Δ | e_top | e_bot | ein_top | ein_bot | amp_top | st.rank | eff.rank | CE |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **2e-5** | **42** | **55.88** | **·** | **47.98** | **47.98** | **39.30** | **0.04** | **·** | **·** | **·** | **·** | **·** | **·** | **·** | **·** |
+| 1e-3 | 42 | 24.49 | · | 35.66 | 35.66 | 9.45 | 0.68 | · | · | · | · | · | · | · | · |
+
 ### `qwswm_lora_r16` — LoRA, r=16
 
 | LR | seed | GSM8K | MATH | Retention | BBH | MMLU-Pro | F_Δ | e_top | e_bot | ein_top | ein_bot | amp_top | st.rank | eff.rank | CE |
