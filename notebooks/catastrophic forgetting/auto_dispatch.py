@@ -40,15 +40,22 @@ def locked(rn):
 
 
 def gpus_owned_by_live_pools(my_pid):
-    """Set of GPU indices claimed by any live gpu_pool.py process (so we never collide)."""
+    """Set of GPU indices claimed by any live gpu_pool.py process (so we never collide).
+
+    Only count REAL python pool processes (comm == python*): stale `bash -c` launcher
+    wrappers keep the full `setsid ... gpu_pool.py --gpu_ids 6,7 ...` text in their
+    cmdline long after the pool exited, which froze GPUs as phantom-"pool-owned"
+    (GPU6 idled for hours on 2026-07-10 while the watchdog heal-looped)."""
     owned = set()
     try:
-        out = subprocess.run(["ps", "-eo", "pid,cmd"], capture_output=True, text=True).stdout
+        out = subprocess.run(["ps", "-eo", "comm,cmd"], capture_output=True, text=True).stdout
     except Exception:
         return owned
     for line in out.splitlines():
         if "gpu_pool.py" not in line or "grep" in line:
             continue
+        if not line.split(None, 1)[0].startswith("python"):
+            continue  # bash/sh wrapper, not a live pool
         m = re.search(r"--gpu_ids\s+([0-9,]+)", line)
         if m:
             owned.update(int(x) for x in m.group(1).split(","))
