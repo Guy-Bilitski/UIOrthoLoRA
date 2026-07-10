@@ -17,7 +17,7 @@ Run:
   setsid nice -n 5 .venv/bin/python auto_dispatch.py --jobs jobs/master_dispatch.txt \
       --gpus 0,1,2,3,4,5,6,7 > logs/auto_dispatch.log 2>&1 < /dev/null &
 """
-import os, re, sys, time, json, glob, argparse, subprocess
+import os, re, sys, time, json, glob, fcntl, argparse, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOCKS = os.path.join(HERE, "results", "dispatch_locks")
@@ -93,6 +93,17 @@ def main():
     ap.add_argument("--poll", type=int, default=90)
     a = ap.parse_args()
     my_pid = os.getpid()
+    # SINGLE-INSTANCE GUARD: two dispatchers on the same jobs file both picked GPU1
+    # within 14s on 2026-07-10 (watchdog relaunch raced the live instance) -> both
+    # jobs shared the GPU and one OOM'd. flock held for process lifetime; a second
+    # instance exits immediately.
+    lockf = open(os.path.join(LOGS, f"dispatcher_{os.path.basename(a.jobs)}.pidlock"), "w")
+    try:
+        fcntl.flock(lockf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        print(f"[disp] another dispatcher already owns {a.jobs} — exiting", flush=True)
+        return
+    lockf.write(f"{my_pid}\n"); lockf.flush()
     all_gpus = [int(x) for x in a.gpus.split(",")]
     with open(a.jobs) as f:
         queue = [l.strip() for l in f if l.strip() and not l.startswith("#")]
@@ -100,6 +111,7 @@ def main():
 
     running = {}      # gpu -> (Popen, run_name)
     launched = 0
+    fails = {}        # run_name -> crash count (for bounded requeue)
     while True:
         # reap finished children.
         # CRITICAL: keep the Popen object and use poll(), NOT os.path.exists(/proc/pid).
@@ -111,6 +123,20 @@ def main():
             if p.poll() is not None:
                 del running[g]
                 print(f"[disp] GPU{g} freed (job {rn} exited rc={p.returncode})", flush=True)
+                # FAILURE REQUEUE: a job that died without a summary (OOM, watchdog
+                # hang-kill, crash) must release its dispatch lock, or the cell is
+                # blocked forever (12 cells silently lost this way on 2026-07-10).
+                # Bounded so a deterministic crasher can't loop all night.
+                if p.returncode != 0 and not done(rn):
+                    fails[rn] = fails.get(rn, 0) + 1
+                    if fails[rn] <= 2:
+                        try:
+                            os.remove(os.path.join(LOCKS, rn + ".lock"))
+                            print(f"[disp] {rn} FAILED rc={p.returncode} — lock cleared, retry {fails[rn]}/2", flush=True)
+                        except OSError:
+                            pass
+                    else:
+                        print(f"[disp] {rn} PERMANENT-FAIL after 2 retries — lock kept, needs triage", flush=True)
         # remaining work?
         pending = [c for c in queue if not done(run_name(c) or "") and not locked(run_name(c) or "")]
         if not pending and not running:
