@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": NaN,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": NaN,
+  "n_positions": 40920,
+  "run_name": "frm_milora_lr7e4_c256_s42",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 6.8,
+  "method": "LORA",
+  "adapter_r": 128,
+  "fdelta": NaN
+}
