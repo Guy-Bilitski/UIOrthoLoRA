@@ -210,3 +210,7 @@ run_state/
 
 # geometry-drift regenerable intermediate (3.4GB of base-W SVD tensors)
 notebooks/catastrophic forgetting/results/geo_drift/base_svd/
+
+# results book (auto-generated presentation tables) must be tracked despite **/*.md
+!notebooks/catastrophic forgetting/results_book/
+!notebooks/catastrophic forgetting/results_book/*.md
