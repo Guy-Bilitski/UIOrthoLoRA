@@ -2,7 +2,7 @@
 
 One readable folder with every experiment's results — adaptation, retention, magnitude (F_Δ), geometry, and MiLoRA-style amplification metrics, per seed and per LR. Regenerated automatically as new runs land (`results_book.py`, auto-loop every 30 min).
 
-_Last updated: 2026-07-10 10:51 IDT_
+_Last updated: 2026-07-10 11:51 IDT_
 
 **Retention definitions** — CS runs: mean(BBH, MMLU-Pro), Llama-2-7B base = 26.0. Math runs: BBH-only, Llama-2-7B base = 33.1. Missing values are shown as ·.
 
@@ -13,9 +13,9 @@ _Last updated: 2026-07-10 10:51 IDT_
 | [03_cs_faithful.md](03_cs_faithful.md) | Faithful CS repro (frc_) — fills as the spine lands | 0 |
 | [04_rank_wd_matrix.md](04_rank_wd_matrix.md) | Rank/weight-decay matrix (mtx_/mtxm_), 3 seeds, per-config mean±SD | 110 |
 | [05_qwen.md](05_qwen.md) | Qwen2.5-7B second-model replication: CS + math LR sweeps | 65 |
-| [06_calibration_control.md](06_calibration_control.md) | Eval-matched calibration control (b4_) | 3 |
+| [06_calibration_control.md](06_calibration_control.md) | Eval-matched calibration control (b4_) | 4 |
 | [07_ce_forgetting.md](07_ce_forgetting.md) | CE-to-base forgetting for every measured run + Spearman(CE, F_Δ) | 55 |
-| [08_geometry_fingerprint.md](08_geometry_fingerprint.md) | Per-method geometry fingerprint + per-run appendix | 307 |
-| [99_all_runs.md](99_all_runs.md) | Flat master table — every run, all metrics | 476 |
+| [08_geometry_fingerprint.md](08_geometry_fingerprint.md) | Per-method geometry fingerprint + per-run appendix | 308 |
+| [99_all_runs.md](99_all_runs.md) | Flat master table — every run, all metrics | 477 |
 
 _151 additional exploratory/legacy runs (uio*, clora_*, scl2_*, a5_*, grid_*, …) are classified `misc` and appear only in [99_all_runs.md](99_all_runs.md)._
