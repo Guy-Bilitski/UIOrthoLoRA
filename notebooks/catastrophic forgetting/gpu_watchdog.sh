@@ -37,10 +37,35 @@ idle_gpus() {  # GPUs with <5% util and no compute process
   echo "$idle"
 }
 
+hung_proc_heal() {
+  # HANG CLASS 2 (seen twice: milora BBH-init, b4_lora_null BBH-init): a compute proc
+  # RESIDENT on the GPU but util <5% across two consecutive checks (~20 min) = frozen
+  # at lm-eval init. Kill it; the pool/dispatcher relaunches the cell (skip-done safe).
+  mkdir -p logs/wd_state
+  while IFS=, read -r idx util uuid; do
+    idx=${idx// /}; util=${util// /}; uuid=${uuid// /}
+    local pids cnt f
+    pids=$(nvidia-smi --query-compute-apps=gpu_uuid,pid --format=csv,noheader 2>/dev/null | grep "$uuid" | awk -F', ' '{print $2}' | tr '\n' ' ')
+    f="logs/wd_state/hang_gpu${idx}"
+    if [ -n "${pids// /}" ] && [ "${util%.*}" -lt 5 ]; then
+      cnt=$(( $(cat "$f" 2>/dev/null || echo 0) + 1 ))
+      echo "$cnt" > "$f"
+      if [ "$cnt" -ge 2 ]; then
+        echo "$(date '+%F %H:%M') [$TAG] HANG-HEAL GPU$idx: procs '$pids' util<5% for $cnt checks -> kill" >> "$LOG"
+        kill -9 $pids 2>/dev/null
+        echo 0 > "$f"
+      fi
+    else
+      echo 0 > "$f"
+    fi
+  done < <(nvidia-smi --query-gpu=index,utilization.gpu,gpu_uuid --format=csv,noheader,nounits 2>/dev/null)
+}
+
 check_once() {
   local pend idle disp_alive
   pend=$(pending_cells)
   [ "$pend" -eq 0 ] && { echo "$(date '+%F %H:%M') [$TAG] queue drained, nothing to guard" >> "$LOG"; return 0; }
+  hung_proc_heal
   idle=$(idle_gpus)
   pgrep -f "auto_dispatch.py --jobs $JOBS" > /dev/null && disp_alive=1 || disp_alive=0
   if [ -n "${idle// /}" ] || [ "$disp_alive" -eq 0 ]; then
