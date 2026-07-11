@@ -128,6 +128,12 @@ _Retention = BBH only; base model Qwen2.5-7B (no base reference evaluated in thi
 | 5e-4 | 42 | 70.58 | · | 41.04 | 41.04 | 39.05 | 0.26 | · | · | · | · | · | · | · | · |
 | 1e-3 | 42 | 24.49 | · | 35.66 | 35.66 | 9.45 | 0.68 | · | · | · | · | · | · | · | · |
 
+### `qwswm_lora_null_r16` — LoRA-Null, r=16
+
+| LR | seed | GSM8K | MATH | Retention | BBH | MMLU-Pro | F_Δ | e_top | e_bot | ein_top | ein_bot | amp_top | st.rank | eff.rank | CE |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **1e-3** | **42** | **72.86** | **·** | **45.45** | **45.45** | **31.70** | **0.39** | **·** | **·** | **·** | **·** | **·** | **·** | **·** | **·** |
+
 ### `qwswm_lora_r16` — LoRA, r=16
 
 | LR | seed | GSM8K | MATH | Retention | BBH | MMLU-Pro | F_Δ | e_top | e_bot | ein_top | ein_bot | amp_top | st.rank | eff.rank | CE |
@@ -151,4 +157,10 @@ _Retention = BBH only; base model Qwen2.5-7B (no base reference evaluated in thi
 | **3e-4** | **42** | **66.64** | **·** | **47.57** | **47.57** | **43.30** | **0.10** | **·** | **·** | **·** | **·** | **·** | **·** | **·** | **·** |
 | 5e-4 | 42 | 65.35 | · | 48.01 | 48.01 | 42.10 | 0.12 | · | · | · | · | · | · | · | · |
 | 1e-3 | 42 | 0.00 | · | 0.00 | 0.00 | 0.00 | 15.76 | · | · | · | · | · | · | · | · |
+
+### `qwswm_milora_r32` — MiLoRA, r=32
+
+| LR | seed | GSM8K | MATH | Retention | BBH | MMLU-Pro | F_Δ | e_top | e_bot | ein_top | ein_bot | amp_top | st.rank | eff.rank | CE |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **5e-4** | **42** | **68.31** | **·** | **45.15** | **45.15** | **34.68** | **0.30** | **·** | **·** | **·** | **·** | **·** | **·** | **·** | **·** |
 
