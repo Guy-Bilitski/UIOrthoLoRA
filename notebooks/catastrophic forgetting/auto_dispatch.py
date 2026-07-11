@@ -66,6 +66,33 @@ def gpus_owned_by_live_pools(my_pid):
     return owned
 
 
+def gpus_locked_by_live_runs():
+    """GPU indices recorded in dispatch locks whose run still has a LIVE process.
+
+    Closes the ORPHAN TRANSITION RACE (GPU5 double-booked 2026-07-11 ~04:50 with a
+    single dispatcher): an orphaned `train && eval` job has a seconds-to-minutes gap
+    between the two python processes where nvidia-smi shows the GPU empty, so the
+    compute-proc guard passes and a second job lands on it. The lock file records
+    the assigned GPU ("gpuN <ts>"); if the lock's run name appears in any live
+    process cmdline, that GPU is busy regardless of what nvidia-smi says."""
+    busy = set()
+    try:
+        ps_out = subprocess.run(["ps", "-eo", "args"], capture_output=True, text=True).stdout
+    except Exception:
+        return busy
+    for lf in glob.glob(os.path.join(LOCKS, "*.lock")):
+        rn = os.path.basename(lf)[:-5]
+        if done(rn) or rn not in ps_out:
+            continue
+        try:
+            m = re.match(r"gpu(\d+)", open(lf).read())
+            if m:
+                busy.add(int(m.group(1)))
+        except Exception:
+            pass
+    return busy
+
+
 def gpus_with_compute():
     """GPU indices that currently have ANY compute process."""
     busy = set()
@@ -150,12 +177,15 @@ def main():
             return
         owned = gpus_owned_by_live_pools(my_pid)
         compute = gpus_with_compute()
+        lockbusy = gpus_locked_by_live_runs()
         for g in all_gpus:
             if g in running:            # we already have a job here
                 continue
             if g in owned:              # a live gpu_pool owns this GPU
                 continue
             if g in compute:            # something else is using it (settle guard)
+                continue
+            if g in lockbusy:           # live orphan holds this GPU (train->eval gap)
                 continue
             # pick next undone/unlocked job
             nxt = None
