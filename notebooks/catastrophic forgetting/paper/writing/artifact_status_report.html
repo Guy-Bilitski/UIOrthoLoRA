@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-11 16:55</b></span>
+      <span>Last updated · <b>2026-07-11 20:20</b></span>
     </div>
   </header>
 
@@ -153,7 +153,7 @@
       </div>
       <div class="legend" id="legend"></div>
     </div>
-    <p>The relationship is not an artifact of one setting or a few points. It reproduces <strong>within every one of the seven assessed adapters</strong> (r −0.86 to −0.97), on a <strong>second architecture in full</strong> (Qwen2.5-7B commonsense, the same 7 adapters × 7 LRs: pooled r = −0.86, n = 49 — numerically indistinguishable from Llama-2's −0.86; the slope is steeper on Qwen's retention scale, ≈ −32 pp/decade, so the two fits are reported separately), and — decisively — the update size is a far better predictor of retention than the learning rate that produced it (R² 0.74 vs 0.32).</p>
+    <p>The relationship is not an artifact of one setting or a few points. It reproduces <strong>within every one of the seven assessed adapters</strong> (r −0.86 to −0.97), on a <strong>second architecture in full</strong> (Qwen2.5-7B commonsense, the same 7 adapters × 7 LRs: pooled r = −0.86, n = 49 — numerically indistinguishable from Llama-2's −0.86; the slope is steeper on Qwen's retention scale, ≈ −32 pp/decade, so the two fits are reported separately), and — decisively — the update size is a far better predictor of retention than the learning rate that produced it (R² 0.74 vs 0.32). The second architecture now also carries the <strong>math arm in full</strong> (Qwen2.5-7B on MetaMathQA, 6 method families × 7 LRs): pooled r = −0.71, slope <strong>−15.3 pp/decade</strong> — the same slope family as Llama-2 math (−13.9), Llama-2 commonsense (−14.8) and CLoRA's published table (−14.7) — on n = 42 non-degenerate cells (one LoRA+wd lr-1e-3 cell collapsed outright, F<sub>Δ</sub> 15.8 with 0 accuracy, and is excluded with disclosure). The pooled correlation is weaker than Llama's for a structural reason visible in the data: Qwen's base BBH is much higher (≈ 48 vs 33.1), so more of the sweep sits in the law's saturation region — including the <em>entire</em> LoRA+wd sweep (F<sub>Δ</sub> 0.04–0.12, retention pinned at 46.8–48.0 while GSM8K reaches 66.6), which replicates the efficient-operating-point result on the second model. Where a method's LR range does span the knee, the within-method law reappears (r −0.70 to −0.90 for CLoRA, SC-LoRA, MiLoRA, DoRA).</p>
     <p>The learning rate acts <em>through</em> the update size, not beside it. At each of the seven swept rates taken alone, update size still predicts retention across adapters (mean within-LR r = −0.83; LR-demeaned pooled r = −0.82, slope −20.6 pp/decade — matching the below-reference slope). Conversely, once F<sub>Δ</sub> is controlled, the learning rate's partial correlation with retention flips to <strong>+0.46</strong>: LR harms retention only through the update size it produces.</p>
 
     <div class="callout">
@@ -369,7 +369,7 @@
   </section>
 
   <div class="foot">
-    <b>Evidence base:</b> commonsense fair sweep (8 adapters × 7 LRs) + rank/wd grids · faithful math reproduction · Qwen2.5-7B commonsense replication (7 adapters × 7 LRs) · geometry battery over 320 saved adapters · per-method efficiency audit · CE-to-base forgetting metric · 8 ports audited · correctness checks passed.<br>
+    <b>Evidence base:</b> commonsense fair sweep (8 adapters × 7 LRs) + rank/wd grids · faithful math reproduction · Qwen2.5-7B commonsense + math replications (7 adapters × 7 LRs each) · geometry battery over 320 saved adapters · per-method efficiency audit · CE-to-base forgetting metric · 8 ports audited · correctness checks passed.<br>
     <b>Metrics:</b> retention = BBH + MMLU-Pro (base 26.0; math uses BBH, base 33.1). Update size = F<sub>Δ</sub> (effective output change, comparable to CLoRA's Table 4). Published numbers use each paper's own evaluation and are kept separate from our in-pipeline runs.
   </div>
 
