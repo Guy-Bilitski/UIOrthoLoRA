@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-11 23:05</b></span>
+      <span>Last updated · <b>2026-07-12 00:10</b></span>
     </div>
   </header>
 
@@ -228,46 +228,60 @@
   <!-- 3 COMMONSENSE -->
   <section>
     <div class="sec-head"><span class="sec-num">3</span><h2>Commonsense — adaptation &amp; retention</h2></div>
-    <p class="lead">Each adapter at its own best learning rate (its most favourable single-rate snapshot, seed 42). The field is flat on accuracy; retention broadly tracks update size; and <strong>plain LoRA+weight-decay is indistinguishable from the field on accuracy and best on retention, at the smallest update and the widest safe learning-rate band.</strong></p>
+    <p class="lead">Each adapter at its own best learning rate, <strong>re-trained from scratch on three seeds (42/43/44)</strong> — one table, error bars included. The field is flat on accuracy; retention tracks update size; and <strong>LoRA+weight-decay is best on retention at the smallest update and the widest safe learning-rate band</strong> — a margin (+3.4 CS, +4.3 retention over CLoRA) that is roughly 8–10× either method's seed noise.</p>
     <div class="tbl-scroll">
       <table>
-        <caption>Per-adapter best operating point — Commonsense-170K, Llama-2-7B. Each row is the adapter at <b>its own highest-accuracy learning rate</b> (best LR). <b>CS acc</b>: mean accuracy over the 8 commonsense tasks. <b>Retention</b>: held-out accuracy on tasks never trained on (BBH + MMLU-Pro); base model = 26.0, the base-model reference; higher = less forgetting. <b>update F<sub>Δ</sub></b>: effective size of the weight edit (lower = gentler). <b>Safe band</b> — an <b>LR-robustness</b> measure: of the 7 learning rates swept for that adapter (2e-5 … 1e-3), how many produce retention ≥ 24, i.e. within ~2 points of the base reference 26.0. Read 6/7 as "you can mis-pick the learning rate by an order of magnitude and still not forget"; 1/7 as "only one narrow LR avoids forgetting" — fragile. It matters because practitioners rarely tune the LR per method: a wide safe band is what makes a method deployable at a default learning rate. Note: Retention is at the best-accuracy LR, while Safe band counts across all 7 LRs — which is why SC-LoRA can show retention 22.5 yet safe band 1/7.</caption>
-        <thead><tr><th>Adapter</th><th>best LR</th><th>CS acc ↑</th><th>Retention ↑</th><th>update F<sub>Δ</sub> ↓</th><th>Safe band</th></tr></thead>
+        <caption>Per-adapter best operating point, 3-seed — Commonsense-170K, Llama-2-7B. Each row: the adapter at <b>its own highest-accuracy learning rate</b>, re-run end-to-end on seeds 42/43/44; values are mean ± sample SD, F<sub>Δ</sub> as its range across seeds. <b>Retention</b> = held-out accuracy (BBH + MMLU-Pro mean); base model = 26.0; higher = less forgetting. <b>Safe band</b> = of the 7 LRs swept (2e-5…1e-3, seed 42), how many keep retention ≥ 24 — the LR-robustness that makes a method deployable at a default rate (6/7 = "mis-pick the LR by an order of magnitude and still don't forget"; 1/7 = fragile). Two seed regularities, visible down the rows: <b>retention moves across seeds only when F<sub>Δ</sub> moves</b> (SC-LoRA), and stays put when F<sub>Δ</sub> is stable — with the one predicted exception that LoRA-Null's spread (±1.32) sits past the law's knee (≈0.37), where the fitted residual SD grows from ≈0.6 to ≈3.5 pp; and <b>adaptation accuracy, not retention, is the seed-fragile axis</b> (MiLoRA, DoRA). Independent corroboration: the separate 3-seed rank/wd matrix's lr-3e-4 twins give MiLoRA 24.19±0.48 and plain LoRA 24.32±0.36 — matching these in-sweep triples.</caption>
+        <thead><tr><th>Adapter</th><th>best LR</th><th>CS acc ↑ <span class="dim">(±SD, n=3)</span></th><th>Retention ↑ <span class="dim">(±SD, n=3)</span></th><th>F<sub>Δ</sub> ↓ <span class="dim">(range)</span></th><th>Safe band</th><th style="text-align:left">Seed behavior</th></tr></thead>
         <tbody>
-          <tr class="ref"><td>Base (no fine-tuning)</td><td>—</td><td>—</td><td>26.0</td><td>0</td><td>—</td></tr>
-          <tr class="hi"><td>LoRA + weight decay</td><td>5e-4</td><td>81.6</td><td class="win">25.6</td><td class="win">0.39</td><td class="win">6 / 7</td></tr>
-          <tr><td>SC-LoRA</td><td>5e-5</td><td>80.1</td><td>22.5</td><td>0.56</td><td>1 / 7</td></tr>
-          <tr><td>MiLoRA</td><td>3e-4</td><td>79.9</td><td>24.7</td><td>0.54</td><td>5 / 7</td></tr>
-          <tr><td>LoRA (plain)</td><td>3e-4</td><td>79.1</td><td>24.4</td><td>0.62</td><td>5 / 7</td></tr>
-          <tr><td>LoRA-Null</td><td>5e-4</td><td>78.9</td><td>23.6</td><td>0.70</td><td>5 / 7</td></tr>
-          <tr><td>CLoRA</td><td>5e-4</td><td>78.4</td><td>21.9</td><td>0.64</td><td>5 / 7</td></tr>
-          <tr><td>DoRA</td><td>2e-4</td><td>78.3</td><td>24.8</td><td>0.45</td><td>4 / 7</td></tr>
+          <tr class="ref"><td>Base (no fine-tuning)</td><td>—</td><td>—</td><td>26.0</td><td>0</td><td>—</td><td style="text-align:left">—</td></tr>
+          <tr class="hi"><td>LoRA + weight decay</td><td>5e-4</td><td><b>81.80 ± 0.16</b></td><td class="win"><b>25.93 ± 0.42</b></td><td class="win">0.38–0.41</td><td class="win">6 / 7</td><td style="text-align:left">stable on every axis; retention statistically at base</td></tr>
+          <tr><td>SC-LoRA</td><td>5e-5</td><td>80.61 ± 0.41</td><td>24.60 ± 1.85</td><td class="sig">0.28–0.56</td><td>1 / 7</td><td style="text-align:left">update size itself seed-unstable; retention tracks it along the law (22.5 vs 25.6/25.8)</td></tr>
+          <tr><td>LoRA (plain)</td><td>3e-4</td><td>79.08 ± 0.11</td><td>23.81 ± 0.58</td><td>0.60–0.63</td><td>5 / 7</td><td style="text-align:left">stable on every axis</td></tr>
+          <tr><td>LoRA-Null</td><td>5e-4</td><td>78.93 ± 0.12</td><td>22.14 ± 1.32</td><td>0.70–0.71</td><td>5 / 7</td><td style="text-align:left">widest retention spread at stable F<sub>Δ</sub> — past-knee heteroscedasticity, as the law predicts</td></tr>
+          <tr><td>CLoRA</td><td>5e-4</td><td>78.41 ± 0.11</td><td>21.59 ± 0.48</td><td>0.63–0.66</td><td>5 / 7</td><td style="text-align:left">replicates cleanly; 4.3 pp retention below LoRA+wd at a larger update</td></tr>
+          <tr><td>DoRA</td><td>2e-4</td><td>74.29 ± 8.65</td><td>25.20 ± 0.33</td><td>0.44–0.45</td><td>4 / 7</td><td style="text-align:left">retention rock-stable; accuracy fragile (78.3/80.2/64.4)</td></tr>
+          <tr><td>MiLoRA</td><td>3e-4</td><td class="sig">57.69 ± 22.67</td><td>24.20 ± 0.48</td><td>0.54–0.56</td><td>5 / 7</td><td style="text-align:left">retention rock-stable; accuracy collapses across seeds (79.9/58.7/34.5)</td></tr>
         </tbody>
       </table>
     </div>
-    <p>All seven adapters cluster in a tight 78–82 accuracy band (single-seed, s42; on adaptation the methods are within seed noise, so the robust claims here are retention, update size, and safe-band width — not the accuracy ordering). At its best LR, LoRA+wd has the highest retention at the smallest update, and also wins the robustness measures (highest mean retention across all rates, widest safe band). Its retention (25.6) is within noise of the base reference (26.0) — essentially no measurable forgetting at full task accuracy. A stricter <em>joint</em> band — LRs where a run both adapts (CS ≥ 70) and retains (≥ 24) — gives the same headline: LoRA+wd, plain LoRA and MiLoRA each keep 3 of 7 rates, DoRA/LoRA-Null/SC-LoRA keep 1, and CLoRA keeps 0, so the safe-band picture is not an artifact of counting non-adapted runs as safe.</p>
-    <p>What the forgetting actually consists of at these operating points: averaged over the seven rows, <strong>MMLU-Pro loses 3.24 pp while BBH loses 0.95 pp</strong> vs base — the generative, format-following suite degrades first, the likelihood-scored one barely moves.</p>
-    <h3>Seed robustness — the operating points, replicated</h3>
-    <p class="lead">Every operating point in the table above was re-trained and re-evaluated from scratch on fresh seeds (43, 44 — identical config otherwise). <strong>All seven now carry full 3-seed error bars.</strong> The head-to-head at the top of the table survives them decisively: LoRA+wd's margin over CLoRA (+3.4 CS, +4.3 retention) is roughly 8–10× either method's seed noise.</p>
-    <div class="tbl-scroll">
-      <table>
-        <caption>3-seed replication of the §3 operating points (seeds 42/43/44, same <span class="dim">lrsw_</span> config re-run end-to-end). Mean ± sample SD; F<sub>Δ</sub> shown as its range across seeds. Where F<sub>Δ</sub> moves across seeds, retention moves with it along the law; where F<sub>Δ</sub> is stable, retention is stable too — with one predicted exception: LoRA-Null's retention spread (± 1.32) is the largest of any stable-F<sub>Δ</sub> method <em>because its operating point sits past the law's knee (≈ 0.37)</em>, in the regime where the fitted residual SD grows from ≈ 0.6 to ≈ 3.5 pp. Even the noise structure follows the law.</caption>
-        <thead><tr><th>Adapter (LR)</th><th>CS accuracy</th><th>Retention</th><th>F<sub>Δ</sub> range</th><th>seeds</th><th style="text-align:left">What the seeds show</th></tr></thead>
-        <tbody>
-          <tr><td>LoRA + wd (5e-4)</td><td><b>81.80 ± 0.16</b></td><td><b>25.93 ± 0.42</b></td><td>0.38–0.41</td><td>3</td><td style="text-align:left">stable on every axis; retention statistically at the base reference (26.03)</td></tr>
-          <tr><td>SC-LoRA (5e-5)</td><td>80.61 ± 0.41</td><td>24.60 ± 1.85</td><td class="sig">0.28–0.56</td><td>3</td><td style="text-align:left">the update size <em>itself</em> is seed-unstable (0.56 vs 0.29/0.28); retention tracks it along the law (22.5 vs 25.6/25.8)</td></tr>
-          <tr><td>MiLoRA (3e-4)</td><td class="sig">57.69 ± 22.67</td><td>24.20 ± 0.48</td><td>0.54–0.56</td><td>3</td><td style="text-align:left">accuracy is the fragile axis (79.9/58.7/34.5); retention and F<sub>Δ</sub> are not — reproduces its matrix twins' 24.19 ± 0.48</td></tr>
-          <tr><td>LoRA (3e-4)</td><td>79.08 ± 0.11</td><td>23.81 ± 0.58</td><td>0.60–0.63</td><td>3</td><td style="text-align:left">on-law baseline, stable on every axis</td></tr>
-          <tr><td>LoRA-Null (5e-4)</td><td>78.93 ± 0.12</td><td>22.14 ± 1.32</td><td>0.70–0.71</td><td>3</td><td style="text-align:left">largest retention spread at stable F<sub>Δ</sub> — exactly the past-knee heteroscedasticity the law predicts</td></tr>
-          <tr><td>CLoRA k1024 (5e-4)</td><td>78.41 ± 0.11</td><td>21.59 ± 0.48</td><td>0.63–0.66</td><td>3</td><td style="text-align:left">replicates cleanly; stays 4.3 pp of retention below LoRA+wd at a larger update</td></tr>
-          <tr><td>DoRA (2e-4)</td><td>74.29 ± 8.65</td><td>25.20 ± 0.33</td><td>0.44–0.45</td><td>3</td><td style="text-align:left">retention rock-stable at stable F<sub>Δ</sub>; accuracy is the fragile axis (78.3/80.2/64.4 — the MiLoRA pattern again)</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="dim" style="font-size:12.5px">† The operating-point table above shows seed-42 values (the sweep's common seed); this table adds the replications. Independent corroboration from the 3-seed rank/wd matrix: its lr-3e-4 twins give MiLoRA r32 retention 24.19 ± 0.48 (CS 79.9/58.7/34.6) and plain LoRA r16 24.32 ± 0.36 (CS 80.2/79.5/77.3) — matching the in-sweep triples above. Across the matrix, retention seed-SD is ≤ 0.5 for on-law cells and grows with update size, while adaptation accuracy is the seed-sensitive axis — so accuracy comparisons are stated as "tied within the band," not ranked.</p>
+    <p>All adapters that hold their accuracy cluster in a tight 78–82 band — on adaptation the methods are tied within noise, so the robust claims are retention, update size, and safe-band width, not the accuracy ordering (MiLoRA and DoRA rank low on <em>mean</em> accuracy only because single bad seeds drag them — their seed-42 points sit at 79.9 and 78.3). LoRA+wd's retention is statistically at the base reference — no measurable forgetting at full task accuracy. A stricter <em>joint</em> band (adapts CS ≥ 70 <em>and</em> retains ≥ 24) gives the same headline: LoRA+wd/LoRA/MiLoRA keep 3 of 7 rates, DoRA/LoRA-Null/SC-LoRA keep 1, CLoRA 0. Decomposing the forgetting at these operating points: <strong>MMLU-Pro loses 3.24 pp while BBH loses 0.95 pp</strong> — the generative, format-following suite degrades first.</p>
     <div class="callout warn">
       <h3>Boundary condition — high-rank CLoRA on commonsense</h3>
       <p>In CLoRA's published results, its k1024/k2048 configurations reach 82.6/83.7 accuracy at BBH 36.5/38.7 — above our LoRA+wd, and their k2048 even exceeds the base model out-of-domain. What keeps this a boundary rather than a refutation: high-k CLoRA sits <em>on</em> the magnitude law — it achieves that retention by shrinking the update (their own Table 4 shows k2048 at the smallest F<sub>Δ</sub> in their study). So the defensible statement is narrow: <em>at high rank, CLoRA's null-space constraint buys adaptation-efficiency per unit of update that pure size control does not</em> — while the magnitude law still governs both. Two commensurability notes: their 82.6/83.7 are their own harness (not directly comparable to our 81.6 — the same recipe gap that shows up on math, §4), and in our pipeline high-k CLoRA lands on our law but below LoRA+wd on both axes (k1024: CS 79.9, retention 24.8 at F<sub>Δ</sub> 0.46; k2048 retains 25.7 with BBH 34.1 above base, but its accuracy collapses to 65.4 — and is seed-fragile in the 3-seed matrix). The retention half of their high-k claim replicates, riding on the smaller update exactly as the law predicts; the accuracy half does not, in our hands.</p>
+    </div>
+    <h3>Second model — Qwen2.5-7B, identical settings</h3>
+    <p class="lead">The full sweep was repeated on Qwen2.5-7B with the training args matched key-for-key (only <span class="dim">base_model</span> differs): commonsense 7 adapters × 7 LRs and math 6 method families × 7 LRs, <strong>single seed (42)</strong> — replication breadth, not error bars; the 3-seed error-bar work lives on the Llama-2 arm above. The law stats for both arms are in §1; these tables give the per-adapter operating points.</p>
+    <div class="tbl-scroll">
+      <table>
+        <caption>Qwen2.5-7B commonsense — per-adapter best-accuracy point of its 7-LR sweep (seed 42). Retention = BBH + MMLU-Pro mean, on Qwen's own scale — its base is a much stronger model, so read these against each other and the §1 Qwen fit (pooled r = −0.857), not against the Llama numbers. No direct no-finetuning eval was run on Qwen; the lowest-update runs bound the base reference at ≥ 41. The Llama-2 headline replicates: <b>LoRA+wd again pairs the best accuracy with the best retention at the smallest update</b>; SC-LoRA again pays the largest retention price at its best-accuracy point. CorDA (original) trained at one LR only on this model and is shown for completeness.</caption>
+        <thead><tr><th>Adapter</th><th>best LR</th><th>CS acc ↑</th><th>Retention ↑</th><th>F<sub>Δ</sub> ↓</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td>LoRA + weight decay</td><td>1e-4</td><td><b>87.5</b></td><td class="win"><b>41.0</b></td><td class="win">0.14</td></tr>
+          <tr><td>MiLoRA</td><td>1e-4</td><td>87.5</td><td>39.7</td><td>0.18</td></tr>
+          <tr><td>LoRA (plain)</td><td>1e-4</td><td>87.4</td><td>38.6</td><td>0.16</td></tr>
+          <tr><td>LoRA-Null</td><td>2e-4</td><td>87.2</td><td>38.4</td><td>0.22</td></tr>
+          <tr><td>CLoRA</td><td>2e-4</td><td>87.1</td><td>38.9</td><td>0.21</td></tr>
+          <tr class="bad"><td>SC-LoRA</td><td>1e-4</td><td>87.1</td><td>9.4</td><td>0.44</td></tr>
+          <tr><td>DoRA</td><td>2e-4</td><td>86.9</td><td>37.0</td><td>0.26</td></tr>
+          <tr><td>CorDA <span class="dim">(1 LR only)</span></td><td>2e-5</td><td>85.5</td><td>27.3</td><td>0.24</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <caption>Qwen2.5-7B math (MetaMathQA) — per-method best-GSM8K point of its 7-LR sweep (seed 42). Retention = BBH only (same rule as §4); Qwen's base BBH ≈ 48. The law reads directly off the rows: methods whose best-accuracy point needed a small update (LoRA+wd, CLoRA, SC-LoRA) keep BBH at or near base; those that got there with a large one pay for it (plain LoRA's best GSM8K comes at lr 1e-3, F<sub>Δ</sub> 0.59 — and BBH collapses to 16.0; DoRA's best point also sheds 18 pp of BBH). Same law, second model, second task arm.</caption>
+        <thead><tr><th>Method</th><th>best LR</th><th>GSM8K ↑</th><th>BBH retention ↑</th><th>F<sub>Δ</sub> ↓</th></tr></thead>
+        <tbody>
+          <tr><td>SC-LoRA</td><td>1e-4</td><td><b>76.9</b></td><td>45.9</td><td>0.18</td></tr>
+          <tr><td>LoRA-Null</td><td>1e-3</td><td>72.9</td><td>45.5</td><td>0.39</td></tr>
+          <tr><td>CLoRA</td><td>3e-4</td><td>71.8</td><td>46.4</td><td>0.11</td></tr>
+          <tr class="bad"><td>DoRA</td><td>3e-4</td><td>71.0</td><td>30.1</td><td>0.16</td></tr>
+          <tr><td>MiLoRA</td><td>5e-4</td><td>68.3</td><td>45.2</td><td>0.30</td></tr>
+          <tr class="bad"><td>LoRA (plain)</td><td>1e-3</td><td>67.3</td><td>16.0</td><td>0.59</td></tr>
+          <tr class="hi"><td>LoRA + weight decay</td><td>3e-4</td><td>66.6</td><td class="win"><b>47.6</b></td><td class="win">0.10</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
@@ -277,7 +291,7 @@
     <p class="lead">On the CLoRA math recipe (MetaMathQA-395K, r64/α128), plain LoRA+wd <strong>edges the best published GSM8K numbers at a smaller update</strong>, and retains at the base BBH reference. All our in-pipeline cells share a matched 256-token recipe; the published numbers are each paper's own recipe and harness (CLoRA leaves its cutoff unstated; MiLoRA's own script trains at 2048 tokens with α=r).</p>
     <div class="chart">
       <div class="ct">GSM8K accuracy — our LoRA+wd vs each method's best published number</div>
-      <div class="cs">Blue = value reported in each method's own paper (LoRA, MiLoRA, PiSSA, CLoRA). Green = our LoRA+wd run. Grey = our in-pipeline reproduction of CLoRA-k128. CLoRA-k128 appears twice (published 64.6, ours 59.6); the gap is a harness/recipe difference — our in-pipeline LoRA reproduces the published LoRA (60.2 vs 60.6), so the pipeline is sound. All in-pipeline cells matched at 256-token cutoff.</div>
+      <div class="cs"><b>What's behind the bars:</b> the green LoRA+wd bar is a <b>3-seed mean (66.79 ± 0.79; every seed beats the best published 64.6)</b> drawn from a 30-cell LR × weight-decay sweep; blue bars are single values reported in each method's own paper (LoRA, MiLoRA, PiSSA, CLoRA — papers report no seed variance); grey = our in-pipeline single-seed reproduction of CLoRA-k128. CLoRA-k128 appears twice (published 64.6, ours 59.6); the gap is a harness/recipe difference — our in-pipeline LoRA reproduces the published LoRA (60.2 vs 60.6), so the pipeline is sound. All in-pipeline cells matched at 256-token cutoff.</div>
       <div class="bar-row"><div class="name">LoRA+wd (wd0.3) <small>ours · F_Δ 0.28 · BBH 33.1</small></div><div class="bar-track"><div class="bar-fill ours" style="width:89.7%"></div></div><div class="val" style="color:var(--good)">67.3</div></div>
       <div class="bar-row"><div class="name">CLoRA-k128 <small>published (their best)</small></div><div class="bar-track"><div class="bar-fill pub" style="width:86.1%"></div></div><div class="val">64.6</div></div>
       <div class="bar-row"><div class="name">MiLoRA <small>published</small></div><div class="bar-track"><div class="bar-fill pub" style="width:84.7%"></div></div><div class="val">63.5</div></div>
@@ -288,7 +302,7 @@
     </div>
     <div class="chart">
       <div class="ct">BBH retention after math fine-tuning — the other half of the claim</div>
-      <div class="cs">Retention on math is measured on <b>BBH only</b> (base reference 33.1); MMLU-Pro is dropped because math-tuned models emit chain-of-thought its answer parser cannot score reliably, so including it would penalize adaptation rather than forgetting. All bars are our in-pipeline measurements (results/*/summary.json) on the same training recipe; each bar states its learning rate — LoRA+wd is shown at its best LR (2e-4), the competitors at the recipe LR (3e-4). The comparison survives matching: <b>at 3e-4 for everyone, LoRA+wd still leads (GSM8K 65.05, BBH 33.47)</b>, and MiLoRA's own best-retention cell (lr 1e-4) reaches BBH 32.38 at GSM8K 62.85 — the ordering is unchanged. There are <b>no published bars to show</b>: CLoRA's math table (its Table 3) reports only GSM8K and MATH accuracy — no published <em>benchmark-accuracy</em> retention numbers exist for any math-trained model (the 18.38 in that table is MATH-benchmark accuracy, not BBH; MiLoRA reports only the CE-to-base metric of §6, which we reproduce) — so our reproduction supplies the retention measurement the published tables lack. BBH-only is not a blind spot, either: the same evals record MMLU, ARC-Challenge and MMLU-Pro for every math model, and each stays lawful against update size on this arm (r −0.76 to −0.94 — the full per-benchmark table is in §1).</div>
+      <div class="cs">Retention on math is measured on <b>BBH only</b> (base reference 33.1); MMLU-Pro is dropped because math-tuned models emit chain-of-thought its answer parser cannot score reliably, so including it would penalize adaptation rather than forgetting. All bars are our in-pipeline measurements (results/*/summary.json) on the same training recipe; each bar states its learning rate — LoRA+wd is shown at its best LR (2e-4) as a <b>3-seed mean (BBH 33.57 ± 1.04)</b>, the competitors single-seed at the recipe LR (3e-4); the full per-method LR sweeps (7 rates each) are the points of the §1 law figure. The comparison survives matching: <b>at 3e-4 for everyone, LoRA+wd still leads (GSM8K 65.05, BBH 33.47)</b>, and MiLoRA's own best-retention cell (lr 1e-4) reaches BBH 32.38 at GSM8K 62.85 — the ordering is unchanged. There are <b>no published bars to show</b>: CLoRA's math table (its Table 3) reports only GSM8K and MATH accuracy — no published <em>benchmark-accuracy</em> retention numbers exist for any math-trained model (the 18.38 in that table is MATH-benchmark accuracy, not BBH; MiLoRA reports only the CE-to-base metric of §6, which we reproduce) — so our reproduction supplies the retention measurement the published tables lack. BBH-only is not a blind spot, either: the same evals record MMLU, ARC-Challenge and MMLU-Pro for every math model, and each stays lawful against update size on this arm (r −0.76 to −0.94 — the full per-benchmark table is in §1).</div>
       <div class="bar-row"><div class="name">Base (no fine-tuning) <small>reference · base retention</small></div><div class="bar-track"><div class="bar-fill repro" style="width:91.9%; opacity:.55"></div></div><div class="val dim">33.1</div></div>
       <div class="bar-row"><div class="name">LoRA+wd (wd0.3) <small>ours · lr 2e-4 (best) · GSM8K 67.3</small></div><div class="bar-track"><div class="bar-fill ours" style="width:91.9%"></div></div><div class="val" style="color:var(--good)">33.1</div></div>
       <div class="bar-row"><div class="name">MiLoRA <small>our pipeline · lr 3e-4 · GSM8K 59.0</small></div><div class="bar-track"><div class="bar-fill repro" style="width:83.8%"></div></div><div class="val">30.2</div></div>
