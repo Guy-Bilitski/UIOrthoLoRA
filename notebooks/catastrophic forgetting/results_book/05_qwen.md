@@ -133,6 +133,7 @@ _Retention = BBH only; base model Qwen2.5-7B (no base reference evaluated in thi
 
 | LR | seed | GSM8K | MATH | Retention | BBH | MMLU-Pro | F_Δ | e_top | e_bot | ein_top | ein_bot | amp_top | st.rank | eff.rank | CE |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2e-5 | 42 | 52.54 | · | 47.66 | 47.66 | 39.21 | 0.03 | · | · | · | · | · | · | · | · |
 | **1e-3** | **42** | **72.86** | **·** | **45.45** | **45.45** | **31.70** | **0.39** | **·** | **·** | **·** | **·** | **·** | **·** | **·** | **·** |
 
 ### `qwswm_lora_r16` — LoRA, r=16
