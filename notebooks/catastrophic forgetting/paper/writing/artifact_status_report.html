@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-12 00:55</b></span>
+      <span>Last updated · <b>2026-07-12 09:35</b></span>
     </div>
   </header>
 
@@ -292,8 +292,8 @@
     <div class="callout warn">
       <h3>Boundary condition — high-rank CLoRA on commonsense</h3>
       <p><strong>What they claim:</strong> in CLoRA's published results, its k1024/k2048 configurations reach 82.6/83.7 accuracy at BBH 36.5/38.7 — above our LoRA+wd, and their k2048 even exceeds the base model out-of-domain.</p>
-      <p><strong>What replicates:</strong> the retention half of their high-k claim, riding on the smaller update exactly as the law predicts — in our pipeline that configuration retains 25.7 with BBH 34.1 above base.</p>
-      <p><strong>What doesn't:</strong> the accuracy half, in our hands. In our pipeline high-k CLoRA lands on our law but below LoRA+wd on both axes (k1024: CS 79.9, retention 24.8 at F<sub>Δ</sub> 0.46; k2048's accuracy collapses to 65.4 — and is seed-fragile in the 3-seed matrix). A commensurability note: their 82.6/83.7 are their own harness (not directly comparable to our 81.6 — the same recipe gap that shows up on math, §4).</p>
+      <p><strong>What replicates — now on a full faithful k-grid:</strong> the retention half, mechanically and monotonically. On the matched commonsense recipe (c256, lr 3e-4, s42), sweeping only k gives F<sub>Δ</sub> <b>0.61 → 0.61 → 0.51 → 0.44 → 0.34</b> (k128→k2048) and retention <b>22.6 → 22.7 → 23.6 → 24.3 → 25.0</b> — every step of retention bought by a step of update shrinkage, exactly the law's prediction and their own Table 4's pattern (§1). The earlier grid agrees (its k2048 retained 25.7, BBH 34.1 above base).</p>
+      <p><strong>What doesn't:</strong> the accuracy half, in our hands. Accuracy holds at 79–80 through k1024 (still below LoRA+wd on both axes: k1024 CS 80.1, retention 24.3 vs 81.8 / 25.9) and then <b>collapses to 68.5 at k2048</b> on the faithful grid (65.4 in the earlier grid; seed-fragile in the 3-seed matrix). A commensurability note: their 82.6/83.7 are their own harness (not directly comparable to our 81.6 — the same recipe gap that shows up on math, §4).</p>
       <p><strong>Why it stays a boundary rather than a refutation:</strong> high-k CLoRA sits <em>on</em> the magnitude law — it achieves that retention by shrinking the update (their own Table 4 shows k2048 at the smallest F<sub>Δ</sub> in their study). So the defensible statement is narrow: <em>at high rank, CLoRA's null-space constraint buys adaptation-efficiency per unit of update that pure size control does not</em> — while the magnitude law still governs both.</p>
     </div>
     <h3>Second model — Qwen2.5-7B, identical settings</h3>
