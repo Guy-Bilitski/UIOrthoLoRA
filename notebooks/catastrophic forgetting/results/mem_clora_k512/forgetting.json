@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 1.909074867155138,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 0.05705094307349934,
+  "n_positions": 40920,
+  "run_name": "mem_clora_k512",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 2.9,
+  "method": "LORA",
+  "adapter_r": 64,
+  "fdelta": null
+}

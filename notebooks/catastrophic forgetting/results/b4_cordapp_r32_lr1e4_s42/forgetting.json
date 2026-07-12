@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 1.9395424966647383,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 0.08751857258309959,
+  "n_positions": 40920,
+  "run_name": "b4_cordapp_r32_lr1e4_s42",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 3.4,
+  "method": "LORA",
+  "adapter_r": 2
+}

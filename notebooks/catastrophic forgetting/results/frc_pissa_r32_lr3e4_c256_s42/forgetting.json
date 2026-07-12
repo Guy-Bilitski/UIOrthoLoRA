@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 3.930924849780089,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 2.0789009256984503,
+  "n_positions": 40920,
+  "run_name": "frc_pissa_r32_lr3e4_c256_s42",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 2.9,
+  "method": "LORA",
+  "adapter_r": 64,
+  "fdelta": 1.4138
+}

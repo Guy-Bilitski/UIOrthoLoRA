@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 4.222253674844924,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 2.3702297507632855,
+  "n_positions": 40920,
+  "run_name": "mtx_sclora_b0p1_s43",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 3.0,
+  "method": "LORA",
+  "adapter_r": 64,
+  "fdelta": 1.4426
+}

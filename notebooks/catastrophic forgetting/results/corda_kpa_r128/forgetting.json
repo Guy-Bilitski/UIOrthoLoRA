@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 8.204257799204319,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 6.35223387512268,
+  "n_positions": 40920,
+  "run_name": "corda_kpa_r128",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 3.6,
+  "method": "LORA",
+  "adapter_r": 128,
+  "fdelta": 4.557
+}

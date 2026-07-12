@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 5.9135212099713454,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 4.061497285889707,
+  "n_positions": 40920,
+  "run_name": "lrsw_corda_r16_lr5e4_s42",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 2.5,
+  "method": "LORA",
+  "adapter_r": 32,
+  "fdelta": 3.4551
+}

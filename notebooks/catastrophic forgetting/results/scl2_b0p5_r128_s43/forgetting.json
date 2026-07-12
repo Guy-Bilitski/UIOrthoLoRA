@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 6.845215335383437,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 4.993191411301798,
+  "n_positions": 40920,
+  "run_name": "scl2_b0p5_r128_s43",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 5.0,
+  "method": "LORA",
+  "adapter_r": 256,
+  "fdelta": 1.8745
+}

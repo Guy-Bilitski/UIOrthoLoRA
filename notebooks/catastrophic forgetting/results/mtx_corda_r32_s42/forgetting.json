@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 3.9334427103934684,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 2.0814187863118296,
+  "n_positions": 40920,
+  "run_name": "mtx_corda_r32_s42",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 2.9,
+  "method": "LORA",
+  "adapter_r": 64,
+  "fdelta": 1.356
+}

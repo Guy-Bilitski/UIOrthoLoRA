@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 2.129223849248559,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 0.2771999251669204,
+  "n_positions": 40920,
+  "run_name": "dora_r8",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 4.1,
+  "method": "LORA",
+  "adapter_r": 8,
+  "fdelta": 0.524
+}

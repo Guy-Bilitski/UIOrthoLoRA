@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 1.9174420904269154,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 0.06541816634527664,
+  "n_positions": 40920,
+  "run_name": "mem_cordapp",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 3.9,
+  "method": "LORA",
+  "adapter_r": 2,
+  "fdelta": null
+}

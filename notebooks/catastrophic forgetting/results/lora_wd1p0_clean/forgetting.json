@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 1.9061513650312136,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 0.05412744094957489,
+  "n_positions": 40920,
+  "run_name": "lora_wd1p0_clean",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 2.5,
+  "method": "LORA",
+  "adapter_r": 32,
+  "fdelta": 0.1698
+}
