@@ -2,7 +2,7 @@
 
 One readable folder with every experiment's results — adaptation, retention, magnitude (F_Δ), geometry, and MiLoRA-style amplification metrics, per seed and per LR. Regenerated automatically as new runs land (`results_book.py`, auto-loop every 30 min).
 
-_Last updated: 2026-07-12 16:53 IDT_
+_Last updated: 2026-07-12 17:24 IDT_
 
 **Retention definitions** — CS runs: mean(BBH, MMLU-Pro), Llama-2-7B base = 26.0. Math runs: BBH-only, Llama-2-7B base = 33.1. Missing values are shown as ·.
 
@@ -16,6 +16,6 @@ _Last updated: 2026-07-12 16:53 IDT_
 | [06_calibration_control.md](06_calibration_control.md) | Eval-matched calibration control (b4_) | 4 |
 | [07_ce_forgetting.md](07_ce_forgetting.md) | CE-to-base forgetting for every measured run + Spearman(CE, F_Δ) | 76 |
 | [08_geometry_fingerprint.md](08_geometry_fingerprint.md) | Per-method geometry fingerprint + per-run appendix | 308 |
-| [99_all_runs.md](99_all_runs.md) | Flat master table — every run, all metrics | 577 |
+| [99_all_runs.md](99_all_runs.md) | Flat master table — every run, all metrics | 579 |
 
-_156 additional exploratory/legacy runs (uio*, clora_*, scl2_*, a5_*, grid_*, …) are classified `misc` and appear only in [99_all_runs.md](99_all_runs.md)._
+_158 additional exploratory/legacy runs (uio*, clora_*, scl2_*, a5_*, grid_*, …) are classified `misc` and appear only in [99_all_runs.md](99_all_runs.md)._
