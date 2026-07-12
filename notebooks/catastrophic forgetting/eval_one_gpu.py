@@ -23,7 +23,9 @@ HERE = run_lib.HERE
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--adapter", required=True)
+    ap.add_argument("--adapter", default="",
+                    help="path to a trained adapter; empty or 'none' evaluates the raw "
+                         "base model (no-FT reference row; F-delta is identically 0)")
     ap.add_argument("--run_name", default="")
     ap.add_argument("--base_model", default="meta-llama/Llama-2-7b-hf")
     ap.add_argument("--eval_limit", type=int, default=0)
@@ -52,6 +54,9 @@ def main():
                          "(is_equiv); math_faithful=BOTH GSM8K+MATH faithful (CLoRA Table 3 repro). "
                          "cs_avg holds the primary (gsm8k) so the adapt axis stays uniform.")
     args = ap.parse_args()
+    base_only = args.adapter in ("", "none")
+    if base_only and not args.run_name:
+        ap.error("--run_name is required in base-only mode (no adapter path to name from)")
     run_name = args.run_name or os.path.basename(os.path.normpath(args.adapter))
 
     # Self-heal the bbh_fewshot exact_match normalization (idempotent). Without it a
@@ -79,15 +84,17 @@ def main():
     # ~140-240 tok) untouched. No-op for models that already stop early
     # (Llama-2: max_new_tokens=None). Verified: bio 0.75->0.75, math 0.42->0.44.
     model.generation_config.max_new_tokens = args.gen_cap
-    model = PeftModel.from_pretrained(model, args.adapter, device_map={"": 0})
+    method = "BASE"
+    if not base_only:
+        model = PeftModel.from_pretrained(model, args.adapter, device_map={"": 0})
+        method = "unknown"
+        try:
+            import json
+            method = json.load(open(os.path.join(args.adapter, "adapter_config.json"))).get("peft_type", "unknown")
+        except Exception:
+            pass
     model.eval()
     print(f"==== generation cap: max_new_tokens={args.gen_cap} ====", flush=True)
-    method = "unknown"
-    try:
-        import json
-        method = json.load(open(os.path.join(args.adapter, "adapter_config.json"))).get("peft_type", "unknown")
-    except Exception:
-        pass
     print(f"==== EVAL {run_name} (method={method}) ====", flush=True)
 
     # in-domain adaptation: commonsense (8-task) or math (gsm8k lm-eval / faithful GSM8K+MATH)
@@ -125,11 +132,14 @@ def main():
         cs_avg = round(sum(cs.values()) / len(cs), 2)
     print(f"[{run_name}] adapt={args.adapt_task} CS={cs} CS_AVG={cs_avg}", flush=True)
 
-    # F-delta
-    try:
-        fd = fdelta_inprocess(model, tokenizer)
-    except Exception as e:
-        print(f"[{run_name}] fdelta failed: {e}", flush=True); fd = {}
+    # F-delta (identically 0 for the raw base model: there is no weight update)
+    if base_only:
+        fd = {"fdelta_token_weighted": 0.0, "dw_sv_max": 0.0, "dw_sv_mean": 0.0, "n_matrices": 0}
+    else:
+        try:
+            fd = fdelta_inprocess(model, tokenizer)
+        except Exception as e:
+            print(f"[{run_name}] fdelta failed: {e}", flush=True); fd = {}
 
     # retention (in-memory). retention_mean stays BBH+MMLU-Pro so it's directly
     # comparable to the entire existing campaign; --ret_suite broad adds 3 tasks
@@ -172,7 +182,7 @@ def main():
                 "retention_broad": ret_broad,
                 "fdelta": fd.get("fdelta_token_weighted"),
                 "dw_sv_max": fd.get("dw_sv_max"), "dw_sv_mean": fd.get("dw_sv_mean")}
-    summary = {"run_name": run_name, "method": method, "adapter": args.adapter,
+    summary = {"run_name": run_name, "method": method, "adapter": args.adapter or None,
                "per_dataset": cs, "fdelta": fd, "headline": headline,
                "git_commit": run_lib.git_commit(), "evaluated_at": run_lib.now_iso()}
     run_lib.write_json(os.path.join(HERE, "results", run_name, "summary.json"), summary)

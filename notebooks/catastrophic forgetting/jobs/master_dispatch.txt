@@ -10,6 +10,8 @@
 #      (frm_lorawd_wd0p3_lr2e4_c256_s43 is already DONE -> intentionally omitted)
 # ---- [2b] CE-to-base forgetting, PRIORITY chunk (PI order 2026-07-10): ALL frm_ math-recipe adapters
 #      missing CE -> fills the Sec.6 forgetting table (CLoRA/DoRA/MiLoRA/LoRA+wd grid now; SC-LoRA/
+# ---- [0] base no-FT reference (handoff/35 MISALIGNMENT-1; F_delta=0 row, patched eval_one_gpu.py) ----
+/home/guy/UIOrthoLoRA/.venv/bin/python eval_one_gpu.py --adapter none --run_name base_llama2_noft --base_model meta-llama/Llama-2-7b-hf --adapt_task cs --ret_suite broad --ret_limit 0 --ret_max_gen 512
 /home/guy/UIOrthoLoRA/.venv/bin/python ce_batch.py --runs_file jobs/ce_chunks/chunk_new.txt --out results/forgetting_chunk_new.jsonl --max_length 1024 --max_blocks 40 --batch_size 2 --done_marker ce_chunk_new --run_name ce_chunk_new
 #      LoRA-Null/CorDA frm_ cells picked up by the ce_chunk8 catch-all once their trainings land).
 #      glob resolved at RUNTIME; idempotent (skips run_names already in results/forgetting*.jsonl).
