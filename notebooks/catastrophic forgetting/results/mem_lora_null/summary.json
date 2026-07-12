@@ -1,0 +1,23 @@
+{
+ "run_name": "mem_lora_null",
+ "mem_probe": true,
+ "peak_mem_init_gb": 38.67,
+ "peak_mem_train_gb": 64.22,
+ "trainable_params": 112197632,
+ "train_runtime_s": 29.6,
+ "method_args": {
+  "method": "lora",
+  "num_epochs": 1,
+  "max_samples": 2000,
+  "use_dora": 0,
+  "corda": 0,
+  "milora": 0,
+  "pissa": 0,
+  "sclora": 0,
+  "lora_null": 1,
+  "cordapp": 0,
+  "lora_r": 64,
+  "lora_alpha": 128,
+  "clora_k": 512
+ }
+}
