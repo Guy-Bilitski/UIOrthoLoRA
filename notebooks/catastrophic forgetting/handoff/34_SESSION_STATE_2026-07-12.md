@@ -29,7 +29,9 @@ morning; artifact is the primary deliverable; paper.tex fixes are the main open 
 - Llama CS law n=49: r=−0.858, slope −14.78; within-method −0.86..−0.97; Spearman −0.90;
   knee ≈0.37; past-knee residual SD ≈3.5 vs 0.6 below.
 - Broad retention battery (every eval records BBH/MMLU-Pro/MMLU/ARC-C/TruthfulQA):
-  4-task composite r=−0.945 slope −13.7; per-task CS: MMLU −0.93, ARC-C −0.93, MMLU-Pro
+  [CORRECTED 2026-07-12, handoff/36 BLOCKER-2: the −0.945/−13.7 figure was the 5-task
+  mean INCLUDING TruthfulQA; the true 4-task capability composite is r=−0.937 slope
+  −16.96 — use that.] 4-task composite r=−0.937 slope −17.0; per-task CS: MMLU −0.93, ARC-C −0.93, MMLU-Pro
   −0.89, BBH −0.79; TruthfulQA flat −0.10 (control only; INVERTS +0.43 on math arm).
 - Qwen CS n=49 r=−0.857 (identical settings); Qwen MATH n=42 non-degenerate r=−0.71
   slope −15.3 (excl. 1 collapsed lorawd lr1e3 cell, F_Δ 15.8/acc 0; SMOKE excluded);
