@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-12 09:35</b></span>
+      <span>Last updated · <b>2026-07-12 11:58</b></span>
     </div>
   </header>
 
@@ -429,7 +429,7 @@
       </table>
     </div>
     <p class="dim" style="font-size:12.5px">Our implementation reproduces MiLoRA's published Table 8 for LoRA (3.24↔3.57) and PiSSA (6.07↔6.31). MiLoRA's own published 2.54 is not a reproduction target here, <em>by its own protocol</em>: MiLoRA's Table 10 sets α(MiLoRA/PiSSA) = r while its LoRA baseline uses α = 2r, so its published 2.54 is a lower-magnitude operating point by construction — the matched-magnitude 3.66 in the table is exactly this section's point.</p>
-    <p>The load-bearing comparison: at matched learning rate and rank, <strong>MiLoRA (3.66) forgets essentially the same as plain LoRA (3.57)</strong> on this metric — its published advantage came from running at a lower-magnitude operating point, not from its geometry (their Δα halves the update scaling by construction). The fitted CE–magnitude law even <em>retro-dicts</em> their published number: a power-law fit on the 46 non-degenerate cells (KL ≈ 1.09·F<sub>Δ</sub><sup>1.20</sup>, log-log r = 0.965) predicts CE ≈ 2.48 at MiLoRA's published operating point (F<sub>Δ</sub> ≈ 0.63) — they report 2.54, within 2.5% (suggestive rather than exact: it assumes F<sub>Δ</sub> scales roughly linearly with α). A third, independent forgetting axis — now spanning 50 scored math cells across seven method families, CLoRA, DoRA and CorDA++ included — therefore points to the same conclusion as the retention suite and CLoRA's own table: update size is what governs forgetting.</p>
+    <p>The load-bearing comparison: at matched learning rate and rank, <strong>MiLoRA (3.66) forgets essentially the same as plain LoRA (3.57)</strong> on this metric — its published advantage came from running at a lower-magnitude operating point, not from its geometry (their Δα halves the update scaling by construction). The fitted CE–magnitude law even <em>retro-dicts</em> their published number: a power-law fit on the 46 non-degenerate cells (KL ≈ 1.09·F<sub>Δ</sub><sup>1.20</sup>, log-log r = 0.965) predicts CE ≈ 2.48 at MiLoRA's published operating point (F<sub>Δ</sub> ≈ 0.63) — they report 2.54, within 2.5% (suggestive rather than exact: it assumes F<sub>Δ</sub> scales roughly linearly with α). A third, independent forgetting axis — now spanning 50 scored math cells across seven method families, CLoRA, DoRA and CorDA++ included — therefore points to the same conclusion as the retention suite and CLoRA's own table: update size is what governs forgetting. The metric also transfers across adaptation tasks: scoring 20 <em>commonsense</em>-adapted cells the same way (seven method families — LoRA, LoRA+wd, LoRA-Null, SC-LoRA, CLoRA, MiLoRA, DoRA — spanning F<sub>Δ</sub> 0.25–0.99 on the α=r commonsense scale) reproduces the law on the second arm: Spearman ρ = 0.95 with update size (p ≈ 3×10⁻¹⁰), CE-to-base rising 1.98 → 2.81 nats across the range.</p>
   </section>
 
   <!-- 7 CORRECTNESS -->
