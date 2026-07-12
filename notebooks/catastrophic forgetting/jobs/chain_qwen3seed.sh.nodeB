@@ -1,0 +1,28 @@
+#!/bin/bash
+# Chain: when frcB fully drains, launch the qwen3seed dispatcher + watchdog.
+# PI order 2026-07-12: "wait for frcB to finish, then launch qwen 3-seed" (no preemption).
+# Fires when every frcB run_name has summary.json, OR (backstop) dispatcher AND all
+# train/eval procs are gone. Corner not handled: permanently-failed cells keep pend>0
+# with an idle dispatcher — the 2-hourly campaign check adjudicates that case.
+set -u
+WORK="/home/guy/UIOrthoLoRA/notebooks/catastrophic forgetting"
+LOG=/home/ubuntu/chain_qwen3seed.log
+while true; do
+  pend=0
+  for rn in $(grep -oP -- '--run_name \K\S+' "$WORK/jobs/frcB.txt" | sort -u); do
+    [ -f "$WORK/results/$rn/summary.json" ] || pend=$((pend+1))
+  done
+  disp=$(pgrep -f 'auto_dispatch.py --jobs jobs/frcB.txt' | head -1)
+  procs=$(pgrep -c -f 'train_one_gpu|eval_one_gpu')
+  echo "$(date -Is) pend=$pend disp=${disp:-none} procs=${procs:-0}" >> "$LOG"
+  if [ "$pend" -eq 0 ] || { [ -z "$disp" ] && [ "${procs:-0}" -eq 0 ]; }; then
+    echo "$(date -Is) frcB drained (pend=$pend) - launching qwen3seed" >> "$LOG"
+    cd "$WORK" || exit 1
+    setsid nice -n 5 /home/guy/UIOrthoLoRA/.venv/bin/python auto_dispatch.py --jobs jobs/qwen3seed_B.txt --gpus 0,1,2,3,4,5,6,7 --tag qw3s --hf_offline 1 >> logs/qw3s_dispatch.log 2>&1 < /dev/null &
+    sleep 10
+    setsid bash gpu_watchdog.sh jobs/qwen3seed_B.txt qw3s loop >> /dev/null 2>&1 < /dev/null &
+    echo "$(date -Is) qwen3seed dispatcher + watchdog launched" >> "$LOG"
+    exit 0
+  fi
+  sleep 300
+done
