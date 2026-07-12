@@ -409,9 +409,16 @@ def main():
                                        data_collator=collator)
     from norm_trace import NormTraceCallback
     _ntc = NormTraceCallback(); trainer.add_callback(_ntc)
+    # Peak-memory instrumentation (handoff/35): cumulative peak so far = init phase
+    # (calibration/SVD passes included); reset, then measure the training phase alone.
+    peak_init_gb = round(torch.cuda.max_memory_allocated() / 2**30, 2) if torch.cuda.is_available() else None
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
     t0 = time.time()
     tr_out = trainer.train()
     dt = time.time() - t0
+    peak_train_gb = round(torch.cuda.max_memory_allocated() / 2**30, 2) if torch.cuda.is_available() else None
+    print(f"[mem] peak GPU alloc: init-phase {peak_init_gb} GB, train-phase {peak_train_gb} GB", flush=True)
     model.save_pretrained(out_dir)
     tokenizer.save_pretrained(out_dir)
     if residual_method:
@@ -436,6 +443,7 @@ def main():
         "trainable_pct": round(100 * trainable / total, 4),
         "grad_accum": grad_accum, "effective_batch": args.micro_batch_size * grad_accum,
         "train_runtime_s": round(dt, 1), "final_train_loss": tr_out.training_loss,
+        "peak_mem_init_gb": peak_init_gb, "peak_mem_train_gb": peak_train_gb,
         "norm_trace": _ntc.trace,
         "git_commit": run_lib.git_commit(), "finished_at": run_lib.now_iso(),
     }
