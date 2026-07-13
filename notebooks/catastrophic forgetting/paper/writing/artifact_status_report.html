@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-13 10:10</b></span>
+      <span>Last updated · <b>2026-07-13 11:05</b></span>
     </div>
   </header>
 
@@ -273,7 +273,7 @@
     <p class="lead"><strong>The field is flat on accuracy; retention tracks update size; and LoRA+weight-decay is best on retention at the smallest update and the widest safe learning-rate band — a margin (+3.4 CS, +4.3 retention over CLoRA) that is roughly 8–10× either method's seed noise.</strong> Each adapter at its own best learning rate, <strong>re-trained from scratch on three seeds (42/43/44)</strong> — one table, error bars included.</p>
     <div class="tbl-scroll">
       <table>
-        <caption>Per-adapter best operating point, 3-seed — Commonsense-170K, Llama-2-7B. Each row: the adapter at <b>its own highest-accuracy learning rate</b>, re-run end-to-end on seeds 42/43/44; values are mean ± sample SD, F<sub>Δ</sub> as its range across seeds. <b>Retention</b> = held-out accuracy (BBH + MMLU-Pro mean); base model = 26.0; higher = less forgetting. <b>Safe band</b> = of the 7 LRs swept (2e-5…1e-3, seed 42), how many keep retention ≥ 24 — the LR-robustness that makes a method deployable at a default rate (6/7 = "mis-pick the LR by an order of magnitude and still don't forget"; 1/7 = fragile).</caption>
+        <caption>Llama-2-7B commonsense — per-adapter best-accuracy point of its 7-LR sweep, re-run end-to-end on 3 seeds (42/43/44). Each row: the adapter at <b>its own highest-accuracy learning rate</b>, re-run end-to-end on seeds 42/43/44; values are mean ± sample SD, F<sub>Δ</sub> as its range across seeds. <b>Retention</b> = held-out accuracy (BBH + MMLU-Pro mean); base model = 26.0; higher = less forgetting. <b>Safe band</b> = of the 7 LRs swept (2e-5…1e-3, seed 42), how many keep retention ≥ 24 — the LR-robustness that makes a method deployable at a default rate (6/7 = "mis-pick the LR by an order of magnitude and still don't forget"; 1/7 = fragile).</caption>
         <thead><tr><th>Adapter</th><th>best LR</th><th>CS acc ↑ <span class="dim">(±SD, n=3)</span></th><th>Retention ↑ <span class="dim">(±SD, n=3)</span></th><th>F<sub>Δ</sub> ↓ <span class="dim">(range)</span></th><th>Safe band</th><th style="text-align:left">Seed behavior</th></tr></thead>
         <tbody>
           <tr class="ref"><td>Base (no fine-tuning)</td><td>—</td><td>—</td><td>26.0</td><td>0</td><td>—</td><td style="text-align:left">—</td></tr>
@@ -297,8 +297,8 @@
       <p><strong>What doesn't:</strong> the accuracy half, in our hands. Accuracy holds at 79–80 through k1024 (still below LoRA+wd on both axes: k1024 CS 80.1, retention 24.3 vs 81.8 / 25.9) and then <b>collapses to 68.5 at k2048</b> on the faithful grid (65.4 in the earlier grid; seed-fragile in the 3-seed matrix). A commensurability note: their 82.6/83.7 are their own harness (not directly comparable to our 81.6 — the same recipe gap that shows up on math, §4).</p>
       <p><strong>Why it stays a boundary rather than a refutation:</strong> high-k CLoRA sits <em>on</em> the magnitude law — it achieves that retention by shrinking the update (their own Table 4 shows k2048 at the smallest F<sub>Δ</sub> in their study). So the defensible statement is narrow: <em>at high rank, CLoRA's null-space constraint buys adaptation-efficiency per unit of update that pure size control does not</em> — while the magnitude law still governs both.</p>
     </div>
-    <h3>Second model — Qwen2.5-7B, identical settings</h3>
-    <p class="lead"><strong>The full sweep was repeated on Qwen2.5-7B with the training args matched key-for-key (only <span class="dim">base_model</span> differs): commonsense 7 adapters × 7 LRs and math 6 method families × 7 LRs, single seed (42)</strong> — replication breadth, not error bars; the 3-seed error-bar work lives on the Llama-2 arm above. The law stats for both arms are in §1; these tables give the per-adapter operating points.</p>
+    <h3>Second architecture — Qwen2.5-7B, identical settings (seed 42)</h3>
+    <p class="lead"><strong>The full sweep was repeated on Qwen2.5-7B with the training args matched key-for-key (only <span class="dim">base_model</span> differs): commonsense 7 adapters × 7 LRs and math 6 method families × 7 LRs, single seed (42)</strong> — replication breadth, not error bars; the 3-seed error-bar work lives on the Llama-2 arm above. The law stats for both arms are in §1. The commonsense operating points are below, mirroring the Llama-2 table; the math operating points sit in §4 beside Llama-2's, in the same format.</p>
     <div class="tbl-scroll">
       <table>
         <caption>Qwen2.5-7B commonsense — per-adapter best-accuracy point of its 7-LR sweep (seed 42). Retention = BBH + MMLU-Pro mean, on Qwen's own scale — its base is a much stronger model, so read these against each other and the §1 Qwen fit (pooled r = −0.857), not against the Llama numbers. A direct no-fine-tuning eval (F<sub>Δ</sub> ≡ 0, run 2026-07-13) measures Qwen's base pair at <b>44.35</b> (BBH 47.93 / MMLU-Pro 40.77) — notably <em>above</em> every operating point below: even the smallest-update adapters give up ~3 pp on this recipe, where Llama-2's best sit at its base. A stronger base has measurably more to lose. CorDA (original) trained at one LR only on this model and is shown for completeness. SC-LoRA’s 9.4 retention is a single-seed reading of the axis the Llama 3-seed matrix found seed-fragile for this method (retention SD 1.9 pp); its F<sub>Δ</sub> 0.44 — the largest in this table — puts the collapse on the law’s direction, but the exact figure carries single-run uncertainty.</caption>
@@ -316,21 +316,7 @@
       </table>
     </div>
     <p class="dim" style="font-size:12.5px">The Llama-2 headline replicates: <b>LoRA+wd again pairs the best accuracy with the best retention at the smallest update</b>; SC-LoRA again pays the largest retention price at its best-accuracy point.</p>
-    <div class="tbl-scroll">
-      <table>
-        <caption>Qwen2.5-7B math (MetaMathQA) — per-adapter best-GSM8K point of its 7-LR sweep (seed 42). Retention = BBH only (same rule as §4); Qwen's base BBH measured 47.93 (direct no-FT eval; base 5-shot GSM8K 55.1). † DoRA’s 30.1 is a <b>BBH-only outlier, flagged rather than interpreted</b>: that cell’s four other retention metrics all sit at the base level (MMLU-Pro 42.7 / MMLU 71.2 / ARC-C 52.8 vs base 40.8 / 71.8 / 51.3; broad composite 50.5 vs base 53.6) while BBH alone collapses — the signature of the answer parser choking on the cell’s output format (the same fragility class that removes MMLU-Pro from math retention), not of broad forgetting. Plain LoRA’s 16.0, by contrast, is real: every one of its retention metrics is heavily damaged (MMLU-Pro 1.8, MMLU 52.6, broad 33.4) — the table’s largest update forgetting the most, as the law predicts.</caption>
-        <thead><tr><th>Adapter</th><th>best LR</th><th>GSM8K ↑</th><th>BBH retention ↑</th><th>F<sub>Δ</sub> ↓</th></tr></thead>
-        <tbody>
-          <tr><td>SC-LoRA</td><td>1e-4</td><td><b>76.9</b></td><td>45.9</td><td>0.18</td></tr>
-          <tr><td>LoRA-Null</td><td>1e-3</td><td>72.9</td><td>45.5</td><td>0.39</td></tr>
-          <tr><td>CLoRA</td><td>3e-4</td><td>71.8</td><td>46.4</td><td>0.11</td></tr>
-          <tr class="bad"><td>DoRA</td><td>3e-4</td><td>71.0</td><td>30.1†</td><td>0.16</td></tr>
-          <tr><td>MiLoRA</td><td>5e-4</td><td>68.3</td><td>45.2</td><td>0.30</td></tr>
-          <tr class="bad"><td>LoRA (plain)</td><td>1e-3</td><td>67.3</td><td>16.0</td><td>0.59</td></tr>
-          <tr class="hi"><td>LoRA + weight decay</td><td>3e-4</td><td>66.6</td><td class="win"><b>47.6</b></td><td class="win">0.10</td></tr>
-        </tbody>
-      </table>
-    </div>
+    
     <p class="dim" style="font-size:12.5px">The law reads directly off the rows: methods whose best-accuracy point needed a small update (LoRA+wd, CLoRA, SC-LoRA) keep BBH at or near base; those that got there with a large one pay for it (plain LoRA's best GSM8K comes at lr 1e-3, F<sub>Δ</sub> 0.59 — and BBH collapses to 16.0; DoRA's best point also sheds 18 pp of BBH). Same law, second model, second task arm.</p>
   </section>
 
@@ -363,7 +349,7 @@
     <p class="dim" style="font-size:12.5px">The comparison survives matching: <b>at 3e-4 for everyone, LoRA+wd still leads (GSM8K 65.05, BBH 33.47)</b>, and MiLoRA's own best-retention cell (lr 1e-4) reaches BBH 32.38 at GSM8K 62.85 — the ordering is unchanged. There are <b>no published bars to show</b>: CLoRA's math table (its Table 3) reports only GSM8K and MATH accuracy — no published <em>benchmark-accuracy</em> retention numbers exist for any math-trained model (the 18.38 in that table is MATH-benchmark accuracy, not BBH; MiLoRA reports only the CE-to-base metric of §6, which we reproduce) — so our reproduction supplies the retention measurement the published tables lack. BBH-only is not a blind spot, either: the same evals record MMLU, ARC-Challenge and MMLU-Pro for every math model, and each stays lawful against update size on this arm (r −0.76 to −0.94 — the full per-benchmark table is in §1).</p>
     <div class="tbl-scroll">
       <table>
-        <caption>Llama-2-7B math (MetaMathQA) — per-adapter best-GSM8K point of the faithful sweep (same format as the Qwen tables). Retention = BBH only (base 33.1; measured no-FT 32.96). LoRA+wd is the 3-seed headline row (mean ± SD); the other adapters are single-seed at the learning rates their faithful recipes ran — coverage disclosed per row (the full-sweep composition note is above).</caption>
+        <caption>Llama-2-7B math (MetaMathQA) — per-adapter best-GSM8K point of the faithful sweep. Retention = BBH only (base 33.1; measured no-FT 32.96). LoRA+wd is the 3-seed headline row (mean ± SD); the other adapters are single-seed at the learning rates their faithful recipes ran — coverage disclosed per row (the full-sweep composition note is above).</caption>
         <thead><tr><th>Adapter</th><th>best LR</th><th>GSM8K ↑</th><th>BBH retention ↑</th><th>F<sub>Δ</sub> ↓</th></tr></thead>
         <tbody>
           <tr class="hi"><td>LoRA + weight decay (wd0.3, of 6 LRs; 3-seed)</td><td>2e-4</td><td>66.8 ± 0.8</td><td>33.6 ± 1.0</td><td>0.28</td></tr>
@@ -375,6 +361,22 @@
           <tr><td>CorDA++ (of 3 LRs)</td><td>3e-4</td><td>59.7</td><td>17.7</td><td>4.12</td></tr>
           <tr><td>DoRA (1 LR)</td><td>3e-4</td><td>58.8</td><td>29.3</td><td>2.84</td></tr>
           <tr class="bad"><td>PiSSA (1 LR)</td><td>3e-4</td><td>49.7</td><td>7.2</td><td>2.21</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Second architecture — Qwen2.5-7B, identical settings (seed 42)</h3>
+    <div class="tbl-scroll">
+      <table>
+        <caption>Qwen2.5-7B math (MetaMathQA) — per-adapter best-GSM8K point of its 7-LR sweep (seed 42). Retention = BBH only (same rule as §4); Qwen's base BBH measured 47.93 (direct no-FT eval; base 5-shot GSM8K 55.1). † DoRA’s 30.1 is a <b>BBH-only outlier, flagged rather than interpreted</b>: that cell’s four other retention metrics all sit at the base level (MMLU-Pro 42.7 / MMLU 71.2 / ARC-C 52.8 vs base 40.8 / 71.8 / 51.3; broad composite 50.5 vs base 53.6) while BBH alone collapses — the signature of the answer parser choking on the cell’s output format (the same fragility class that removes MMLU-Pro from math retention), not of broad forgetting. Plain LoRA’s 16.0, by contrast, is real: every one of its retention metrics is heavily damaged (MMLU-Pro 1.8, MMLU 52.6, broad 33.4) — the table’s largest update forgetting the most, as the law predicts.</caption>
+        <thead><tr><th>Adapter</th><th>best LR</th><th>GSM8K ↑</th><th>BBH retention ↑</th><th>F<sub>Δ</sub> ↓</th></tr></thead>
+        <tbody>
+          <tr><td>SC-LoRA</td><td>1e-4</td><td><b>76.9</b></td><td>45.9</td><td>0.18</td></tr>
+          <tr><td>LoRA-Null</td><td>1e-3</td><td>72.9</td><td>45.5</td><td>0.39</td></tr>
+          <tr><td>CLoRA</td><td>3e-4</td><td>71.8</td><td>46.4</td><td>0.11</td></tr>
+          <tr class="bad"><td>DoRA</td><td>3e-4</td><td>71.0</td><td>30.1†</td><td>0.16</td></tr>
+          <tr><td>MiLoRA</td><td>5e-4</td><td>68.3</td><td>45.2</td><td>0.30</td></tr>
+          <tr class="bad"><td>LoRA (plain)</td><td>1e-3</td><td>67.3</td><td>16.0</td><td>0.59</td></tr>
+          <tr class="hi"><td>LoRA + weight decay</td><td>3e-4</td><td>66.6</td><td class="win"><b>47.6</b></td><td class="win">0.10</td></tr>
         </tbody>
       </table>
     </div>
