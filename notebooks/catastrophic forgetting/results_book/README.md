@@ -2,7 +2,7 @@
 
 One readable folder with every experiment's results — adaptation, retention, magnitude (F_Δ), geometry, and MiLoRA-style amplification metrics, per seed and per LR. Regenerated automatically as new runs land (`results_book.py`, auto-loop every 30 min).
 
-_Last updated: 2026-07-13 15:25 IDT_
+_Last updated: 2026-07-13 15:55 IDT_
 
 **Retention definitions** — CS runs: mean(BBH, MMLU-Pro), Llama-2-7B base = 26.0. Math runs: BBH-only, Llama-2-7B base = 33.1. Missing values are shown as ·.
 
@@ -15,7 +15,7 @@ _Last updated: 2026-07-13 15:25 IDT_
 | [05_qwen.md](05_qwen.md) | Qwen2.5-7B second-model replication: CS + math LR sweeps | 104 |
 | [06_calibration_control.md](06_calibration_control.md) | Eval-matched calibration control (b4_) | 5 |
 | [07_ce_forgetting.md](07_ce_forgetting.md) | CE-to-base forgetting for every measured run + Spearman(CE, F_Δ) | 391 |
-| [08_geometry_fingerprint.md](08_geometry_fingerprint.md) | Per-method geometry fingerprint + per-run appendix | 383 |
+| [08_geometry_fingerprint.md](08_geometry_fingerprint.md) | Per-method geometry fingerprint + per-run appendix | 397 |
 | [99_all_runs.md](99_all_runs.md) | Flat master table — every run, all metrics | 645 |
 
 _171 additional exploratory/legacy runs (uio*, clora_*, scl2_*, a5_*, grid_*, …) are classified `misc` and appear only in [99_all_runs.md](99_all_runs.md)._
