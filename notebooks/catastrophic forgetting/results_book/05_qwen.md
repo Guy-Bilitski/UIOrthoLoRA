@@ -233,6 +233,12 @@ Seed mean ± SD (LRs with ≥ 2 seeds):
 |---|---|---|---|---|
 | 3e-4 | 3 | 68.97 ± 3.33 | 47.54 ± 0.43 | 0.10 ± 0.00 |
 
+### `qwswm_lorawd_wd0p3_ep6` — LoRA+wd, wd=0.3
+
+| LR | seed | GSM8K | MATH | Retention | BBH | MMLU-Pro | F_Δ | e_top | e_bot | ein_top | ein_bot | amp_top | st.rank | eff.rank | CE |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **3e-4** | **42** | **71.65** | **·** | **46.48** | **46.48** | **42.66** | **0.11** | **·** | **·** | **·** | **·** | **·** | **·** | **·** | **·** |
+
 ### `qwswm_milora_r32` — MiLoRA, r=32
 
 | LR | seed | GSM8K | MATH | Retention | BBH | MMLU-Pro | F_Δ | e_top | e_bot | ein_top | ein_bot | amp_top | st.rank | eff.rank | CE |
