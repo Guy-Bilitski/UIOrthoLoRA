@@ -1,0 +1,34 @@
+{
+  "run_name": "frm_lora_null_lr2e4_c256_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/frm_lora_null_lr2e4_c256_s42",
+  "per_dataset": {
+    "gsm8k": 62.17,
+    "math": 15.36
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.8823,
+    "dw_sv_mean": 13.2719,
+    "dw_sv_max": 85.7944,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 62.17,
+    "adapt_task": "math_faithful",
+    "bbh": 28.2,
+    "mmlu_pro": 9.08,
+    "mmlu": 23.64,
+    "arc_c": 32.94,
+    "truthfulqa": 43.88,
+    "gsm8k": 62.17,
+    "math": 15.36,
+    "retention_mean": 18.64,
+    "retention_bbh": 28.2,
+    "retention_broad": 27.55,
+    "fdelta": 0.8823,
+    "dw_sv_max": 85.7944,
+    "dw_sv_mean": 13.2719
+  },
+  "git_commit": "15a7c6f4088f7ab34b103ea8eca9c111380c4138",
+  "evaluated_at": "2026-07-13T13:06:20+03:00"
+}
