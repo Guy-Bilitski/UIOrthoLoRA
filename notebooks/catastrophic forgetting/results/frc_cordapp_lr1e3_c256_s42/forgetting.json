@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 9.447271328529421,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 7.5952474044477825,
+  "n_positions": 40920,
+  "run_name": "frc_cordapp_lr1e3_c256_s42",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 3.1,
+  "method": "LORA",
+  "adapter_r": 2,
+  "fdelta": 110.3962
+}
