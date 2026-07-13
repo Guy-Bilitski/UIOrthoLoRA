@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-13 09:15</b></span>
+      <span>Last updated · <b>2026-07-13 09:40</b></span>
     </div>
   </header>
 
@@ -318,13 +318,13 @@
     <p class="dim" style="font-size:12.5px">The Llama-2 headline replicates: <b>LoRA+wd again pairs the best accuracy with the best retention at the smallest update</b>; SC-LoRA again pays the largest retention price at its best-accuracy point.</p>
     <div class="tbl-scroll">
       <table>
-        <caption>Qwen2.5-7B math (MetaMathQA) — per-method best-GSM8K point of its 7-LR sweep (seed 42). Retention = BBH only (same rule as §4); Qwen's base BBH measured 47.93 (direct no-FT eval; base 5-shot GSM8K 55.1).</caption>
+        <caption>Qwen2.5-7B math (MetaMathQA) — per-method best-GSM8K point of its 7-LR sweep (seed 42). Retention = BBH only (same rule as §4); Qwen's base BBH measured 47.93 (direct no-FT eval; base 5-shot GSM8K 55.1). † DoRA’s 30.1 is a <b>BBH-only outlier, flagged rather than interpreted</b>: that cell’s four other retention metrics all sit at the base level (MMLU-Pro 42.7 / MMLU 71.2 / ARC-C 52.8 vs base 40.8 / 71.8 / 51.3; broad composite 50.5 vs base 53.6) while BBH alone collapses — the signature of the answer parser choking on the cell’s output format (the same fragility class that removes MMLU-Pro from math retention), not of broad forgetting. Plain LoRA’s 16.0, by contrast, is real: every one of its retention metrics is heavily damaged (MMLU-Pro 1.8, MMLU 52.6, broad 33.4) — the table’s largest update forgetting the most, as the law predicts.</caption>
         <thead><tr><th>Method</th><th>best LR</th><th>GSM8K ↑</th><th>BBH retention ↑</th><th>F<sub>Δ</sub> ↓</th></tr></thead>
         <tbody>
           <tr><td>SC-LoRA</td><td>1e-4</td><td><b>76.9</b></td><td>45.9</td><td>0.18</td></tr>
           <tr><td>LoRA-Null</td><td>1e-3</td><td>72.9</td><td>45.5</td><td>0.39</td></tr>
           <tr><td>CLoRA</td><td>3e-4</td><td>71.8</td><td>46.4</td><td>0.11</td></tr>
-          <tr class="bad"><td>DoRA</td><td>3e-4</td><td>71.0</td><td>30.1</td><td>0.16</td></tr>
+          <tr class="bad"><td>DoRA</td><td>3e-4</td><td>71.0</td><td>30.1†</td><td>0.16</td></tr>
           <tr><td>MiLoRA</td><td>5e-4</td><td>68.3</td><td>45.2</td><td>0.30</td></tr>
           <tr class="bad"><td>LoRA (plain)</td><td>1e-3</td><td>67.3</td><td>16.0</td><td>0.59</td></tr>
           <tr class="hi"><td>LoRA + weight decay</td><td>3e-4</td><td>66.6</td><td class="win"><b>47.6</b></td><td class="win">0.10</td></tr>
