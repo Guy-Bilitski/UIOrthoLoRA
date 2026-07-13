@@ -1,0 +1,38 @@
+{
+  "run_name": "frc_cordapp_lr5e4_c256_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/frc_cordapp_lr5e4_c256_s42",
+  "per_dataset": {
+    "boolq": 68.32,
+    "piqa": 81.61,
+    "social_i_qa": 79.58,
+    "hellaswag": 87.19,
+    "winogrande": 78.61,
+    "ARC-Easy": 80.39,
+    "ARC-Challenge": 66.64,
+    "openbookqa": 79.8
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 10.5845,
+    "dw_sv_mean": 274.2,
+    "dw_sv_max": 20049.207,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 77.77,
+    "adapt_task": "cs",
+    "bbh": 25.5,
+    "mmlu_pro": 7.05,
+    "mmlu": 25.59,
+    "arc_c": 37.03,
+    "truthfulqa": 36.15,
+    "retention_mean": 16.27,
+    "retention_bbh": 25.5,
+    "retention_broad": 26.26,
+    "fdelta": 10.5845,
+    "dw_sv_max": 20049.207,
+    "dw_sv_mean": 274.2
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-13T04:11:39+03:00"
+}
