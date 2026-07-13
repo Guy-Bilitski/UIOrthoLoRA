@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-13 17:50</b></span>
+      <span>Last updated · <b>2026-07-13 20:40</b></span>
     </div>
   </header>
 
@@ -380,6 +380,7 @@
         </tbody>
       </table>
     </div>
+    <p><strong>SC-LoRA’s adaptation edge on this arm survives every control we ran — a boundary finding in the CLoRA mold.</strong> Size-matched (plain LoRA at SC-LoRA’s exact r32/α64): the control plateaus at 58–65 GSM8K across its whole usable range (F<sub>Δ</sub> 0.04–0.20) and collapses past the knee (19.0 at lr 1e-3, F<sub>Δ</sub> 0.90, BBH 29.3 — real all-metric damage), never approaching SC-LoRA’s 75–77; rank itself buys nothing (r32’s best 64.8 ≈ r16’s healthy 65.7). Seed-checked: SC-LoRA’s operating point reproduces at 76.9 / 75.1 (s42/s43, F<sub>Δ</sub> 0.183/0.181), retention 45.9/47.1. At matched update size (F<sub>Δ</sub> ≈ 0.10) SC-LoRA delivers ~+10 GSM8K over both plain LoRA and LoRA+wd at the same near-ceiling retention — its task-covariance initialization (Cov⁺ from 256 training samples) earns adaptation per unit of update that neither weight decay nor unconstrained training matches <em>on this model×task arm</em>; on Llama-2 math the identical recipe shows no such edge (60.0 vs LoRA+wd’s 67.3). The geometry battery ties the mechanism to placement: SC-LoRA’s Qwen updates concentrate 33–39% of their energy in the base weights’ input-principal directions vs 5–7% for every other method. Retention, throughout, stays governed by update size — the law’s claim — while placement emerges as an <em>adaptation</em> lever whose payoff is base-model-dependent.</p>
     <p>Together the two charts show both halves of the §4 claim:</p>
     <ul style="max-width:74ch">
       <li><strong>Adaptation:</strong> LoRA+wd edges the field. The headline cell is now <strong>3-seed complete: GSM8K 66.8 ± 0.8 (67.25 / 65.88 / 67.25), BBH 33.6 ± 1.0 — every seed above the 64.6 published best; retention mean at the 33.1 base — 33.10 / 34.77 / 32.85, two seeds above it, the third 0.3 pp under</strong>.</li>
