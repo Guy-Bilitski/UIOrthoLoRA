@@ -328,3 +328,65 @@ law fit with any one of them held out predicts that adapter's seven points to wi
 about the in-sample accuracy of a method-aware model (2.2 pp). The full-pool tests
 (F(6,41)=7.05 intercepts; F(6,35)=9.32 slopes; both p<0.001) are significant, driven almost
 entirely by SC-LoRA (provisional)."
+
+## 16. REGISTRY REFRESH `[RECOMPUTED 2026-07-14, post-qwswm ingestion — SUPERSEDES §11 "math in progress", §4 stale rows, and the "provisional SC-LoRA" framing above]`
+
+Full verification detail: `paper/writing/registry_refresh_2026-07-14.md`. Registry after
+ingestion: **622 rows, 606 unique** (backup: `results/campaign_summary.jsonl.bak_pre_qwswm_ingest_2026-07-14`).
+Ingestion note: 51 qwswm cells (evaluated 07-09–07-14, node B) had `results/*/summary.json` but
+were never appended to the registry; appended 2026-07-14 with their original `evaluated_at`
+(SMOKE run excluded). Lead approved 2026-07-14.
+
+### Qwen-2.5 math — NOW REPLICATES QUALITATIVELY
+- **Headline (s42 only, BBH vs log10 F_Δ): n=56, r=−0.70, slope −14.4 pp/decade**, F_Δ span
+  0.029–0.90 (~1.5 decades). Two diverged cells excluded with disclosure
+  (`qwswm_lora_r32_lr5e4_s42` F_Δ=20.9/all-zero; `qwswm_lorawd_wd0p3_lr1e3_s42`).
+  All-seeds variant (incl. 7 s43/s44 cells): n=63, r=−0.66, −13.3 pp/dec.
+- Slope −14.4 sits INSIDE the cross-domain band (−12.7…−18.9; Llama −14.3/−14.8).
+- Per-method r (all seeds): lora_r32 −0.84, sclora −0.82, clora −0.79, dora −0.70, milora −0.65,
+  lora_null −0.63; **lorawd +0.09 = flat by construction** (wd caps F_Δ; same signature as CS).
+- Strength to quote: **qualitative/directional replication — single seed, BBH-only retention**.
+  Do NOT quote as a quantitative law match (no calibrated ceiling; MMLU-Pro excluded by
+  convention). The §11 "+0.67 broken parser" framing: parser output on the new r32 rows is sane
+  (39–43); keep the BBH-only convention but describe MMLU-Pro as "excluded by convention
+  (unreliable on early Qwen-math rows)", not "broken".
+
+### W2/B5a param-matched control — CLOSED
+- `frc_lorawdr16_wd0p3_lr5e4_c256_s42` (r16, 28.0M params = plain-LoRA-matched):
+  **CS 81.04 / ret 26.27 / F_Δ 0.334** — reproduces the r32 operating point (81.6/25.6/0.394)
+  at HALF the parameters. The capacity confound is dead.
+- Plain-LoRA rank ladder @ lr3e-4 (frc, c256): r8 79.0/24.0/F_Δ 0.518 → r16 79.6/23.0/0.603 →
+  r32 73.5/22.2/0.739. More capacity → larger F_Δ → lower retention (and lower adaptation at
+  r32); no rank benefit once F_Δ is controlled.
+- **Disclosed anomaly:** the lr3e-4 r16 sibling (`frc_lorawdr16_wd0p3_lr3e4`) lands in a
+  deterministic answer-format collapse basin: CS 13.53 (below-chance per-dataset: piqa 3.1,
+  winogrande 1.4) with INTACT retention 26.84 and healthy training (31,210 steps, final loss
+  0.805 < working sibling). Reeval reproduces (13.54). Not a magnitude effect (F_Δ=0.328).
+  Seed replicate queued. Report the 5e-4 cell; disclose the 3e-4 basin.
+
+### Base ceilings (C5) — LANDED (Llama-2); broad retention now calibrated
+- `base_llama2_noft` (07-12): BBH 32.96, MMLU-Pro 18.82 → core 25.89; MMLU 40.88, ARC-C 44.80,
+  TruthfulQA 38.85 → **broad ceiling 35.26**.
+- **CANONICAL core ceiling stays 26.0** (external h00/h05 snapshot: 33.10/18.96 → 26.03);
+  in-registry 25.89 is the confirming replicate (snapshot difference; decision 2026-07-14).
+- "Ret-broad is uncalibrated / texture only" hedges are RETIRED.
+- **TruthfulQA immunity is real, not a floor artifact:** base 38.85; fine-tuned range 31.4–39.5
+  (mean 35.7; 1/49 above base); slope −0.46 ns → a constant ≈−3 pp fine-tuning offset,
+  magnitude-independent.
+
+### Seeds & math (frm) — 3-seed complete
+- Headline verified: `frm_lorawd_wd0p3_lr2e4` GSM8K 67.25/65.88/67.25 → **66.79±0.79**
+  (retention SD ≤0.53 across all six 3-seed frm configs; full table in the refresh report).
+- DoRA s44 landed → **all 7 CS operating points are now 3-seed**.
+- SC-LoRA math (`frm_sclora_lr1e4`, 3-seed): GSM8K 60.9±0.4, ret 18.1±0.2 @ F_Δ≈0.86 — sits on
+  the frm math law (n=48, r=−0.90), residual −1.8 pp: magnitude explains the SC-LoRA↔LoRA+wd
+  math gap.
+
+### Geometry sign-flip — convention decision 2026-07-14
+- Print the retention_mean-consistent values: **amp_top +0.31, ein_top +0.41, e_top −0.17**
+  (n=173, drop SC-LoRA; PiSSA absent from CS subset). The BBH-only variant gives
+  +0.27/+0.29/−0.15 — same qualitative claim (2 of 3 flip), do not mix bases in one paragraph.
+
+### Still genuinely pending (post-refresh)
+CorDA clean nq_open CS re-run (zero post-07-11 corda cells); Qwen CS seeds 43/44; Qwen base
+ceilings (no-FT); b4_lora_null lr1e4/3e4 + b4_cordapp full evals; r16-collapse seed replicate.

@@ -10,7 +10,7 @@
 %       single-seed / sub-noise caveat added.
 % Do NOT regenerate this file via make_table.py; regeneration would reintroduce
 % the CorDA row and the strong-form title.
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
@@ -23,7 +23,9 @@ frontier that sits on or above the method's best single-LR point on \emph{both} 
 (columns 5--6). \emph{Single seed (42); the retention margins are sub-1\,pp and within
 documented seed noise---the point is that no fixed-LR advantage survives a symmetric
 sweep, not the size of the gap.} Adapt = commonsense accuracy; Ret = mean(BBH,
-MMLU-Pro). Llama-2-7B, 7 LRs. CorDA is withheld (Section~\ref{sec:limits}).}
+MMLU-Pro). Llama-2-7B, 7 LRs. CorDA is withheld (see Limitations).
+$^{\dagger}$MiLoRA's 79.9 is a seed-fragile cell (three-seed $57.7\!\pm\!22.7$;
+Table~\ref{tab:cs}).}
 \label{tab:lr_artifact}
 \begin{tabular}{l cc c cc}
 \toprule
@@ -33,10 +35,10 @@ Method & Method @ LR$^\star$ & LoRA @ same LR & $\Delta$adapt & LoRA+wd frontier
  & (adapt / ret) & (adapt / ret) & (pp) & (LR: adapt / ret) & \\
 \midrule
 DoRA & 78.3 / 24.8 ($2\!\times\!10^{-4}$) & 72.3 / 25.2 & +5.9 & $5\!\times\!10^{-4}$: 81.6 / 25.6 & \textbf{yes} \\
-MiLoRA & 79.9 / 24.7 ($3\!\times\!10^{-4}$) & 79.1 / 24.4 & +0.8 & $5\!\times\!10^{-4}$: 81.6 / 25.6 & \textbf{yes} \\
+MiLoRA & 79.9$^{\dagger}$ / 24.7 ($3\!\times\!10^{-4}$) & 79.1 / 24.4 & +0.8 & $5\!\times\!10^{-4}$: 81.6 / 25.6 & \textbf{yes} \\
 SC-LoRA & 79.5 / 25.3 ($2\!\times\!10^{-5}$) & 53.6 / 26.3 & +26.0 & $5\!\times\!10^{-4}$: 81.6 / 25.6 & \textbf{yes} \\
 LoRA-Null & 73.0 / 26.2 ($2\!\times\!10^{-5}$) & 53.6 / 26.3 & +19.5 & $3\!\times\!10^{-4}$: 80.6 / 26.2 & \textbf{yes} \\
 CLoRA & 64.9 / 24.3 ($3\!\times\!10^{-4}$) & 79.1 / 24.4 & -14.2 & $5\!\times\!10^{-4}$: 81.6 / 25.6 & \textbf{yes} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
