@@ -83,3 +83,43 @@ commands), and the resume recipe.
 ## 5. Final drain results — APPENDED AT SHUTDOWN
 (to fill: r32 control verdict, ep6 verdict, sclora math seed verdict, CS seed rows,
 ce_chunk9_final/geo final counts, shutdown checklist confirmation)
+
+## 5. FINAL LEDGER — completed 2026-07-14 06:35 (night window through Tue 07:00)
+
+**Night-window verdicts (all folded into the artifact, final publish 06:30):**
+- SC-LoRA Qwen-math adaptation edge: CONFIRMED across every control — 3-seed 76.3±1.0
+  GSM8K at F_Δ 0.181–0.183 / retention 46.6±0.7; size-matched plain-r32 control plateaus
+  58–65 (diverged at lr1e-3, F 20.9); epoch controls closed both directions (plain 6ep
+  regresses 64.1→62.4 as F grows; lorawd 6ep 71.7 at F 0.10→0.11 — wd caps magnitude);
+  geometry mechanism: 33–39% update energy in input-principal dirs vs 5–7% others;
+  Llama-math contrast negative (edge is base-model-dependent).
+- SC-LoRA Qwen-CS 9.4-retention outlier RESOLVED: seed-level magnitude event
+  (ret 9.4/36.2/37.9 tracks F 0.44/0.30/0.30; accuracy stable 87.2±0.2).
+- CLoRA boundary both k-points 3-seed: k1024 ret 24.39±0.13 (acc basin 59.7 in s43),
+  k2048 ret 25.17±0.13 / acc 70.0±5.1. Qwen math lorawd 3-seed 69.0±3.3 / 47.5±0.4.
+- Qwen CS rows 3-seed: lorawd 86.9±0.6/40.7±0.3, milora 87.4±0.1/38.8±0.9,
+  lora 85.6±2.6/38.3±0.5, sclora 87.2±0.2 (ret = magnitude event above); lora_null 2-seed.
+- Qwen math milora 3-seed 61.9±10.0/44.7±0.9 (accuracy basin s43=50.4 at stable F/ret).
+- Llama math P1: plain-LoRA triplet 59.6±1.5 / 28.2±0.9 folded; sclora/lora_null/
+  pissa/cordapp pairs were mid-eval at freeze — summaries that landed after the final
+  publish are IN GIT but not folded into tables (fold from results/ on resume).
+- Final artifact structure: results-first section order (CS results §1, math §2, law §3,
+  geometry §4; all § cross-refs renumbered and verified), 2×2 per-model/per-arm law-stats
+  table (Llama CS 49/−0.86/−14.8/ρ−0.90; Llama math 39/−0.82/−14.3/ρ−0.89; Qwen CS
+  49/−0.86/−32.0/ρ−0.78; Qwen math 48/−0.69/−14.8/ρ−0.71 — single-seed sweeps, diverged
+  excluded, definitions in caption), W7 pooling documented (‖ΔW‖_F-weighted means —
+  verified from geo_drift_phase2.py, NOT energy-squared).
+- Final extraction: CE catch-all chunk10 ran 05:53 (+8 late adapters; union 438 records /
+  385 finite pairs); geometry batteries final: Llama+9, Qwen+14 (Qwen battery 125 adapters).
+
+**Shutdown checklist:**
+- [x] Dispatchers + watchdogs killed BOTH nodes (05:50) — no new launches
+- [x] All A background loops killed (sync_d002 loop, nodeB_syncback, results_book_loop,
+      evacuate) 06:33; B loops killed 05:50
+- [x] B-only adapters pulled to A (final round 05:50); B registry deltas merged (+11)
+- [x] B logs pulled to A logs/nodeB_final/ (host-only; cited evidence logs in git
+      at paper/evidence/)
+- [x] Final CE + geometry extraction over all adapters
+- [x] Final artifact published (2026-07-14 06:30 stamp) + mirrored to repo
+- [ ] LAST results sync at ~07:20 (running evals may still land; sweep before hosts go)
+- Data that will finish after the last sync is LOST (disclosed; re-trainable from configs)
