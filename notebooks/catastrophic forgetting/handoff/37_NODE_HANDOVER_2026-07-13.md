@@ -125,3 +125,5 @@ ce_chunk9_final/geo final counts, shutdown checklist confirmation)
 - Data that will finish after the last sync is LOST (disclosed; re-trainable from configs)
 
 **RELEASE 2026-07-14 ~09:05: all compute killed on BOTH nodes (GPUs 0%/0MiB verified); mid-eval tail cells terminated (lora_null/dora P1 partials on A; pissa/cordapp/qwen tail on B) — training adapters were already geometry/CE-extracted; their eval summaries do not exist. Nodes clean for reprovisioning.**
+
+**FINAL AUDIT APPLIED 2026-07-14 10:45** — data-verifier full sweep (edit list A1-A9: CE seed spreads for PiSSA 6.53±0.22 / CorDA++ 5.03±0.79, CS CE union 282 cells rho 0.97, math union 106, faithful-math rho 0.974, MiLoRA llama-math 3-seed 63.7±0.8, minor consistency fixes) + cross-architecture geometry table (Qwen fingerprints: every design signature replicates) + slope-family chart. Verified-clean list covers every other displayed number. Filter-dependent counts flagged in the audit (C1-C5) for camera-ready.
