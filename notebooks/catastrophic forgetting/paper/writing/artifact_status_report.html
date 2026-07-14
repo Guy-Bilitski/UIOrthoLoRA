@@ -88,7 +88,7 @@
       <span>Models · <b>Llama-2-7B · Qwen2.5-7B</b></span>
       <span>Adapters · <b>9 (8 swept on commonsense + PiSSA on math)</b></span>
       <span>Analyses · <b>magnitude · geometry · efficiency · CE-forgetting</b></span>
-      <span>Last updated · <b>2026-07-14 01:55</b></span>
+      <span>Last updated · <b>2026-07-14 04:55</b></span>
     </div>
   </header>
 
@@ -305,9 +305,9 @@
         <thead><tr><th>Adapter</th><th>best LR</th><th>CS acc ↑</th><th>Retention ↑</th><th>F<sub>Δ</sub> ↓</th></tr></thead>
         <tbody>
           <tr class="hi"><td>LoRA + weight decay <b>(3-seed)</b></td><td>1e-4</td><td><b>86.9 ± 0.6</b></td><td class="win"><b>40.7 ± 0.3</b></td><td class="win">0.13–0.14</td></tr>
-          <tr><td>MiLoRA</td><td>1e-4</td><td>87.5</td><td>39.7</td><td>0.18</td></tr>
-          <tr><td>LoRA (plain)</td><td>1e-4</td><td>87.4</td><td>38.6</td><td>0.16</td></tr>
-          <tr><td>LoRA-Null</td><td>2e-4</td><td>87.2</td><td>38.4</td><td>0.22</td></tr>
+          <tr><td>MiLoRA <b>(3-seed)</b></td><td>1e-4</td><td>87.4 ± 0.1</td><td>38.8 ± 0.9</td><td>0.18</td></tr>
+          <tr><td>LoRA (plain) <b>(3-seed)</b></td><td>1e-4</td><td>85.6 ± 2.6</td><td>38.3 ± 0.5</td><td>0.16</td></tr>
+          <tr><td>LoRA-Null <b>(2-seed)</b></td><td>2e-4</td><td>87.2 ± 0.0</td><td>39.1 ± 0.9</td><td>0.20–0.22</td></tr>
           <tr><td>CLoRA</td><td>2e-4</td><td>87.1</td><td>38.9</td><td>0.21</td></tr>
           <tr class="bad"><td>SC-LoRA <b>(3-seed)</b></td><td>1e-4</td><td>87.2 ± 0.2</td><td>9.4 / 36.2 / 37.9</td><td>0.44 / 0.30 / 0.30</td></tr>
           <tr><td>DoRA</td><td>2e-4</td><td>86.9</td><td>37.0</td><td>0.26</td></tr>
