@@ -123,3 +123,5 @@ ce_chunk9_final/geo final counts, shutdown checklist confirmation)
 - [x] Final artifact published (2026-07-14 06:30 stamp) + mirrored to repo
 - [ ] LAST results sync at ~07:20 (running evals may still land; sweep before hosts go)
 - Data that will finish after the last sync is LOST (disclosed; re-trainable from configs)
+
+**RELEASE 2026-07-14 ~09:05: all compute killed on BOTH nodes (GPUs 0%/0MiB verified); mid-eval tail cells terminated (lora_null/dora P1 partials on A; pissa/cordapp/qwen tail on B) — training adapters were already geometry/CE-extracted; their eval summaries do not exist. Nodes clean for reprovisioning.**
