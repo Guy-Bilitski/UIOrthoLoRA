@@ -3,12 +3,29 @@
 Goal: test whether the **magnitude + spectral-spread → retention** forgetting law (found on Llama/Qwen-7B)
 generalizes to a much larger, **MoE** model. Not a full sweep — one config per method, single seed.
 
-## Model
-`deepseek-ai/DeepSeek-V4-Flash` — 284B total / 13B active MoE (top-6 of 256 experts + 1 shared),
-MIT license, open weights on HuggingFace. Released 2026-04-24.
-- Memory: bf16 ≈ 568 GB (does NOT fit a node's ~480 GB /scratch; DOES fit sharded across 8×B200=1.44 TB
-  HBM). **FP8 ≈ 284 GB fits /scratch** — VERIFY the HF repo dtype first (decides download+rsync feasibility).
-- 13B active ⇒ forward passes far cheaper than dense 284B ⇒ CE/eval tractable for a small adapter set.
+## Model (verified from HF config 2026-07-15)
+`deepseek-ai/DeepSeek-V4-Flash` — MIT, open weights, **accessible (not gated)**. `model_type=deepseek_v4`,
+43 layers, hidden 4096, **256 routed experts + 1 shared, 6/token**, vocab 129280, 284B total / 13B active.
+- **FP8 block-quant** (e4m3, dynamic act, weight_block_size 128×128), **~158 GB on disk** → fits a node's
+  ~480 GB /scratch with ~320 GB headroom for the ongoing sweep. Downloading to d001 now (egress).
+- **FP8 training implication (key):** LoRA training needs the base in a trainable form — either dequant
+  FP8→bf16 (~568 GB, shards across 8×B200=1.44 TB HBM) or an FP8-QLoRA path (base frozen FP8, adapter bf16).
+  DeepSeek ships FP8→bf16 dequant scripts (V3 lineage). **Residual-init methods (milora/sclora/clora) need
+  base-weight SVD → require dequant of the targeted matrices first** (extra work vs plain lora/dora).
+
+## Node → method assignment (d002–d008, one adapter per node, single seed=42; LR = 7B prior)
+| node | method    | LR    | notes |
+|------|-----------|-------|-------|
+| d002 | lora      | 3e-4  | baseline, no base-SVD |
+| d003 | milora    | 5e-4  | residual-init → needs base-W dequant+SVD |
+| d004 | sclora    | 5e-5  | residual-init → needs base-W dequant+SVD; 7B Pareto star |
+| d005 | lora_null | 5e-4  | null-space init → needs base-W SVD |
+| d006 | clora     | 3e-4  | residual-init → needs base-W dequant+SVD |
+| d007 | dora      | 2e-4  | no base-SVD |
+| d008 | lorawd    | 5e-4  | lora + weight decay, no base-SVD |
+Run ONLY after a node's sweep shard + derive/finalize complete (never steal from the sweep). Attention-only
+target_modules first (dense; clean for spread analysis). If FP8 base-SVD proves too costly, fall back to the
+no-SVD methods (lora/dora/lorawd/+lora_null) on more nodes for a first pass.
 
 ## Config: one adapter per method, single seed (LRs = 7B-derived priors; verify on 284B)
 lora=3e-4 · milora=5e-4 · sclora=5e-5 · lora_null=5e-4 · clora=3e-4 · dora=2e-4.  EXCLUDE corda
