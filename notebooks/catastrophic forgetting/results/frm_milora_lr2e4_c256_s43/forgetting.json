@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 2.971120618463375,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 1.1190966943817364,
+  "n_positions": 40920,
+  "run_name": "frm_milora_lr2e4_c256_s43",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 6.6,
+  "method": "LORA",
+  "adapter_r": 128
+}
