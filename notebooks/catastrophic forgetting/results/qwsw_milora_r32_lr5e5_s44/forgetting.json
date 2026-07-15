@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 2.1098207339205883,
+  "base_entropy": 1.9346918347336524,
+  "forgetting_kl": 0.17512889918693597,
+  "n_positions": 297693,
+  "run_name": "qwsw_milora_r32_lr5e5_s44",
+  "max_length": 1024,
+  "n_blocks": 291,
+  "wall_s": 30.3,
+  "method": "LORA",
+  "adapter_r": 64
+}
