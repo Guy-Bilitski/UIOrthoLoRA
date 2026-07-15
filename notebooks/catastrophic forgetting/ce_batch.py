@@ -71,11 +71,25 @@ def done_set():
     return done
 
 
-def is_llama_adapter(adir):
+def _base_family(name):
+    n = (name or "").lower()
+    if "llama" in n:
+        return "llama"
+    if "qwen" in n:
+        return "qwen"
+    return "other"
+
+
+def adapter_base_matches(adir, want_base):
+    """True if the adapter's saved base model is the SAME family as the requested --base_model.
+
+    Replaces the old hardcoded Llama-only guard, which skipped every Qwen adapter even when
+    --base_model Qwen/Qwen2.5-7B was passed (so Qwen CE-shift was never computed). We still
+    reject cross-family scoring (e.g. a Llama adapter under a Qwen base)."""
     try:
         base = json.load(open(os.path.join(adir, "adapter_config.json"))).get(
             "base_model_name_or_path", "")
-        return "llama" in base.lower()
+        return _base_family(base) == _base_family(want_base)
     except Exception:
         return False
 
@@ -102,8 +116,8 @@ def resolve_candidates(args):
         if not os.path.exists(os.path.join(adir, "adapter_model.safetensors")):
             print(f"[list-skip] {n}: no adapter_model.safetensors (not trained yet?)", flush=True)
             continue
-        if not is_llama_adapter(adir):
-            print(f"[list-skip] {n}: base model is not Llama (Qwen adapter?)", flush=True)
+        if not adapter_base_matches(adir, args.base_model):
+            print(f"[list-skip] {n}: adapter base family != --base_model ({args.base_model})", flush=True)
             continue
         out.append(n)
     return out
