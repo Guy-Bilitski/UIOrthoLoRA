@@ -239,6 +239,14 @@ def main():
     out_root = args.out_root if os.path.isdir(os.path.dirname(args.out_root) or "/") else os.path.join(HERE, "models")
     out_dir = os.path.join(out_root, run_name)
     os.makedirs(out_dir, exist_ok=True)
+    # [train_cs] idempotency guard: if this adapter was already fully trained (run_config.json is
+    # written last in this script, so it marks a completed run), skip retraining and let the
+    # downstream `&& eval_one_gpu.py` run. Turns a dispatcher retry of a banked adapter into
+    # seconds of eval instead of hours of retrain (added 2026-07-15 for fleet eval recovery).
+    if os.path.exists(os.path.join(out_dir, 'run_config.json')) and \
+       os.path.exists(os.path.join(out_dir, 'adapter_model.safetensors')):
+        print(f'[train_cs] {run_name}: complete adapter already at {out_dir} — SKIP train, proceed to eval', flush=True)
+        return
     grad_accum = max(1, args.batch_size // args.micro_batch_size)
 
     tokenizer = AutoTokenizer.from_pretrained(args.base_model)
