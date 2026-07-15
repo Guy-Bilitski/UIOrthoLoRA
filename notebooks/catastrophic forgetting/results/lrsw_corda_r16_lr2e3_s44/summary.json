@@ -1,0 +1,38 @@
+{
+  "run_name": "lrsw_corda_r16_lr2e3_s44",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/lrsw_corda_r16_lr2e3_s44",
+  "per_dataset": {
+    "boolq": 62.14,
+    "piqa": 49.46,
+    "social_i_qa": 32.8,
+    "hellaswag": 25.25,
+    "winogrande": 49.72,
+    "ARC-Easy": 26.01,
+    "ARC-Challenge": 23.81,
+    "openbookqa": 27.6
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 25.3396,
+    "dw_sv_mean": 269.132,
+    "dw_sv_max": 6801.1235,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 37.1,
+    "adapt_task": "cs",
+    "bbh": 0.0,
+    "mmlu_pro": 0.0,
+    "mmlu": 23.29,
+    "arc_c": 22.18,
+    "truthfulqa": 51.11,
+    "retention_mean": 0.0,
+    "retention_bbh": 0.0,
+    "retention_broad": 19.32,
+    "fdelta": 25.3396,
+    "dw_sv_max": 6801.1235,
+    "dw_sv_mean": 269.132
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-15T12:54:59+03:00"
+}
