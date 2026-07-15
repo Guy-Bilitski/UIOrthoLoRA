@@ -9,7 +9,6 @@ set -u
 cd "$(dirname "$0")/.."
 INT="${1:-90}"
 WD="/home/guyb/UIOrthoLoRA/notebooks/catastrophic forgetting"
-NODES=$(grep -v '^#' fleet/ready_nodes.txt)
 log(){ echo "[derive-sup $(date -u +%H:%M:%SZ)] $*"; }
 
 alive_local(){ ps -eo args | grep -q '[d]erive_loop.sh 300'; }
@@ -18,6 +17,7 @@ exec 8>logs/derive_supervisor.lock
 flock -n 8 || { echo "[derive-sup] already running — exiting"; exit 0; }
 
 while true; do
+  NODES=$(grep -v '^#' fleet/ready_nodes.txt)   # re-read each pass so evacuated nodes are dropped
   revived=0; up=0
   # d001 itself
   if ! alive_local; then rm -f logs/derive_loop.lock; setsid nohup bash fleet/derive_loop.sh 300 > logs/derive_loop.log 2>&1 </dev/null & disown; revived=$((revived+1)); else up=$((up+1)); fi
