@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 2.0612668717752496,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 0.25119766008225386,
+  "n_positions": 337590,
+  "run_name": "frm_lorawd_wd0p3_lr3e4_c512_s44",
+  "max_length": 1024,
+  "n_blocks": 330,
+  "wall_s": 42.4,
+  "method": "LORA",
+  "adapter_r": 64
+}
