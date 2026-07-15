@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": NaN,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": NaN,
+  "n_positions": 40920,
+  "run_name": "lrsw_lorawd_wd0p3_lr5e3_s44",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 2.6,
+  "method": "LORA",
+  "adapter_r": 32
+}
