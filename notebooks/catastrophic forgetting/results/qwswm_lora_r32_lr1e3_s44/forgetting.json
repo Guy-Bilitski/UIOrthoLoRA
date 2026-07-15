@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 4.174169724262853,
+  "base_entropy": 1.9346918347336524,
+  "forgetting_kl": 2.239477889529201,
+  "n_positions": 297693,
+  "run_name": "qwswm_lora_r32_lr1e3_s44",
+  "max_length": 1024,
+  "n_blocks": 291,
+  "wall_s": 28.6,
+  "method": "LORA",
+  "adapter_r": 32
+}
