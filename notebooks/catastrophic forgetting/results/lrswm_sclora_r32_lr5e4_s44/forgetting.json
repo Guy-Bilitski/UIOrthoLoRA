@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 3.00237033510051,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 1.1503464110188713,
+  "n_positions": 40920,
+  "run_name": "lrswm_sclora_r32_lr5e4_s44",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 5.5,
+  "method": "LORA",
+  "adapter_r": 64
+}
