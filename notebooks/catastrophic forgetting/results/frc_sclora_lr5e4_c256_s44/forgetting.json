@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 3.30462950168035,
+  "base_entropy": 1.8520239240816387,
+  "forgetting_kl": 1.4526055775987112,
+  "n_positions": 40920,
+  "run_name": "frc_sclora_lr5e4_c256_s44",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 6.5,
+  "method": "LORA",
+  "adapter_r": 64
+}
