@@ -1,0 +1,279 @@
+{
+  "run_name": "qwsw_clora_k1024_lr2e5_s44",
+  "method": "clora",
+  "task": "commonsense_170k",
+  "base_model": "Qwen/Qwen2.5-7B",
+  "args": {
+    "method": "clora",
+    "run_name": "qwsw_clora_k1024_lr2e5_s44",
+    "out_root": "/scratch/cf_models",
+    "base_model": "Qwen/Qwen2.5-7B",
+    "data_path": "repro/LLM-Adapters/ft-training_set/commonsense_170k.json",
+    "cutoff_len": 256,
+    "num_epochs": 3,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.0,
+    "batch_size": 16,
+    "micro_batch_size": 16,
+    "warmup_steps": 100,
+    "target_modules": "q_proj,k_proj,v_proj,up_proj,down_proj",
+    "dropout": 0.05,
+    "train_on_inputs": true,
+    "seed": 44,
+    "max_samples": 0,
+    "use_dora": 0,
+    "corda": 0,
+    "corda_calib_size": 256,
+    "milora": 0,
+    "pissa": 0,
+    "sclora": 0,
+    "sclora_beta": 0.5,
+    "sclora_calib_size": 256,
+    "lora_null": 0,
+    "lora_null_calib_size": 256,
+    "lora_null_dim": 0,
+    "lora_null_freeze_a": 0,
+    "calib_source": "nq_open",
+    "cordapp": 0,
+    "cordapp_n": 5,
+    "cordapp_calib_size": 0,
+    "lora_r": 32,
+    "lora_alpha": 64,
+    "clora_k": 1024,
+    "clora_lambda": 1.0,
+    "k_val": 256,
+    "k_vec": 128,
+    "alpha": 1.0,
+    "use_de": true,
+    "initial_scaler": 0.1,
+    "initial_sigma": 0.1
+  },
+  "adapter": {
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "r": 32,
+    "lora_alpha": 64,
+    "lora_dropout": 0.05,
+    "use_dora": false,
+    "clora_k": 1024,
+    "clora_lambda": 1.0
+  },
+  "trainable_params": 54132736,
+  "total_params": 7669749248,
+  "trainable_pct": 0.7058,
+  "grad_accum": 1,
+  "effective_batch": 16,
+  "train_runtime_s": 7985.3,
+  "final_train_loss": 1.9188169386736338,
+  "peak_mem_init_gb": 17.77,
+  "peak_mem_train_gb": 58.24,
+  "norm_trace": [
+    {
+      "step": 10,
+      "loss": 181.0062255859375,
+      "dwF": 0.0449
+    },
+    {
+      "step": 810,
+      "loss": 1.1861068725585937,
+      "dwF": 6.045
+    },
+    {
+      "step": 1610,
+      "loss": 1.1163846969604492,
+      "dwF": 7.2929
+    },
+    {
+      "step": 2410,
+      "loss": 1.1179038047790528,
+      "dwF": 8.2954
+    },
+    {
+      "step": 3210,
+      "loss": 1.0499869346618653,
+      "dwF": 9.1839
+    },
+    {
+      "step": 4010,
+      "loss": 1.1040106773376466,
+      "dwF": 9.9863
+    },
+    {
+      "step": 4810,
+      "loss": 1.041807270050049,
+      "dwF": 10.7837
+    },
+    {
+      "step": 5610,
+      "loss": 1.0197626113891602,
+      "dwF": 11.5526
+    },
+    {
+      "step": 6410,
+      "loss": 1.056052017211914,
+      "dwF": 12.2981
+    },
+    {
+      "step": 7210,
+      "loss": 1.0561589241027831,
+      "dwF": 13.0394
+    },
+    {
+      "step": 8010,
+      "loss": 1.0690865516662598,
+      "dwF": 13.76
+    },
+    {
+      "step": 8810,
+      "loss": 1.0039937019348144,
+      "dwF": 14.4682
+    },
+    {
+      "step": 9610,
+      "loss": 1.0653063774108886,
+      "dwF": 15.1302
+    },
+    {
+      "step": 10410,
+      "loss": 1.1132744789123534,
+      "dwF": 15.7809
+    },
+    {
+      "step": 11210,
+      "loss": 1.0452919006347656,
+      "dwF": 16.6171
+    },
+    {
+      "step": 12010,
+      "loss": 1.0543609619140626,
+      "dwF": 17.4504
+    },
+    {
+      "step": 12810,
+      "loss": 1.052863311767578,
+      "dwF": 18.134
+    },
+    {
+      "step": 13610,
+      "loss": 1.0761383056640625,
+      "dwF": 18.7862
+    },
+    {
+      "step": 14410,
+      "loss": 1.0576513290405274,
+      "dwF": 19.384
+    },
+    {
+      "step": 15210,
+      "loss": 1.110730266571045,
+      "dwF": 19.9361
+    },
+    {
+      "step": 16010,
+      "loss": 1.0991113662719727,
+      "dwF": 20.4634
+    },
+    {
+      "step": 16810,
+      "loss": 0.9736263275146484,
+      "dwF": 20.9219
+    },
+    {
+      "step": 17610,
+      "loss": 1.1032114028930664,
+      "dwF": 21.4077
+    },
+    {
+      "step": 18410,
+      "loss": 1.0199382781982422,
+      "dwF": 21.8276
+    },
+    {
+      "step": 19210,
+      "loss": 1.0925321578979492,
+      "dwF": 22.2238
+    },
+    {
+      "step": 20010,
+      "loss": 0.9235969543457031,
+      "dwF": 22.5766
+    },
+    {
+      "step": 20810,
+      "loss": 1.0299774169921876,
+      "dwF": 22.9149
+    },
+    {
+      "step": 21610,
+      "loss": 1.0572494506835937,
+      "dwF": 23.3008
+    },
+    {
+      "step": 22410,
+      "loss": 0.9798813819885254,
+      "dwF": 23.7051
+    },
+    {
+      "step": 23210,
+      "loss": 1.088026523590088,
+      "dwF": 24.0446
+    },
+    {
+      "step": 24010,
+      "loss": 1.0200809478759765,
+      "dwF": 24.3328
+    },
+    {
+      "step": 24810,
+      "loss": 1.0255722045898437,
+      "dwF": 24.595
+    },
+    {
+      "step": 25610,
+      "loss": 0.9585700988769531,
+      "dwF": 24.7998
+    },
+    {
+      "step": 26410,
+      "loss": 1.0515460968017578,
+      "dwF": 24.9811
+    },
+    {
+      "step": 27210,
+      "loss": 0.9779179573059082,
+      "dwF": 25.1362
+    },
+    {
+      "step": 28010,
+      "loss": 0.9986587524414062,
+      "dwF": 25.2678
+    },
+    {
+      "step": 28810,
+      "loss": 0.9941241264343261,
+      "dwF": 25.3732
+    },
+    {
+      "step": 29610,
+      "loss": 0.9668755531311035,
+      "dwF": 25.4544
+    },
+    {
+      "step": 30410,
+      "loss": 0.9764795303344727,
+      "dwF": 25.5119
+    },
+    {
+      "step": 31210,
+      "loss": 1.0724241256713867,
+      "dwF": 25.5475
+    }
+  ],
+  "git_commit": "unknown",
+  "finished_at": "2026-07-15T18:16:14+03:00"
+}
