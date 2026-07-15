@@ -1,0 +1,38 @@
+{
+  "run_name": "base_qwen25_7b_noft",
+  "method": "BASE",
+  "adapter": "none",
+  "per_dataset": {
+    "boolq": 18.87,
+    "piqa": 42.55,
+    "social_i_qa": 38.95,
+    "hellaswag": 78.44,
+    "winogrande": 17.52,
+    "ARC-Easy": 40.03,
+    "ARC-Challenge": 35.92,
+    "openbookqa": 25.0
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.0,
+    "dw_sv_max": 0.0,
+    "dw_sv_mean": 0.0,
+    "n_matrices": 0
+  },
+  "headline": {
+    "cs_avg": 37.16,
+    "adapt_task": "cs",
+    "bbh": 47.93,
+    "mmlu_pro": 40.77,
+    "mmlu": 71.8,
+    "arc_c": 51.28,
+    "truthfulqa": 56.28,
+    "retention_mean": 44.35,
+    "retention_bbh": 47.93,
+    "retention_broad": 53.61,
+    "fdelta": 0.0,
+    "dw_sv_max": 0.0,
+    "dw_sv_mean": 0.0
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-15T14:19:24+03:00"
+}
