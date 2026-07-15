@@ -1,5 +1,7 @@
 # CAMPAIGN STATUS — as of 2026-07-09
 
+> **LIVE OPS 2026-07-15 (~08:30Z):** 30-node fleet resumed. Fixed offline gsm8k eval failure (pre-cached `openai/gsm8k` fleet-wide) + added `train_cs.py` skip-retrain guard (commit `bbf5eb8f`) so ~270 overnight-banked adapters re-evaluate in minutes. All 30 dispatchers up; 714 planned cells completing + syncing. Full incident writeup: **`handoff/39_FLEET_EVAL_RECOVERY_2026-07-15.md`**.
+
 Live snapshot of the magnitude-law campaign. For onboarding read **`WORKDIR_ALIGNMENT.md`**; for the plan
 read **`handoff/20_FAITHFUL_REPRO_SPEC.md`** + **`handoff/25`–`28`**; for numbers read
 **`paper/writing/data/key_numbers.md`**. (The prior 2026-06-29 2×2 snapshot is in git history / `handoff/13`.)
