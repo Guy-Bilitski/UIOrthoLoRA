@@ -15,4 +15,7 @@ $V eval_one_gpu.py --adapter /scratch/cf_models/smoke_d001 --run_name smoke_d001
 # 2) gsm8k: the lm-eval 'gsm8k' task pulls openai/gsm8k, which the cs smoke above does NOT
 #    touch. Cache it explicitly so --adapt_task gsm8k cells work offline (2026-07-15 fix).
 $V -c "import datasets; datasets.load_dataset('openai/gsm8k','main'); print('gsm8k cached')"
+# 3) WikiText-103/2 test: forgetting_ce.py / ce_batch.py (CE-to-base drift) load Salesforce/wikitext
+#    offline. Cache it so per-node derive_loop.sh CE works offline (2026-07-15 fix).
+$V -c "import datasets; [datasets.load_dataset('Salesforce/wikitext',c,split='test') for c in ('wikitext-103-raw-v1','wikitext-2-raw-v1')]; print('wikitext cached')"
 echo "PRECACHE_DONE rc=$?"
