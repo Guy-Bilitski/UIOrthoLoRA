@@ -64,6 +64,21 @@ Then repeat the magnitude+spread→retention correlation/partial-correlation ana
 - Download+rsync the 284GB(fp8)/568GB(bf16) model is a big one-time op on d001 egress.
 - New compute-heavy direction ⇒ get PI nod before committing nodes. Do NOT touch paper.tex / artifact.
 
+## Prep status (2026-07-15 ~17:15Z)
+- ✅ Model on d001 VERIFIED COMPLETE: `/scratch/hf_cache/hub/models--deepseek-ai--DeepSeek-V4-Flash`
+  (46/46 shards, index 0-missing, config+tokenizer, 159.6 GB). `/scratch`==`/root/scratch` (symlink).
+- ✅ Datasets cached on d001: MedMCQA (adapt) + MMLU/HellaSwag/ARC/MBPP/HumanEval/TruthfulQA/GSM8K + WikiText.
+- ✅ Node→method map + config + best-LRs (above).
+- **Load plan (FP8):** keep the 158 GB FP8 on disk; at load, dequant per-block FP8→bf16 directly into the
+  8-GPU sharded HBM (FSDP/TP) — no 568 GB bf16 on disk needed. Freeze base, add bf16 LoRA, train. For
+  residual-init methods, run the base-W SVD on the dequantized target matrices at init.
+
 ## OPEN ITEMS before launch
-1. Confirm adapt task (MedMCQA vs SciCode) — needs Guy/PI.  2. Verify HF dtype/size + /scratch fit.
-3. Build + smoke-test the sharded train+eval stack on ONE node/ONE adapter.  4. Quick LR-transfer check.
+1. **Build the sharded train+eval stack** (FSDP/TP + PEFT + FP8-dequant-on-load) — the real engineering;
+   smoke-test on ONE node/ONE adapter when a worker drains.
+2. **Stage model+data to d002–d008** — ~160 GB each (~1.1 TB total). RECOMMEND doing this throttled
+   (nice/ionice, --bwlimit) shortly BEFORE nodes drain, not now (nodes are hours from free; no point
+   holding 160 GB on 7 busy nodes early, and it protects the sweep's I/O). Rsync the whole
+   `models--deepseek-ai--DeepSeek-V4-Flash/` cache dir (blobs+snapshots+refs).
+3. Quick LR-transfer sanity check on 1–2 methods at 284B scale.
+4. Adapt task = MedMCQA (working default; swappable to SciCode if PI prefers).
