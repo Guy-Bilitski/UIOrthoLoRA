@@ -1,0 +1,38 @@
+{
+  "run_name": "frc_lorawd_wd0p1_lr7e4_c256_s44",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/frc_lorawd_wd0p1_lr7e4_c256_s44",
+  "per_dataset": {
+    "boolq": 69.72,
+    "piqa": 80.79,
+    "social_i_qa": 79.73,
+    "hellaswag": 83.93,
+    "winogrande": 80.03,
+    "ARC-Easy": 79.04,
+    "ARC-Challenge": 64.16,
+    "openbookqa": 77.6
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.8692,
+    "dw_sv_mean": 14.0503,
+    "dw_sv_max": 93.8808,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 76.88,
+    "adapt_task": "cs",
+    "bbh": 29.6,
+    "mmlu_pro": 13.55,
+    "mmlu": 27.48,
+    "arc_c": 36.35,
+    "truthfulqa": 34.45,
+    "retention_mean": 21.58,
+    "retention_bbh": 29.6,
+    "retention_broad": 28.29,
+    "fdelta": 0.8692,
+    "dw_sv_max": 93.8808,
+    "dw_sv_mean": 14.0503
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-15T20:52:56+03:00"
+}
