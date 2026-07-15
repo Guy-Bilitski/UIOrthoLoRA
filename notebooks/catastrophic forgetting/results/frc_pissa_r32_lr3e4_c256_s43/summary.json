@@ -1,0 +1,38 @@
+{
+  "run_name": "frc_pissa_r32_lr3e4_c256_s43",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/frc_pissa_r32_lr3e4_c256_s43",
+  "per_dataset": {
+    "boolq": 66.09,
+    "piqa": 76.33,
+    "social_i_qa": 76.31,
+    "hellaswag": 61.9,
+    "winogrande": 77.11,
+    "ARC-Easy": 70.96,
+    "ARC-Challenge": 54.69,
+    "openbookqa": 70.6
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 1.4141,
+    "dw_sv_mean": 13.9728,
+    "dw_sv_max": 54.1678,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 69.25,
+    "adapt_task": "cs",
+    "bbh": 25.25,
+    "mmlu_pro": 1.25,
+    "mmlu": 23.43,
+    "arc_c": 31.14,
+    "truthfulqa": 37.93,
+    "retention_mean": 13.25,
+    "retention_bbh": 25.25,
+    "retention_broad": 23.8,
+    "fdelta": 1.4141,
+    "dw_sv_max": 54.1678,
+    "dw_sv_mean": 13.9728
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-15T21:25:22+03:00"
+}
