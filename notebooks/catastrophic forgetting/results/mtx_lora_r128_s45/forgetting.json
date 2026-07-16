@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 3.2881737157928574,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 1.4781045040998617,
+  "n_positions": 337590,
+  "run_name": "mtx_lora_r128_s45",
+  "max_length": 1024,
+  "n_blocks": 330,
+  "wall_s": 44.3,
+  "method": "LORA",
+  "adapter_r": 128
+}
