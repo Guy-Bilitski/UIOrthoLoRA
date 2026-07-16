@@ -6,7 +6,7 @@
   "run_name": "lrsw_sclora_r32_lr5e4_s43",
   "max_length": 1024,
   "n_blocks": 330,
-  "wall_s": 40.3,
+  "wall_s": 19.9,
   "method": "LORA",
   "adapter_r": 64,
   "fdelta": 1.0856
