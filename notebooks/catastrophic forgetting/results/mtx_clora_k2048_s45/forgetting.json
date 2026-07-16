@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 2.0823311527795885,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 0.27226194108659274,
+  "n_positions": 337590,
+  "run_name": "mtx_clora_k2048_s45",
+  "max_length": 1024,
+  "n_blocks": 330,
+  "wall_s": 39.1,
+  "method": "LORA",
+  "adapter_r": 32
+}
