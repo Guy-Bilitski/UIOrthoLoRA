@@ -1,0 +1,32 @@
+{
+  "run_name": "mtxm_lorawd_wd0p05_s43",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/mtxm_lorawd_wd0p05_s43",
+  "per_dataset": {
+    "gsm8k": 51.63
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.5388,
+    "dw_sv_mean": 11.7894,
+    "dw_sv_max": 30.9075,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 51.63,
+    "adapt_task": "gsm8k",
+    "bbh": 31.88,
+    "mmlu_pro": 14.85,
+    "mmlu": 34.16,
+    "arc_c": 38.65,
+    "truthfulqa": 40.44,
+    "gsm8k": 51.63,
+    "retention_mean": 23.36,
+    "retention_bbh": 31.88,
+    "retention_broad": 32.0,
+    "fdelta": 0.5388,
+    "dw_sv_max": 30.9075,
+    "dw_sv_mean": 11.7894
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-16T10:03:40+03:00"
+}
