@@ -22,7 +22,7 @@ start_one(){
   # bulletproof detached start of dispatcher + watchdog
   ssh -o BatchMode=yes ubuntu@"$n" "cd '$WD' && export HF_HOME=/scratch/hf_cache HF_HUB_DISABLE_XET=1 && \
     ( setsid nohup $VENV auto_dispatch.py --jobs jobs/fleet/$n.txt --gpus 0,1,2,3,4,5,6,7 --tag disp --hf_offline 1 >logs/disp.log 2>&1 </dev/null & ) && \
-    ( setsid nohup bash gpu_watchdog.sh jobs/fleet/$n.txt disp loop >logs/watchdog.log 2>&1 </dev/null & ) ; \
+    ( pgrep -f 'gpu_watchdog.sh jobs/fleet/$n.txt' >/dev/null 2>&1 || setsid nohup bash gpu_watchdog.sh jobs/fleet/$n.txt disp loop >logs/watchdog.log 2>&1 </dev/null & ) ; \
     sleep 4" 2>/dev/null
   # verify
   local ok
