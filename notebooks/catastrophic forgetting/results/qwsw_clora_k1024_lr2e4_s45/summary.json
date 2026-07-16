@@ -1,0 +1,38 @@
+{
+  "run_name": "qwsw_clora_k1024_lr2e4_s45",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/qwsw_clora_k1024_lr2e4_s45",
+  "per_dataset": {
+    "boolq": 74.59,
+    "piqa": 41.73,
+    "social_i_qa": 78.56,
+    "hellaswag": 87.78,
+    "winogrande": 85.64,
+    "ARC-Easy": 90.19,
+    "ARC-Challenge": 80.89,
+    "openbookqa": 87.2
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.2083,
+    "dw_sv_mean": 5.3269,
+    "dw_sv_max": 21.0264,
+    "n_matrices": 140
+  },
+  "headline": {
+    "cs_avg": 78.32,
+    "adapt_task": "cs",
+    "bbh": 45.63,
+    "mmlu_pro": 35.65,
+    "mmlu": 69.21,
+    "arc_c": 46.33,
+    "truthfulqa": 45.59,
+    "retention_mean": 40.64,
+    "retention_bbh": 45.63,
+    "retention_broad": 48.48,
+    "fdelta": 0.2083,
+    "dw_sv_max": 21.0264,
+    "dw_sv_mean": 5.3269
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-16T13:29:43+03:00"
+}
