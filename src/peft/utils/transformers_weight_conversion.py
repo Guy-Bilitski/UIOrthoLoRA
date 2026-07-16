@@ -14,6 +14,7 @@
 
 # NOTE: don't import from this module unless transformers v5+ is used
 import copy
+import inspect
 import re
 from typing import Any
 
@@ -196,6 +197,26 @@ class PermuteDims(ConversionOps):
         return f"{self.__class__.__name__}(dims={self.dims})"
 
 
+def _clone_conversion(orig_conversion, **kwargs):
+    """Instantiate orig_conversion's class, passing only kwargs its __init__ accepts.
+
+    transformers >= the currently installed version removed `distributed_operation` /
+    `quantization_operation` from WeightConverter.__init__ (they are attributes managed
+    elsewhere), which crashed the sharded-adapter load path on DeepSeek-V4-Flash
+    (2026-07-17). Unknown kwargs are set as attributes post-init, best-effort.
+    """
+    accepted = set(inspect.signature(orig_conversion.__class__.__init__).parameters)
+    init_kwargs = {k: v for k, v in kwargs.items() if k in accepted}
+    new_conversion = orig_conversion.__class__(**init_kwargs)
+    for k, v in kwargs.items():
+        if k not in accepted:
+            try:
+                setattr(new_conversion, k, v)
+            except Exception:
+                pass
+    return new_conversion
+
+
 def build_peft_weight_mapping(
     weight_conversions: list[WeightConverter | WeightRenaming] | None, adapter_name: str, peft_config=None
 ) -> list[WeightConverter | WeightRenaming]:
@@ -265,11 +286,12 @@ def build_peft_weight_mapping(
                 new_target_patterns = [f"{pat}.{lora}.{adapter_name}.weight"]
 
                 # Instantiate a new object that correctly post process patterns if needed
-                new_conversion = orig_conversion.__class__(
+                new_conversion = _clone_conversion(
+                    orig_conversion,
                     source_patterns=new_source_patterns,
                     target_patterns=new_target_patterns,
-                    distributed_operation=orig_conversion.distributed_operation,
-                    quantization_operation=orig_conversion.quantization_operation,
+                    distributed_operation=getattr(orig_conversion, "distributed_operation", None),
+                    quantization_operation=getattr(orig_conversion, "quantization_operation", None),
                     operations=peft_weight_operations,
                 )
                 new_weight_conversions.append(new_conversion)
@@ -307,11 +329,12 @@ def build_peft_weight_mapping(
                 new_target_patterns = [f"{pat}.{lora}.{adapter_name}.weight"]
 
                 # Instantiate a new object that correctly post process patterns if needed
-                new_conversion = orig_conversion.__class__(
+                new_conversion = _clone_conversion(
+                    orig_conversion,
                     source_patterns=new_source_patterns,
                     target_patterns=new_target_patterns,
-                    distributed_operation=orig_conversion.distributed_operation,
-                    quantization_operation=orig_conversion.quantization_operation,
+                    distributed_operation=getattr(orig_conversion, "distributed_operation", None),
+                    quantization_operation=getattr(orig_conversion, "quantization_operation", None),
                     operations=peft_weight_operations,
                 )
                 new_weight_conversions.append(new_conversion)
