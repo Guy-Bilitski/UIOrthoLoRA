@@ -32,7 +32,7 @@ CS_DATASETS = ["boolq", "piqa", "social_i_qa", "hellaswag", "winogrande",
                "ARC-Easy", "ARC-Challenge", "openbookqa"]
 
 
-def fdelta_inprocess(model, tokenizer, n_inputs=100, device="cuda:0"):
+def fdelta_inprocess(model, tokenizer, n_inputs=100, device="cuda:0", prompts=None):
     layers, hooks, accum = {}, [], {}
 
     def make_hook(name):
@@ -57,11 +57,12 @@ def fdelta_inprocess(model, tokenizer, n_inputs=100, device="cuda:0"):
             layers[name] = {"dw": dw, "sv": sv}
             hooks.append(mod.register_forward_pre_hook(make_hook(name)))
 
-    prompts = []
-    for ds in ["boolq", "piqa", "social_i_qa", "hellaswag", "winogrande", "ARC-Challenge", "openbookqa"]:
-        data = json.load(open(os.path.join(HERE, "repro/LLM-Adapters/dataset", ds, "test.json")))
-        for d in data[: (n_inputs // 7) + 2]:
-            prompts.append(run_lib.eval_prompt(d["instruction"], d.get("input") or None))
+    if prompts is None:  # default: the 7B CS adaptation distribution (original behavior)
+        prompts = []
+        for ds in ["boolq", "piqa", "social_i_qa", "hellaswag", "winogrande", "ARC-Challenge", "openbookqa"]:
+            data = json.load(open(os.path.join(HERE, "repro/LLM-Adapters/dataset", ds, "test.json")))
+            for d in data[: (n_inputs // 7) + 2]:
+                prompts.append(run_lib.eval_prompt(d["instruction"], d.get("input") or None))
     prompts = prompts[:n_inputs]
     with torch.no_grad():
         for i in range(0, len(prompts), 8):

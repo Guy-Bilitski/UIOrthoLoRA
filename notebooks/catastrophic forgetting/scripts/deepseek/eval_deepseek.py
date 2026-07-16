@@ -105,6 +105,16 @@ def main():
             fd = fdelta_inprocess(model, tokenizer)
         except Exception as e:
             print(f"[{run_name}] fdelta failed: {e}", flush=True); fd = {}
+        # F_Delta on the ADAPT distribution (MedMCQA) — the 7B semantics are "F_Delta on
+        # adapt-task inputs"; the default prompts above are the 7B CS suite, which is
+        # off-distribution here. Report both (adversarial-review fix 2026-07-16, flaw #4).
+        try:
+            rows = json.load(open(VAL))[:100]
+            mprompts = [run_lib.train_prompt({**r, "output": ""}) for r in rows]
+            fd_a = fdelta_inprocess(model, tokenizer, prompts=mprompts)
+            fd["fdelta_adapt"] = fd_a.get("fdelta_token_weighted")
+        except Exception as e:
+            print(f"[{run_name}] fdelta_adapt failed: {e}", flush=True)
 
     from lm_eval import simple_evaluate
     from lm_eval.models.huggingface import HFLM
@@ -133,10 +143,20 @@ def main():
 
     headline = {"cs_avg": cs_avg, "adapt_task": "medmcqa", **ret, "medmcqa": acc,
                 "retention_mean": ret_mean, "retention_bbh": ret_bbh, "retention_broad": ret_broad,
-                "fdelta": fd.get("fdelta_token_weighted"),
+                "fdelta": fd.get("fdelta_token_weighted"), "fdelta_adapt": fd.get("fdelta_adapt"),
                 "dw_sv_max": fd.get("dw_sv_max"), "dw_sv_mean": fd.get("dw_sv_mean")}
+    # Keep the FULL per-subtask lm_eval rows (esp. MMLU medical subtasks) so retention can be
+    # recomputed with/without adapt-domain overlap post-hoc — irrecoverable otherwise
+    # (adversarial-review fix 2026-07-16, flaw #5).
+    def _clean(d):
+        try:
+            return json.loads(json.dumps(d, default=str))
+        except Exception:
+            return {}
     summary = {"run_name": run_name, "method": method, "adapter": args.adapter or None,
                "per_dataset": cs, "fdelta": fd, "headline": headline,
+               "lm_eval_results": _clean(res.get("results", {})),
+               "lm_eval_groups": _clean(res.get("groups", {})),
                "git_commit": run_lib.git_commit(), "evaluated_at": run_lib.now_iso()}
     run_lib.write_json(os.path.join(HERE, "results", run_name, "summary.json"), summary)
     run_lib.append_registry("campaign_summary.jsonl", {"run_name": run_name, "method": method,
