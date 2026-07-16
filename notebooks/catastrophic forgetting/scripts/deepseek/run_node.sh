@@ -10,7 +10,7 @@
 #         bash scripts/deepseek/run_node.sh dora    2e-4 dsv4_dora_r16_lr2e4_s42   --use_dora 1
 #         bash scripts/deepseek/run_node.sh lorawd  5e-4 dsv4_lorawd_r16_lr5e4_s42 --weight_decay 0.1
 set -euo pipefail
-METHOD_FLAG_METHOD="lora"; [ "${1:-}" = "clora" ] && METHOD_FLAG_METHOD="clora"
+METHOD="${1:?need method}"; METHOD_FLAG_METHOD="lora"; [ "$METHOD" = "clora" ] && METHOD_FLAG_METHOD="clora"
 LR="${2:?need lr}"
 RUN="${3:-dsv4_${1}_r16_lr${2//./}_s42}"
 shift 3 || true
@@ -23,7 +23,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 export HF_HOME=/scratch/hf_cache HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 HF_HUB_DISABLE_XET=1
 export TOKENIZERS_PARALLELISM=false
 LOG="logs/dsv4_${RUN}.log"; mkdir -p logs
-echo "==== [run_node] $RUN method=$1 lr=$LR extra=${EXTRA[*]:-} $(date -u +%FT%TZ) ====" | tee -a "$LOG"
+echo "==== [run_node] $RUN method=$METHOD lr=$LR extra=${EXTRA[*]:-} $(date -u +%FT%TZ) ====" | tee -a "$LOG"
 
 echo "---- TRAIN ----" | tee -a "$LOG"
 $PY scripts/deepseek/train_deepseek.py --method "$METHOD_FLAG_METHOD" --run_name "$RUN" \
