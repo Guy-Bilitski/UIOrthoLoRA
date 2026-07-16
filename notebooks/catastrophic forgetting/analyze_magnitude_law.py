@@ -16,7 +16,8 @@ import run_lib
 RES = os.path.join(run_lib.HERE, "results")
 
 def pear(xy):
-    xy=[(x,y) for x,y in xy if isinstance(x,(int,float)) and isinstance(y,(int,float))]
+    xy=[(x,y) for x,y in xy if isinstance(x,(int,float)) and isinstance(y,(int,float))
+        and math.isfinite(x) and math.isfinite(y)]  # drop NaN/inf (diverged cells) — they poison the sum
     n=len(xy)
     if n<3: return float('nan'),n
     mx=sum(p[0] for p in xy)/n; my=sum(p[1] for p in xy)/n

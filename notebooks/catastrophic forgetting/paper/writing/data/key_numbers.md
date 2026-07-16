@@ -390,3 +390,52 @@ were never appended to the registry; appended 2026-07-14 with their original `ev
 ### Still genuinely pending (post-refresh)
 CorDA clean nq_open CS re-run (zero post-07-11 corda cells); Qwen CS seeds 43/44; Qwen base
 ceilings (no-FT); b4_lora_null lr1e4/3e4 + b4_cordapp full evals; r16-collapse seed replicate.
+
+---
+
+## 13. FULL-CAMPAIGN RECOMPUTE `[RECOMPUTED 2026-07-16, n>=3 seed campaign]`
+
+**Source:** all `results/*/summary.json` on d001 after the 30-node seed campaign
+(1418 summaries; 1299 usable = finite F_Δ & retention, corda/smoke excluded), plus the
+fleet-merged geometry (`results/geo_drift/adapter_metrics_merged.jsonl`, 1398 adapters) and CE
+(`results/forgetting_merged.jsonl`, 1308 adapters) aggregates. Recompute script:
+`analyze_full_2026-07-16.py`. Seeds 42/43/44 everywhere (+45/46 partial via idle-GPU gap-fill).
+
+### 13.1 The magnitude law, per family — r(retention_core, log10 F_Δ), ALL seeds pooled
+
+| Family | r | rank-r | n | seeds |
+|---|---|---|---|---|
+| Llama-2 CS (lrsw) | **−0.886** | −0.911 | 178 | 42–45 |
+| Llama-2 math (lrswm) | **−0.865** | −0.833 | 120 | 42–44 |
+| Qwen-2.5 CS (qwsw) | **−0.837** | −0.779 | 134 | 42–45 |
+| Qwen-2.5 math (qwswm) | **−0.830** | −0.602 | 156 | 42–44 |
+| Llama CS grid (frc) | **−0.928** | −0.952 | 271 | 42–46 |
+| Llama math-395k (frm) | **−0.929** | −0.969 | 142 | 42–44 |
+| ALL pooled | −0.845 | **−0.922** | 1001 | |
+
+Consistent with the 2026-07-02 single-seed values (−0.86/−0.97) at ~4× the n — the law
+replicates across seeds, both models, and both task types.
+
+### 13.2 Seed-averaged law + error bars (the campaign's goal)
+
+- Seed-averaged per-cell r: lrsw −0.916 (54 cells), lrswm −0.871 (42), qwsw −0.800 (49),
+  qwswm −0.832 (58), frc −0.928 (74), frm −0.896 (51).
+- **287 cells now have n≥3 seeds** (49/36/40/47/72/43 per family).
+- Within-cell seed noise is small: SD(retention) 0.33–1.0 pp (Llama), 2.1–2.6 pp (Qwen);
+  SD(F_Δ) 0.01–2.0. The law's ~15–30 pp retention range is 10–50× the seed noise.
+
+### 13.3 Geometry & CE corroboration at full n (was n=71 forensics)
+
+- Spread vs retention (n=1222): spec_mean **−0.758**, fro_total −0.743, spec_max −0.738;
+  stable_rank_w −0.36, eff_rank_w −0.30.
+- **Partial correlation:** r(spec_max, ret | log F_Δ) = **+0.195** with r(F_Δ, spec_max)=0.92 —
+  spread is largely collinear with magnitude; **F_Δ is the dominant single predictor.**
+- CE (independent measure, n=1094): r(log F_Δ, forgetting_ce) = **+0.786**;
+  r(forgetting_ce, retention) = −0.653.
+
+### 13.4 In flight (not in this recompute)
+
+- 7 remaining sweep dora evals (~2–5 h ETAs) + ~90 gap-fill s45/s46 cells still evaluating.
+- **DeepSeek-V4-Flash 284B generalization run:** all 7 methods training (lora/milora/lorawd at
+  3 seeds; dora/clora/sclora/lora_null seed-42 up, remaining seeds staged) — first summaries
+  expected ~24 h; NOT yet part of any number above.
