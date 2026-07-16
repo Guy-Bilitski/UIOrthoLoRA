@@ -58,6 +58,7 @@ log "Phase A: freeze orchestration"
 if [ $DRY -eq 0 ]; then
   pkill -TERM -f "guardian_[l]oop"        2>/dev/null
   pkill -TERM -f "collect_[l]oop"         2>/dev/null
+  pkill -TERM -f "ds_collect_[l]oop"      2>/dev/null
   pkill -TERM -f "derive_[s]upervisor"    2>/dev/null
   pkill -TERM -f "derive_[l]oop"          2>/dev/null
   pkill -TERM -f "auto_[d]ispatch"        2>/dev/null
