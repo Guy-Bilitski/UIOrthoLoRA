@@ -1,0 +1,31 @@
+{
+  "run_name": "brq_lora_r16_lr3e4_s42",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/brq_lora_r16_lr3e4_s42",
+  "per_dataset": {
+    "medmcqa": 41.79
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.1555,
+    "dw_sv_mean": 3.8352,
+    "dw_sv_max": 9.1504,
+    "n_matrices": 112
+  },
+  "headline": {
+    "cs_avg": 41.79,
+    "adapt_task": "medmcqa",
+    "bbh": 43.2,
+    "mmlu_pro": 37.61,
+    "mmlu": 70.16,
+    "arc_c": 51.45,
+    "truthfulqa": 54.21,
+    "retention_mean": 40.4,
+    "retention_bbh": 43.2,
+    "retention_broad": 51.33,
+    "fdelta": 0.1555,
+    "dw_sv_max": 9.1504,
+    "dw_sv_mean": 3.8352
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-16T22:25:07+03:00"
+}
