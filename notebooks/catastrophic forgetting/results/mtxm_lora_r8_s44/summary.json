@@ -1,0 +1,32 @@
+{
+  "run_name": "mtxm_lora_r8_s44",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/mtxm_lora_r8_s44",
+  "per_dataset": {
+    "gsm8k": 43.44
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.4585,
+    "dw_sv_mean": 13.1197,
+    "dw_sv_max": 34.2738,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 43.44,
+    "adapt_task": "gsm8k",
+    "bbh": 34.48,
+    "mmlu_pro": 16.71,
+    "mmlu": 29.81,
+    "arc_c": 40.53,
+    "truthfulqa": 43.13,
+    "gsm8k": 43.44,
+    "retention_mean": 25.6,
+    "retention_bbh": 34.48,
+    "retention_broad": 32.93,
+    "fdelta": 0.4585,
+    "dw_sv_max": 34.2738,
+    "dw_sv_mean": 13.1197
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-16T08:15:31+03:00"
+}
