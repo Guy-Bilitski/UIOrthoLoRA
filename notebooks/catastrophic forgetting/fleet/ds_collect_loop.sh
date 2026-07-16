@@ -16,7 +16,9 @@ echo "[ds_collect] watching DS nodes: $(echo $DSN | tr '\n' ' ')"
 while true; do
   for n in $DSN; do
     timeout 120 rsync -a --update \
-      --include='dsv4_*/' --include='dsv4_*/**' --exclude='*/' --exclude='*' \
+      --include='dsv4_*/' --include='dsv4_*/**' \
+      --include='geo_drift/' --include='geo_drift/adapter_metrics_deepseek_*' \
+      --exclude='*/' --exclude='*' \
       "ubuntu@$n:$WD/results/" results/ 2>/dev/null
     timeout 30 rsync -a --update "ubuntu@$n:$WD/results/campaign_summary.jsonl" \
       "results/fleet_reg/$n.campaign_summary.jsonl" 2>/dev/null
