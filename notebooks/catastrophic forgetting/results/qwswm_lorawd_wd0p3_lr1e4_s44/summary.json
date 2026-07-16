@@ -1,0 +1,32 @@
+{
+  "run_name": "qwswm_lorawd_wd0p3_lr1e4_s44",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/qwswm_lorawd_wd0p3_lr1e4_s44",
+  "per_dataset": {
+    "gsm8k": 63.46
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.0633,
+    "dw_sv_mean": 1.5379,
+    "dw_sv_max": 4.7896,
+    "n_matrices": 140
+  },
+  "headline": {
+    "cs_avg": 63.46,
+    "adapt_task": "gsm8k",
+    "bbh": 46.87,
+    "mmlu_pro": 42.35,
+    "mmlu": 72.28,
+    "arc_c": 50.17,
+    "truthfulqa": 57.58,
+    "gsm8k": 63.46,
+    "retention_mean": 44.61,
+    "retention_bbh": 46.87,
+    "retention_broad": 53.85,
+    "fdelta": 0.0633,
+    "dw_sv_max": 4.7896,
+    "dw_sv_mean": 1.5379
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-16T05:22:11+03:00"
+}
