@@ -47,10 +47,24 @@ def load_base(dtype=torch.bfloat16):
     """FP8->bf16 dequantized, sharded across all visible GPUs. Returns a frozen base model."""
     from transformers import FineGrainedFP8Config
     qcfg = FineGrainedFP8Config(dequantize=True)  # materialize bf16 weights (mutable; residual-safe)
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL, dtype=dtype, device_map="auto", quantization_config=qcfg,
-        low_cpu_mem_usage=True, trust_remote_code=True)
-    return model
+    # The FP8->bf16 conversion of the (unused) MTP expert weights intermittently trips
+    # transformers' strict loading-report (~1 in 4 loads, nondeterministic under device_map);
+    # a fresh from_pretrained succeeds. Retry rather than fail the cell.
+    last = None
+    for attempt in range(4):
+        try:
+            return AutoModelForCausalLM.from_pretrained(
+                MODEL, dtype=dtype, device_map="auto", quantization_config=qcfg,
+                low_cpu_mem_usage=True, trust_remote_code=True)
+        except RuntimeError as e:
+            last = e
+            print(f"[load_base] attempt {attempt+1}/4 failed ({str(e)[:90]}); retrying", flush=True)
+            import gc; gc.collect()
+            try:
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+    raise last
 
 
 def resolve_targets(model, requested):

@@ -60,12 +60,19 @@ class CLoRARegularizer:
         return q.detach()
 
     def loss(self):
-        reg = 0.0
+        # NB: under device_map sharding (DeepSeek) each target Linear can live on a
+        # different GPU, so accumulate every per-layer term onto a single device
+        # (reg's device = first term's) before summing. On the single-GPU 7B path this
+        # is a no-op. Also pin Pv/Pu to each A/B's device, not just dtype.
+        reg = None
         for mod, Pv, Pu in self.layers:
             A = mod.lora_A["default"].weight  # (r, in)  (peft keeps these fp32)
             B = mod.lora_B["default"].weight  # (out, r)
-            reg = reg + torch.norm(A @ Pv.to(A.dtype), p="fro") ** 2 / 2
-            reg = reg + torch.norm(B.T @ Pu.to(B.dtype), p="fro") ** 2 / 2
+            t = torch.norm(A @ Pv.to(A.device, A.dtype), p="fro") ** 2 / 2 \
+              + torch.norm(B.T @ Pu.to(B.device, B.dtype), p="fro") ** 2 / 2
+            reg = t if reg is None else reg + t.to(reg.device)
+        if reg is None:
+            return 0.0
         return self.lambda_ * reg
 
 
