@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 1.8623777494775389,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 0.05230853778454314,
+  "n_positions": 337590,
+  "run_name": "mtx_lorawd_wd1p0_s45",
+  "max_length": 1024,
+  "n_blocks": 330,
+  "wall_s": 37.5,
+  "method": "LORA",
+  "adapter_r": 32
+}
