@@ -32,7 +32,9 @@ CS_DATASETS = ["boolq", "piqa", "social_i_qa", "hellaswag", "winogrande",
                "ARC-Easy", "ARC-Challenge", "openbookqa"]
 
 
-def fdelta_inprocess(model, tokenizer, n_inputs=100, device="cuda:0", prompts=None):
+def fdelta_inprocess(model, tokenizer, n_inputs=100, device="cuda:0", prompts=None, deltas=None):
+    """deltas: optional {module_name: dW tensor} for non-PEFT updates (e.g. full FT, E2 arm) —
+    hooks attach to those named modules instead of PEFT BaseTunerLayer discovery."""
     layers, hooks, accum = {}, [], {}
 
     def make_hook(name):
@@ -47,15 +49,24 @@ def fdelta_inprocess(model, tokenizer, n_inputs=100, device="cuda:0", prompts=No
             accum[name] = (s + (dwxn[m] / xn[m]).sum().item(), c + int(m.sum().item()))
         return pre_hook
 
-    for name, mod in model.named_modules():
-        if isinstance(mod, BaseTunerLayer) and hasattr(mod, "get_delta_weight"):
-            try:
-                dw = mod.get_delta_weight("default").detach()
-            except Exception:
-                continue
+    if deltas is not None:
+        mods = dict(model.named_modules())
+        for name, dw in deltas.items():
+            mod = mods[name]
+            dw = dw.detach().to(next(mod.parameters()).device)
             sv = torch.linalg.svdvals(dw.float())[0].item()
             layers[name] = {"dw": dw, "sv": sv}
             hooks.append(mod.register_forward_pre_hook(make_hook(name)))
+    else:
+        for name, mod in model.named_modules():
+            if isinstance(mod, BaseTunerLayer) and hasattr(mod, "get_delta_weight"):
+                try:
+                    dw = mod.get_delta_weight("default").detach()
+                except Exception:
+                    continue
+                sv = torch.linalg.svdvals(dw.float())[0].item()
+                layers[name] = {"dw": dw, "sv": sv}
+                hooks.append(mod.register_forward_pre_hook(make_hook(name)))
 
     if prompts is None:  # default: the 7B CS adaptation distribution (original behavior)
         prompts = []

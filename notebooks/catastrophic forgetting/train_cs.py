@@ -195,6 +195,18 @@ def main():
     ap.add_argument("--train_on_inputs", type=int, default=1)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--max_samples", type=int, default=0)
+    # E5 replay baseline (adversarial-review menu 2026-07-16): mix a fraction of
+    # general-knowledge QA (nq_open train, instruction-formatted) into the adapt set —
+    # the practitioner's standard forgetting mitigation. Tests whether replay beats /
+    # moves the magnitude relation.
+    ap.add_argument("--replay_frac", type=float, default=0.0,
+                    help=">0: add replay_frac*len(adapt_data) nq_open QA examples to training")
+    # E2 full-FT anchor (adversarial-review menu 2026-07-16): no adapter — train ALL params;
+    # F_Delta computed from the dense dW on the target modules and stored in
+    # <out_dir>/fdelta_fullft.json (eval_one_gpu --adapter none picks it up). Scope test:
+    # is the magnitude relation a LoRA-family artifact or does dense FT sit on the same curve?
+    ap.add_argument("--full_ft", type=int, default=0,
+                    help="1 = full fine-tune (no PEFT); saves the full model to out_root/run_name")
     # LoRA
     ap.add_argument("--use_dora", type=int, default=0, help="DoRA: decouple magnitude (m) from direction. Test the adaptation-per-||dW|| frontier vs retention (DoRA never eval'd for retention).")
     ap.add_argument("--corda", type=int, default=0, help="CorDA-KPA data-aware init (faithful port; residual_save preserves any alpha/r, so alpha=2r is fine). corda_init.py.")
@@ -280,6 +292,21 @@ def main():
     data = load_dataset("json", data_files=args.data_path)["train"]
     if args.max_samples > 0:
         data = data.select(range(min(args.max_samples, len(data))))
+    if args.replay_frac > 0:
+        from datasets import Dataset, concatenate_datasets
+        import random as _rnd
+        nq = load_dataset("google-research-datasets/nq_open", split="train")
+        k = int(args.replay_frac * len(data))
+        _rnd.seed(args.seed)
+        idx = _rnd.sample(range(len(nq)), min(k, len(nq)))
+        rep_rows = [{"instruction": nq[i]["question"] + "?",
+                     "input": "",
+                     "output": (nq[i]["answer"][0] if nq[i]["answer"] else ""),
+                     "answer": (nq[i]["answer"][0] if nq[i]["answer"] else "")}
+                    for i in idx]
+        data = concatenate_datasets([data, Dataset.from_list(rep_rows)])
+        print(f"[replay] mixed {len(rep_rows)} nq_open QA examples "
+              f"({args.replay_frac:.0%} of adapt set) into training", flush=True)
     train_data = data.shuffle(seed=args.seed).map(gen_and_tok, remove_columns=data.column_names)
 
     model = AutoModelForCausalLM.from_pretrained(args.base_model, dtype=torch.bfloat16,
@@ -300,7 +327,17 @@ def main():
         args._cordapp_patterns = (cordapp_res["rank_pattern"], cordapp_res["alpha_pattern"])
         print(f"[cordapp] N={args.cordapp_n} calib={_csz} tau(nominal)={cordapp_res['nominal_tau']} "
               f"realized={cordapp_res['realized_tau']} over {len(cordapp_res['ranks'])} layers", flush=True)
-    model, adapter_desc = build_adapter(args.method, model, args)
+    fullft_snap = None
+    if args.full_ft:
+        _tg = set(args.target_modules.split(","))
+        fullft_snap = {n: m.weight.detach().to("cpu", torch.bfloat16).clone()
+                       for n, m in model.named_modules()
+                       if n.split(".")[-1] in _tg and hasattr(m, "weight")}
+        for p in model.parameters():
+            p.requires_grad_(True)
+        adapter_desc = f"full_ft (dense dW snapshot: {len(fullft_snap)} target mats)"
+    else:
+        model, adapter_desc = build_adapter(args.method, model, args)
     trainable, total = run_lib.count_trainable(model)
     model.config.use_cache = False
     print(f"[run {run_name}] method={args.method} trainable={trainable:,} ({100*trainable/total:.3f}%) "
@@ -434,6 +471,21 @@ def main():
     dt = time.time() - t0
     peak_train_gb = round(torch.cuda.max_memory_allocated() / 2**30, 2) if torch.cuda.is_available() else None
     print(f"[mem] peak GPU alloc: init-phase {peak_init_gb} GB, train-phase {peak_train_gb} GB", flush=True)
+    if args.full_ft and fullft_snap is not None:
+        # dense-dW F_Delta on the adapt distribution, same hook math as the adapter runs
+        model.eval()
+        _mods = dict(model.named_modules())
+        _deltas = {n: (_mods[n].weight.detach()
+                       - snap.to(_mods[n].weight.device, _mods[n].weight.dtype))
+                   for n, snap in fullft_snap.items()}
+        from uio_inprocess import fdelta_inprocess
+        try:
+            _fd = fdelta_inprocess(model, tokenizer, deltas=_deltas)
+        except Exception as _e:
+            print(f"[full_ft] fdelta failed: {_e}", flush=True); _fd = {}
+        del _deltas
+        run_lib.write_json(os.path.join(out_dir, "fdelta_fullft.json"), _fd)
+        print(f"[full_ft] dense-dW fdelta: {_fd}", flush=True)
     model.save_pretrained(out_dir)
     tokenizer.save_pretrained(out_dir)
     if residual_method:

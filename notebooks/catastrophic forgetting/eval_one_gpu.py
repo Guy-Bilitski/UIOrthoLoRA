@@ -47,7 +47,8 @@ def main():
                     help="core=BBH+MMLU-Pro (backward-comparable retention_mean); "
                          "broad adds MMLU+ARC-c+TruthfulQA -> retention_broad.")
     ap.add_argument("--adapt_task",
-                    choices=["cs", "gsm8k", "gsm8k_faithful", "math", "math_faithful"], default="cs",
+                    choices=["cs", "gsm8k", "gsm8k_faithful", "math", "math_faithful", "medmcqa"],
+                    default="cs",
                     help="in-domain adaptation metric: cs=8-task commonsense (default); "
                          "gsm8k=math via lm-eval (5-shot, legacy); gsm8k_faithful=LLM-Adapters "
                          "0-shot instruction-template GSM8K (last-number); math=Hendrycks MATH "
@@ -123,6 +124,15 @@ def main():
             cs["math"] = round(100 * m_acc, 2)
             print(f"[{run_name}] MATH={cs['math']} ({m_c}/{m_t}, parse_fail={m_pf})", flush=True)
         cs_avg = cs.get("gsm8k", cs.get("math"))
+    elif args.adapt_task == "medmcqa":
+        # E7 bridging arm: same MedMCQA letter-accuracy as the 284B run (one shared impl).
+        import sys as _sys
+        _sys.path.insert(0, os.path.join(HERE, "scripts", "deepseek"))
+        from eval_deepseek import medmcqa_accuracy
+        acc, c, t = medmcqa_accuracy(model, tokenizer, args.eval_limit, gen_cap=8)
+        cs = {"medmcqa": acc}
+        cs_avg = acc
+        print(f"[{run_name}] MedMCQA={acc} ({c}/{t})", flush=True)
     else:
         cs = {}
         for ds in CS_DATASETS:
@@ -135,9 +145,25 @@ def main():
     # F-delta (identically 0 for the raw base model: there is no weight update)
     if base_only:
         fd = {"fdelta_token_weighted": 0.0, "dw_sv_max": 0.0, "dw_sv_mean": 0.0, "n_matrices": 0}
+        # E2 full-FT arm: base_model IS the finetuned checkpoint; its dense-dW F_Delta was
+        # computed at train time (train_cs --full_ft) and stored alongside the weights.
+        _ffj = os.path.join(args.base_model, "fdelta_fullft.json")
+        if os.path.isfile(_ffj):
+            import json as _json
+            fd = _json.load(open(_ffj))
+            print(f"[{run_name}] using dense full-FT fdelta: {fd}", flush=True)
     else:
+        # F_Delta convention = measured on the ADAPT distribution. The default prompt set
+        # inside fdelta_inprocess is the CS suite (== adapt data for cs runs); for medmcqa
+        # adapt runs (E7 bridging arm) pass MedMCQA prompts so the axis stays on-convention.
+        _fd_prompts = None
+        if args.adapt_task == "medmcqa":
+            import json as _json
+            _rows = _json.load(open(os.path.join(
+                HERE, "repro/LLM-Adapters/ft-training_set/medmcqa_val.json")))[:100]
+            _fd_prompts = [run_lib.train_prompt({**r, "output": ""}) for r in _rows]
         try:
-            fd = fdelta_inprocess(model, tokenizer)
+            fd = fdelta_inprocess(model, tokenizer, prompts=_fd_prompts)
         except Exception as e:
             print(f"[{run_name}] fdelta failed: {e}", flush=True); fd = {}
 
