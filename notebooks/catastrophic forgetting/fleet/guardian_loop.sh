@@ -20,10 +20,11 @@ while true; do
   for n in $(grep -v '^#' fleet/ready_nodes.txt); do
     ssh -o BatchMode=yes -o ConnectTimeout=8 ubuntu@$n 'cd "/home/guyb/UIOrthoLoRA/notebooks/catastrophic forgetting" || exit 0
       [ -f results/finalize_$(hostname).done ] && exit 0
-      pgrep -f "finalize_node.sh" >/dev/null && exit 0
+      fn=finalize_node
+      pgrep -f "${fn}.sh" >/dev/null && exit 0
       tot=$(grep -vcE "^#|^\s*$" jobs/fleet/$(hostname).txt 2>/dev/null || echo 0); [ "$tot" -eq 0 ] && exit 0
       done=0; for rn in $(grep -oP "(?<=--run_name )\S+" jobs/fleet/$(hostname).txt | sort -u); do [ -f results/$rn/summary.json ] && done=$((done+1)); done
-      [ $((done*100/tot)) -ge 90 ] && setsid nohup bash fleet/finalize_node.sh >logs/finalize.log 2>&1 </dev/null & ' 2>/dev/null &
+      [ $((done*100/tot)) -ge 90 ] && setsid nohup bash fleet/${fn}.sh >logs/finalize.log 2>&1 </dev/null & ' 2>/dev/null &
   done; wait
   echo "guardian $(date -u +%H:%M:%SZ): relaunch pass done (dead-nodes-restarted=$revived)"
   sleep "$INT"
