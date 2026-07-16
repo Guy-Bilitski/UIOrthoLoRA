@@ -34,8 +34,11 @@ echo "---- EVAL ----" | tee -a "$LOG"
 if [ -f "results/$RUN/summary.json" ]; then
   echo "[run_node] summary exists — skip eval" | tee -a "$LOG"
 else
+  # --ret_limit 500: deadline cap (2026-07-16, 12-15h finish directive). Uniform across all
+  # 21 cells -> fair within-model comparison; bounds the eval to ~2-4h vs 20-40h unbounded
+  # (the base-noft eval demonstrated the full suite is generation-bound on 284B). Disclose.
   $PY scripts/deepseek/eval_deepseek.py --adapter "$ADAPTER" --run_name "$RUN" \
-      --ret_suite broad --adapt_limit 1000 2>&1 | tee -a "$LOG"
+      --ret_suite broad --adapt_limit 1000 --ret_limit 500 2>&1 | tee -a "$LOG"
 fi
 
 echo "---- CE ----" | tee -a "$LOG"

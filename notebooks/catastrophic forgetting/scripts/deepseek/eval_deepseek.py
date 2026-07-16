@@ -57,7 +57,10 @@ def main():
     ap.add_argument("--adapter", default="", help="adapter dir; empty/'none' = base ceiling")
     ap.add_argument("--run_name", default="")
     ap.add_argument("--adapt_limit", type=int, default=1000, help="MedMCQA val examples (0=all ~4.2k)")
-    ap.add_argument("--ret_limit", type=int, default=0)
+    # default 500 (was 0=full): deadline cap 2026-07-16 — the in-flight run_node.sh instances
+    # hold the pre-cap script (old inode), so the cap must live in the eval's own default.
+    # Uniform across all 21 cells; bounds a 284B broad eval to ~2-4h vs 20-40h. Disclose.
+    ap.add_argument("--ret_limit", type=int, default=500)
     ap.add_argument("--ret_suite", choices=["core", "broad"], default="broad")
     ap.add_argument("--ret_batch", default="1", help="HFLM batch_size (int or 'auto')")
     ap.add_argument("--gen_cap", type=int, default=512)
