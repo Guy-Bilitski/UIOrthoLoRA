@@ -131,13 +131,13 @@ for line in open("results/geo_drift/adapter_metrics_merged.jsonl"):
     except Exception:
         pass
 byrn = {r["rn"]: r for r in rows}
-for metric in ["stable_rank_mean", "eff_rank_mean", "spec_max", "fro_total"]:
+for metric in ["stable_rank_w", "eff_rank_w", "spec_mean", "spec_max", "fro_total"]:
     pairs = []
     for rn, g in geo.items():
         r = byrn.get(rn)
         v = g.get(metric)
         if r and isinstance(v, (int, float)) and math.isfinite(v) and v > 0:
-            pairs.append((math.log10(v) if metric in ("spec_max", "fro_total") else v, r["ret"]))
+            pairs.append((math.log10(v) if metric in ("spec_mean", "spec_max", "fro_total") else v, r["ret"]))
     rP, n = pearson(pairs); rS, _ = spearman(pairs)
     print(f"  {metric:18s} r={rP:+.3f} (rank {rS:+.3f}) n={n}")
 

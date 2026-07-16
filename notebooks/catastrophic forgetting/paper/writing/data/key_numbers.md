@@ -81,15 +81,24 @@ methods. **NOTE:** these supersede the older within-method list (LoRA −0.97 / 
 CLoRA −0.98 / DoRA −0.86 / CorDA −0.91 / MiLoRA −0.96 / SC-LoRA −0.88) that appears in `01`/
 `CONCLUSIONS` — that list was from a stale eval/dedup and is **wrong**; use the table above.
 
-## 2. LR IS A WEAKER PROXY THAN ‖ΔW‖ (Llama-2 CS, n=49) `[RECOMPUTED 2026-07-02]`
+## 2. LR IS A WEAKER PROXY THAN ‖ΔW‖ `[REWRITTEN 2026-07-16 — adversarial-review repair; supersedes the 07-02 framing]`
 
-| Predictor of retention_core | R² | r |
-|---|---|---|
-| log10(learning rate) | **0.32** | −0.57 |
-| log10(‖ΔW‖_F) | **0.74** | −0.86 |
+**Do NOT quote "R² doubles vs LR" against continuous log-LR alone** — a reviewer fitting LR **as
+dummies** nearly ties F_Δ in the sweep families (lrsw 0.765 vs 0.785), because the LR grid is
+coarse and F_Δ is LR-monotone within a sweep. The claim survives on three stronger legs (full
+numbers: §17.2, `analyze_adversarial_2026-07-16.py`):
 
-R² more than doubles switching the x-axis from LR to the ‖ΔW‖ it produces (fig7 message). The brief
-cites "0.75 vs 0.35"; the registry-verified values are **0.74 vs 0.32** — use these.
+1. **Fixed-LR strata:** holding LR constant, F_Δ still predicts retention — r = −0.7…−0.97
+   across strata with LR ≥ 1e-4 in every family (variation from rank/wd/method at the same LR).
+2. **Partials:** r(F_Δ, ret | LR-dummies) = −0.58…−0.91 (|t| = 7.6…32.6) vs
+   r(LR, ret | F_Δ) = −0.18…+0.29 (|t| ≤ 4): F_Δ retains nearly all its signal with LR
+   controlled; LR retains almost none with F_Δ controlled.
+3. **Decoupling grids (frc/frm):** where wd/rank/method vary at fixed-ish LR, r(log F_Δ, log LR)
+   drops to 0.64/0.50 while R²(F_Δ) stays 0.86 and R²(LR-dummies) collapses to 0.39/0.37 —
+   when the proxy decouples from the quantity, the quantity wins.
+
+Legacy single-seed values (log-LR continuous 0.32 vs F_Δ 0.74, n=49) remain correct but are the
+weakest form of the argument; cite the strata/partials instead.
 
 ## 3. PER-METHOD BEST-ADAPT OPERATING POINTS — Llama-2 CS `[RECOMPUTED 2026-07-02]`
 
@@ -439,3 +448,93 @@ replicates across seeds, both models, and both task types.
 - **DeepSeek-V4-Flash 284B generalization run:** all 7 methods training (lora/milora/lorawd at
   3 seeds; dora/clora/sclora/lora_null seed-42 up, remaining seeds staged) — first summaries
   expected ~24 h; NOT yet part of any number above.
+
+## 17. ADVERSARIAL-REVIEW RECOMPUTE `[2026-07-16, n=1018 rows — script: analyze_adversarial_2026-07-16.py]`
+
+Repairs from `paper/writing/adversarial_review_2026-07-16.md` §3. Source data as §13-full-campaign
+plus the dora tail / gap-fill cells that landed 07-16 (1018 usable rows vs 1001).
+
+### 17.1 Functional form: it is a MAGNITUDE RELATION with a knee, not a single log-linear law
+
+2-segment fits beat a single line in 5/6 families (F = 8.6–38.4; frm F=1.6 is the exception).
+Shape = flat-then-falling: below the knee slopes are ≈0 (Qwen +0.9/+1.5 pp/dec, Llama −2.4…−13.8),
+above it −7.4…−40.9 pp/dec. Qwen bottom-half (median split) even flips sign (+0.33 CS / +0.41 math).
+Monotonicity above the knee is robust: healthy-only (ret≥15) r = −0.68…−0.94; drop-top-F_Δ-quartile
+keeps r = −0.27…−0.94 (weakest qwswm — its signal is tail-anchored; disclose).
+**Normalized slopes (pp/dec ÷ family retention range) do NOT converge: −0.34…−0.71** →
+per the pre-registered decision rule, headline wording = **"magnitude relation"**, "law" only with
+the knee caveat. Knees (log10 F_Δ): lrsw 0.00, lrswm −0.48, qwsw −0.68, qwswm −0.92, frc −0.45, frm −0.50.
+
+### 17.2 LR rescue (backs the §2 rewrite)
+
+| family | R²(F_Δ) | R²(LR-dummies) | partial r(F_Δ\|LR) | partial r(LR\|F_Δ) | fixed-LR strata r (lr≥1e-4) |
+|---|---|---|---|---|---|
+| lrsw | 0.785 | 0.765 | −0.61 (t=9.9) | −0.18 | −0.71…−0.97 |
+| lrswm | 0.747 | 0.638 | −0.58 (t=7.6) | −0.16 | −0.55…−0.85 |
+| qwsw | 0.707 | 0.658 | −0.68 (t=10.6) | +0.18 | −0.67…−0.87 |
+| qwswm | 0.689 | 0.605 | −0.74 (t=13.6) | +0.29 | −0.67…−0.94 |
+| frc | 0.861 | 0.391 | −0.89 (t=32.6) | +0.23 | −0.86…−0.94 |
+| frm | 0.863 | 0.367 | −0.91 (t=25.5) | −0.01 | −0.83…−0.96 |
+
+Low-LR strata (≤5e-5) are flat/noisy (r −0.16…+0.58) — consistent with the 17.1 knee: below the
+knee there is nothing for ANY predictor to explain.
+
+### 17.3 Direction is a real ~1–4 pp second-order effect (magnitude still dominates)
+
+- Partial r(log spec_max, ret | log F_Δ) = **+0.117 adapter-level (n=1016, t=3.8)**, +0.115
+  cell-level (n=328, t=2.1). (The 07-16 review quoted +0.195/+0.198 on the wider 1222-row
+  geometry match incl. non-family runs; family-only is smaller but same sign/significance.)
+  spec_mean carries no residual signal (+0.03, ns) — the residual direction signal lives in the
+  top singular value.
+- Method offsets at matched F_Δ (OLS ret ~ log F_Δ + method): **SC-LoRA −1.3…−3.7 pp below**
+  (sig. in lrsw/lrswm/frc/frm), **PiSSA −5.9/−11.4 pp** (frc/frm), DoRA +1.7…+4.6 above.
+  Qwen offsets ns (larger seed noise). → "magnitude, not direction" must be softened to
+  "magnitude first-order (R² 0.69–0.86); direction/method a 1–4 pp second-order offset".
+
+### 17.4 Adaptation-efficiency ANCOVA (the sharper slogan)
+
+Retention cost: R²(ret ~ log F_Δ) = 0.69–0.86; adding method dummies gains only +0.01…+0.14
+with offsets ≤ a few pp. Adaptation bought: R²(adapt ~ log F_Δ) ≈ 0.00–0.37 in sweeps (0.86 frm),
+and method dummies move adapt by a 4.9–16.0 pp spread. **The retention cost of a unit of update
+magnitude is near-universal; methods differ mainly in how much adaptation that unit buys.**
+
+### 17.5 Within-cell micro-test (closest thing to a causal signal)
+
+At FIXED recipe (cell), seed-level log-F_Δ fluctuations predict seed-level retention fluctuations:
+pooled demeaned r = **−0.713, n=952 obs / 290 cells, t=−31.3**. (Raw-F_Δ demeaned r = −0.18 —
+the effect is log-scale, as the relation predicts.) → main text.
+
+### 17.6 ARC-c contamination control
+
+retention_broad without ARC-c (ARC-c is both trained-on in CS and in the broad suite):
+r changes by ≤0.09 everywhere (largest lrswm −0.906→−0.816); qwswm/frm unchanged. Non-issue,
+one disclosure sentence.
+
+### 17.7 Format-collapse control (proxy)
+
+Per-item parse rates were not retained in 7B artifacts (per-subtask rows ARE saved for DeepSeek
+runs from 07-16 on). Proxy = drop cells with adapt<25 or any zero retention task: r moves
+≤0.03 in 4 families; lrsw −0.886→−0.866 (15 dropped), **qwswm −0.830→−0.696 (9 dropped)** —
+Qwen-math's pooled r is partly carried by collapsed cells; quote the clean −0.70 alongside.
+
+### 17.8 CE corroboration, WITHIN family (framing repair)
+
+r(log F_Δ, CE) = +0.81…+0.92 (partly mechanical — same ΔW); the evidential link is
+**r(CE, retention): lrsw −0.860, lrswm −0.923, qwsw −0.631, qwswm −0.792, frc −0.858, frm −0.896**.
+Qwen coverage holes: 123 runs lack CE (`jobs/ce_backfill_qwen.txt`); fills as fleet finalize
+(geo+CE battery) completes per node — recompute before freeze.
+
+### 17.9 F_Δ decomposition
+
+R²(ret ~ log‖ΔW‖_F) = 0.56 vs R²(ret ~ log F_Δ) = 0.71 — the gap IS the adapt-distribution
+(direction) weighting; label the axis "effective update magnitude on the adaptation
+distribution". Alignment (F_Δ/‖ΔW‖_F) is NOT method-invariant (dora 2.7e-3 vs clora 1.55e-3,
+lora_null 1.61e-3) but within-method spread is as large as the between-method gap.
+dw_sv_max R² = 0.58.
+
+### 17.10 Bookkeeping
+
+- `analyze_full_2026-07-16.py` geometry keys fixed (stable_rank_w/eff_rank_w/spec_mean —
+  two rows were silently empty).
+- All numbers above exclude corda/cordapp/smoke and non-finite rows; families lrsw/lrswm/qwsw/
+  qwswm/frc/frm only.
