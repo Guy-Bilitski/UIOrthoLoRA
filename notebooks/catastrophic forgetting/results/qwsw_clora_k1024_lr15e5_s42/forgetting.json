@@ -1,0 +1,12 @@
+{
+  "forgetting_ce": 2.101219776909083,
+  "base_entropy": 1.8790178806577968,
+  "forgetting_kl": 0.22220189625128595,
+  "n_positions": 40920,
+  "run_name": "qwsw_clora_k1024_lr15e5_s42",
+  "max_length": 1024,
+  "n_blocks": 40,
+  "wall_s": 3.2,
+  "method": "LORA",
+  "adapter_r": 32
+}
