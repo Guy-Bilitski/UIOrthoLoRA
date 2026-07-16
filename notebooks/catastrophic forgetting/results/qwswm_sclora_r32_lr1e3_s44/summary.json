@@ -1,0 +1,32 @@
+{
+  "run_name": "qwswm_sclora_r32_lr1e3_s44",
+  "method": "LORA",
+  "adapter": "/scratch/cf_models/qwswm_sclora_r32_lr1e3_s44",
+  "per_dataset": {
+    "gsm8k": 3.26
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.8708,
+    "dw_sv_mean": 14.1688,
+    "dw_sv_max": 69.8089,
+    "n_matrices": 140
+  },
+  "headline": {
+    "cs_avg": 3.26,
+    "adapt_task": "gsm8k",
+    "bbh": 12.7,
+    "mmlu_pro": 0.41,
+    "mmlu": 23.62,
+    "arc_c": 26.71,
+    "truthfulqa": 46.62,
+    "gsm8k": 3.26,
+    "retention_mean": 6.56,
+    "retention_bbh": 12.7,
+    "retention_broad": 22.01,
+    "fdelta": 0.8708,
+    "dw_sv_max": 69.8089,
+    "dw_sv_mean": 14.1688
+  },
+  "git_commit": "unknown",
+  "evaluated_at": "2026-07-16T04:34:44+03:00"
+}
