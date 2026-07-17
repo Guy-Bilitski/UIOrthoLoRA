@@ -105,3 +105,22 @@ the other geometry covariates; not a conflict, different regression.)
   geometry adds 1.7% (F≈30); method identity 0.6% (F≈3.5)."
 - Seed-stability closes a reviewer hole: the second-order geometry effect is not a
   seed artifact, and we now know which geometry metric NOT to headline (spec_max).
+
+## 5. INSERTION-ORDER / COMMONALITY RESPONSE (added same-day after adversarial pass)
+
+Objection (reviewer A4): ΔR² ladders are order-dependent and F_Δ↔geometry is collinear —
+"+0.017" is a floor. Computed both orders + commonality split (appended to
+ladder_output_2026-07-17.txt):
+
+- Full geometry block (incl. log spec_max): geometry-first banks +0.351, but
+  unique(magnitude)=+0.062 vs unique(geometry)=+0.017, shared=+0.334. The shared
+  block is spec_max: r(log F_Δ, log spec_max)=+0.931 — spec_max IS a magnitude
+  measure, not a placement measure.
+- Shape-only geometry (e_top r=−0.134, stable_rank r=+0.316 with log F_Δ — genuinely
+  scale-invariant): **unique(magnitude)=+0.296 vs unique(shape)=+0.016 (18×),
+  shared=+0.099**. Order-independent.
+
+Paper guidance: define the geometry axis as *shape* (e_top, stable_rank); report the
+commonality split (0.296 / 0.016 / 0.099) next to the ladder so no insertion-order
+objection survives; never put spec_max on the geometry side of the ledger (it is
+magnitude by another name, and 3/4 seed-stable besides — §3).

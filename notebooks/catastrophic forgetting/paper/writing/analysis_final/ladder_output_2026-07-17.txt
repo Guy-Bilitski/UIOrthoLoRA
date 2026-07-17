@@ -112,3 +112,17 @@ standardized betas (final pre-method model, |beta| = axis strength):
   partial r(e_top, ret | fam+logfd) = -0.173  (n=1034)
   partial r(lspec, ret | fam+logfd) = +0.047  (n=1034)
   partial r(srank, ret | fam+logfd) = -0.225  (n=1034)
+
+[ADDENDUM to ladder output — geometry-first insertion order + commonality (A4 response), 2026-07-17]
+geometry-first: M0 fam 0.390 -> +geometry 0.741 (dR2 +0.351) -> +logFd 0.802 (dR2 +0.062)
+magnitude-first (ref): M0 0.390 -> +logFd 0.785 (+0.395) -> +geometry 0.802 (+0.017)
+commonality (beyond family FE): unique(magnitude)=+0.062  unique(geometry)=+0.017  shared=+0.334
+reading: even entered LAST, magnitude adds +0.062; geometry entered FIRST adds +0.351 but only +0.017 is unique to it.
+
+[ADDENDUM 2 — shape-only geometry split (e_top, stable_rank; spec_max removed as magnitude-contaminated, r(logfd,lspec) high)]
+collinearity with logFd: lspec r=+0.931  e_top r=-0.134  srank r=+0.316
+shape-first: M0 0.390 -> +shape 0.505 (+0.116) -> +logFd 0.801 (+0.296)
+magnitude-first: M0 -> +logFd 0.785 (+0.395) -> +shape 0.801 (+0.016)
+commonality: unique(magnitude)=+0.296  unique(shape-geometry)=+0.016  shared=+0.099
+reading: vs SHAPE-only geometry (scale-invariant ratios), magnitude's unique share is 0.296 vs 0.016 — the large shared block in Addendum 1 came from spec_max, i.e. from
+geometry metrics that are themselves magnitude measures. Shape-geometry is genuinely second-order.
