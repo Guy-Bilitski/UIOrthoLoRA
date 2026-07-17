@@ -538,3 +538,104 @@ dw_sv_max R² = 0.58.
   two rows were silently empty).
 - All numbers above exclude corda/cordapp/smoke and non-finite rows; families lrsw/lrswm/qwsw/
   qwswm/frc/frm only.
+
+## 18. FINAL FREEZE — POST-FLEET-KILL `[FROZEN 2026-07-17, final synced dataset; scripts: analyze_full/adversarial/ebatch re-run on results/*/summary.json]`
+
+> The fleet was killed overnight 2026-07-16/17 before the scheduled 06:00–08:00 freeze pass.
+> This section IS that freeze, run on everything that synced (last summary.json ≈ 06:34Z).
+> Dataset: **1,661 result dirs, 1,500 with full evals**; quarantine regenerated
+> (`results/quarantine_diverged.txt`, 71 runs). `campaign_summary.jsonl` (645 rows) and
+> `results_book/` are STALE — do not source numbers from them.
+
+### 18.1 The magnitude relation — final, multi-seed, all arms (supersedes §13/§17 headline rows)
+
+Pooled r(retention, log10 F_Δ), all seeds, quarantine-filtered (n=1035 usable):
+| family | r | rank-r | n | seeds |
+|---|---|---|---|---|
+| Llama-2 CS (lrsw) | −0.886 | −0.908 | 180 | 42–45 |
+| Llama-2 math (lrswm) | −0.865 | −0.833 | 120 | 42–44 |
+| Qwen-2.5 CS (qwsw) | −0.840 | −0.778 | 151 | 42–45 |
+| **Qwen-2.5 math (qwswm)** | **−0.830** | −0.582 | **164** | 42–44 |
+| Llama CS grid (frc) | −0.928 | −0.952 | 276 | 42–46 |
+| Llama math-395k (frm) | −0.929 | −0.969 | 144 | 42–45 |
+| ALL pooled | −0.847 | −0.923 | 1035 | |
+
+Seed-averaged (cell-level) r: lrsw −0.916 (56 cells), lrswm −0.871 (42), qwsw −0.799 (58),
+qwswm −0.832 (62), frc −0.928 (74), frm −0.896 (51). Within-cell seed SD(ret): lrsw 0.94pp,
+lrswm 0.33, frc 0.75, frm 1.00 (qwsw 2.73 / qwswm 2.07, inflated by seed-unstable F_Δ cells).
+**Qwen math is no longer qualitative-only**: 3 seeds, n=164, r=−0.830 (clean-subset −0.70 per
+§17.7 convention — quote both).
+
+### 18.2 Functional form (A1 final)
+
+2-segment beats linear in every family (F2seg 1.6–40.0); knees (log10 F_Δ): lrsw −0.02,
+lrswm −0.48, qwsw −0.69, qwswm −0.91, frc −0.45, frm −0.50. Below-knee slopes ≈ flat-to-mild
+(−13.8…+2.0), above-knee steep (−7.5…−40.8). Normalized slopes do NOT converge
+(−0.33…−0.70) → headline wording stays **"magnitude relation (flat-then-falling with a knee)"**,
+"law" only with the knee caveat (pre-registered rule, §17.1).
+
+### 18.3 E-batch — FINAL verdicts (supersedes assessment_2026-07-17.md counts)
+
+- **E1 interventional — COMPLETE, 15/15 trained rescales** (dora f015/f040/f080 landed post-assessment)
+  + 9/9 random-direction controls. Trained rescales: mean on-curve residual **+1.29 ± 2.07pp**,
+  within-set r=−0.732. Random-direction at matched F_Δ: mean −1.76 ± 1.32pp ⇒ **direction penalty
+  −3.05pp vs trained**. Upscaling asymmetry confirmed (clora 0.65→0.78: −3.86pp below curve;
+  randdir f080 −1.8…−3.8 below). Rescale>retrain holds: e.g. e1_lora_f040 ret 26.93/adapt 75.4
+  vs trained lr3e-4 twin 24.4/79.1.
+- **E2 full-FT anchor — COMPLETE 3/3**: monotone (26.9→26.2→17.1 as F_Δ 0.023→0.395) but
+  −4.1…−8.6pp BELOW the LoRA-family curve at matched F_Δ (dense ΔW: dw_sv_max ~4 vs 30–40;
+  fft F_Δ under-counts dense mass — disclosed). Universal in form, family-specific in level.
+- **E3 Qwen densification — PARTIAL 13/26** (9 qwsw + 4 qwswm mid-LR cells landed; 2nd wave lost).
+  Bottom-half r: qwsw −0.04, qwswm −0.03 ⇒ **flat below the knee, not positive** — the old
+  anti-replication is dead; remaining hole is only figure density.
+- **E4 SC-LoRA eval-matched — 20/24 evaluated (lr1e3×2, s46×2 unevaluated)**: eval-matched mean
+  residual **+0.92pp ABOVE curve (n=20)** vs nq_open-calibrated −3.39pp (n=24). SC-LoRA's
+  deviation = calibration-set artifact, not method geometry. (b4_sclora_lr2e5_s42 adapt=13.2
+  low-LR format fluke; retention unaffected — exclude from adapt comparisons.)
+- **E5 replay — TRAINED 4/4, BENCHMARK-EVAL LOST (0/4).** CE salvage (forgetting.json):
+  replay-5% CE vs matched plain-LoRA twins, all 4 cells lower —
+  lr3e4: 2.248/2.204 vs 2.307/2.254; lr5e4: 2.465/2.462 vs 2.551/2.526 (Δ≈−0.05…−0.09 CE;
+  KL likewise lower). Verdict: replay gives a small consistent CE-forgetting reduction;
+  the benchmark-retention comparison died with the fleet — state as partially answered.
+- **E6 wd-generalization — SPLIT VERDICT.** MiLoRA+wd0.3: +1.75/+2.36pp above curve (2/2,
+  adapt 80.2 at lr5e4) — wd transfers. **DoRA+wd0.3: DEGENERATE** (benchmark evals lost, but
+  salvage shows CE 20.8/10.4 vs DoRA twins 2.1/2.6, spec_max up to 1183) — naive AdamW wd on
+  DoRA (incl. its magnitude vector) breaks training. Report as a boundary: wd is not a
+  universally free knob; it transfers to MiLoRA, breaks DoRA as-implemented.
+- **E7 bridging arms — 7/8**: brl (Llama, MedMCQA, attn-only) r=−0.878 (4/4);
+  brq (Qwen) r=−0.995 (3/4, lr1e3 lost). Relation reproduces off-recipe on both models.
+- **DSV4 284B — ABSENT (0/21 synced).** Trains + geometry completed on DeepSeek nodes; capped
+  evals never synced before the kill. The generalization section has NO data in this repo —
+  ledger as designed-but-lost (spec: handoff/DEEPSEEK_GEN_EXPERIMENT.md).
+
+### 18.4 Direction/method offsets at matched F_Δ (A3 final, n=1018)
+
+partial r(log spec_max, ret | log F_Δ) = +0.117 (t=3.7); cell-level +0.115 (t=2.1).
+Method dummies (OLS, ref=clora): significant offsets are bounded ±1.2–4.6pp; frc grid:
+sclora −3.7±0.5*, pissa −5.9±1.0*, lora_null −2.0±0.5*; frm: pissa −11.4±2.1* (collapse-driven),
+dora +4.6±1.4*. Qwen arms: no significant offsets (±0.1–3.4, all n.s.).
+⇒ direction/method identity = real, bounded, second-order; SC-LoRA's negative offset is the
+E4 calibration artifact.
+
+### 18.5 LR-artifact battery (A2 final)
+
+R²(fd) vs R²(LR-continuous): 0.785/0.509 (lrsw), 0.747/0.516 (lrswm), 0.705/0.450 (qwsw),
+0.689/0.308 (qwswm), 0.861/0.275 (frc), 0.863/0.223 (frm). Partials: r(fd|LR) −0.58…−0.91
+(|t|≥7.6) vs r(LR|fd) −0.17…+0.29 (|t|≤4). Fixed-LR strata: r ≤ −0.7 at every LR ≥ 1e-4 in
+every family. LR is a proxy; F_Δ is the variable.
+
+### 18.6 Cross-checks that held (A5–A9 final)
+
+Within-cell demeaned micro-test r=−0.713 (n=954/290 cells, t=−31.3); ARC-c exclusion moves r
+≤0.09; format-collapse-clean r within 0.03 except qwswm −0.830→−0.695 (quote both); CE
+corroboration r(CE,ret) −0.63…−0.92 per family (136 Qwen runs still lack CE —
+jobs/ce_backfill_qwen.txt regenerated, unfillable without GPUs); F_Δ beats ‖ΔW‖_F
+(R² 0.72 vs 0.56) and dw_sv_max (0.58).
+
+### 18.7 Data-state ledger (for the paper's reproducibility + limitations sections)
+
+COMPLETE: E1, E2, E4 (20/24), E6-MiLoRA, E7-Llama, Llama 3-seed spine (frc 284, frm 163,
+lrsw 201, lrswm 120 evaluated), Qwen 3-seed sweeps (qwsw 155/182, qwswm 165/187), quarantine (71).
+TRUNCATED/LOST: E3 13/26 · E5 0/4 benchmark (CE salvaged) · E6-DoRA 0/2 benchmark (degenerate
+by CE) · brq 3/4 · qwsw 27 / qwswm 22 trained-not-evaluated · DSV4 0/21 · 284B ceiling absent ·
+base-ceiling dirs: 4/22 evaluated (Llama 26.0 / broad 35.26; Qwen 44.35 landed 07-16).
