@@ -1,0 +1,358 @@
+
+===== LLAMA CS (lrsw) =====
+LoRA+wd(0.3)         bestLR=5e-4    cs=81.75±0.17 ret=25.86±0.37 F_D=0.384-0.411 n=4 seeds[42,43,44,45] safe@s42=6/7 (evald 7, quar_s42=[])
+    s42: cs=81.62 ret=25.55 fd=0.3941 bbh=32.38
+    s43: cs=81.89 ret=25.86 fd=0.3841 bbh=32.74
+    s44: cs=81.90 ret=26.38 fd=0.4110 bbh=33.04
+    s45: cs=81.59 ret=25.64 fd=0.4071 bbh=32.21
+    quarantined (2): ['lrsw_lorawd_wd0p3_lr2e3_s43', 'lrsw_lorawd_wd0p3_lr2e3_s44']
+SC-LoRA              bestLR=5e-5    cs=80.61±0.41 ret=24.60±1.85 F_D=0.284-0.559 n=3 seeds[42,43,44] safe@s42=1/7 (evald 7, quar_s42=[])
+    s42: cs=80.14 ret=22.47 fd=0.5590 bbh=31.99
+    s43: cs=80.84 ret=25.56 fd=0.2860 bbh=33.60
+    s44: cs=80.86 ret=25.77 fd=0.2836 bbh=33.96
+LoRA                 bestLR=3e-4    cs=79.17±0.20 ret=23.86±0.48 F_D=0.603-0.626 n=4 seeds[42,43,44,45] safe@s42=5/7 (evald 7, quar_s42=[])
+    s42: cs=79.11 ret=24.42 fd=0.6230 bbh=32.53
+    s43: cs=79.17 ret=23.76 fd=0.6262 bbh=32.24
+    s44: cs=78.96 ret=23.26 fd=0.6031 bbh=30.93
+    s45: cs=79.44 ret=23.99 fd=0.6107 bbh=32.74
+LoRA-Null            bestLR=5e-4    cs=78.86±0.17 ret=21.76±1.32 F_D=0.696-0.706 n=4 seeds[42,43,44,45] safe@s42=5/7 (evald 7, quar_s42=[])
+    s42: cs=78.93 ret=23.64 fd=0.6956 bbh=33.22
+    s43: cs=79.05 ret=21.14 fd=0.7058 bbh=30.72
+    s44: cs=78.82 ret=21.64 fd=0.7055 bbh=29.58
+    s45: cs=78.66 ret=20.62 fd=0.7010 bbh=30.43
+CLoRA-k1024          bestLR=5e-4    cs=78.29±0.25 ret=21.60±0.39 F_D=0.631-0.661 n=4 seeds[42,43,44,45] safe@s42=5/7 (evald 7, quar_s42=[])
+    s42: cs=78.36 ret=21.88 fd=0.6429 bbh=29.66
+    s43: cs=78.53 ret=21.84 fd=0.6307 bbh=31.67
+    s44: cs=78.33 ret=21.03 fd=0.6606 bbh=29.32
+    s45: cs=77.94 ret=21.66 fd=0.6463 bbh=30.56
+    quarantined (1): ['lrsw_clora_k1024_lr5e3_s44']
+DoRA                 bestLR=5e-4    cs=76.23±1.65 ret=19.15±1.39 F_D=1.214-1.246 n=3 seeds[42,43,44] safe@s42=4/7 (evald 6, quar_s42=['lrsw_dora_r16_lr1e3_s42'])
+    s42: cs=74.36 ret=17.80 fd=1.2143 bbh=25.53
+    s43: cs=77.47 ret=20.58 fd=1.2465 bbh=29.50
+    s44: cs=76.87 ret=19.08 fd=1.2185 bbh=29.10
+    quarantined (7): ['lrsw_dora_r16_lr1e3_s42', 'lrsw_dora_r16_lr1e3_s43', 'lrsw_dora_r16_lr1e3_s44', 'lrsw_dora_r16_lr2e3_s43', 'lrsw_dora_r16_lr2e3_s44', 'lrsw_dora_r16_lr5e3_s43', 'lrsw_dora_r16_lr5e3_s44']
+MiLoRA               bestLR=5e-4    cs=77.19±0.42 ret=21.43±0.87 F_D=0.840-0.866 n=4 seeds[42,43,44,45] safe@s42=5/7 (evald 7, quar_s42=[])
+    s42: cs=76.74 ret=20.76 fd=0.8396 bbh=29.61
+    s43: cs=76.96 ret=21.27 fd=0.8585 bbh=29.24
+    s44: cs=77.67 ret=21.00 fd=0.8658 bbh=29.69
+    s45: cs=77.40 ret=22.70 fd=0.8422 bbh=31.68
+
+-- lrsw per-LR means (acc / ret / n) --
+LoRA+wd(0.3)   2e-5:42.0/26.7(n3) 5e-5:41.7/27.6(n3) 1e-4:72.8/27.4(n4) 2e-4:65.1/27.0(n4) 3e-4:72.3/26.6(n4) 5e-4:81.8/25.9(n4) 1e-3:77.1/24.8(n3)
+SC-LoRA        2e-5:46.0/26.4(n3) 5e-5:80.6/24.6(n3) 1e-4:80.5/22.6(n4) 2e-4:79.4/18.7(n4) 3e-4:77.4/15.7(n3) 5e-4:71.4/12.5(n4) 1e-3:53.1/6.4(n3)
+LoRA           2e-5:58.4/26.5(n3) 5e-5:37.6/27.3(n3) 1e-4:69.5/26.5(n4) 2e-4:68.9/25.5(n4) 3e-4:79.2/23.9(n4) 5e-4:77.2/21.5(n4) 1e-3:67.4/17.3(n3)
+LoRA-Null      2e-5:70.8/26.1(n3) 5e-5:56.3/26.5(n3) 1e-4:53.4/26.6(n4) 2e-4:46.6/25.8(n4) 3e-4:45.1/24.4(n4) 5e-4:78.9/21.8(n4) 1e-3:73.8/17.8(n3)
+CLoRA-k1024    2e-5:53.3/26.5(n3) 5e-5:52.9/27.2(n3) 1e-4:33.6/26.8(n4) 2e-4:66.4/25.6(n4) 3e-4:68.2/24.3(n3) 5e-4:78.3/21.6(n4) 1e-3:71.9/16.4(n3) 2e-3:55.2/6.3(n2)
+DoRA           2e-5:53.5/26.5(n3) 5e-5:32.9/27.2(n3) 1e-4:68.5/26.8(n3) 2e-4:74.3/25.2(n3) 3e-4:72.9/23.5(n3) 5e-4:76.2/19.2(n3)
+MiLoRA         2e-5:67.9/26.2(n3) 5e-5:40.7/27.4(n3) 1e-4:54.9/27.3(n4) 2e-4:63.9/26.1(n4) 3e-4:63.1/24.4(n4) 5e-4:77.2/21.4(n4) 1e-3:65.5/16.5(n3)
+
+===== LLAMA MATH sweep (lrswm), acc=gsm8k(cs key), ret shown = bbh =====
+LoRA+wd(0.3)         bestLR=5e-4    cs=50.67±1.33 ret=31.70±0.64 F_D=0.399-0.421 n=3 seeds[42,43,44]
+    s42: cs=50.64 ret=32.28 fd=0.3991 bbh=32.28
+    s43: cs=52.01 ret=31.82 fd=0.4031 bbh=31.82
+    s44: cs=49.36 ret=31.01 fd=0.4210 bbh=31.01
+SC-LoRA              bestLR=1e-4    cs=59.09±0.37 ret=31.09±1.08 F_D=0.391-0.391 n=2 seeds[43,44]
+    s43: cs=59.36 ret=30.32 fd=0.3906 bbh=30.32
+    s44: cs=58.83 ret=31.85 fd=0.3907 bbh=31.85
+LoRA                 bestLR=3e-4    cs=47.82±1.22 ret=31.18±0.40 F_D=0.491-0.520 n=3 seeds[42,43,44]
+    s42: cs=46.55 ret=30.82 fd=0.5196 bbh=30.82
+    s43: cs=48.98 ret=31.61 fd=0.4993 bbh=31.61
+    s44: cs=47.92 ret=31.10 fd=0.4912 bbh=31.10
+CLoRA-k1024          bestLR=3e-4    cs=48.62±1.09 ret=31.49±1.33 F_D=0.318-0.328 n=3 seeds[42,43,44]
+    s42: cs=49.43 ret=32.50 fd=0.3282 bbh=32.50
+    s43: cs=49.05 ret=29.98 fd=0.3191 bbh=29.98
+    s44: cs=47.38 ret=31.98 fd=0.3180 bbh=31.98
+DoRA                 bestLR=3e-4    cs=46.45±1.04 ret=31.43±0.21 F_D=0.490-0.525 n=3 seeds[42,43,44]
+    s42: cs=46.93 ret=31.35 fd=0.4904 bbh=31.35
+    s43: cs=47.16 ret=31.27 fd=0.5251 bbh=31.27
+    s44: cs=45.26 ret=31.67 fd=0.5237 bbh=31.67
+MiLoRA               bestLR=3e-4    cs=47.61±0.72 ret=31.33±1.22 F_D=0.443-0.468 n=3 seeds[42,43,44]
+    s42: cs=47.54 ret=32.11 fd=0.4679 bbh=32.11
+    s43: cs=46.93 ret=29.93 fd=0.4604 bbh=29.93
+    s44: cs=48.37 ret=31.96 fd=0.4425 bbh=31.96
+
+===== LLAMA MATH faithful-recipe (frm c256), acc=gsm8k, ret=bbh =====
+LoRA+wd0.3           bestLR=2e-4    cs=66.79±0.79 ret=33.57±1.04 F_D=0.278-0.282 n=3 seeds[42,43,44]
+    s42: cs=67.25 ret=33.10 fd=0.2780 bbh=33.10
+    s43: cs=65.88 ret=34.77 fd=0.2825 bbh=34.77
+    s44: cs=67.25 ret=32.85 fd=0.2793 bbh=32.85
+    quarantined (3): ['frm_lorawd_wd0p3_lr1e3_c256_s42', 'frm_lorawd_wd0p3_lr1e3_c256_s43', 'frm_lorawd_wd0p3_lr1e3_c256_s44']
+LoRA(wd0)            bestLR=1e-4    cs=63.99±0.87 ret=31.29±0.35 F_D=0.434-0.448 n=3 seeds[42,43,44]
+    s42: cs=64.97 ret=30.96 fd=0.4336 bbh=30.96
+    s43: cs=63.68 ret=31.27 fd=0.4484 bbh=31.27
+    s44: cs=63.31 ret=31.65 fd=0.4449 bbh=31.65
+    quarantined (6): ['frm_lorawd_wd0_lr1e3_c256_s42', 'frm_lorawd_wd0_lr1e3_c256_s43', 'frm_lorawd_wd0_lr1e3_c256_s44', 'frm_lorawd_wd0_lr7e4_c256_s42', 'frm_lorawd_wd0_lr7e4_c256_s43', 'frm_lorawd_wd0_lr7e4_c256_s44']
+MiLoRA               bestLR=1e-4    cs=63.68±0.80 ret=32.44±0.10 F_D=0.448-0.452 n=3 seeds[42,43,44]
+    s42: cs=62.85 ret=32.38 fd=0.4491 bbh=32.38
+    s43: cs=64.44 ret=32.56 fd=0.4519 bbh=32.56
+    s44: cs=63.76 ret=32.38 fd=0.4483 bbh=32.38
+    quarantined (6): ['frm_milora_lr1e3_c256_s42', 'frm_milora_lr1e3_c256_s43', 'frm_milora_lr1e3_c256_s44', 'frm_milora_lr7e4_c256_s42', 'frm_milora_lr7e4_c256_s43', 'frm_milora_lr7e4_c256_s44']
+CLoRA-k64            bestLR=3e-4    cs=59.38±1.05 ret=28.08±0.58 F_D=1.113-1.143 n=4 seeds[42,43,44,45]
+    s42: cs=58.53 ret=28.24 fd=1.1128 bbh=28.24
+    s43: cs=60.50 ret=28.09 fd=1.1327 bbh=28.09
+    s44: cs=58.45 ret=28.69 fd=1.1357 bbh=28.69
+    s45: cs=60.05 ret=27.29 fd=1.1432 bbh=27.29
+CLoRA-k128           bestLR=3e-4    cs=60.00±0.52 ret=28.17±1.06 F_D=1.079-1.109 n=3 seeds[42,43,44]
+    s42: cs=59.59 ret=27.55 fd=1.0793 bbh=27.55
+    s43: cs=59.82 ret=27.57 fd=1.0884 bbh=27.57
+    s44: cs=60.58 ret=29.40 fd=1.1090 bbh=29.40
+CLoRA-k256           bestLR=3e-4    cs=60.65±0.40 ret=28.63±0.11 F_D=1.004-1.019 n=3 seeds[42,43,44]
+    s42: cs=60.80 ret=28.61 fd=1.0191 bbh=28.61
+    s43: cs=60.20 ret=28.75 fd=1.0094 bbh=28.75
+    s44: cs=60.96 ret=28.54 fd=1.0045 bbh=28.54
+SC-LoRA              bestLR=1e-4    cs=60.47±0.53 ret=27.94±0.52 F_D=0.853-0.861 n=3 seeds[42,43,44]
+    s42: cs=59.97 ret=28.44 fd=0.8531 bbh=28.44
+    s43: cs=61.03 ret=27.40 fd=0.8535 bbh=27.40
+    s44: cs=60.42 ret=27.98 fd=0.8605 bbh=27.98
+DoRA                 bestLR=3e-4    cs=59.19±0.50 ret=28.09±1.07 F_D=2.840-2.879 n=3 seeds[42,43,44]
+    s42: cs=58.76 ret=29.26 fd=2.8399 bbh=29.26
+    s43: cs=59.74 ret=27.85 fd=2.8444 bbh=27.85
+    s44: cs=59.06 ret=27.15 fd=2.8788 bbh=27.15
+LoRA(r32,lr3e4)      bestLR=3e-4    cs=59.59±1.53 ret=28.15±0.87 F_D=1.283-1.297 n=3 seeds[42,43,44]
+    s42: cs=60.20 ret=29.14 fd=1.2831 bbh=29.14
+    s43: cs=57.85 ret=27.83 fd=1.2974 bbh=27.83
+    s44: cs=60.73 ret=27.49 fd=1.2841 bbh=27.49
+LoRA-Null            bestLR=1e-4    cs=63.76±0.00 ret=32.15±0.00 F_D=0.474-0.474 n=1 seeds[42]
+    s42: cs=63.76 ret=32.15 fd=0.4739 bbh=32.15
+PiSSA                bestLR=3e-4    cs=49.66±0.00 ret=7.23±0.00 F_D=2.206-2.206 n=1 seeds[42]
+    s42: cs=49.66 ret=7.23 fd=2.2058 bbh=7.23
+CorDA++              bestLR=1e-4    cs=58.76±0.00 ret=31.56±0.00 F_D=0.632-0.632 n=1 seeds[42]
+    s42: cs=58.76 ret=31.56 fd=0.6323 bbh=31.56
+    quarantined (1): ['frm_cordapp_lr3e4_c256_s42']
+
+-- frm_lorawd_wd0p3_lr2e4_c256 all seeds --
+  frm_lorawd_wd0p3_lr2e4_c256_s42: gsm8k=67.25 bbh=33.10 ret_core=25.14 fd=0.278 quar=False
+  frm_lorawd_wd0p3_lr2e4_c256_s43: gsm8k=65.88 bbh=34.77 ret_core=26.01 fd=0.282 quar=False
+  frm_lorawd_wd0p3_lr2e4_c256_s44: gsm8k=67.25 bbh=32.85 ret_core=25.06 fd=0.279 quar=False
+
+===== QWEN CS (qwsw) =====
+LoRA+wd(0.3)         bestLR=7e-5    cs=87.77±0.00 ret=39.92±0.00 F_D=0.116-0.116 n=1 seeds[42] safe@s42=7/7 (evald 7, quar_s42=[])
+    s42: cs=87.77 ret=39.92 fd=0.1161 bbh=45.29
+    quarantined (1): ['qwsw_lorawd_wd0p3_lr1e3_s44']
+SC-LoRA              bestLR=7e-5    cs=87.53±0.00 ret=37.79±0.00 F_D=0.246-0.246 n=1 seeds[42] safe@s42=2/7 (evald 6, quar_s42=['qwsw_sclora_r32_lr1e3_s42'])
+    s42: cs=87.53 ret=37.79 fd=0.2465 bbh=43.89
+    quarantined (1): ['qwsw_sclora_r32_lr1e3_s42']
+LoRA                 bestLR=7e-5    cs=87.47±0.00 ret=36.38±0.00 F_D=0.135-0.135 n=1 seeds[42] safe@s42=5/7 (evald 7, quar_s42=[])
+    s42: cs=87.47 ret=36.38 fd=0.1352 bbh=40.76
+LoRA-Null            bestLR=2e-4    cs=86.23±1.60 ret=38.95±0.68 F_D=0.197-0.217 n=3 seeds[42,43,44] safe@s42=6/7 (evald 7, quar_s42=[])
+    s42: cs=87.17 ret=38.43 fd=0.2171 bbh=43.80
+    s43: cs=87.14 ret=39.72 fd=0.1969 bbh=45.58
+    s44: cs=84.38 ret=38.69 fd=0.1979 bbh=44.97
+CLoRA-k1024          bestLR=1e-4    cs=87.02±0.19 ret=39.52±1.15 F_D=0.127-0.130 n=4 seeds[42,43,44,45] safe@s42=6/7 (evald 7, quar_s42=[])
+    s42: cs=87.07 ret=37.96 fd=0.1295 bbh=44.49
+    s43: cs=86.85 ret=39.64 fd=0.1266 bbh=45.77
+    s44: cs=87.26 ret=39.74 fd=0.1288 bbh=45.71
+    s45: cs=86.88 ret=40.72 fd=0.1284 bbh=46.58
+DoRA                 bestLR=1e-4    cs=86.80±0.00 ret=38.50±0.00 F_D=0.159-0.159 n=1 seeds[42] safe@s42=5/7 (evald 7, quar_s42=[])
+    s42: cs=86.80 ret=38.50 fd=0.1590 bbh=45.58
+MiLoRA               bestLR=1.5e-4  cs=87.33±0.00 ret=37.64±0.00 F_D=0.234-0.234 n=1 seeds[42] safe@s42=5/7 (evald 7, quar_s42=[])
+    s42: cs=87.33 ret=37.64 fd=0.2342 bbh=44.26
+
+===== QWEN MATH (qwswm), acc=gsm8k, ret=bbh =====
+LoRA+wd(0.3)         bestLR=1e-3    cs=72.93±0.00 ret=46.98±0.00 F_D=0.213-0.213 n=1 seeds[44]
+    s44: cs=72.93 ret=46.98 fd=0.2126 bbh=46.98
+    quarantined (2): ['qwswm_lorawd_wd0p3_lr1e3_s42', 'qwswm_lorawd_wd0p3_lr1e3_s43']
+SC-LoRA              bestLR=5e-5    cs=77.23±0.79 ret=47.71±0.23 F_D=0.107-0.107 n=3 seeds[42,43,44]
+    s42: cs=76.35 ret=47.96 fd=0.1070 bbh=47.96
+    s43: cs=77.86 ret=47.52 fd=0.1067 bbh=47.52
+    s44: cs=77.48 ret=47.64 fd=0.1067 bbh=47.64
+LoRA-r32             bestLR=5e-4    cs=70.44±0.86 ret=41.77±2.31 F_D=0.385-0.386 n=2 seeds[43,44]
+    s43: cs=71.04 ret=40.13 fd=0.3860 bbh=40.13
+    s44: cs=69.83 ret=43.40 fd=0.3852 bbh=43.40
+    quarantined (1): ['qwswm_lora_r32_lr5e4_s42']
+LoRA-r16             bestLR=3e-4    cs=61.97±4.80 ret=47.13±0.43 F_D=0.157-0.168 n=3 seeds[42,43,44]
+    s42: cs=65.73 ret=46.72 fd=0.1585 bbh=46.72
+    s43: cs=56.56 ret=47.57 fd=0.1677 bbh=47.57
+    s44: cs=63.61 ret=47.09 fd=0.1569 bbh=47.09
+LoRA-Null            bestLR=1e-3    cs=72.33±1.33 ret=44.76±0.64 F_D=0.370-0.394 n=3 seeds[42,43,44]
+    s42: cs=72.86 ret=45.45 fd=0.3938 bbh=45.45
+    s43: cs=73.31 ret=44.65 fd=0.3918 bbh=44.65
+    s44: cs=70.81 ret=44.19 fd=0.3703 bbh=44.19
+CLoRA-k1024          bestLR=1e-3    cs=70.46±0.96 ret=39.98±0.12 F_D=0.432-0.442 n=3 seeds[42,43,44]
+    s42: cs=71.19 ret=39.86 fd=0.4423 bbh=39.86
+    s43: cs=70.81 ret=40.09 fd=0.4335 bbh=40.09
+    s44: cs=69.37 ret=39.99 fd=0.4318 bbh=39.99
+DoRA                 bestLR=3e-4    cs=70.96±0.00 ret=30.10±0.00 F_D=0.157-0.157 n=1 seeds[42]
+    s42: cs=70.96 ret=30.10 fd=0.1568 bbh=30.10
+MiLoRA               bestLR=2e-4    cs=65.35±4.03 ret=46.16±1.28 F_D=0.136-0.150 n=3 seeds[42,43,44]
+    s42: cs=62.62 ret=47.15 fd=0.1496 bbh=47.15
+    s43: cs=69.98 ret=44.71 fd=0.1363 bbh=44.71
+    s44: cs=63.46 ret=46.61 fd=0.1493 bbh=46.61
+    quarantined (1): ['qwswm_milora_r32_lr1e3_s43']
+
+-- qwsw per-LR means (acc / ret / n) --
+LoRA+wd(0.3)   2e-5:85.7/38.6(n3) 5e-5:86.2/39.4(n3) 7e-5:87.8/39.9(n1) 1e-4:86.8/40.7(n3) 1.5e-4:85.5/41.0(n1) 2e-4:86.3/40.3(n3) 3e-4:86.1/41.0(n3) 5e-4:87.4/40.1(n3) 1e-3:87.4/38.2(n2)
+SC-LoRA        2e-5:87.0/39.8(n3) 5e-5:75.8/38.8(n3) 7e-5:87.5/37.8(n1) 1e-4:87.1/27.8(n3) 1.5e-4:86.8/35.3(n1) 2e-4:82.5/22.4(n3) 3e-4:84.2/21.4(n3) 5e-4:82.0/10.9(n3) 1e-3:64.3/5.5(n2)
+LoRA           2e-5:85.7/38.5(n3) 5e-5:86.4/38.0(n3) 7e-5:87.5/36.4(n1) 1e-4:85.5/38.3(n3) 1.5e-4:78.3/38.4(n1) 2e-4:80.7/38.4(n3) 3e-4:80.1/34.8(n3) 5e-4:80.6/12.6(n3) 1e-3:77.0/6.6(n3)
+LoRA-Null      2e-5:84.0/39.5(n3) 5e-5:85.8/38.9(n3) 7e-5:86.1/40.0(n1) 1e-4:84.5/39.6(n3) 2e-4:86.2/38.9(n3) 3e-4:82.8/37.9(n3) 5e-4:85.3/25.4(n2) 1e-3:82.1/9.6(n3)
+CLoRA-k1024    2e-5:83.1/37.6(n3) 5e-5:86.9/39.1(n3) 1e-4:87.0/39.5(n4) 2e-4:83.0/39.6(n4) 3e-4:85.6/37.5(n3) 5e-4:77.3/32.6(n3) 1e-3:66.0/9.7(n3)
+DoRA           2e-5:86.1/37.7(n1) 5e-5:85.2/38.4(n1) 1e-4:86.8/38.5(n1) 2e-4:86.4/38.0(n3) 3e-4:86.6/34.3(n1) 5e-4:77.2/16.3(n3) 1e-3:77.4/11.0(n3)
+MiLoRA         2e-5:84.4/38.7(n3) 5e-5:86.4/39.4(n2) 7e-5:86.8/39.0(n1) 1e-4:82.9/39.1(n4) 1.5e-4:87.3/37.6(n1) 2e-4:86.4/36.7(n4) 3e-4:84.1/34.3(n4) 5e-4:83.4/12.3(n3) 1e-3:72.3/7.8(n3)
+
+-- qwsw_sclora per-LR per-seed (ret, fd) --
+  2e-5 [('s42', '87.04', '39.78', '0.17', ''), ('s43', '87.18', '39.75', '0.12', ''), ('s44', '86.64', '39.80', '0.12', '')]
+  5e-5 [('s42', '86.49', '39.04', '0.28', ''), ('s43', '53.38', '38.27', '0.20', ''), ('s44', '87.45', '39.08', '0.20', '')]
+  7e-5 [('s42', '87.53', '37.79', '0.25', '')]
+  1e-4 [('s42', '87.07', '9.44', '0.44', ''), ('s43', '87.32', '36.22', '0.30', ''), ('s44', '87.05', '37.88', '0.30', '')]
+  1.5e-4 [('s42', '86.85', '35.28', '0.37', '')]
+  2e-4 [('s42', '84.76', '7.39', '0.63', ''), ('s43', '86.79', '29.82', '0.43', ''), ('s44', '76.06', '30.02', '0.43', '')]
+  3e-4 [('s42', '84.00', '6.75', '0.72', ''), ('s43', '85.43', '29.00', '0.53', ''), ('s44', '83.23', '28.58', '0.52', '')]
+  5e-4 [('s42', '79.80', '6.88', '0.91', ''), ('s43', '83.35', '6.70', '0.70', ''), ('s44', '82.70', '19.06', '0.72', '')]
+  1e-3 [('s42', '38.81', '2.23', '2.70', 'Q'), ('s43', '59.43', '6.24', '1.09', ''), ('s44', '69.11', '4.78', '1.08', '')]
+
+===== RANK LADDER frc_lora_r{8,16,32}_lr3e4 =====
+frc_lora_r8_lr3e4_c256: acc=74.37±8.80 ret=24.70±0.50 fd=0.516±0.007 n=4
+    s42: acc=78.99 ret=23.96 fd=0.518 quar=False
+    s43: acc=78.95 ret=24.95 fd=0.507 quar=False
+    s44: acc=78.37 ret=24.83 fd=0.524 quar=False
+    s45: acc=61.18 ret=25.04 fd=0.516 quar=False
+frc_lora_r16_lr3e4_c256: acc=79.37±0.66 ret=23.56±0.71 fd=0.603±0.001 n=3
+    s42: acc=79.56 ret=23.00 fd=0.603 quar=False
+    s43: acc=78.63 ret=24.36 fd=0.602 quar=False
+    s45: acc=79.91 ret=23.32 fd=0.603 quar=False
+frc_lora_r32_lr3e4_c256: acc=77.05±2.14 ret=22.13±0.41 fd=0.747±0.015 n=5
+    s42: acc=73.46 ret=22.19 fd=0.739 quar=False
+    s43: acc=78.58 ret=22.34 fd=0.759 quar=False
+    s44: acc=76.75 ret=21.60 fd=0.726 quar=False
+    s45: acc=78.63 ret=21.86 fd=0.747 quar=False
+    s46: acc=77.81 ret=22.66 fd=0.762 quar=False
+
+===== r16 PARAM-MATCHED LoRA+wd (frc_lorawdr16) =====
+  frc_lorawdr16_wd0p3_lr3e4_c256_s42: acc=13.53 ret=26.84 fd=0.328 quar=False
+  frc_lorawdr16_wd0p3_lr3e4_c256_s42_reeval: acc=13.54 ret=26.84 fd=0.328 quar=False
+  frc_lorawdr16_wd0p3_lr3e4_c256_s43: acc=71.95 ret=27.25 fd=0.334 quar=False
+  frc_lorawdr16_wd0p3_lr3e4_c256_s44: acc=61.33 ret=27.06 fd=0.305 quar=False
+  frc_lorawdr16_wd0p3_lr3e4_c256_s45: acc=80.67 ret=26.88 fd=0.333 quar=False
+  frc_lorawdr16_wd0p3_lr5e4_c256_s42: acc=81.04 ret=26.27 fd=0.334 quar=False
+  frc_lorawdr16_wd0p3_lr5e4_c256_s43: acc=77.79 ret=26.52 fd=0.337 quar=False
+  frc_lorawdr16_wd0p3_lr5e4_c256_s44: acc=81.19 ret=26.64 fd=0.359 quar=False
+  frc_lorawdr16_wd0p3_lr5e4_c256_s45: acc=51.49 ret=26.78 fd=0.340 quar=False
+  frc_lorawdr16_wd0p3_lr5e4_c256_s46: acc=81.39 ret=26.86 fd=0.363 quar=False
+
+===== WD x LR GRID (frc_lorawd_wd*, lr3e4) monotonicity =====
+  wd0  : fd=0.744±0.013 ret=22.27±1.01 acc=75.28±7.46 n=4 [42,43,44,45]
+  wd0p1: fd=0.553±0.014 ret=24.46±0.63 acc=71.61±15.17 n=4 [42,43,44,45]
+  wd0p2: fd=0.430±0.006 ret=25.91±0.21 acc=79.11±3.81 n=4 [42,43,44,45]
+  wd0p3: fd=0.350±0.007 ret=26.35±0.79 acc=68.64±22.51 n=4 [42,43,44,45]
+  wd0p5: fd=0.257±0.002 ret=25.56±1.84 acc=67.96±21.16 n=3 [42,43,45]
+  -- s42 only --
+  wd0   s42: fd=0.747 ret=21.10 acc=64.12
+  wd0p1 s42: fd=0.573 ret=24.08 acc=49.11
+  wd0p2 s42: fd=0.423 ret=26.05 acc=81.82
+  wd0p3 s42: fd=0.358 ret=27.28 acc=76.17
+  wd0p5 s42: fd=0.255 ret=27.47 acc=43.59
+
+===== E6 lrsw_milorawd / dorawd =====
+  lrsw_milora_r32_lr2e4_s42: acc=75.12 ret=25.84 fd=0.398 quar=False
+  lrsw_milora_r32_lr2e4_s43: acc=79.62 ret=25.52 fd=0.414 quar=False
+  lrsw_milora_r32_lr2e4_s44: acc=22.31 ret=26.52 fd=0.402 quar=False
+  lrsw_milora_r32_lr2e4_s45: acc=78.53 ret=26.46 fd=0.416 quar=False
+  lrsw_milora_r32_lr5e4_s42: acc=76.74 ret=20.76 fd=0.84 quar=False
+  lrsw_milora_r32_lr5e4_s43: acc=76.96 ret=21.27 fd=0.859 quar=False
+  lrsw_milora_r32_lr5e4_s44: acc=77.67 ret=21.00 fd=0.866 quar=False
+  lrsw_milora_r32_lr5e4_s45: acc=77.40 ret=22.70 fd=0.842 quar=False
+  lrsw_milorawd_wd0p3_r32_lr2e4_s42: acc=59.98 ret=27.99 fd=0.248 quar=False
+  lrsw_milorawd_wd0p3_r32_lr5e4_s42: acc=80.22 ret=26.66 fd=0.296 quar=False
+
+===== CLORA K-GRID frc_clora_k* lr3e4 =====
+  k128  : fd=0.615±0.014 ret=22.68±0.29 acc=76.83±4.77 n=4
+      s42: acc=79.53 ret=22.64 fd=0.610 quar=False
+      s43: acc=78.91 ret=22.88 fd=0.617 quar=False
+      s44: acc=79.21 ret=22.92 fd=0.600 quar=False
+      s45: acc=69.69 ret=22.29 fd=0.633 quar=False
+  k256  : fd=0.586±0.018 ret=23.31±0.78 acc=78.91±0.43 n=3
+      s42: acc=79.41 ret=22.66 fd=0.605 quar=False
+      s43: acc=78.61 ret=24.18 fd=0.570 quar=False
+      s45: acc=78.72 ret=23.08 fd=0.584 quar=False
+  k512  : fd=0.521±0.019 ret=23.31±0.77 acc=79.39±0.36 n=5
+      s42: acc=78.86 ret=23.60 fd=0.507 quar=False
+      s43: acc=79.20 ret=22.09 fd=0.541 quar=False
+      s44: acc=79.74 ret=23.18 fd=0.541 quar=False
+      s45: acc=79.49 ret=24.16 fd=0.502 quar=False
+      s46: acc=79.64 ret=23.52 fd=0.512 quar=False
+  k1024 : fd=0.449±0.010 ret=24.13±0.52 acc=74.88±10.10 n=4
+      s42: acc=80.14 ret=24.30 fd=0.441 quar=False
+      s43: acc=59.72 ret=24.32 fd=0.441 quar=False
+      s44: acc=79.93 ret=24.54 fd=0.451 quar=False
+      s45: acc=79.71 ret=23.36 fd=0.461 quar=False
+  k2048 : fd=0.347±0.007 ret=25.26±0.17 acc=69.38±4.26 n=5
+      s42: acc=68.53 ret=25.02 fd=0.344 quar=False
+      s43: acc=75.63 ret=25.27 fd=0.352 quar=False
+      s44: acc=65.73 ret=25.22 fd=0.349 quar=False
+      s45: acc=71.52 ret=25.29 fd=0.336 quar=False
+      s46: acc=65.51 ret=25.49 fd=0.353 quar=False
+
+-- frm clora k grid (math) --
+  k64 s42: gsm8k=58.53 bbh=28.24 fd=1.113 quar=False
+  k64 s43: gsm8k=60.50 bbh=28.09 fd=1.133 quar=False
+  k64 s44: gsm8k=58.45 bbh=28.69 fd=1.136 quar=False
+  k64 s45: gsm8k=60.05 bbh=27.29 fd=1.143 quar=False
+  k128 s42: gsm8k=59.59 bbh=27.55 fd=1.079 quar=False
+  k128 s43: gsm8k=59.82 bbh=27.57 fd=1.088 quar=False
+  k128 s44: gsm8k=60.58 bbh=29.40 fd=1.109 quar=False
+  k256 s42: gsm8k=60.80 bbh=28.61 fd=1.019 quar=False
+  k256 s43: gsm8k=60.20 bbh=28.75 fd=1.009 quar=False
+  k256 s44: gsm8k=60.96 bbh=28.54 fd=1.004 quar=False
+
+TOTAL usable rows: 1429 quarantined: 71
+
+-- qwswm per-LR means (gsm8k / bbh / n) [ep6+SMOKE excluded] --
+LoRA+wd(0.3)   2e-5:57.1/47.6(n3) 5e-5:60.2/47.1(n3) 1e-4:64.3/47.3(n3) 2e-4:61.9/47.7(n3) 3e-4:69.0/47.5(n3) 5e-4:68.1/47.9(n3) 1e-3:72.9/47.0(n1)
+SC-LoRA        2e-5:68.6/48.2(n3) 5e-5:77.2/47.7(n3) 1e-4:76.3/46.6(n3) 2e-4:71.1/43.8(n3) 3e-4:65.3/39.9(n2) 5e-4:57.0/34.1(n3) 1e-3:12.8/12.7(n3)
+LoRA-r32       2e-5:58.1/47.5(n3) 5e-5:61.1/46.9(n3) 7e-5:67.2/45.8(n1) 1e-4:66.1/46.2(n3) 1.5e-4:54.8/45.8(n1) 2e-4:63.3/47.0(n3) 3e-4:66.6/43.7(n3) 5e-4:70.4/41.8(n2) 1e-3:30.8/18.4(n3)
+LoRA-r16       2e-5:55.9/47.6(n3) 5e-5:60.0/47.5(n3) 1e-4:61.2/45.5(n2) 2e-4:60.5/47.3(n3) 3e-4:62.0/47.1(n3) 5e-4:60.3/45.3(n3) 1e-3:52.9/23.0(n3)
+LoRA-Null      2e-5:51.1/47.6(n3) 5e-5:61.7/47.6(n2) 1e-4:67.5/47.0(n3) 2e-4:70.5/47.0(n3) 3e-4:71.5/44.3(n3) 5e-4:64.9/45.3(n3) 1e-3:72.3/44.8(n3)
+CLoRA-k1024    2e-5:52.4/47.3(n2) 5e-5:59.2/47.4(n3) 1e-4:63.5/45.0(n3) 2e-4:64.2/46.6(n3) 3e-4:69.9/46.0(n3) 5e-4:68.8/42.9(n3) 1e-3:70.5/40.0(n3)
+DoRA           2e-5:56.1/48.0(n2) 5e-5:61.1/46.6(n2) 1e-4:63.5/46.9(n2) 2e-4:67.1/45.6(n1) 3e-4:71.0/30.1(n1) 5e-4:70.6/41.0(n1) 1e-3:44.9/37.2(n2)
+MiLoRA         2e-5:43.1/45.6(n3) 5e-5:55.2/46.4(n3) 7e-5:57.1/47.2(n1) 1e-4:60.3/46.5(n3) 1.5e-4:57.9/47.0(n1) 2e-4:65.4/46.2(n3) 3e-4:58.8/43.3(n3) 5e-4:61.9/44.7(n3) 1e-3:61.2/15.3(n2)
+
+-- frm lorawd c512 robustness cells --
+  frm_lorawd_wd0p1_lr2e4_c512_s42: gsm8k=66.11 bbh=33.21 fd=0.499 quar=False
+  frm_lorawd_wd0p1_lr2e4_c512_s43: gsm8k=67.78 bbh=32.05 fd=0.515 quar=False
+  frm_lorawd_wd0p1_lr2e4_c512_s44: gsm8k=66.79 bbh=32.30 fd=0.503 quar=False
+  frm_lorawd_wd0p1_lr3e4_c512_s42: gsm8k=64.97 bbh=31.87 fd=0.673 quar=False
+  frm_lorawd_wd0p1_lr3e4_c512_s43: gsm8k=67.32 bbh=31.12 fd=0.657 quar=False
+  frm_lorawd_wd0p1_lr3e4_c512_s44: gsm8k=66.26 bbh=29.90 fd=0.660 quar=False
+  frm_lorawd_wd0p1_lr5e4_c512_s42: gsm8k=64.52 bbh=28.71 fd=0.918 quar=False
+  frm_lorawd_wd0p1_lr5e4_c512_s43: gsm8k=63.08 bbh=30.03 fd=0.925 quar=False
+  frm_lorawd_wd0p1_lr5e4_c512_s44: gsm8k=62.62 bbh=29.75 fd=0.907 quar=False
+  frm_lorawd_wd0p2_lr2e4_c512_s42: gsm8k=67.17 bbh=31.04 fd=0.368 quar=False
+  frm_lorawd_wd0p2_lr2e4_c512_s43: gsm8k=67.85 bbh=32.90 fd=0.354 quar=False
+  frm_lorawd_wd0p2_lr2e4_c512_s44: gsm8k=66.94 bbh=32.05 fd=0.368 quar=False
+  frm_lorawd_wd0p2_lr3e4_c512_s42: gsm8k=66.41 bbh=32.44 fd=0.421 quar=False
+  frm_lorawd_wd0p2_lr3e4_c512_s43: gsm8k=68.99 bbh=31.52 fd=0.457 quar=False
+  frm_lorawd_wd0p2_lr3e4_c512_s44: gsm8k=68.08 bbh=32.41 fd=0.429 quar=False
+  frm_lorawd_wd0p2_lr5e4_c512_s42: gsm8k=66.57 bbh=29.92 fd=0.531 quar=False
+  frm_lorawd_wd0p2_lr5e4_c512_s43: gsm8k=64.52 bbh=30.73 fd=0.563 quar=False
+  frm_lorawd_wd0p2_lr5e4_c512_s44: gsm8k=65.28 bbh=30.95 fd=0.556 quar=False
+  frm_lorawd_wd0p3_lr2e4_c512_s42: gsm8k=69.52 bbh=33.57 fd=0.282 quar=False
+  frm_lorawd_wd0p3_lr2e4_c512_s43: gsm8k=68.08 bbh=34.28 fd=0.284 quar=False
+  frm_lorawd_wd0p3_lr2e4_c512_s44: gsm8k=67.85 bbh=33.16 fd=0.279 quar=False
+  frm_lorawd_wd0p3_lr3e4_c512_s42: gsm8k=67.48 bbh=33.70 fd=0.315 quar=False
+  frm_lorawd_wd0p3_lr3e4_c512_s43: gsm8k=68.84 bbh=32.87 fd=0.320 quar=False
+  frm_lorawd_wd0p3_lr3e4_c512_s44: gsm8k=68.69 bbh=32.35 fd=0.323 quar=False
+  frm_lorawd_wd0p3_lr5e4_c512_s42: gsm8k=67.55 bbh=33.31 fd=0.399 quar=False
+  frm_lorawd_wd0p3_lr5e4_c512_s43: gsm8k=67.32 bbh=32.50 fd=0.377 quar=False
+  frm_lorawd_wd0p3_lr5e4_c512_s44: gsm8k=66.79 bbh=31.58 fd=0.389 quar=False
+
+-- lrswm per-LR means (gsm8k / bbh / n) --
+LoRA+wd(0.3)   2e-5:36.2/35.0(n3) 5e-5:42.1/33.4(n3) 1e-4:45.7/33.4(n3) 2e-4:49.6/33.3(n3) 3e-4:49.8/32.0(n3) 5e-4:50.7/31.7(n3) 1e-3:48.8/31.1(n3)
+SC-LoRA        2e-5:40.6/33.4(n3) 5e-5:58.5/32.5(n2) 1e-4:59.1/31.1(n2) 2e-4:58.0/30.0(n2) 3e-4:56.5/28.7(n2) 5e-4:54.8/28.0(n2) 1e-3:46.2/17.3(n2)
+LoRA           2e-5:34.4/34.7(n3) 5e-5:40.3/33.4(n3) 1e-4:42.6/32.9(n3) 2e-4:46.2/32.2(n3) 3e-4:47.8/31.2(n3) 5e-4:45.2/29.6(n3) 1e-3:42.0/28.4(n3)
+CLoRA-k1024    2e-5:34.8/34.0(n3) 5e-5:40.1/33.3(n3) 1e-4:43.9/33.6(n3) 2e-4:46.7/31.7(n3) 3e-4:48.6/31.5(n3) 5e-4:46.3/30.2(n3) 1e-3:43.2/28.1(n3)
+DoRA           2e-5:33.5/33.7(n3) 5e-5:39.8/34.4(n3) 1e-4:42.6/32.9(n3) 2e-4:45.7/31.9(n3) 3e-4:46.4/31.4(n3) 5e-4:44.6/30.3(n3) 1e-3:32.3/28.0(n3)
+MiLoRA         2e-5:33.9/33.6(n3) 5e-5:37.2/33.3(n3) 1e-4:41.7/33.3(n3) 2e-4:44.9/31.9(n3) 3e-4:47.6/31.3(n3) 5e-4:47.0/29.8(n3) 1e-3:37.6/27.8(n3)
+
+-- frm per-LR means (gsm8k / bbh / n), c256 --
+LoRA+wd0.3     1e-4:65.7/33.4(n3) 2e-4:66.8/33.6(n3) 3e-4:65.6/33.1(n3) 5e-4:64.7/32.8(n3) 7e-4:63.6/32.6(n3)
+LoRA(wd0)      1e-4:64.0/31.3(n3) 2e-4:62.2/29.0(n3) 3e-4:59.1/27.9(n3) 5e-4:50.4/17.1(n3)
+MiLoRA         1e-4:63.7/32.4(n3) 2e-4:62.9/30.3(n2) 3e-4:59.1/28.5(n3) 5e-4:50.6/13.0(n2)
+CLoRA-k64      3e-4:59.4/28.1(n4)
+CLoRA-k128     3e-4:60.0/28.2(n3)
+CLoRA-k256     3e-4:60.7/28.6(n3)
+SC-LoRA        1e-4:60.5/27.9(n3) 2e-4:56.0/23.5(n3)
+DoRA           3e-4:59.2/28.1(n3)
+LoRA(r32,lr3e4) 3e-4:59.6/28.2(n3)
+LoRA-Null      1e-4:63.8/32.1(n1) 2e-4:61.9/28.9(n3)
+PiSSA          3e-4:49.7/7.2(n1)
+CorDA++        1e-4:58.8/31.6(n1) 2e-4:58.6/30.7(n1)

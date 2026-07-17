@@ -1,0 +1,66 @@
+usable runs: 1004
+coverage: geo 1002 ce 857
+CE = H(base)+KL check: median |ce-be-kl| = 0.0000 (n=857)
+
+=== 1. THE THREE MEASUREMENT BLOCKS — what is (nearly) the same thing? ===
+pairwise r among magnitude measures + CE drift, per family (all log10 except ret):
+fam     r(lF,lFro) r(lF,lSmax)  r(lF,KL) r(lFro,KL) r(KL,ret) r(lF,ret)
+lrsw        +0.930      +0.907    +0.762     +0.613    -0.899    -0.864
+lrswm       +0.848      +0.906    +0.906     +0.813    -0.931    -0.865
+qwsw        +0.943      +0.905    +0.927     +0.839    -0.888    -0.837
+qwswm       +0.962      +0.928    +0.808     +0.721    -0.944    -0.707
+frc         +0.940      +0.930    +0.859     +0.699    -0.901    -0.921
+frm         +0.989      +0.856    +0.875     +0.864    -0.916    -0.877
+
+=== 2. MEDIATION: does CE/KL drift MEDIATE magnitude -> retention? ===
+path a = r(KL, logF); b = partial r(ret, KL | logF); direct = partial r(ret, logF | KL)
+fam           a  b (KL|F) direct (F|KL)     n
+lrsw   +0.762    -0.737        -0.631   170
+lrswm  +0.906    -0.693        -0.138   120
+qwsw   +0.927    -0.545        -0.083    92
+qwswm  +0.808    -0.866        +0.053    97
+frc    +0.859    -0.550        -0.675   242
+frm    +0.875    -0.638        -0.392   136
+
+=== 3. GEOMETRY -> ALIGNMENT: does placement set functional magnitude per unit weight? ===
+align = fd / fro_total. r(align, X) pooled across runs with geometry:
+  r(align, e_top_w       ) = -0.083  (n=1002)
+  r(align, e_bot_w       ) = +0.166  (n=1002)
+  r(align, stable_rank_w ) = -0.416  (n=1002)
+  r(align, spec_max      ) = -0.486  (n=1002)
+  alignment by method (median, x1e3):
+    pissa          1.94  (n=5)
+    sclora         1.81  (n=108)
+    lorawd         1.50  (n=321)
+    dora           1.50  (n=69)
+    milora         1.34  (n=152)
+    lora           1.28  (n=129)
+    lora_null      1.21  (n=93)
+    clora          1.19  (n=121)
+
+=== 4. AT MATCHED MAGNITUDE: what does geometry add? partial r(ret, X | logF) per family ===
+fam     stable_rank  e_top_w  e_bot_w log spec_max      KL
+lrsw         -0.377   -0.210   -0.049       +0.593  -0.737
+lrswm        -0.666   -0.357   +0.094       +0.132  -0.693
+qwsw         +0.187   -0.152   +0.055       -0.063  -0.545
+qwswm        +0.104   -0.141   +0.060       +0.095  -0.866
+frc          -0.240   -0.411   -0.118       +0.397  -0.550
+frm          -0.083   -0.246   +0.083       +0.111  -0.638
+
+=== 5. ADAPTATION SIDE: what buys task accuracy? ===
+fam     r(adapt,logF) partial(adapt,e_top|F) partial(adapt,stable_rank|F)
+lrsw           +0.366                 -0.014                       +0.100
+lrswm          +0.060                 +0.472                       +0.584
+qwsw           -0.444                 +0.084                       -0.048
+qwswm          -0.107                 +0.075                       +0.237
+frc            +0.111                 +0.000                       +0.269
+frm            -0.847                 -0.157                       -0.018
+
+=== 6. DRIFT EFFICIENCY: which placements drift MORE per unit magnitude? partial r(KL, X | logF) ===
+fam      e_top_w  e_bot_w stable_rank log spec_max
+lrsw      +0.081   +0.054      +0.098       -0.448
+lrswm     +0.223   -0.016      +0.481       +0.134
+qwsw      -0.003   +0.096      +0.040       +0.083
+qwswm     +0.086   +0.015      -0.047       -0.057
+frc       +0.273   +0.176      -0.193       -0.450
+frm       +0.252   +0.053      -0.061       -0.044

@@ -1,0 +1,83 @@
+runs merged with battery: 986 of 1004 (corda kept separate: 26)
+
+=== G1. FINGERPRINTS by method x model (medians over all swept cells) ===
+neutral reference ~0.05-0.06 for e_*/ein_* (256 of 4096 dims)
+-- Llama-2:
+method        n  e_top  e_bot ein_top ein_bot amp_top st.rank
+lora        117  0.072  0.046   0.089   0.052   0.076     6.5
+lorawd      266  0.073  0.047   0.085   0.049   0.073    10.5
+dora         45  0.069  0.048   0.086   0.050   0.074     3.5
+clora        78  0.061  0.047   0.066   0.050   0.060     7.6
+milora      104  0.067  0.082   0.072   0.106   0.066     5.9
+pissa         5  0.221  0.039   0.457   0.028   0.216    18.0
+sclora       66  0.086  0.042   0.318   0.020   0.147    14.2
+corda        15  0.073  0.053   0.058   0.504   0.055     7.0
+cordapp       7  0.152  0.034   0.096   0.137   0.111     2.5
+-- Qwen-2.5:
+method        n  e_top  e_bot ein_top ein_bot amp_top st.rank
+lora        104  0.121  0.092   0.071   0.053   0.076     7.1
+lorawd       42  0.116  0.095   0.074   0.047   0.074     7.4
+dora         24  0.115  0.101   0.071   0.049   0.073     5.1
+clora        43  0.054  0.044   0.060   0.047   0.045     8.6
+milora       43  0.077  0.262   0.061   0.195   0.057    10.7
+sclora       40  0.149  0.102   0.260   0.028   0.142    15.6
+corda         4  0.071  0.074   0.055   0.468   0.056     6.5
+
+=== G2. DOES THE DESIGN SIGNATURE SURVIVE TRAINING PRESSURE? r(signature, logF) within method ===
+  milora     ein_bot_w   Llama CS  r=-0.83  low-F median 0.186 -> high-F median 0.059  (n=73)
+  milora     ein_bot_w   Qwen CS   r=-0.98  low-F median 0.309 -> high-F median 0.063  (n=23)
+  sclora     ein_top_w   Llama CS  r=-0.28  low-F median 0.353 -> high-F median 0.181  (n=45)
+  sclora     ein_top_w   Qwen CS   r=-0.51  low-F median 0.260 -> high-F median 0.126  (n=20)
+  clora      stable_rank_w Llama CS  r=+0.96  low-F median 2.844 -> high-F median 11.495  (n=47)
+  clora      stable_rank_w Qwen CS   r=+0.99  low-F median 2.134 -> high-F median 17.618  (n=23)
+
+=== G3. WHICH SIDE COSTS RETENTION? partial r(ret, X | logF) per family, full battery ===
+fam       e_top   e_bot  ein_top  ein_bot  amp_top  st.rank   lspec
+lrsw      -0.21   -0.05    -0.34    -0.03    -0.41    -0.38   +0.60
+lrswm     -0.36   +0.09    -0.34    +0.19    -0.37    -0.67   +0.13
+qwsw      -0.15   +0.04    -0.08    -0.02    -0.14    +0.17   -0.03
+qwswm     -0.14   +0.05    -0.04    +0.02    -0.12    +0.10   +0.10
+frc       -0.41   -0.12    -0.57    -0.02    -0.61    -0.24   +0.40
+frm       -0.25   +0.08    -0.38    +0.16    -0.38    -0.08   +0.11
+
+=== G4. PRINCIPAL-TOUCH TAX quantified: OLS ret ~ logF + e_top (pp per +0.1 e_top) ===
+  lrsw    beta(logF)=-14.49 pp/dec   beta(e_top)=-1.35 pp per +0.1 energy in top-256 output dirs   (n=167)
+  lrswm   beta(logF)= -9.50 pp/dec   beta(e_top)=-4.12 pp per +0.1 energy in top-256 output dirs   (n=120)
+  qwsw    beta(logF)=-31.58 pp/dec   beta(e_top)=-2.36 pp per +0.1 energy in top-256 output dirs   (n=140)
+  qwswm   beta(logF)=-17.69 pp/dec   beta(e_top)=-2.09 pp per +0.1 energy in top-256 output dirs   (n=156)
+  frc     beta(logF)=-14.81 pp/dec   beta(e_top)=-3.70 pp per +0.1 energy in top-256 output dirs   (n=267)
+  frm     beta(logF)=-12.80 pp/dec   beta(e_top)=-4.15 pp per +0.1 energy in top-256 output dirs   (n=136)
+
+=== G5. GEOMETRY -> EXCHANGE RATES ===
+adaptation: partial r(adapt, ein_top | logF) — does input-task alignment buy accuracy?
+  lrsw    ein_top +0.14   e_top -0.03   st.rank +0.10   (n=160)
+  lrswm   ein_top +0.32   e_top +0.47   st.rank +0.58   (n=120)
+  qwsw    ein_top +0.08   e_top +0.10   st.rank -0.08   (n=140)
+  qwswm   ein_top +0.31   e_top +0.19   st.rank +0.32   (n=151)
+  frc     ein_top +0.01   e_top -0.02   st.rank +0.23   (n=257)
+  frm     ein_top -0.24   e_top -0.16   st.rank -0.02   (n=136)
+drift: partial r(KL, X | logF) — what makes a unit of magnitude MORE damaging on neutral text?
+  lrsw    e_top +0.08   ein_top +0.15   st.rank +0.10   (n=167)
+  lrswm   e_top +0.22   ein_top +0.12   st.rank +0.48   (n=120)
+  qwsw    e_top -0.01   ein_top -0.02   st.rank +0.08   (n=83)
+  qwswm   e_top +0.09   ein_top -0.01   st.rank -0.05   (n=93)
+  frc     e_top +0.27   ein_top +0.23   st.rank -0.19   (n=242)
+  frm     e_top +0.25   ein_top +0.10   st.rank -0.06   (n=136)
+
+=== G6. SLOPE MODULATION: does geometry change the PRICE of a decade of magnitude? ===
+per family: split at median e_top; fit ret~logF in each half:
+  lrsw    low e_top   slope   -8.9 pp/dec  r=-0.85  n=83
+  lrsw    high e_top  slope  -16.6 pp/dec  r=-0.88  n=84
+  lrswm   low e_top   slope   -8.8 pp/dec  r=-0.86  n=60
+  lrswm   high e_top  slope  -10.7 pp/dec  r=-0.85  n=60
+  qwsw    low e_top   slope  -24.4 pp/dec  r=-0.75  n=70
+  qwsw    high e_top  slope  -36.6 pp/dec  r=-0.89  n=70
+  qwswm   low e_top   slope  -19.9 pp/dec  r=-0.73  n=78
+  qwswm   high e_top  slope  -17.9 pp/dec  r=-0.80  n=78
+  frc     low e_top   slope   -9.7 pp/dec  r=-0.91  n=133
+  frc     high e_top  slope  -16.6 pp/dec  r=-0.93  n=134
+  frm     low e_top   slope  -10.8 pp/dec  r=-0.97  n=68
+  frm     high e_top  slope  -14.5 pp/dec  r=-0.87  n=68
+
+=== G7. CORDA-FAMILY (fingerprint only, excluded from all fits) ===
+  n=26  ein_bot median 0.461 (design: input-minor)  fro_total median 1076 (vs ~30-80 typical)

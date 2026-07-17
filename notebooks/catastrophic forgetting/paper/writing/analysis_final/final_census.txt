@@ -1,0 +1,27 @@
+total result dirs: 1661
+family                        dirs  summary   geo  forg
+Llama CS grid                  307      284   306   273
+Llama math grid                168      163   152   168
+E5 replay                        4        0     4     4
+E6 DoRA+wd                       2        0     2     2
+E6 MiLoRA+wd                     2        2     2     2
+Llama CS LR-sweep (other)      232      201   207   232
+Llama math LR-sweep            126      120   126   126
+Qwen CS                        182      155   182   123
+Qwen math                      187      165   186   121
+E1 rescale                      24       24    24     0
+E2 full-FT                       3        3     0     0
+E4 SC-LoRA eval-matched         24       20    24    24
+B4 other                        15       10    15    15
+E7 bridge Llama                  4        4     4     0
+E7 bridge Qwen                   3        3     3     0
+DSV4 284B                        0
+base ceilings                   22        4     0     0
+(other/legacy)                 356      342
+
+-- trained-but-not-evaluated (no summary.json) in E-families + qwen sweeps --
+lrsw_lorarep05: 4  ['lrsw_lorarep05_r16_lr3e4_s42', 'lrsw_lorarep05_r16_lr3e4_s43', 'lrsw_lorarep05_r16_lr5e4_s42', 'lrsw_lorarep05_r16_lr5e4_s43']
+lrsw_dorawd: 2  ['lrsw_dorawd_wd0p3_r16_lr2e4_s42', 'lrsw_dorawd_wd0p3_r16_lr5e4_s42']
+b4_sclora: 4  ['b4_sclora_r32_lr1e3_s42', 'b4_sclora_r32_lr1e3_s43', 'b4_sclora_r32_lr3e4_s46', 'b4_sclora_r32_lr5e4_s46']
+qwsw_: 27  ['qwsw_clora_k1024_lr15e5_s42', 'qwsw_clora_k1024_lr3e4_s45', 'qwsw_clora_k1024_lr5e4_s45', 'qwsw_clora_k1024_lr7e5_s42', 'qwsw_corda_r16_lr5e5_s44', 'qwsw_dora_r16_lr15e5_s42', 'qwsw_dora_r16_lr1e4_s43', 'qwsw_dora_r16_lr1e4_s44']
+qwswm_: 22  ['qwswm_clora_k1024_lr15e5_s42', 'qwswm_clora_k1024_lr2e5_s44', 'qwswm_clora_k1024_lr7e5_s42', 'qwswm_dora_r16_lr15e5_s42', 'qwswm_dora_r16_lr1e3_s43', 'qwswm_dora_r16_lr1e4_s44', 'qwswm_dora_r16_lr2e4_s43', 'qwswm_dora_r16_lr2e4_s44']

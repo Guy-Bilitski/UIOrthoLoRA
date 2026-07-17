@@ -1,0 +1,47 @@
+=== 7. WITHIN-CELL (seed-demeaned) MEDIATION — the causal-ish version ===
+At FIXED recipe: do seed fluctuations in KL carry the retention signal beyond seed fluctuations in F?
+n=821 obs / 283 cells
+r(dRet, dKL) = -0.395   r(dRet, dlogF) = -0.608   r(dKL, dlogF) = +0.536
+partial r(dRet, dKL | dlogF) = -0.103   partial r(dRet, dlogF | dKL) = -0.511
+
+=== 8. WHY does Llama-CS keep a direct F path? component split + knee split ===
+mediation per retention component (partial(ret_comp, F | KL) = direct path):
+fam     direct->BBH direct->MMLU-Pro
+lrsw         -0.379           -0.706
+lrswm        +0.070           -0.306
+qwsw         -0.105           -0.048
+qwswm        +0.124           -0.012
+frc          -0.503           -0.670
+frm          -0.033           -0.703
+above-knee only (where forgetting actually happens): direct = partial(ret, F | KL)
+  lrsw    direct -0.115   KL-path -0.596   (n=26)
+  lrswm   direct +0.021   KL-path -0.654   (n=71)
+  qwsw    direct -0.613   KL-path +0.001   (n=56)
+  qwswm   direct -0.467   KL-path -0.661   (n=40)
+  frc     direct -0.686   KL-path -0.214   (n=164)
+  frm     direct -0.291   KL-path -0.590   (n=107)
+
+=== 9. PER-METHOD DRIFT EFFICIENCY — who drifts more per unit magnitude? ===
+OLS KL ~ a + b*logF per family; method mean residual (pp of KL) = drift bought beyond magnitude:
+  lrsw    lora:-0.126(n=25) lorawd:-0.040(n=27) milora:-0.038(n=25) clora:+0.119(n=26) sclora:+0.221(n=24) lora_null:-0.046(n=25) dora:-0.115(n=18)
+  lrswm   lora:-0.132(n=21) lorawd:-0.051(n=21) milora:+0.043(n=21) clora:+0.154(n=21) sclora:+0.183(n=15) dora:-0.145(n=21)
+  qwsw    lora:-0.075(n=14) lorawd:-0.058(n=13) milora:+0.080(n=16) clora:+0.032(n=16) sclora:+0.032(n=14) lora_null:-0.006(n=13) dora:-0.059(n=6)
+  qwswm   lora:-0.016(n=31) lorawd:-0.031(n=13) milora:+0.014(n=13) clora:-0.017(n=13) sclora:+0.107(n=11) lora_null:-0.042(n=12) dora:+0.066(n=4)
+  frc     lora:-0.241(n=12) lorawd:+0.016(n=130) milora:-0.002(n=36) clora:-0.013(n=21) sclora:+0.001(n=15) lora_null:+0.034(n=17) dora:-0.365(n=3) pissa:+0.607(n=4)
+  frm     lora:-0.172(n=3) lorawd:+0.007(n=99) milora:+0.233(n=10) clora:-0.176(n=10) sclora:-0.084(n=6) lora_null:-0.117(n=4) dora:-0.537(n=3)
+
+=== 10. RETENTION vs KL: the 'one curve' in drift space ===
+if KL is the proximal variable, methods should collapse onto ret~KL even better than ret~logF.
+R2 comparison per family: ret~logF vs ret~KL vs ret~logF+KL
+fam      R2(logF)   R2(KL)  R2(both)
+lrsw        0.747    0.808     0.884
+lrswm       0.747    0.866     0.869
+qwsw        0.701    0.788     0.790
+qwswm       0.566    0.891     0.892
+frc         0.854    0.813     0.898
+frm         0.770    0.839     0.864
+
+method offsets in ret~KL (like §18.4's ANCOVA but on the KL axis): mean residual per method
+  lrsw    lora:+0.31 lorawd:+1.10 milora:+0.49 clora:-0.42 sclora:-1.50 lora_null:-0.37 dora:+0.36
+  frc     lora:-0.29 lorawd:+0.46 milora:+0.27 clora:+0.23 sclora:-3.01 lora_null:-0.93 dora:-0.71 pissa:-1.98
+  frm     lora:+0.02 lorawd:+0.13 milora:+0.46 clora:-0.28 sclora:-3.02 lora_null:-0.68 dora:+2.89

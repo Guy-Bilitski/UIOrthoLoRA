@@ -1,0 +1,97 @@
+observational lrsw fit: ret = 19.91 + -9.47*log10(fd)  (n=201)
+
+=== E1 INTERVENTIONAL (rescale + random-direction controls) ===
+run                              fd    ret   pred  resid  adapt
+e1_clora_f015_s45             0.157  27.30  27.51  -0.21  31.73
+e1_dora_f015_s43              0.158  25.73  27.48  -1.75  15.19
+e1_milora_f015_s43            0.162  27.74  27.40  +0.34  16.43
+e1_lora_f015_s43              0.166  27.82  27.29  +0.53  22.81
+e1_sclora_f015_s43            0.240  27.38  25.78  +1.60  13.47
+e1_clora_f040_s45             0.416  25.88  23.52  +2.36  79.55
+e1_dora_f040_s43              0.421  26.42  23.47  +2.95  28.62
+e1_milora_f040_s43            0.424  26.69  23.44  +3.25  65.60
+e1_lora_f040_s43              0.436  26.93  23.32  +3.61  75.37
+e1_sclora_f040_s43            0.517  25.73  22.62  +3.11  74.21
+e1_clora_f080_s45             0.781  17.06  20.92  -3.86  74.21
+e1_milora_f080_s43            0.806  22.12  20.79  +1.33  76.22
+e1_lora_f080_s43              0.814  23.57  20.75  +2.82  78.34
+e1_dora_f080_s43              0.821  24.05  20.72  +3.33  79.31
+e1_sclora_f080_s43            0.859  20.52  20.53  -0.01  77.84
+e1_randdir1_f015_s43          0.161  25.24  27.41  -2.17   2.51
+e1_randdir3_f015_s43          0.161  25.30  27.41  -2.11   7.02
+e1_randdir2_f015_s43          0.162  25.28  27.40  -2.12   3.79
+e1_randdir2_f040_s43          0.422  23.52  23.46  +0.06   0.47
+e1_randdir3_f040_s43          0.423  23.30  23.45  -0.15   1.84
+e1_randdir1_f040_s43          0.423  23.18  23.44  -0.26   0.53
+e1_randdir1_f080_s43          0.798  17.05  20.83  -3.78   1.20
+e1_randdir2_f080_s43          0.799  17.37  20.83  -3.46   2.33
+e1_randdir3_f080_s43          0.801  19.00  20.82  -1.82   1.07
+trained rescales: n=15 mean on-curve residual +1.29 ± 2.07 pp
+  r(ret, log fd) within rescales: -0.732
+random controls:  n=9 mean residual -1.76 ± 1.32 pp (direction penalty vs trained: -3.05 pp)
+
+=== E2 FULL-FT ANCHOR vs LoRA-family curve ===
+fft_full_lr1e5_s42     fd= 0.023 ret= 26.90 (LoRA-curve pred 35.47, resid -8.57) adapt=54.12
+fft_full_lr3e5_s42     fd= 0.080 ret= 26.16 (LoRA-curve pred 30.28, resid -4.12) adapt=80.47
+fft_full_lr1e4_s42     fd= 0.395 ret= 17.12 (LoRA-curve pred 23.73, resid -6.61) adapt=73.18
+
+=== E3 QWEN DENSIFICATION (does the mid-range fill the knee?) ===
+Qwen CS: n=155 (+9 new mid-LR) pooled r=-0.840 bottom-half(median) r=-0.042
+   qwsw_lora_null_r16_lr7e5_s42       fd= 0.1156 ret= 40.03 adapt=86.12
+   qwsw_lorawd_wd0p3_lr7e5_s42        fd= 0.1161 ret= 39.92 adapt=87.77
+   qwsw_lora_r16_lr7e5_s42            fd= 0.1352 ret= 36.38 adapt=87.47
+   qwsw_milora_r32_lr7e5_s42          fd= 0.1538 ret= 38.98 adapt=86.76
+   qwsw_lorawd_wd0p3_lr15e5_s42       fd= 0.1662 ret= 41.03 adapt=85.55
+   qwsw_lora_r16_lr15e5_s42           fd= 0.2096 ret= 38.39 adapt=78.3
+   qwsw_milora_r32_lr15e5_s42         fd= 0.2342 ret= 37.64 adapt=87.33
+   qwsw_sclora_r32_lr7e5_s42          fd= 0.2465 ret= 37.79 adapt=87.53
+   qwsw_sclora_r32_lr15e5_s42         fd= 0.3737 ret= 35.28 adapt=86.85
+Qwen math: n=165 (+4 new mid-LR) pooled r=-0.807 bottom-half(median) r=-0.033
+   qwswm_lora_r32_lr7e5_s42           fd= 0.0629 ret= 43.72 adapt=67.17
+   qwswm_milora_r32_lr7e5_s42         fd= 0.0812 ret= 44.09 adapt=57.09
+   qwswm_lora_r32_lr15e5_s42          fd= 0.1050 ret= 44.18 adapt=54.81
+   qwswm_milora_r32_lr15e5_s42        fd= 0.1244 ret= 43.96 adapt=57.92
+
+=== E4 SC-LoRA EVAL-MATCHED CALIBRATION (b4 arm, full ladder) ===
+b4_sclora_r32_lr2e5_s43        fd= 0.152 ret= 27.30 resid_vs_lrsw_curve=-0.36 adapt=77.34
+b4_sclora_r32_lr2e5_s42        fd= 0.152 ret= 27.53 resid_vs_lrsw_curve=-0.12 adapt=13.17
+b4_sclora_r32_lr5e5_s43        fd= 0.258 ret= 26.82 resid_vs_lrsw_curve=+1.34 adapt=80.49
+b4_sclora_r32_lr5e5_s42        fd= 0.260 ret= 26.54 resid_vs_lrsw_curve=+1.10 adapt=80.14
+b4_sclora_r32_lr5e5_s44        fd= 0.261 ret= 26.83 resid_vs_lrsw_curve=+1.41 adapt=80.28
+b4_sclora_r32_lr1e4_s42        fd= 0.365 ret= 27.02 resid_vs_lrsw_curve=+2.97 adapt=80.72
+b4_sclora_r32_lr1e4_s43        fd= 0.365 ret= 25.80 resid_vs_lrsw_curve=+1.75 adapt=81.23
+b4_sclora_r32_lr1e4_s45        fd= 0.368 ret= 26.39 resid_vs_lrsw_curve=+2.38 adapt=80.82
+b4_sclora_r32_lr1e4_s44        fd= 0.369 ret= 25.94 resid_vs_lrsw_curve=+1.93 adapt=80.91
+b4_sclora_r32_lr1e4_s46        fd= 0.370 ret= 26.39 resid_vs_lrsw_curve=+2.40 adapt=80.73
+b4_sclora_r32_lr2e4_s42        fd= 0.531 ret= 23.97 resid_vs_lrsw_curve=+1.46 adapt=78.8
+b4_sclora_r32_lr2e4_s43        fd= 0.536 ret= 24.57 resid_vs_lrsw_curve=+2.10 adapt=79.81
+b4_sclora_r32_lr3e4_s45        fd= 0.678 ret= 22.32 resid_vs_lrsw_curve=+0.82 adapt=78.84
+b4_sclora_r32_lr3e4_s43        fd= 0.682 ret= 23.46 resid_vs_lrsw_curve=+1.98 adapt=79.77
+b4_sclora_r32_lr3e4_s44        fd= 0.686 ret= 22.04 resid_vs_lrsw_curve=+0.59 adapt=79.3
+b4_sclora_r32_lr3e4_s42        fd= 0.689 ret= 22.03 resid_vs_lrsw_curve=+0.59 adapt=72.62
+b4_sclora_r32_lr5e4_s44        fd= 0.980 ret= 19.33 resid_vs_lrsw_curve=-0.66 adapt=48.93
+b4_sclora_r32_lr5e4_s45        fd= 0.986 ret= 18.55 resid_vs_lrsw_curve=-1.41 adapt=76.11
+b4_sclora_r32_lr5e4_s42        fd= 0.988 ret= 18.68 resid_vs_lrsw_curve=-1.27 adapt=76.61
+b4_sclora_r32_lr5e4_s43        fd= 1.012 ret= 19.34 resid_vs_lrsw_curve=-0.52 adapt=76.58
+b4 (eval-matched) mean resid +0.92 (n=20) vs nq_open sclora -3.39 (n=24)
+
+=== E5 REPLAY BASELINE ===
+
+=== E6 WD ON OTHER METHODS ===
+lrsw_milorawd_wd0p3_r32_lr2e4_s42    fd= 0.248 ret= 27.99 resid=+2.36 adapt=59.98
+lrsw_milorawd_wd0p3_r32_lr5e4_s42    fd= 0.296 ret= 26.66 resid=+1.75 adapt=80.22
+
+=== E7 BRIDGING ARMS (MedMCQA, attn-only) ===
+brl: r(ret, log fd) = -0.878 (n=4)
+   brl_lora_r16_lr1e4_s42       fd= 0.1612 ret= 26.06 medmcqa=44.82
+   brl_lora_r16_lr3e4_s42       fd= 0.2576 ret= 26.47 medmcqa=44.68
+   brl_lora_r16_lr5e4_s42       fd= 0.4047 ret= 25.16 medmcqa=45.35
+   brl_lora_r16_lr1e3_s42       fd= 0.7774 ret= 19.40 medmcqa=17.57
+brq: r(ret, log fd) = -0.995 (n=3)
+   brq_lora_r16_lr1e4_s42       fd= 0.0834 ret= 42.06 medmcqa=52.4
+   brq_lora_r16_lr3e4_s42       fd= 0.1555 ret= 40.40 medmcqa=41.79
+   brq_lora_r16_lr5e4_s42       fd= 0.2305 ret= 39.70 medmcqa=54.05
+
+=== DSV4 (whatever has landed) ===
+
+done.

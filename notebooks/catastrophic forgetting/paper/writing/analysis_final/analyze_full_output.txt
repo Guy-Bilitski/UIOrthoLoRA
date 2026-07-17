@@ -1,0 +1,37 @@
+usable rows (finite FDelta & retention, non-corda/smoke): 1372
+
+=== (1) THE MAGNITUDE LAW: r(retention_core, log10 FDelta) — ALL SEEDS pooled ===
+  Llama-2 CS             r=-0.886 (rank -0.908)  n= 180  seeds=42,43,44,45
+  Llama-2 math           r=-0.865 (rank -0.833)  n= 120  seeds=42,43,44
+  Qwen-2.5 CS            r=-0.840 (rank -0.778)  n= 151  seeds=42,43,44,45
+  Qwen-2.5 math          r=-0.830 (rank -0.582)  n= 164  seeds=42,43,44
+  Llama CS grid (frc)    r=-0.928 (rank -0.952)  n= 276  seeds=42,43,44,45,46
+  Llama math-395k (frm)  r=-0.929 (rank -0.969)  n= 144  seeds=42,43,44,45
+  ALL FAMILIES pooled    r=-0.847 (rank -0.923)  n=1035
+
+=== (2) SEED-AVERAGED law (cell = recipe averaged over its seeds) ===
+  Llama-2 CS             r=-0.916  cells=  56  (cells with n>=3 seeds: 49)
+  Llama-2 math           r=-0.871  cells=  42  (cells with n>=3 seeds: 36)
+  Qwen-2.5 CS            r=-0.799  cells=  58  (cells with n>=3 seeds: 43)
+  Qwen-2.5 math          r=-0.832  cells=  62  (cells with n>=3 seeds: 47)
+  Llama CS grid (frc)    r=-0.928  cells=  74  (cells with n>=3 seeds: 72)
+  Llama math-395k (frm)  r=-0.896  cells=  51  (cells with n>=3 seeds: 43)
+
+=== (3) SEED VARIANCE (n>=3 cells): mean within-cell SD ===
+  Llama-2 CS             cells(n>=3)= 49  SD(ret)=0.94 pp  SD(FDelta)=0.054
+  Llama-2 math           cells(n>=3)= 36  SD(ret)=0.33 pp  SD(FDelta)=0.012
+  Qwen-2.5 CS            cells(n>=3)= 43  SD(ret)=2.73 pp  SD(FDelta)=0.227
+  Qwen-2.5 math          cells(n>=3)= 47  SD(ret)=2.07 pp  SD(FDelta)=0.981
+  Llama CS grid (frc)    cells(n>=3)= 72  SD(ret)=0.75 pp  SD(FDelta)=1.993
+  Llama math-395k (frm)  cells(n>=3)= 43  SD(ret)=1.00 pp  SD(FDelta)=0.781
+
+=== (4) GEOMETRY (merged, n-full): spread metrics vs retention ===
+  stable_rank_w      r=-0.362 (rank -0.452) n=1242
+  eff_rank_w         r=-0.302 (rank -0.367) n=1242
+  spec_mean          r=-0.758 (rank -0.819) n=1242
+  spec_max           r=-0.738 (rank -0.814) n=1242
+  fro_total          r=-0.744 (rank -0.856) n=1242
+
+=== (5) CE cross-check (merged): delta-CE vs FDelta ===
+  r(log10 FDelta, delta-CE) = +nan  n=0
+  [CE keys available: ['adapter_r', 'base_entropy', 'fdelta', 'forgetting_ce', 'forgetting_kl', 'max_length', 'method', 'n_blocks', 'n_positions', 'run_name', 'wall_s']]

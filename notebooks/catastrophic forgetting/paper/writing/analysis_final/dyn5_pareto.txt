@@ -1,0 +1,55 @@
+
+=== Llama-2 CS (LR sweep, + eval-matched SC-LoRA b4 arm) ===  n=182
+Pareto frontier (no other run beats it on both axes):
+  lorawd             adapt  81.9  ret 26.38  fd 0.41   lrsw_lorawd_wd0p3_lr5e4_s44
+  sclora_evalmatch   adapt  80.8  ret 26.39  fd 0.37   b4_sclora_r32_lr1e4_s45
+  sclora_evalmatch   adapt  80.7  ret 27.02  fd 0.36   b4_sclora_r32_lr1e4_s42
+  sclora_evalmatch   adapt  77.3  ret 27.30  fd 0.15   b4_sclora_r32_lr2e5_s43
+  lorawd             adapt  74.9  ret 27.34  fd 0.23   lrsw_lorawd_wd0p3_lr1e4_s45
+  milora             adapt  72.9  ret 27.42  fd 0.25   lrsw_milora_r32_lr1e4_s43
+  lorawd             adapt  71.8  ret 27.44  fd 0.23   lrsw_lorawd_wd0p3_lr1e4_s43
+  lorawd             adapt  67.7  ret 27.70  fd 0.24   lrsw_lorawd_wd0p3_lr1e4_s44
+  lorawd             adapt  60.0  ret 27.99  fd 0.25   lrsw_milorawd_wd0p3_r32_lr2e4_s42
+  frontier share: {'lorawd': 5, 'sclora_evalmatch': 3, 'milora': 1}
+matched-adaptation bands — mean retention per method (n>=2 runs in band):
+  adapt [80,82): sclora_evalmatch 26.5(n=8)  dora 26.0(n=2)  lorawd 25.6(n=8)  lora 25.4(n=2)  sclora 23.8(n=8)
+  adapt [77,80): lorawd 26.6(n=5)  sclora_evalmatch 23.9(n=6)  dora 23.9(n=4)  milora 23.8(n=7)  lora 23.4(n=10)  clora 22.1(n=5)
+  adapt [72,77): milora 25.3(n=4)  clora 21.0(n=2)  dora 20.2(n=3)  lora_null 19.9(n=4)  sclora_evalmatch 19.6(n=4)  sclora 13.5(n=3)
+
+=== Llama-2 math (faithful grid; ret = BBH, base 33.1) ===  n=136
+Pareto frontier (no other run beats it on both axes):
+  lorawd             adapt  69.5  ret 33.57  fd 0.28   frm_lorawd_wd0p3_lr2e4_c512_s42
+  lorawd             adapt  68.1  ret 34.28  fd 0.28   frm_lorawd_wd0p3_lr2e4_c512_s43
+  lorawd             adapt  65.9  ret 34.77  fd 0.28   frm_lorawd_wd0p3_lr2e4_c256_s43
+  lorawd             adapt  64.5  ret 34.88  fd 0.25   frm_lorawd_wd0p5_lr5e4_c256_s43
+  frontier share: {'lorawd': 4}
+matched-adaptation bands — mean retention per method (n>=2 runs in band):
+  adapt [68,70): lorawd 32.8(n=10)
+  adapt [65,68): lorawd 32.6(n=52)
+  adapt [60,65): milora 31.6(n=5)  lorawd 30.9(n=28)  lora_null 29.7(n=4)  lora 28.3(n=2)  clora 28.2(n=8)  sclora 27.9(n=3)
+
+=== Qwen2.5 CS (base 44.35) ===  n=149
+Pareto frontier (no other run beats it on both axes):
+  lorawd             adapt  87.8  ret 39.92  fd 0.12   qwsw_lorawd_wd0p3_lr7e5_s42
+  lorawd             adapt  87.6  ret 40.39  fd 0.25   qwsw_lorawd_wd0p3_lr5e4_s44
+  lorawd             adapt  87.5  ret 40.53  fd 0.24   qwsw_lorawd_wd0p3_lr5e4_s43
+  lorawd             adapt  87.5  ret 41.01  fd 0.14   qwsw_lorawd_wd0p3_lr1e4_s42
+  lorawd             adapt  87.0  ret 41.44  fd 0.21   qwsw_lorawd_wd0p3_lr3e4_s43
+  frontier share: {'lorawd': 5}
+matched-adaptation bands — mean retention per method (n>=2 runs in band):
+  adapt [86,88): lorawd 39.9(n=17)  clora 39.0(n=11)  lora_null 38.8(n=8)  milora 37.5(n=12)  lora 37.3(n=9)  dora 37.1(n=5)
+  adapt [83,86): lorawd 39.9(n=5)  lora_null 35.8(n=8)  clora 35.6(n=5)  dora 28.8(n=4)  milora 28.1(n=8)  lora 27.0(n=5)
+  adapt [78,83): clora 26.2(n=5)  lora 25.8(n=5)  lora_null 17.3(n=4)  sclora 13.0(n=2)
+
+=== Qwen2.5 math (ret = BBH, base 47.9) ===  n=156
+Pareto frontier (no other run beats it on both axes):
+  sclora             adapt  77.9  ret 47.52  fd 0.11   qwswm_sclora_r32_lr5e5_s43
+  sclora             adapt  77.5  ret 47.64  fd 0.11   qwswm_sclora_r32_lr5e5_s44
+  sclora             adapt  76.3  ret 47.96  fd 0.11   qwswm_sclora_r32_lr5e5_s42
+  sclora             adapt  69.1  ret 48.41  fd 0.06   qwswm_sclora_r32_lr2e5_s43
+  lorawd             adapt  68.8  ret 48.87  fd 0.12   qwswm_lorawd_wd0p3_lr5e4_s43
+  frontier share: {'sclora': 4, 'lorawd': 1}
+matched-adaptation bands — mean retention per method (n>=2 runs in band):
+  adapt [76,78): sclora 47.1(n=5)
+  adapt [73,76): lora_null 45.4(n=3)
+  adapt [68,73): lorawd 47.0(n=5)  sclora 45.5(n=5)  lora_null 45.5(n=6)  milora 44.9(n=2)  clora 42.5(n=5)  lora 42.5(n=5)

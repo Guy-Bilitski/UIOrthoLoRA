@@ -1,0 +1,18 @@
+=== 11. ADAPTATION-PER-MAGNITUDE — the exchange rate where methods actually differ ===
+per family: OLS adapt ~ a + b*logF on healthy runs (adapt>=25, drop collapse); method mean residual (pp of task accuracy at matched magnitude):
+  lrsw    slope=+17.4 | lora:-0.2 lorawd:+6.1 milora:-2.0 clora:-3.3 sclora:+3.0 lora_null:-3.1 dora:-0.6
+  lrswm   slope=+1.5 | lora:-1.5 lorawd:+2.2 milora:-2.6 clora:-0.5 sclora:+8.4 dora:-3.5
+  qwsw    slope=-9.5 | lora:-0.8 lorawd:+1.6 milora:+0.5 clora:-2.4 sclora:+0.4 lora_null:+0.3 dora:+0.7
+  qwswm   slope=+4.7 | lora:-2.9 lorawd:+1.8 milora:-5.6 clora:+2.0 sclora:+5.4 lora_null:+3.3 dora:+0.9
+  frc     slope=-2.8 | lora:+5.4 lorawd:-0.3 milora:-4.1 clora:+4.0 sclora:+0.2 lora_null:+1.2 dora:+8.0 pissa:-0.9
+  frm     slope=-11.8 | lora:+0.7 lorawd:+0.0 milora:-0.7 clora:+0.2 sclora:-1.6 lora_null:+0.7 dora:+4.4
+
+reading: positive = this method converts a unit of update magnitude into MORE task accuracy than the family average.
+
+=== 12. THE FULL LOOP at one operating point (sanity narrative) ===
+healthy lrsw runs sorted by fd: adapt saturates early, retention keeps falling — the dose keeps costing after the benefit stops:
+  F_D 0.10-0.25: n=  8  adapt  72.8  ret 26.70
+  F_D 0.25-0.40: n= 19  adapt  79.0  ret 26.17
+  F_D 0.40-0.60: n= 19  adapt  79.7  ret 24.87
+  F_D 0.60-0.90: n= 24  adapt  78.6  ret 21.74
+  F_D 0.90-1.50: n= 17  adapt  75.0  ret 17.46
