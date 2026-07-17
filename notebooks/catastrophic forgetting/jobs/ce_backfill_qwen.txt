@@ -1,3 +1,7 @@
+# Qwen CE backfill — REFRESHED 2026-07-18 (verification pass, analysis_final/09 Q4)
+# 13 of the original 136 were backfilled 2026-07-17 (s42, full protocol).
+# 123 pool runs currently lack CE. NOTE: s42 adapters destroyed 2026-07-03
+# (handoff/41) — those cells are permanently unfillable; kept for disclosure accounting.
 qwsw_clora_k1024_lr1e3_s42
 qwsw_clora_k1024_lr1e4_s42
 qwsw_clora_k1024_lr2e4_s42
@@ -20,8 +24,6 @@ qwsw_lora_null_r16_lr2e5_s42
 qwsw_lora_null_r16_lr3e4_s42
 qwsw_lora_null_r16_lr5e4_s42
 qwsw_lora_null_r16_lr5e5_s42
-qwsw_lora_null_r16_lr7e5_s42
-qwsw_lora_r16_lr15e5_s42
 qwsw_lora_r16_lr1e3_s42
 qwsw_lora_r16_lr1e4_s42
 qwsw_lora_r16_lr1e4_s43
@@ -31,8 +33,6 @@ qwsw_lora_r16_lr2e5_s42
 qwsw_lora_r16_lr3e4_s42
 qwsw_lora_r16_lr5e4_s42
 qwsw_lora_r16_lr5e5_s42
-qwsw_lora_r16_lr7e5_s42
-qwsw_lorawd_wd0p3_lr15e5_s42
 qwsw_lorawd_wd0p3_lr1e3_s42
 qwsw_lorawd_wd0p3_lr1e4_s42
 qwsw_lorawd_wd0p3_lr1e4_s43
@@ -42,8 +42,6 @@ qwsw_lorawd_wd0p3_lr2e5_s42
 qwsw_lorawd_wd0p3_lr3e4_s42
 qwsw_lorawd_wd0p3_lr5e4_s42
 qwsw_lorawd_wd0p3_lr5e5_s42
-qwsw_lorawd_wd0p3_lr7e5_s42
-qwsw_milora_r32_lr15e5_s42
 qwsw_milora_r32_lr1e3_s42
 qwsw_milora_r32_lr1e4_s42
 qwsw_milora_r32_lr1e4_s43
@@ -53,8 +51,6 @@ qwsw_milora_r32_lr2e5_s42
 qwsw_milora_r32_lr3e4_s42
 qwsw_milora_r32_lr5e4_s42
 qwsw_milora_r32_lr5e5_s42
-qwsw_milora_r32_lr7e5_s42
-qwsw_sclora_r32_lr15e5_s42
 qwsw_sclora_r32_lr1e3_s42
 qwsw_sclora_r32_lr1e4_s42
 qwsw_sclora_r32_lr1e4_s43
@@ -64,7 +60,6 @@ qwsw_sclora_r32_lr2e5_s42
 qwsw_sclora_r32_lr3e4_s42
 qwsw_sclora_r32_lr5e4_s42
 qwsw_sclora_r32_lr5e5_s42
-qwsw_sclora_r32_lr7e5_s42
 qwswm_clora_k1024_lr1e3_s42
 qwswm_clora_k1024_lr1e4_s42
 qwswm_clora_k1024_lr2e4_s42
@@ -94,7 +89,6 @@ qwswm_lora_r16_lr2e5_s42
 qwswm_lora_r16_lr3e4_s42
 qwswm_lora_r16_lr5e4_s42
 qwswm_lora_r16_lr5e5_s42
-qwswm_lora_r32_lr15e5_s42
 qwswm_lora_r32_lr1e3_s42
 qwswm_lora_r32_lr1e4_s42
 qwswm_lora_r32_lr2e4_ep6_s42
@@ -103,7 +97,6 @@ qwswm_lora_r32_lr2e5_s42
 qwswm_lora_r32_lr3e4_s42
 qwswm_lora_r32_lr5e4_s42
 qwswm_lora_r32_lr5e5_s42
-qwswm_lora_r32_lr7e5_s42
 qwswm_lorawd_wd0p3_lr1e3_s42
 qwswm_lorawd_wd0p3_lr1e4_s42
 qwswm_lorawd_wd0p3_lr2e4_s42
@@ -114,7 +107,6 @@ qwswm_lorawd_wd0p3_lr3e4_s43
 qwswm_lorawd_wd0p3_lr3e4_s44
 qwswm_lorawd_wd0p3_lr5e4_s42
 qwswm_lorawd_wd0p3_lr5e5_s42
-qwswm_milora_r32_lr15e5_s42
 qwswm_milora_r32_lr1e3_s42
 qwswm_milora_r32_lr1e4_s42
 qwswm_milora_r32_lr2e4_s42
@@ -124,7 +116,6 @@ qwswm_milora_r32_lr5e4_s42
 qwswm_milora_r32_lr5e4_s43
 qwswm_milora_r32_lr5e4_s44
 qwswm_milora_r32_lr5e5_s42
-qwswm_milora_r32_lr7e5_s42
 qwswm_sclora_r32_lr1e3_s42
 qwswm_sclora_r32_lr1e4_s42
 qwswm_sclora_r32_lr1e4_s43

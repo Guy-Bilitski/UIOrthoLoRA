@@ -75,3 +75,20 @@ CE claim; any use of the fro/spec orderings as method comparisons (LR confound).
 Recovery path (GPU-gated): restore from results/ds_adapters_evac/ (verified),
 run scripts/deepseek/eval_deepseek.py + ce_deepseek.py on 8×B200-class nodes;
 spec: handoff/DEEPSEEK_GEN_EXPERIMENT.md.
+
+## 4. AMENDMENT 2026-07-18 — rank-pooling confound (verification pass, 09 Q3)
+
+The §1 Spearman comparison pools all 7B ranks while the 284B grid is trained-r16.
+Two consequences (verify_semantics_log_2026-07-18.md item 4):
+1. Residual methods (milora/sclora/lora_null) save rank-2r adapters — the 284B
+   stable-rank split (4.2–4.9 vs 1.6–1.8) partly restates that design dichotomy.
+2. At 7B, trained-r16 exists for only 4 of the 7 methods (ordering identical to
+   284B, Spearman +1.00, n=4); the only stratum with all 7 (trained-r32) gives
+   Spearman +0.32 (stable_rank) / +0.14 (eff_rank) — far below the pooled +0.86.
+
+REVISED claim for the paper (supersedes any use of "+0.86" as a headline):
+"the residual-vs-direct design dichotomy in update shape recurs at 284B, and the
+method ordering is directionally preserved (6/6 families positive, sign test
+p≈0.03); within-rank-stratum ordering evidence is weak (n=7 methods)." The
+pooled rank-r and cluster table remain appendix-only, WITH the rank-pooling
+disclosure. §2–§3 guardrails unchanged.

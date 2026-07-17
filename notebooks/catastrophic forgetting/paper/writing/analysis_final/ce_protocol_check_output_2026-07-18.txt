@@ -1,0 +1,18 @@
+[CE PROTOCOL SENSITIVITY — 2026-07-18]
+Issue (semantics audit item 2): forgetting_merged.jsonl mixes two CE protocols
+(40-block slice vs full WikiText-103 test) WITHIN families; Ladder B used KL as one variable.
+CE pool n=911: short-protocol 283, full-protocol 628
+M1 fam+logfd:                      R2=0.795
+M2 +KL (as committed):             R2=0.800  dR2=+0.0049
+M2p +KL +protocol dummy:           R2=0.800  dR2 vs M1=+0.0049
+M2i +KL x protocol interaction:    R2=0.801  dR2 vs M1=+0.0067
+  full-protocol only     n= 628: KL dR2 after logfd = +0.0044
+  short-protocol only    n= 283: KL dR2 after logfd = +0.0177
+
+per-family r(KL, ret) by protocol (n>=10 only):
+  lrsw     full: r=-0.856(n=104)  short: r=-0.876(n=76)
+  lrswm    full: r=-0.917(n=79)  short: r=-0.953(n=41)
+  qwsw     full: r=-0.639(n=86)  short: (n=7)
+  qwswm    full: r=-0.791(n=95)  short: (n=4)
+  frc      full: r=-0.870(n=185)  short: r=-0.871(n=90)
+  frm      full: r=-0.889(n=79)  short: r=-0.918(n=65)
