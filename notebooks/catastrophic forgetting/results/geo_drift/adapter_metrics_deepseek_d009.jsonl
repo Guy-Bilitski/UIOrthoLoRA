@@ -1,0 +1,1 @@
+{"run": "dsv4_lora_r16_lr3e4_s44", "method": "LORA", "r": 16, "alpha": 32, "n_mat": 213, "fro_total": 54.52994993251015, "spec_max": 13.72791576385498, "spec_mean": 2.526790072800408, "stable_rank_w": 1.7124186406674333, "eff_rank_w": 3.851983342947064}
