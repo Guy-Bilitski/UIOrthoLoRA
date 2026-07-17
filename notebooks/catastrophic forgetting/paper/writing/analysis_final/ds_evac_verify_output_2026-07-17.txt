@@ -1,0 +1,28 @@
+# DeepSeek evac adapter integrity verification — 2026-07-17
+# For each of 21 adapters: cat parts | tar -tf - (structure check), then SHA256 of concatenated stream.
+
+PASS  dsv4_clora_r16_lr3e4_s42  parts=2  entries=7
+PASS  dsv4_clora_r16_lr3e4_s43  parts=2  entries=7
+PASS  dsv4_clora_r16_lr3e4_s44  parts=2  entries=7
+PASS  dsv4_dora_r16_lr2e4_s42  parts=3  entries=7
+PASS  dsv4_dora_r16_lr2e4_s43  parts=3  entries=7
+PASS  dsv4_dora_r16_lr2e4_s44  parts=3  entries=7
+PASS  dsv4_lora_null_r16_lr5e4_s42  parts=4  entries=7
+PASS  dsv4_lora_null_r16_lr5e4_s43  parts=4  entries=7
+PASS  dsv4_lora_null_r16_lr5e4_s44  parts=4  entries=7
+PASS  dsv4_lora_r16_lr3e4_s42  parts=2  entries=7
+PASS  dsv4_lora_r16_lr3e4_s43  parts=2  entries=7
+PASS  dsv4_lora_r16_lr3e4_s44  parts=2  entries=7
+PASS  dsv4_lorawd_r16_lr5e4_s42  parts=2  entries=7
+PASS  dsv4_lorawd_r16_lr5e4_s43  parts=2  entries=7
+PASS  dsv4_lorawd_r16_lr5e4_s44  parts=2  entries=7
+PASS  dsv4_milora_r16_lr5e4_s42  parts=4  entries=7
+PASS  dsv4_milora_r16_lr5e4_s43  parts=4  entries=7
+PASS  dsv4_milora_r16_lr5e4_s44  parts=4  entries=7
+PASS  dsv4_sclora_r16_lr5e5_s42  parts=4  entries=7
+PASS  dsv4_sclora_r16_lr5e5_s43  parts=4  entries=7
+PASS  dsv4_sclora_r16_lr5e5_s44  parts=4  entries=7
+
+SUMMARY: pass=21 fail=0 of 21
+
+SHA256SUMS written: 63 part checksums in results/ds_adapters_evac/SHA256SUMS

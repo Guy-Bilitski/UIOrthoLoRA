@@ -639,3 +639,57 @@ lrsw 201, lrswm 120 evaluated), Qwen 3-seed sweeps (qwsw 155/182, qwswm 165/187)
 TRUNCATED/LOST: E3 13/26 · E5 0/4 benchmark (CE salvaged) · E6-DoRA 0/2 benchmark (degenerate
 by CE) · brq 3/4 · qwsw 27 / qwswm 22 trained-not-evaluated · DSV4 0/21 · 284B ceiling absent ·
 base-ceiling dirs: 4/22 evaluated (Llama 26.0 / broad 35.26; Qwen 44.35 landed 07-16).
+
+---
+
+## §19 POST-FREEZE ADDENDUM (2026-07-17, offline pass) — ADDITIVE ONLY
+
+`[§18 is unchanged and remains the freeze. §19 records CPU-only analyses run after
+the freeze plus two ledger corrections. Scripts + outputs: analysis_final/
+ladder_2026-07-17.py, seed_stability_2026-07-17.py, ds284b_recurrence_2026-07-17.py.
+Docs: analysis_final/06_pooled_ladder.md, 07_deepseek_284b_recurrence.md.
+Every script preflight-reproduces §18.1 (n=1035, r=−0.847, all family cells to
+3 decimals) before emitting anything.]`
+
+### 19.1 Pooled nested ΔR² ladder (the one-table version of the title claim)
+
+Frozen pool ∩ geometry, n=1034, run-level, family FE, quarantine-included:
+R² 0.390 (family) → **0.785 (+0.395, F≈1890)** log10 F_Δ → 0.802 (**+0.017**, F=29.5)
+geometry (e_top, log spec_max, stable_rank) → 0.808 (+0.006, F=3.5) method dummies.
+CE-subset ladder (n=911): KL adds +0.005 after magnitude; KL alone +0.340 vs
+magnitude alone +0.420 same-sample (05's family-level "KL beats log F_Δ" is
+granularity-specific — quote both at their own levels). Standardized betas:
+log F_Δ −0.744 vs geometry |β| ≤ 0.138. Robust in all variants (quarantine-excluded,
+current pool, seed-averaged, no-FE); no-FE M1 R²=0.717 independently reproduces
+§18.6's 0.72. Headline sentence: magnitude +39.5% variance, geometry +1.7%,
+method +0.6%.
+
+### 19.2 Geometry seed-stability
+
+Partial r(·, ret | fam+log F_Δ) across seeds 42/43/44/45: log F_Δ −0.828±0.046 (4/4);
+e_top −0.218±0.128 (4/4); stable_rank −0.313±0.184 (4/4); log spec_max +0.105±0.146
+(**3/4, crosses zero at s44**). Second-order geometry is not a seed artifact, but
+spec_max-based direction effects (§18.4's +0.117) need a seed-variability caveat —
+prefer e_top/stable_rank as geometry exhibits.
+
+### 19.3 Ledger correction #1 — DSV4 284B is not data-free
+
+§18.3/§18.7 "DSV4 0/21, NO data" was true at freeze time for retention evals (still
+lost, GPU-gated). Post-freeze salvage landed: **20/21 MedMCQA adapt scores**
+(dsv4_adapt_n1000_logscores.jsonl; missing dsv4_lorawd_r16_lr5e4_s42),
+**21/21 factor-only geometry** (adapter_metrics_deepseek.jsonl + permatrix),
+**21/21 raw adapter tar sets integrity-verified** (SHA256SUMS, 63 parts).
+Result: method update-shape fingerprint recurs at 284B/MLA — stable-rank method
+ordering rank-r **+0.86 pooled**, positive in all 6 families; two 7B clusters
+reproduce ({sclora,milora,lora_null} high-spread vs {lora,lorawd,dora,clora}
+concentrated). Adapt (n=19, diverged dsv4_lora_null_r16_lr5e4_s44 excluded)
+shows no fro-ordering (r=+0.20/rank −0.10) — descriptive only. spec/fro orderings
+carry a per-method fixed-LR confound at 284B: do not quote. NO 284B retention/CE/
+magnitude-relation claims (07 §3).
+
+### 19.4 Ledger correction #2 — seven post-freeze stragglers
+
+Seven runs synced 07-17 12:49 after the freeze (1 lrsw, 2 qwsw, 4 qwswm; names in
+ladder_2026-07-17.py). Current pool = 1042. All §18 numbers remain quoted on the
+frozen n=1035; the stragglers move ladder ΔR²s by ≤0.002 (V2). Any future re-freeze
+should ingest them.

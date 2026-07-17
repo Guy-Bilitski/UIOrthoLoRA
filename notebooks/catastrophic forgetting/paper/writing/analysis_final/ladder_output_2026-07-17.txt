@@ -1,0 +1,114 @@
+==============================================================================
+POOLED NESTED dR2 LADDER — post-freeze addendum, 2026-07-17
+==============================================================================
+
+[PREFLIGHT] frozen-pool reproduction of key_numbers.md §18.1
+  lrsw: n=180 r=-0.886  OK
+  lrswm: n=120 r=-0.865  OK
+  qwsw: n=151 r=-0.840  OK
+  qwswm: n=164 r=-0.830  OK
+  frc: n=276 r=-0.928  OK
+  frm: n=144 r=-0.929  OK
+  pooled: n=1035 r=-0.847  OK — §18.1 reproduced, proceeding
+  stragglers excluded from primary pool (synced post-freeze 07-17 12:49): 7
+    lrsw_clora_k1024_lr3e4_s45
+    qwsw_lora_null_r16_lr5e4_s43
+    qwsw_milora_r32_lr5e5_s44
+    qwswm_clora_k1024_lr2e5_s44
+    qwswm_dora_r16_lr2e4_s43
+    qwswm_lora_r16_lr1e4_s44
+    qwswm_sclora_r32_lr3e4_s44
+
+[JOIN COVERAGE] per family (primary pool)
+family       n    CE    CE%   geo   geo%
+lrsw       180   180 100.0%   180 100.0%
+lrswm      120   120 100.0%   120 100.0%
+qwsw       151    93  61.6%   151 100.0%
+qwswm      164    99  60.4%   164 100.0%
+frc        276   275  99.6%   275  99.6%
+frm        144   144 100.0%   144 100.0%
+
+--- LADDER: PRIMARY A — frozen pool ∩ geometry (no CE step) (n=1034, 10 methods: clora,dora,lora,lora_null,lorawd,lorawdr16,milora,milorawd,pissa,sclora) ---
+step                                                         R2   adjR2     dR2  F(step)
+M0 family FE only                                         0.390   0.387   0.390      nan
+M1 + log10 F_delta                                        0.785   0.784   0.395   1890.3
+M2 + geometry (e_top, log spec_max, stable_rank)          0.802   0.801   0.017     29.5
+M3 + method dummies                                       0.808   0.805   0.006      3.5
+standardized betas (final pre-method model, |beta| = axis strength):
+    logfd    beta_std = -0.744
+    e_top    beta_std = -0.081
+    lspec    beta_std = +0.087
+    srank    beta_std = -0.138
+
+--- LADDER: PRIMARY B — frozen pool ∩ geometry ∩ CE (n=911, 10 methods: clora,dora,lora,lora_null,lorawd,lorawdr16,milora,milorawd,pissa,sclora) ---
+step                                                         R2   adjR2     dR2  F(step)
+M0 family FE only                                         0.375   0.372   0.375      nan
+M1 + log10 F_delta                                        0.795   0.793   0.420   1849.1
+M2 + KL (CE drift)                                        0.800   0.798   0.005     22.0
+M3 + geometry (e_top, log spec_max, stable_rank)          0.824   0.822   0.024     41.5
+M4 + method dummies                                       0.828   0.824   0.004      2.2
+[alt] M1 + geometry (no CE)                               0.815   0.813   0.020     33.1
+[alt] M0 + KL only (no magnitude)                         0.715   0.713   0.340   1076.5
+standardized betas (final pre-method model, |beta| = axis strength):
+    logfd    beta_std = -0.531
+    kl       beta_std = -0.192
+    e_top    beta_std = -0.054
+    lspec    beta_std = +0.055
+    srank    beta_std = -0.201
+
+==============================================================================
+VARIANTS (headline dR2 lines only)
+==============================================================================
+
+--- LADDER: V1 quarantine-excluded (sensitivity; freeze keeps them) (n=1002, 10 methods: clora,dora,lora,lora_null,lorawd,lorawdr16,milora,milorawd,pissa,sclora) ---
+step                                                         R2   adjR2     dR2  F(step)
+M0 family FE only                                         0.463   0.461   0.463      nan
+M1 + log10 F_delta                                        0.791   0.790   0.328   1560.1
+M2 + geometry (e_top, log spec_max, stable_rank)          0.801   0.799   0.010     16.8
+M3 + method dummies                                       0.808   0.805   0.007      4.1
+standardized betas (final pre-method model, |beta| = axis strength):
+    logfd    beta_std = -0.932
+    e_top    beta_std = -0.069
+    lspec    beta_std = +0.201
+    srank    beta_std = +0.028
+
+--- LADDER: V2 current pool (n=1042 incl. post-freeze stragglers) (n=1041, 10 methods: clora,dora,lora,lora_null,lorawd,lorawdr16,milora,milorawd,pissa,sclora) ---
+step                                                         R2   adjR2     dR2  F(step)
+M0 family FE only                                         0.394   0.392   0.394      nan
+M1 + log10 F_delta                                        0.787   0.786   0.392   1902.8
+M2 + geometry (e_top, log spec_max, stable_rank)          0.804   0.802   0.017     29.5
+M3 + method dummies                                       0.810   0.806   0.006      3.7
+standardized betas (final pre-method model, |beta| = axis strength):
+    logfd    beta_std = -0.742
+    e_top    beta_std = -0.080
+    lspec    beta_std = +0.086
+    srank    beta_std = -0.138
+
+--- LADDER: V3 seed-averaged recipe cells (n=343, 10 methods: clora,dora,lora,lora_null,lorawd,lorawdr16,milora,milorawd,pissa,sclora) ---
+step                                                         R2   adjR2     dR2  F(step)
+M0 family FE only                                         0.444   0.435   0.444      nan
+M1 + log10 F_delta                                        0.813   0.810   0.370    664.5
+M2 + geometry (e_top, log spec_max, stable_rank)          0.836   0.831   0.023     15.4
+M3 + method dummies                                       0.840   0.831   0.004      0.9
+standardized betas (final pre-method model, |beta| = axis strength):
+    logfd    beta_std = -0.707
+    e_top    beta_std = -0.063
+    lspec    beta_std = +0.065
+    srank    beta_std = -0.178
+
+--- LADDER: V4 no family FE (fully pooled) (n=1034, 10 methods: clora,dora,lora,lora_null,lorawd,lorawdr16,milora,milorawd,pissa,sclora) ---
+step                                                         R2   adjR2     dR2  F(step)
+M0 family FE only                                         0.000   0.000   0.000      nan
+M1 + log10 F_delta                                        0.717   0.717   0.717   2611.9
+M2 + geometry (e_top, log spec_max, stable_rank)          0.727   0.726   0.010     13.0
+M3 + method dummies                                       0.739   0.736   0.012      5.2
+standardized betas (final pre-method model, |beta| = axis strength):
+    logfd    beta_std = -1.018
+    e_top    beta_std = +0.051
+    lspec    beta_std = +0.217
+    srank    beta_std = -0.076
+
+[PARTIALS] r(x, ret | family FE + log10 F_delta) on frozen∩geometry pool
+  partial r(e_top, ret | fam+logfd) = -0.173  (n=1034)
+  partial r(lspec, ret | fam+logfd) = +0.047  (n=1034)
+  partial r(srank, ret | fam+logfd) = -0.225  (n=1034)
