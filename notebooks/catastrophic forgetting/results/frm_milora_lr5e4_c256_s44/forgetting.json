@@ -1,12 +1,12 @@
 {
-  "forgetting_ce": 5.939329777344521,
-  "base_entropy": 1.8520239240816387,
-  "forgetting_kl": 4.087305853262882,
-  "n_positions": 40920,
+  "forgetting_ce": 5.962066925695594,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 4.151997714002598,
+  "n_positions": 337590,
   "run_name": "frm_milora_lr5e4_c256_s44",
   "max_length": 1024,
-  "n_blocks": 40,
-  "wall_s": 3.8,
+  "n_blocks": 330,
+  "wall_s": 35.6,
   "method": "LORA",
   "adapter_r": 128,
   "fdelta": 2.6923

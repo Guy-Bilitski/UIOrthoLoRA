@@ -1,12 +1,12 @@
 {
-  "forgetting_ce": 1.9216850842527688,
-  "base_entropy": 1.8520239240816387,
-  "forgetting_kl": 0.06966116017113011,
-  "n_positions": 40920,
+  "forgetting_ce": 1.8801803169229971,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 0.07011110523000141,
+  "n_positions": 337590,
   "run_name": "lrsw_milora_r32_lr5e5_s44",
   "max_length": 1024,
-  "n_blocks": 40,
-  "wall_s": 5.7,
+  "n_blocks": 330,
+  "wall_s": 18.9,
   "method": "LORA",
   "adapter_r": 64,
   "fdelta": 0.1984

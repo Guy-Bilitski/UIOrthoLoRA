@@ -1,12 +1,12 @@
 {
-  "forgetting_ce": 2.1238201914131674,
-  "base_entropy": 1.8520239240816387,
-  "forgetting_kl": 0.2717962673315286,
-  "n_positions": 40920,
+  "forgetting_ce": 2.084448679578089,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 0.27437946788509326,
+  "n_positions": 337590,
   "run_name": "lrsw_dora_r16_lr2e5_s44",
   "max_length": 1024,
-  "n_blocks": 40,
-  "wall_s": 9.1,
+  "n_blocks": 330,
+  "wall_s": 33.0,
   "method": "LORA",
   "adapter_r": 16
 }

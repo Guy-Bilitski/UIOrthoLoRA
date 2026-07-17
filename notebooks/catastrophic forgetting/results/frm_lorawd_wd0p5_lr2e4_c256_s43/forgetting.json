@@ -1,12 +1,12 @@
 {
-  "forgetting_ce": 1.9957703524622792,
-  "base_entropy": 1.8520239240816387,
-  "forgetting_kl": 0.14374642838064045,
-  "n_positions": 40920,
+  "forgetting_ce": 1.953295612851881,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 0.1432264011588853,
+  "n_positions": 337590,
   "run_name": "frm_lorawd_wd0p5_lr2e4_c256_s43",
   "max_length": 1024,
-  "n_blocks": 40,
-  "wall_s": 6.7,
+  "n_blocks": 330,
+  "wall_s": 40.5,
   "method": "LORA",
   "adapter_r": 64,
   "fdelta": 0.2047

@@ -1,12 +1,12 @@
 {
-  "forgetting_ce": 3.9299011835740685,
-  "base_entropy": 1.8520239240816387,
-  "forgetting_kl": 2.0778772594924297,
-  "n_positions": 40920,
+  "forgetting_ce": 3.963831059076308,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 2.1537618473833122,
+  "n_positions": 337590,
   "run_name": "frm_dora_lr3e4_c256_s44",
   "max_length": 1024,
-  "n_blocks": 40,
-  "wall_s": 12.2,
+  "n_blocks": 330,
+  "wall_s": 80.0,
   "method": "LORA",
   "adapter_r": 64
 }

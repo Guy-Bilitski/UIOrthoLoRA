@@ -1,12 +1,12 @@
 {
   "forgetting_ce": NaN,
-  "base_entropy": 1.8520239240816387,
+  "base_entropy": 1.8100692116929957,
   "forgetting_kl": NaN,
-  "n_positions": 40920,
+  "n_positions": 337590,
   "run_name": "lrsw_milora_r32_lr2e3_s44",
   "max_length": 1024,
-  "n_blocks": 40,
-  "wall_s": 5.6,
+  "n_blocks": 330,
+  "wall_s": 41.2,
   "method": "LORA",
   "adapter_r": 64
 }

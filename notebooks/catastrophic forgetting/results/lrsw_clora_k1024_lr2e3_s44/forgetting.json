@@ -1,12 +1,13 @@
 {
-  "forgetting_ce": 4.006046289655582,
-  "base_entropy": 1.8520239240816387,
-  "forgetting_kl": 2.154022365573943,
-  "n_positions": 40920,
+  "forgetting_ce": 3.998854296146935,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 2.188785084453939,
+  "n_positions": 337590,
   "run_name": "lrsw_clora_k1024_lr2e3_s44",
   "max_length": 1024,
-  "n_blocks": 40,
-  "wall_s": 5.1,
+  "n_blocks": 330,
+  "wall_s": 18.0,
   "method": "LORA",
-  "adapter_r": 32
+  "adapter_r": 32,
+  "fdelta": 1.8887
 }

@@ -1,12 +1,12 @@
 {
-  "forgetting_ce": 3.7071941047560815,
-  "base_entropy": 1.8520239240816387,
-  "forgetting_kl": 1.8551701806744427,
-  "n_positions": 40920,
+  "forgetting_ce": 3.6694565584747725,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 1.8593873467817768,
+  "n_positions": 337590,
   "run_name": "frc_pissa_r32_lr3e4_c256_s44",
   "max_length": 1024,
-  "n_blocks": 40,
-  "wall_s": 6.7,
+  "n_blocks": 330,
+  "wall_s": 42.5,
   "method": "LORA",
   "adapter_r": 64
 }

@@ -3,7 +3,14 @@
   "method": "BASE",
   "adapter": "none",
   "per_dataset": {
-    "gsm8k": 55.12
+    "boolq": 18.87,
+    "piqa": 42.55,
+    "social_i_qa": 38.95,
+    "hellaswag": 78.44,
+    "winogrande": 17.52,
+    "ARC-Easy": 40.03,
+    "ARC-Challenge": 35.92,
+    "openbookqa": 25.0
   },
   "fdelta": {
     "fdelta_token_weighted": 0.0,
@@ -12,14 +19,13 @@
     "n_matrices": 0
   },
   "headline": {
-    "cs_avg": 55.12,
-    "adapt_task": "gsm8k",
+    "cs_avg": 37.16,
+    "adapt_task": "cs",
     "bbh": 47.93,
     "mmlu_pro": 40.77,
     "mmlu": 71.8,
     "arc_c": 51.28,
     "truthfulqa": 56.28,
-    "gsm8k": 55.12,
     "retention_mean": 44.35,
     "retention_bbh": 47.93,
     "retention_broad": 53.61,
@@ -28,5 +34,5 @@
     "dw_sv_mean": 0.0
   },
   "git_commit": "unknown",
-  "evaluated_at": "2026-07-13T08:05:41+03:00"
+  "evaluated_at": "2026-07-16T19:49:57+03:00"
 }

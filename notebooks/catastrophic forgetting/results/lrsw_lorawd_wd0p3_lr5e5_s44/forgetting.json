@@ -1,12 +1,12 @@
 {
-  "forgetting_ce": 2.1073290466111163,
-  "base_entropy": 1.8520239240816387,
-  "forgetting_kl": 0.25530512252947757,
-  "n_positions": 40920,
+  "forgetting_ce": 2.068094519928801,
+  "base_entropy": 1.8100692116929957,
+  "forgetting_kl": 0.25802530823580505,
+  "n_positions": 337590,
   "run_name": "lrsw_lorawd_wd0p3_lr5e5_s44",
   "max_length": 1024,
-  "n_blocks": 40,
-  "wall_s": 5.1,
+  "n_blocks": 330,
+  "wall_s": 38.4,
   "method": "LORA",
   "adapter_r": 32,
   "fdelta": 0.2211
