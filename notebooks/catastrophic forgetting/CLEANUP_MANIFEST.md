@@ -96,3 +96,30 @@ Provenance for these runs is preserved in `results/` + `logs/`.
 3. `repro/` grew from 2 to 6 vendored repos and `papers/` (5 PDFs) is new — neither was in the old manifest.
    **Recorded** here.
 4. `handoff/README.md` indexed only 00–20; docs 21–28 existed but were unlisted. **Fixed** (index extended).
+
+---
+
+# CLEANUP PASS 2 — post-freeze consolidation (2026-07-17)
+
+Fleet is evacuated (handoff/41): no live pools, so the 07-09 "no deletion" constraint is lifted
+for regenerable/superseded files. Canonical state: key_numbers.md §18 (+§19 addendum),
+analysis_final/ 01–08.
+
+## EXECUTED — DELETED on 2026-07-17 (git rm, recoverable from history)
+
+| Files | Reason |
+|---|---|
+| `results_book/*.md` (10) | Declared STALE by §18 ("do not source numbers from them"); regenerable via `results_book.py` |
+| `paper/writing/artifact_number_audit_final.md`, `artifact_review_round_final.md`, `artifact_feedback_round2.md` | Audits of the 07-14 artifact, fully superseded by `analysis_final/04_story_integrity.md` |
+| `paper/writing/section_reviews/sec0–sec8*.md` (9) | Reviews of the round-4 paper.tex, which will be rewritten from PAPER_BLUEPRINT.md |
+| `results/campaign_summary.jsonl.bak_pre_qwswm_ingest_2026-07-14` (untracked, plain rm) | Backup of a store §18 itself declares stale; current file retained for provenance |
+
+## EXECUTED — ARCHIVED on 2026-07-17 (git mv → `archive/writing_2026-07-17/`, reversible)
+
+Superseded-but-historical audit trail. Key supersessions: 07-02 writing suite + CONCLUSIONS_AND_IDEAS
++ FINALIZATION_PLAN → key_numbers §14+/analysis_final + PAPER_BLUEPRINT; claims_coverage_audit_sat +
+registry_refresh_2026-07-14 → §16–§18 + analysis_final/04; NEXT_EXPERIMENTS + writing_readiness_2026-07-16
++ assessment_2026-07-17 → executed / explicitly superseded by §18.3; pi_review_figures_title +
+author_recommendations + integration_notes → BLUEPRINT §5; STATUS.md → handoff/41 (fleet no longer live);
+handoff/34–40 → handoff/41. `06_reconciliation.md` archived WITH pointer note (key_numbers cites it as its
+B6 contradiction log — path updated in a stub).
