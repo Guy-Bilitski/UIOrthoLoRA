@@ -13,6 +13,17 @@ entries below that say "Claim 2 (LoRA+wd)" refer to what is NOW Claim 3 — read
 Line-number citations (LNNN) refer to the round-1 manuscript and have drifted; anchor on section
 labels instead.
 
+> **UPDATE 2026-07-17 (post-freeze).** Headline numbers are now `key_numbers.md` **§18 FINAL FREEZE +
+> §19 POST-FREEZE ADDENDUM** — pooled **r=−0.847, n=1035**, 6 model×task families, 8 methods, 3–5 seeds —
+> **superseding every §14–15 reference below** (the n=49 single-seed numbers are historical). Framing is
+> "magnitude relation (flat-then-falling with a knee)", not "Magnitude Law". Two consequences for this doc:
+> (i) **O3 is RESOLVED** — E4 eval-matched calibration puts SC-LoRA at **+0.92pp ABOVE the relation**
+> (n=20) vs −3.39pp nq_open-calibrated; the deviation was a calibration-set artifact, not method geometry
+> (§18.3). (ii) New ammunition for every "geometry adds little / your ANCOVA is thin" objection (O5, O9):
+> the **nested ΔR² ladder (§19.1)** — family FE R²=0.390 → **+0.395 magnitude** (F≈1890) → **+0.017
+> geometry** (F=30) → **+0.006 method** (n=1034, run-level) — an out-of-the-box quantification that
+> magnitude explains ~23× the variance geometry does, now multi-seed and multi-family.
+
 **Pending-experiment key (used in every "resolves it" line):**
 - **B4** — eval-matched calibration re-run + sensitivity arm (nq_open vs academic-eval calibration).
 - **B5a** — param-matched LoRA+wd control (r16 and r32) + wd knob applied to ≥2 fancy adapters.
@@ -104,7 +115,13 @@ seed's frontier. This is the cheapest desk-reject insurance to buy (see triage).
 
 ---
 
-## O3 — "Your one significant result is confounded by a calibration/evaluation mismatch you admit you can't resolve."
+## O3 — "Your one significant result is confounded by a calibration/evaluation mismatch you admit you can't resolve." — **RESOLVED 2026-07-17 by E4**
+
+> **RESOLUTION (E4 eval-matched calibration, `key_numbers.md` §18.3).** SC-LoRA calibrated eval-matched
+> sits **+0.92pp ABOVE the relation** (mean residual, n=20) vs −3.39pp under nq_open calibration (n=24):
+> the old −4.15pp deviation was a **calibration-set artifact, not method geometry**. This is the "good
+> case" predicted below — the one-curve story got *stronger*. The text below is kept as the historical
+> record of the objection and the pre-E4 defense.
 
 **The objection.** *"The single statistically significant finding in your entire ANCOVA is SC-LoRA
 at −4.15pp (p=0.006). But SC-LoRA, CorDA, and LoRA-Null calibrate on nq_open (factoid QA) while you

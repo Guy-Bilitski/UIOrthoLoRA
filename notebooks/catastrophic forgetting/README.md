@@ -1,11 +1,13 @@
-# Catastrophic forgetting in PEFT — the magnitude-law study
+# Catastrophic forgetting in PEFT — the magnitude-relation study ("Magnitude, Not Geometry")
 
 **Working dir:** `/home/guy/UIOrthoLoRA/notebooks/catastrophic forgetting/` (note the space — quote it).
-**Repo root:** `/home/guy/UIOrthoLoRA`  ·  **Branch:** `ortho_new`  ·  **Refreshed:** 2026-07-09.
+**Repo root:** `/home/guy/UIOrthoLoRA`  ·  **Branch:** `ortho_new`  ·  **Refreshed:** 2026-07-17.
 
-> **New here? Read `WORKDIR_ALIGNMENT.md` first** (the single onboarding doc: goal, exact settings, live
-> file map, adapter roster, gotchas), then `handoff/20_FAITHFUL_REPRO_SPEC.md` (the live plan) and
-> `paper/writing/data/key_numbers.md` (the single source of truth for every quoted number).
+> **New here? Read `WORKDIR_ALIGNMENT.md` first** (the onboarding doc; its live-fleet sections are now
+> INERT — see below), then `paper/writing/analysis_final/PAPER_BLUEPRINT.md` (the story layer, with
+> docs 01–07) and `paper/writing/data/key_numbers.md` **§18 FINAL FREEZE (2026-07-17) + §19 POST-FREEZE
+> ADDENDUM** (the single source of truth for every quoted number). Current project state:
+> `handoff/41_EVACUATION_2026-07-17.md` (fleet evacuated; offline-analysis phase).
 > This README is the directory front door; the older UIOrthoLoRA "go/no-go" README it replaces is in
 > git history.
 
@@ -13,8 +15,9 @@
 
 ## What this is
 
-We study **what governs catastrophic forgetting when a 7B LLM is PEFT-fine-tuned.** Central claim — **THE
-MAGNITUDE LAW:** retention is governed by the size of the weight update **F_Δ** (CLoRA's effective
+We study **what governs catastrophic forgetting when a 7B LLM is PEFT-fine-tuned.** Central claim — the
+**magnitude relation** (flat-then-falling with a knee; title direction: *"Magnitude, Not Geometry"*):
+retention is governed by the size of the weight update **F_Δ** (CLoRA's effective
 update-magnitude metric, Eq 3), **not** by the adapter method. LoRA, CLoRA, MiLoRA, PiSSA, DoRA, SC-LoRA,
 LoRA-Null and the data-aware inits all fall on one retention-vs-F_Δ curve, so the simplest magnitude control
 (**plain LoRA + weight decay**) matches or beats elaborate structured/data-aware adapters at equal F_Δ.
@@ -25,11 +28,14 @@ prefix `frc_`; MetaMathQA-395K, prefix `frm_`), replicated on **Qwen2.5-7B**, wi
 every run — the column the source papers omit. Every adapter goes through **one shared pipeline** so the
 comparison is fair.
 
-Key results (see `paper/writing/data/key_numbers.md` and `paper/writing/INTERESTING_INSIGHTS.md`):
-magnitude law r=−0.86 pooled / −0.92 on-curve (CS, n=49), replicated on Qwen; LR is a weaker proxy
-(R² 0.32 vs 0.74); CLoRA's own Table 4 is the same line (r=−0.98, slope −14.7 vs our −14.8); geometry is a
-**fingerprint/measurement tool**, magnitude is 1st-order and rank a modest 2nd-order lever (the
-principal-direction "2nd-order axis" was tested and rejected). LoRA+wd is on the frontier at zero extra cost.
+Key results (canonical: `paper/writing/data/key_numbers.md` §18–19; story: `paper/writing/analysis_final/`):
+magnitude relation pooled **r=−0.847 (rank −0.923), n=1035**, across **6 model×task families, 8 methods,
+3–5 seeds**; nested ΔR² ladder (§19.1): family FE R²=0.390 → **+0.395 magnitude** (F≈1890) → +0.017 geometry
+(F=30) → +0.006 method; LR is a weaker proxy (§18.5); CLoRA's own Table 4 is the same line (r=−0.98, slope
+−14.7 vs our −14.8); geometry is a **fingerprint/measurement tool**, magnitude is 1st-order and rank a modest
+2nd-order lever (the principal-direction "2nd-order axis" was tested and rejected); SC-LoRA's old −4.15pp
+deviation is RESOLVED by E4 eval-matched calibration (+0.92pp above the relation — a calibration artifact,
+§18.3). LoRA+wd is on the frontier at zero extra cost.
 
 ---
 
@@ -51,6 +57,9 @@ build_lean.py                              -> jobs/frepro4_lean.txt        (merg
    results/<run>/summary.json  +  results/campaign_summary.jsonl (one line/run) + train/eval registries
 ```
 
+> **Post-freeze note (2026-07-17):** the source of record is `results/*/summary.json`;
+> `results/campaign_summary.jsonl` and `results_book/` are **STALE** — do not source numbers from them.
+
 - **Venv:** `/home/guy/UIOrthoLoRA/.venv/bin/python` (never bare `python` in job lines → rc=127).
 - **Checkpoints:** `/scratch/cf_models/<run>`. **Data:** under `repro/LLM-Adapters/` (commonsense_170k,
   metamathqa_395k, GSM8K/MATH test) — built by `metamath_prep_395k.py` / `math_test_prep.py`.
@@ -67,29 +76,33 @@ needs `--ret_max_gen 256` (models don't emit EOS); LR ≥ 2e-3 diverges (NaN →
 
 ---
 
-## Current status (2026-07-09) — a 2-node campaign
+## Current status (2026-07-17) — campaign FROZEN, fleet EVACUATED, offline-analysis phase
 
-Deadline ~Sun; ~883 GPU-h of demand met by a **two-node fleet** (Node A = this 8×B200 host owns all
-adapters + analysis; Node B = a second 8×B200 trains fresh and syncs summary JSON back). Live on A right
-now: 4 `gpu_pool` pools (tags `frepro4`, `frepro4b4`, `frepro4hs`, `frepro4inj`) + `auto_dispatch` on
-`jobs/master_dispatch.txt`.
+The data-collection campaign is **over**. The fleet was evacuated on 2026-07-17
+(`handoff/41_EVACUATION_2026-07-17.md` is the live state doc) — **no live pools**; the scheduler/fleet
+instructions above are kept for provenance and reproduction, not for a running system.
 
-- **Faithful MATH (`frm_`): ~46/46 done** (+ method/β cells in flight).
-- **Faithful CS (`frc_`): landing now** — the 65-cell reservoir is the paper's spine (0 done at start).
-- **Running/queued:** CLoRA k-grid + `frc_lora_l2`, SC-LoRA/CorDA++ boundary cells (inject/b4), 3-seed
-  headlines, Qwen block (Node B, `lorawd` math LR-sweep first), CE-to-base full batch (A).
-- **Analysis done & validated:** magnitude law (2 models, ceiling-robust stats), geometry-drift verdict,
-  efficiency/memory, CE-to-base, CLoRA-Table-4 external replication, fdelta→F_Δ metrology fix.
-- **Paper actions pending (no GPU):** fdelta→F_Δ relabel in `paper.tex`/`analyze_matrix.py`/figures;
-  saturating-fit law figure; operating-point + efficiency tables; cross-literature overlay.
+- **Canonical numbers:** `paper/writing/data/key_numbers.md` **§18 FINAL FREEZE + §19 POST-FREEZE
+  ADDENDUM** (pooled r=−0.847, n=1035, 6 families, 8 methods, 3–5 seeds).
+- **Story layer:** `paper/writing/analysis_final/` (docs 01–07 + `PAPER_BLUEPRINT.md`).
+- **Source of record:** `results/*/summary.json` + merged aggregates (`results/forgetting_merged.jsonl`,
+  `results/geo_drift/adapter_metrics_merged.jsonl`).
+- **DeepSeek 284B:** 21 adapters evacuated + SHA256-verified (`results/ds_adapters_evac/`); 20/21 MedMCQA
+  adapt + 21/21 factor-only geometry landed; retention/CE lost (GPU re-eval only). The geometry
+  method-fingerprint recurs at 284B (`analysis_final/07`).
+- **Qwen CE:** 123 primary-seed cells permanently unfillable (adapters destroyed);
+  `jobs/ce_backfill_qwen.txt` kept as disclosure.
+- `STATUS.md` and the 07-02 writing suite were archived to `archive/writing_2026-07-17/`.
 
-See `STATUS.md` for the campaign snapshot and `handoff/` for the full decision log.
+What remains is pure offline analysis + writing. See `handoff/` for the full decision log.
 
 ---
 
 ## Handoff-doc index
 
-`handoff/README.md` is the ordered index; **start with `WORKDIR_ALIGNMENT.md`**. Current-era docs (17–28):
+`handoff/README.md` is the ordered index (now through **41**; docs 34–40 live at
+`archive/writing_2026-07-17/handoff/`). **`41_EVACUATION_2026-07-17.md` is the current state doc.**
+Campaign-era docs (17–28), kept for provenance:
 
 | # | Doc | What |
 |---|---|---|

@@ -6,6 +6,25 @@ numbers web-sourced with URLs; code claims carry file:line.*
 
 ---
 
+## ADDENDUM 2026-07-17 — post-freeze resolution status
+
+*The rows below are kept verbatim as the audit of record; their current status
+(per `key_numbers.md` §18):*
+
+- **Asymmetry 1 (calibration↔eval mismatch) → CLOSED by E4, 2026-07-16.** Eval-matched SC-LoRA
+  calibration lands **+0.92pp ABOVE the relation** (n=20) vs −3.39pp nq_open-calibrated — the
+  off-curve effect was a calibration-set artifact, not method geometry (§18.3).
+- **Asymmetry 2 (rank/capacity + wd-knob confound) → CLOSED by B5a** — the param-matched control ran;
+  the frozen dataset spans matched-rank LoRA+wd cells, and E6 tested the wd knob on other adapters
+  (transfers to MiLoRA, +1.75/+2.36pp above curve; breaks DoRA as-implemented — a disclosed boundary,
+  §18.3).
+- **Asymmetry 4 (single seed) → CLOSED** — the frozen campaign is 3–5 seeds per family (n=1035, §18.1).
+- **Asymmetry 5 (DoRA F_Δ under-measurement) → STILL OPEN.** DoRA's magnitude coordinate remains a
+  lower bound (get_delta_weight omits the magnitude-vector rescaling); disclosed in Limitations, and
+  the correction direction can only move DoRA further above the relation. No recompute has landed.
+
+---
+
 ## Q1 — Is our protocol fair across adapters?
 
 **Verdict: fair for the LAW, not yet for the RANKING — and the authors already know it.**
@@ -30,9 +49,11 @@ Because the law is analyzed on the ‖ΔW‖ axis, the rank/scaling/wd differenc
    distribution-mismatched → data-aware inits protect the wrong subspace → **biased AGAINST them, FOR
    LoRA+wd.** This is the asymmetry that plausibly *creates* the "SC-LoRA off-curve" effect.
    → **Acknowledged**; closed by **B4** (eval-matched calibration). Off-curve language embargoed until B4.
+   **[CLOSED 2026-07-16 by E4 — +0.92pp above the relation eval-matched; calibration artifact, §18.3.]**
 2. **Rank/capacity + wd-knob confound (HIGH for ranking).** LoRA+wd is r32 (56.1M params) vs the r16
    arms (28.05M), and is the only arm with the wd knob — `make_campaign_jobs.py:18-26`. Confounds the
    *ranking* claim. → **Acknowledged**; closed by **B5a** (param-matched {r16,r32}×{wd0,wd0.3}).
+   **[CLOSED — B5a ran; see 2026-07-17 addendum above.]**
 3. **Scaling asymmetry 2.0 vs 1.0 (MED) — NOT YET ACKNOWLEDGED.** Plain arms use α=2r (scaling 2.0);
    residual arms are forced α=r (scaling 1.0) by the residual conversion — `residual_save.py:59-62`,
    asserts `train_cs.py:213,230,237,257`. So a fixed nominal LR maps to different ΔW growth per family;
@@ -49,6 +70,8 @@ Because the law is analyzed on the ‖ΔW‖ axis, the rank/scaling/wd differenc
    → **Options:** (a) recompute DoRA's true ΔW = m·(W0+BA)/‖W0+BA‖_c − W0 from the saved DoRA
    checkpoints (needs checkpoints + GPU; changes one series' x-values); or (b) add an explicit
    measurement caveat for the DoRA arm. **This one needs a decision.**
+   **[STILL OPEN 2026-07-17 — option (b) taken (disclosed lower bound); recompute never landed and is
+   now GPU-gated.]**
 
 **Single most important fairness fix:** B4 (eval-matched calibration) — the only asymmetry that
 plausibly manufactures the headline effect; currently biases FOR LoRA+wd.

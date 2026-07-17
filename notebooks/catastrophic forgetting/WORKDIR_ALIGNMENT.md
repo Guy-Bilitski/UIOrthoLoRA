@@ -7,6 +7,16 @@
 > win. `README.md` (Phase-1 UIOrthoLoRA go/no-go) and `STATUS.md` (2026-06-29 2×2 campaign) are HISTORICAL —
 > see the "Stale docs" note at the bottom and `CLEANUP_MANIFEST.md`.
 
+> **⚠ UPDATE 2026-07-17 — campaign FROZEN, fleet EVACUATED.** The fleet was evacuated on 2026-07-17
+> (`handoff/41_EVACUATION_2026-07-17.md` is the live state doc); there are **no live pools**, and every
+> live-fleet section below (the "LIVE file map" in §c, the campaign status in §e) is **INERT** — kept as
+> a historical roster, not a description of a running system. Onboarding now goes:
+> `paper/writing/analysis_final/` (story layer, 01–07 + `PAPER_BLUEPRINT.md`) +
+> `paper/writing/data/key_numbers.md` **§18 FINAL FREEZE + §19 POST-FREEZE ADDENDUM** (canonical numbers:
+> pooled r=−0.847, n=1035; headline wording is "magnitude relation (flat-then-falling with a knee)", not
+> "Magnitude Law"). Source of record: `results/*/summary.json` (`campaign_summary.jsonl` / `results_book/`
+> are stale). `STATUS.md` and the 07-02 writing suite were archived to `archive/writing_2026-07-17/`.
+
 ---
 
 ## (a) Goal & thesis
@@ -78,7 +88,7 @@ LR=3e-4; data-aware arms (milora/sclora/lora_null) are LR-swept at the faithful 
 
 ---
 
-## (c) Pipeline + LIVE file map
+## (c) Pipeline + LIVE file map — **INERT as of 2026-07-17** (fleet evacuated, see `handoff/41`; roster kept for provenance)
 
 ```
   make_frepro_jobs.py  --table {math,cs} --prefix {frm,frc}
@@ -104,9 +114,10 @@ LR=3e-4; data-aware arms (milora/sclora/lora_null) are LR-swept at the faithful 
 ```
 
 **LIVE files** (running pools + dispatcher + their train/eval import chain — verified by grep + `ps`, not
-guessed). As of 2026-07-09 the live schedulers are **4 `gpu_pool` pools** (tags `frepro4`, `frepro4b4`,
+guessed). As of 2026-07-09 the live schedulers were **4 `gpu_pool` pools** (tags `frepro4`, `frepro4b4`,
 `frepro4hs`, `frepro4inj`) + **`auto_dispatch`** on `jobs/master_dispatch.txt` — NOT the old `frepro3`
-pool. Confirm current state with `ps aux | grep -E 'gpu_pool|auto_dispatch'`.
+pool. **[INERT 2026-07-17: nothing runs anymore — fleet evacuated, `handoff/41`. "LIVE" below reads
+"was live during the campaign".]**
 
 | File | Role |
 |---|---|
@@ -161,7 +172,7 @@ W0-relative conversion at save (`residual_save.py`) or eval explodes (see gotcha
 
 ---
 
-## (e) Current campaign status (parsed 2026-07-09)
+## (e) Campaign status (parsed 2026-07-09) — **INERT as of 2026-07-17** (superseded by `handoff/41` + key_numbers §18)
 
 - **Two-node 16×B200 fleet** (`handoff/28`): Node A (this host) owns all adapters + analysis; Node B trains
   fresh and syncs summary JSON. Live on A: 4 `gpu_pool` pools (`frepro4`/`frepro4b4`/`frepro4hs`/`frepro4inj`)
@@ -171,6 +182,10 @@ W0-relative conversion at save (`residual_save.py`) or eval explodes (see gotcha
 - `results/campaign_summary.jsonl` ≈ **472 rows** spanning the whole project history (dedup = latest
   `evaluated_at` per `run_name`, see key_numbers §0); ~482 subdirs under `results/`.
 - **Full current snapshot: `STATUS.md`** (running pools, progress, analysis-done/queued).
+
+**[2026-07-17]** All of the above is history: the campaign is frozen (final dataset = 1,661 result dirs,
+1,500 full evals, n=1035 usable; key_numbers §18), the fleet is evacuated (`handoff/41`), and `STATUS.md`
+now lives at `archive/writing_2026-07-17/STATUS.md`. Remaining work is offline analysis + writing.
 
 ---
 
@@ -220,10 +235,15 @@ W0-relative conversion at save (`residual_save.py`) or eval explodes (see gotcha
 
 ## Stale docs — read the current ones
 
-Current canonical order: **this file** → `handoff/20_FAITHFUL_REPRO_SPEC.md` (the live plan) →
-`handoff/25`–`28` (latest supervisor report, research plan, geometry-drift verdict, two-node plan) →
-`paper/writing/data/key_numbers.md` (paper single-source-of-truth) + `paper/writing/INTERESTING_INSIGHTS.md`
-(consolidated findings, DONE-vs-OPEN). `README.md` and `STATUS.md` are now current front-door / snapshot
-docs. `handoff/00`–`12` are HISTORICAL (UIO era); `handoff/17`/`19` describe the pre-pivot camp5 2×2 /
-fairness campaign, superseded in priority by `handoff/20`. Superseded scripts/jobs live in `archive/`
-(see `CLEANUP_MANIFEST.md` + `archive/README.md`).
+**Current canonical order (2026-07-17):** `handoff/41_EVACUATION_2026-07-17.md` (state) →
+`paper/writing/analysis_final/PAPER_BLUEPRINT.md` + docs 01–07 (story) →
+`paper/writing/data/key_numbers.md` **§18–§19** (every quoted number). `README.md` is the front door.
+
+*(Pre-freeze order, kept for provenance: this file → `handoff/20_FAITHFUL_REPRO_SPEC.md` →
+`handoff/25`–`28` → key_numbers + `paper/writing/INTERESTING_INSIGHTS.md`.)*
+`handoff/00`–`12` are HISTORICAL (UIO era); `handoff/17`/`19` describe the pre-pivot camp5 2×2 /
+fairness campaign, superseded in priority by `handoff/20`; `handoff/34`–`40` were archived. Superseded
+scripts/jobs live in `archive/` (see `CLEANUP_MANIFEST.md` + `archive/README.md`); `STATUS.md` and the
+07-02 writing suite (01–08, CONCLUSIONS_AND_IDEAS, FINALIZATION_PLAN, claims-coverage audit,
+registry-refresh, NEXT_EXPERIMENTS, the 07-16/17 assessments, pi_review/author-recommendation notes,
+and `handoff/34`–`40`) moved to `archive/writing_2026-07-17/`.
