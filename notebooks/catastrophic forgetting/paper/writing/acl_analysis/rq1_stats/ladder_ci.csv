@@ -1,0 +1,4 @@
+step,dr2,lo,hi
+magnitude (log10 F_delta),0.3954,0.3089,0.4826
+"geometry (e_top, log spec_max, stable rank)",0.0171,0.0075,0.0322
+method identity,0.006,0.0028,0.0183

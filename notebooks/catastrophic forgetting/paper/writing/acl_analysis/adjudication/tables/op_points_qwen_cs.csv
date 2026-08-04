@@ -1,0 +1,8 @@
+method,withheld,best_lr,k,adapt,ret,fdelta,n_seeds,seeds,collapse_flag,cut1_lr,cut1_adapt,cut1_ret,cut2_lr,cut2_adapt,cut2_ret
+LoRA+wd,False,5e-4,,87.43 ± 0.23,40.07 ± 0.68,0.246,3,"42,43,44",False,—,none,—,—,none,—
+SC-LoRA,False,1e-4,,87.15 ± 0.15,27.85 ± 15.96,0.348,3,"42,43,44",False,—,none,—,—,none,—
+CLoRA,False,1e-4,k1024,87.02 ± 0.19,39.52 ± 1.15,0.128,4,"42,43,44,45",False,—,none,—,—,none,—
+DoRA,False,2e-4,,86.44 ± 0.76,38.05 ± 0.97,0.260,3,"42,43,44",False,—,none,—,—,none,—
+LoRA,False,5e-5,,86.43 ± 0.41,37.95 ± 0.88,0.122,3,"42,43,44",False,—,none,—,—,none,—
+MiLoRA,False,2e-4,,86.39 ± 0.97,36.68 ± 0.12,0.284,4,"42,43,44,45",False,—,none,—,—,none,—
+LoRA-Null,False,2e-4,,86.23 ± 1.60,38.95 ± 0.68,0.204,3,"42,43,44",False,—,none,—,—,none,—

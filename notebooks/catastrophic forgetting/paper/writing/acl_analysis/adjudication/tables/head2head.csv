@@ -1,0 +1,27 @@
+family,method,method_cell,ref_cell,d_adapt,t_adapt,adapt_verdict,d_ret,t_ret,ret_verdict,mode,beats_lorawd
+llama_cs,SC-LoRA,5e-5,5e-4,-1.19,-8.21,LOSS,-1.33,-1.51,tie,paired(n=3),no
+llama_cs,LoRA,3e-4,5e-4,-2.58,-15.35,LOSS,-2.0,-4.73,LOSS,paired(n=4),dominated
+llama_cs,LoRA-Null,5e-4,5e-4,-2.89,-35.31,LOSS,-4.1,-5.59,LOSS,paired(n=4),dominated
+llama_cs,CLoRA,5e-4 k1024,5e-4,-3.46,-38.25,LOSS,-4.26,-11.4,LOSS,paired(n=4),dominated
+llama_cs,DoRA,5e-4,5e-4,-5.57,-6.45,LOSS,-6.78,-8.92,LOSS,paired(n=3),dominated
+llama_cs,MiLoRA,5e-4,5e-4,-4.56,-22.67,LOSS,-4.42,-8.47,LOSS,paired(n=4),dominated
+llama_math,LoRA,1e-4,2e-4,-2.81,-4.95,LOSS,-2.28,-3.42,LOSS,paired(n=3),dominated
+llama_math,MiLoRA,1e-4,2e-4,-3.11,-3.55,LOSS,-1.13,-2.09,LOSS,paired(n=3),dominated
+llama_math,CLoRA,3e-4 k256,2e-4,-6.14,-26.17,LOSS,-4.94,-9.11,LOSS,paired(n=3),dominated
+llama_math,SC-LoRA,1e-4,2e-4,-6.32,-8.47,LOSS,-5.63,-6.47,LOSS,paired(n=3),dominated
+llama_math,DoRA,3e-4,2e-4,-7.61,-10.3,LOSS,-5.49,-6.13,LOSS,paired(n=3),dominated
+llama_math,LoRA-Null,2e-4,2e-4,-4.93,-6.99,LOSS,-4.68,-10.14,LOSS,paired(n=3),dominated
+llama_math,PiSSA,3e-4,2e-4,-17.13,-37.52,LOSS,-26.34,-43.71,LOSS,welch(1v3),dominated
+qwen_cs,SC-LoRA,1e-4,5e-4,-0.29,-1.99,tie,-12.22,-1.38,tie,paired(n=3),no
+qwen_cs,LoRA,5e-5,5e-4,-1.0,-9.71,LOSS,-2.12,-6.7,LOSS,paired(n=3),dominated
+qwen_cs,LoRA-Null,2e-4,5e-4,-1.2,-1.18,tie,-1.12,-3.86,LOSS,paired(n=3),no
+qwen_cs,CLoRA,1e-4 k1024,5e-4,-0.37,-2.31,LOSS,-0.95,-4.86,LOSS,paired(n=3),dominated
+qwen_cs,DoRA,2e-4,5e-4,-0.99,-1.82,tie,-2.02,-7.91,LOSS,paired(n=3),no
+qwen_cs,MiLoRA,2e-4,5e-4,-1.11,-1.51,tie,-3.41,-10.77,LOSS,paired(n=3),no
+qwen_math,SC-LoRA,5e-5,3e-4,8.26,5.18,WIN,0.17,0.56,tie,paired(n=3),YES
+qwen_math,LoRA,1e-4,3e-4,-5.48,-1.33,tie,-1.44,-1.49,tie,paired(n=3),no
+qwen_math,LoRA(r32),5e-4,3e-4,0.3,0.15,tie,-5.76,-2.79,LOSS,paired(n=2),no
+qwen_math,LoRA-Null,1e-3,3e-4,3.36,2.05,WIN,-2.77,-8.0,LOSS,paired(n=3),no
+qwen_math,CLoRA,1e-3 k1024,3e-4,1.49,0.79,tie,-7.56,-32.52,LOSS,paired(n=3),no
+qwen_math,DoRA,2e-4,3e-4,-5.8,-0.93,tie,-1.68,-6.09,LOSS,paired(n=2),no
+qwen_math,MiLoRA,2e-4,3e-4,-3.61,-8.89,LOSS,-1.38,-1.48,tie,paired(n=3),no

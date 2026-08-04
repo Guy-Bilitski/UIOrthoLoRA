@@ -1,0 +1,9 @@
+method,ret_at_matched_adapt_vs_wd,adapt_ceiling_vs_wd,lr_band,seed_sd_ret,divergence,train_cost,init_cost,memory_gb,deploy_delta,beats_lorawd
+LoRA+wd,reference,reference,26/29,0.43,6/146 (4.1%),1.00x,none (free AdamW flag),0,rank-r,reference
+LoRA,-2.2 pp,-4.0 pp,10/29,0.83,7/179 (3.9%),1.00x,none,0,rank-r,0/4 fam (dominated in 3)
+CLoRA,-4.2 pp,-3.2 pp,12/22,0.76,0/121 (0.0%),1.17x,k x d covariance/eigh on base weights (fast); frozen-P build,+3.34,rank-r,0/4 fam (dominated in 3)
+MiLoRA,-2.8 pp,-4.2 pp,13/31,0.65,9/162 (5.6%),1.00x,160 base-weight SVDs (no forwards),0,rank-2r,0/4 fam (dominated in 2)
+LoRA-Null,-3.2 pp,-2.5 pp,13/24,0.72,3/97 (3.1%),1.00x,256 calibration forwards + eigh,0,rank-r,0/4 fam (dominated in 2)
+SC-LoRA,-4.6 pp (1 beyond),-0.9 pp,6/25,3.06,4/113 (3.5%),0.99x,512 calibration forwards + eigh,0,rank-r,1/4 fam (dominated in 1)
+DoRA,-4.2 pp,-5.9 pp,8/22,0.7,3/73 (4.1%),2.15x,none,0,rank-r,0/4 fam (dominated in 2)
+PiSSA,-26.3 pp,-17.1 pp,0/1,,0/5 (0.0%),—,160 base-weight SVDs (no forwards),0,rank-2r,0/1 fam (dominated in 1)

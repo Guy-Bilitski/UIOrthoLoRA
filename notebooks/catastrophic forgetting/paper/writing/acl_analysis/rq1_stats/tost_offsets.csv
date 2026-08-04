@@ -1,0 +1,49 @@
+scope,method,n,G,beta,se,lo90,hi90,lo95,hi95,r2,equiv_1pp,equiv_2pp,equiv_3pp
+lrsw,clora,27,56,-2.4914,1.0162,-4.1915,-0.7912,-4.5279,-0.4548,0.8508,False,False,False
+lrsw,dora,25,56,0.3796,0.6512,-0.7098,1.469,-0.9254,1.6846,0.8508,False,True,True
+lrsw,lora,25,56,-0.2921,0.5103,-1.1458,0.5616,-1.3147,0.7305,0.8508,False,True,True
+lrsw,lora_null,25,56,-1.331,0.5606,-2.2689,-0.3932,-2.4544,-0.2076,0.8508,False,False,True
+lrsw,milora,25,56,-0.6562,0.6239,-1.7,0.3876,-1.9065,0.5942,0.8508,False,True,True
+lrsw,milorawd,2,56,0.4944,0.4343,-0.2322,1.221,-0.3759,1.3648,0.8508,False,True,True
+lrsw,sclora,24,56,-4.9541,1.4198,-7.3295,-2.5786,-7.7995,-2.1087,0.8508,False,False,False
+lrswm,clora,21,42,-1.6331,0.2389,-2.0352,-1.231,-2.1156,-1.1505,0.892,False,False,True
+lrswm,dora,21,42,0.5252,0.3765,-0.1083,1.1588,-0.235,1.2855,0.892,False,True,True
+lrswm,lora,21,42,0.3112,0.2998,-0.1934,0.8158,-0.2944,0.9168,0.892,True,True,True
+lrswm,milora,21,42,-0.25,0.2328,-0.6418,0.1418,-0.7202,0.2201,0.892,True,True,True
+lrswm,sclora,15,42,-2.9209,0.6931,-4.0873,-1.7545,-4.3207,-1.5211,0.892,False,False,False
+qwsw,clora,23,58,-3.4295,3.189,-8.7616,1.9027,-9.8154,2.9564,0.7203,False,False,False
+qwsw,dora,13,58,-3.3073,3.195,-8.6494,2.0348,-9.7051,3.0906,0.7203,False,False,False
+qwsw,lora,23,58,-4.6948,3.1227,-9.916,0.5264,-10.9479,1.5582,0.7203,False,False,False
+qwsw,lora_null,21,58,-4.6501,2.9435,-9.5718,0.2716,-10.5444,1.2442,0.7203,False,False,False
+qwsw,milora,25,58,-2.8761,3.0815,-8.0285,2.2763,-9.0468,3.2945,0.7203,False,False,False
+qwsw,sclora,23,58,-3.7239,2.7755,-8.3646,0.9168,-9.2817,1.8339,0.7203,False,False,False
+qwswm,clora,20,62,-1.0928,1.9659,-4.3763,2.1906,-5.0239,2.8382,0.698,False,False,False
+qwswm,dora,11,62,-1.8196,1.7055,-4.6682,1.029,-5.23,1.5909,0.698,False,False,False
+qwswm,lora,46,62,-0.9131,2.1156,-4.4466,2.6204,-5.1434,3.3173,0.698,False,False,False
+qwswm,lora_null,20,62,-0.4334,2.3621,-4.3787,3.5118,-5.1568,4.2899,0.698,False,False,False
+qwswm,milora,23,62,-0.2937,2.3687,-4.25,3.6626,-5.0303,4.4429,0.698,False,False,False
+qwswm,sclora,20,62,-3.4862,3.0012,-8.4989,1.5265,-9.4875,2.5151,0.698,False,False,False
+frc,clora,21,74,0.079,0.3036,-0.4267,0.5848,-0.526,0.6841,0.9135,True,True,True
+frc,dora,3,74,1.7826,0.4537,1.0268,2.5384,0.8784,2.6867,0.9135,False,False,True
+frc,lora,16,74,1.2429,0.3323,0.6893,1.7966,0.5807,1.9052,0.9135,False,True,True
+frc,lora_null,26,74,-1.9221,0.7156,-3.1143,-0.7298,-3.3483,-0.4958,0.9135,False,False,False
+frc,lorawdr16,9,74,0.8792,0.2343,0.4889,1.2695,0.4123,1.3461,0.9135,False,True,True
+frc,milora,51,74,0.3102,0.4922,-0.5098,1.1302,-0.6708,1.2911,0.9135,False,True,True
+frc,pissa,4,74,-5.8839,0.6349,-6.9415,-4.8262,-7.1491,-4.6186,0.9135,False,False,False
+frc,sclora,24,74,-3.6428,0.7375,-4.8714,-2.4142,-5.1126,-2.173,0.9135,False,False,False
+frm,clora,10,51,0.239,0.4915,-0.5846,1.0627,-0.7481,1.2262,0.9073,False,True,True
+frm,dora,3,51,4.8697,0.9072,3.3494,6.39,3.0477,6.6918,0.9073,False,False,False
+frm,lora,3,51,0.5047,0.5607,-0.435,1.4444,-0.6215,1.631,0.9073,False,True,True
+frm,lora_null,4,51,-0.3914,0.3873,-1.0405,0.2578,-1.1694,0.3866,0.9073,False,True,True
+frm,milora,12,51,-1.5262,1.6351,-4.2664,1.2141,-4.8103,1.758,0.9073,False,False,False
+frm,pissa,1,51,-11.173,0.7935,-12.5027,-9.8432,-12.7667,-9.5793,0.9073,False,False,False
+frm,sclora,6,51,-2.8957,0.9848,-4.5461,-1.2452,-4.8738,-0.9176,0.9073,False,False,False
+"pooled(all six, family FE)",clora,122,343,-1.0197,0.6577,-2.1045,0.065,-2.3133,0.2739,0.8007,False,False,True
+"pooled(all six, family FE)",dora,76,343,0.5196,1.0271,-1.1745,2.2136,-1.5007,2.5398,0.8007,False,False,True
+"pooled(all six, family FE)",lora,134,343,-0.6527,0.8855,-2.1132,0.8077,-2.3944,1.089,0.8007,False,False,True
+"pooled(all six, family FE)",lora_null,96,343,-1.2505,0.7859,-2.5468,0.0457,-2.7964,0.2953,0.8007,False,False,True
+"pooled(all six, family FE)",lorawdr16,9,343,0.5108,0.3064,0.0055,1.016,-0.0918,1.1133,0.8007,False,True,True
+"pooled(all six, family FE)",milora,157,343,-0.6051,0.6623,-1.6974,0.4872,-1.9077,0.6975,0.8007,False,True,True
+"pooled(all six, family FE)",milorawd,2,343,-0.6178,0.4569,-1.3715,0.1358,-1.5166,0.281,0.8007,False,True,True
+"pooled(all six, family FE)",pissa,5,343,-7.1187,1.1141,-8.9562,-5.2813,-9.31,-4.9274,0.8007,False,False,False
+"pooled(all six, family FE)",sclora,112,343,-4.0823,0.9228,-5.6042,-2.5604,-5.8973,-2.2673,0.8007,False,False,False

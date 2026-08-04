@@ -1,0 +1,153 @@
+# M4 CE-drift distributions per method x family (all on-pool runs with CE; CorDA flagged WITHHELD)
+
+> sd is over all on-pool runs of the cell (configs x LRs x seeds); seeds within a cell are correlated (ICC~0.78), so this sd mixes cell-to-cell and seed noise. Qwen families: ~60% CE coverage with a seed-block deletion pattern -- pooled only, never per-seed.
+
+| metric | family | method | n | mean | sd | min | max |
+|---|---|---|---|---|---|---|---|
+| forgetting_kl | lrsw | lora | 25 | 0.436 | 0.301 | 0.048 | 1.078 |
+| forgetting_kl | lrsw | lora_null | 25 | 0.326 | 0.285 | 0.033 | 0.953 |
+| forgetting_kl | lrsw | lorawd | 27 | 0.808 | 2.181 | 0.11 | 8.53 |
+| forgetting_kl | lrsw | milora | 25 | 0.437 | 0.422 | 0.056 | 1.388 |
+| forgetting_kl | lrsw | milorawd | 2 | 0.149 | 0.0 | 0.149 | 0.149 |
+| forgetting_kl | lrsw | clora | 27 | 0.797 | 1.544 | 0.052 | 7.988 |
+| forgetting_kl | lrsw | dora | 25 | 1.794 | 2.674 | 0.049 | 10.278 |
+| forgetting_kl | lrsw | sclora | 24 | 1.004 | 1.224 | 0.145 | 5.033 |
+| forgetting_kl | lrswm | lora | 21 | 0.463 | 0.391 | 0.061 | 1.348 |
+| forgetting_kl | lrswm | lorawd | 21 | 0.265 | 0.103 | 0.072 | 0.443 |
+| forgetting_kl | lrswm | milora | 21 | 0.529 | 0.52 | 0.071 | 1.724 |
+| forgetting_kl | lrswm | clora | 21 | 0.4 | 0.347 | 0.083 | 1.132 |
+| forgetting_kl | lrswm | dora | 21 | 0.53 | 0.604 | 0.066 | 2.334 |
+| forgetting_kl | lrswm | sclora | 15 | 0.779 | 0.764 | 0.151 | 2.552 |
+| forgetting_kl | qwsw | lora | 14 | 0.405 | 0.389 | 0.049 | 1.289 |
+| forgetting_kl | qwsw | lora_null | 13 | 0.286 | 0.315 | 0.03 | 0.893 |
+| forgetting_kl | qwsw | lorawd | 14 | 0.745 | 2.224 | 0.05 | 8.468 |
+| forgetting_kl | qwsw | milora | 16 | 0.613 | 0.466 | 0.108 | 1.681 |
+| forgetting_kl | qwsw | clora | 16 | 0.365 | 0.323 | 0.058 | 1.016 |
+| forgetting_kl | qwsw | dora | 6 | 0.82 | 0.462 | 0.278 | 1.278 |
+| forgetting_kl | qwsw | sclora | 14 | 0.712 | 0.613 | 0.075 | 1.819 |
+| forgetting_kl | qwswm | lora | 31 | 0.326 | 0.532 | 0.017 | 2.239 |
+| forgetting_kl | qwswm | lora_null | 12 | 0.098 | 0.111 | 0.01 | 0.413 |
+| forgetting_kl | qwswm | lorawd | 14 | 0.639 | 2.088 | 0.019 | 7.892 |
+| forgetting_kl | qwswm | milora | 14 | 0.837 | 2.123 | 0.053 | 8.129 |
+| forgetting_kl | qwswm | clora | 13 | 0.184 | 0.25 | 0.019 | 0.738 |
+| forgetting_kl | qwswm | dora | 4 | 0.273 | 0.482 | 0.016 | 0.996 |
+| forgetting_kl | qwswm | sclora | 11 | 0.696 | 0.78 | 0.045 | 2.152 |
+| forgetting_kl | frc | lora | 16 | 0.492 | 0.155 | 0.265 | 0.637 |
+| forgetting_kl | frc | lora_null | 26 | 1.453 | 2.12 | 0.085 | 8.859 |
+| forgetting_kl | frc | lorawd | 121 | 0.418 | 0.676 | 0.085 | 5.472 |
+| forgetting_kl | frc | lorawdr16 | 9 | 0.132 | 0.004 | 0.122 | 0.136 |
+| forgetting_kl | frc | milora | 51 | 0.957 | 1.455 | 0.059 | 7.541 |
+| forgetting_kl | frc | clora | 21 | 0.459 | 0.091 | 0.293 | 0.56 |
+| forgetting_kl | frc | dora | 3 | 0.646 | 0.012 | 0.633 | 0.657 |
+| forgetting_kl | frc | sclora | 24 | 1.757 | 2.427 | 0.117 | 8.704 |
+| forgetting_kl | frc | pissa | 4 | 1.977 | 0.098 | 1.859 | 2.079 |
+| forgetting_kl | frm | lora | 3 | 1.739 | 0.02 | 1.718 | 1.759 |
+| forgetting_kl | frm | lora_null | 4 | 1.131 | 0.268 | 0.731 | 1.286 |
+| forgetting_kl | frm | lorawd | 105 | 1.164 | 2.394 | 0.14 | 14.079 |
+| forgetting_kl | frm | milora | 12 | 2.864 | 2.743 | 0.647 | 8.134 |
+| forgetting_kl | frm | clora | 10 | 1.523 | 0.103 | 1.391 | 1.675 |
+| forgetting_kl | frm | dora | 3 | 2.425 | 0.425 | 2.154 | 2.915 |
+| forgetting_kl | frm | sclora | 6 | 1.597 | 0.457 | 1.167 | 2.034 |
+| forgetting_kl | frm | pissa | 1 | 4.455 |  | 4.455 | 4.455 |
+| forgetting_kl | lrsw | corda [WITHHELD] | 23 | 1.773 | 2.348 | 0.093 | 8.522 |
+| forgetting_kl | qwsw | corda [WITHHELD] | 4 | 0.095 | 0.037 | 0.062 | 0.129 |
+| forgetting_kl | frc | cordapp [WITHHELD] | 8 | 2.413 | 3.158 | 0.017 | 7.595 |
+| forgetting_kl | frm | cordapp [WITHHELD] | 3 | 1.37 | 1.602 | 0.301 | 3.212 |
+| forgetting_ce | lrsw | lora | 25 | 2.265 | 0.301 | 1.858 | 2.915 |
+| forgetting_ce | lrsw | lora_null | 25 | 2.154 | 0.291 | 1.876 | 2.805 |
+| forgetting_ce | lrsw | lorawd | 27 | 2.637 | 2.182 | 1.92 | 10.34 |
+| forgetting_ce | lrsw | milora | 25 | 2.265 | 0.42 | 1.866 | 3.232 |
+| forgetting_ce | lrsw | milorawd | 2 | 1.959 | 0.0 | 1.959 | 1.959 |
+| forgetting_ce | lrsw | clora | 27 | 2.626 | 1.539 | 1.862 | 9.798 |
+| forgetting_ce | lrsw | dora | 25 | 3.619 | 2.667 | 1.859 | 12.088 |
+| forgetting_ce | lrsw | sclora | 24 | 2.832 | 1.229 | 1.955 | 6.885 |
+| forgetting_ce | lrswm | lora | 21 | 2.289 | 0.396 | 1.871 | 3.158 |
+| forgetting_ce | lrswm | lorawd | 21 | 2.093 | 0.105 | 1.924 | 2.295 |
+| forgetting_ce | lrswm | milora | 21 | 2.353 | 0.52 | 1.881 | 3.534 |
+| forgetting_ce | lrswm | clora | 21 | 2.226 | 0.349 | 1.893 | 2.977 |
+| forgetting_ce | lrswm | dora | 21 | 2.354 | 0.603 | 1.876 | 4.144 |
+| forgetting_ce | lrswm | sclora | 15 | 2.594 | 0.763 | 1.962 | 4.362 |
+| forgetting_ce | qwsw | lora | 14 | 2.332 | 0.394 | 1.955 | 3.223 |
+| forgetting_ce | qwsw | lora_null | 13 | 2.212 | 0.31 | 1.965 | 2.827 |
+| forgetting_ce | qwsw | lorawd | 14 | 2.68 | 2.224 | 1.985 | 10.403 |
+| forgetting_ce | qwsw | milora | 16 | 2.541 | 0.471 | 1.991 | 3.616 |
+| forgetting_ce | qwsw | clora | 16 | 2.297 | 0.324 | 1.993 | 2.95 |
+| forgetting_ce | qwsw | dora | 6 | 2.755 | 0.462 | 2.213 | 3.212 |
+| forgetting_ce | qwsw | sclora | 14 | 2.647 | 0.613 | 2.009 | 3.754 |
+| forgetting_ce | qwswm | lora | 31 | 2.259 | 0.533 | 1.951 | 4.174 |
+| forgetting_ce | qwswm | lora_null | 12 | 2.028 | 0.116 | 1.89 | 2.348 |
+| forgetting_ce | qwswm | lorawd | 14 | 2.574 | 2.088 | 1.954 | 9.827 |
+| forgetting_ce | qwswm | milora | 14 | 2.764 | 2.125 | 1.933 | 10.063 |
+| forgetting_ce | qwswm | clora | 13 | 2.119 | 0.25 | 1.953 | 2.673 |
+| forgetting_ce | qwswm | dora | 4 | 2.208 | 0.482 | 1.951 | 2.93 |
+| forgetting_ce | qwswm | sclora | 11 | 2.631 | 0.78 | 1.979 | 4.087 |
+| forgetting_ce | frc | lora | 16 | 2.315 | 0.151 | 2.084 | 2.456 |
+| forgetting_ce | frc | lora_null | 26 | 3.276 | 2.121 | 1.895 | 10.711 |
+| forgetting_ce | frc | lorawd | 121 | 2.241 | 0.677 | 1.896 | 7.324 |
+| forgetting_ce | frc | lorawdr16 | 9 | 1.951 | 0.016 | 1.94 | 1.984 |
+| forgetting_ce | frc | milora | 51 | 2.78 | 1.456 | 1.872 | 9.393 |
+| forgetting_ce | frc | clora | 21 | 2.291 | 0.091 | 2.103 | 2.412 |
+| forgetting_ce | frc | dora | 3 | 2.47 | 0.029 | 2.443 | 2.5 |
+| forgetting_ce | frc | sclora | 24 | 3.583 | 2.433 | 1.969 | 10.556 |
+| forgetting_ce | frc | pissa | 4 | 3.798 | 0.114 | 3.669 | 3.931 |
+| forgetting_ce | frm | lora | 3 | 3.591 | 0.02 | 3.57 | 3.611 |
+| forgetting_ce | frm | lora_null | 4 | 2.972 | 0.261 | 2.583 | 3.138 |
+| forgetting_ce | frm | lorawd | 105 | 2.991 | 2.396 | 1.95 | 15.889 |
+| forgetting_ce | frm | milora | 12 | 4.695 | 2.729 | 2.499 | 9.944 |
+| forgetting_ce | frm | clora | 10 | 3.345 | 0.101 | 3.201 | 3.485 |
+| forgetting_ce | frm | dora | 3 | 4.249 | 0.415 | 3.964 | 4.725 |
+| forgetting_ce | frm | sclora | 6 | 3.435 | 0.443 | 3.019 | 3.886 |
+| forgetting_ce | frm | pissa | 1 | 6.307 |  | 6.307 | 6.307 |
+| forgetting_ce | lrsw | corda [WITHHELD] | 23 | 3.598 | 2.351 | 1.903 | 10.374 |
+| forgetting_ce | qwsw | corda [WITHHELD] | 4 | 2.016 | 0.057 | 1.944 | 2.064 |
+| forgetting_ce | frc | cordapp [WITHHELD] | 8 | 4.265 | 3.158 | 1.869 | 9.447 |
+| forgetting_ce | frm | cordapp [WITHHELD] | 3 | 3.222 | 1.602 | 2.153 | 5.064 |
+| base_entropy | lrsw | lora | 25 | 1.829 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrsw | lora_null | 25 | 1.829 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrsw | lorawd | 27 | 1.829 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrsw | milora | 25 | 1.829 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrsw | milorawd | 2 | 1.81 | 0.0 | 1.81 | 1.81 |
+| base_entropy | lrsw | clora | 27 | 1.829 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrsw | dora | 25 | 1.825 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrsw | sclora | 24 | 1.828 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrswm | lora | 21 | 1.826 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrswm | lorawd | 21 | 1.828 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrswm | milora | 21 | 1.824 | 0.02 | 1.81 | 1.852 |
+| base_entropy | lrswm | clora | 21 | 1.826 | 0.021 | 1.81 | 1.852 |
+| base_entropy | lrswm | dora | 21 | 1.824 | 0.02 | 1.81 | 1.852 |
+| base_entropy | lrswm | sclora | 15 | 1.816 | 0.015 | 1.81 | 1.852 |
+| base_entropy | qwsw | lora | 14 | 1.927 | 0.02 | 1.879 | 1.935 |
+| base_entropy | qwsw | lora_null | 13 | 1.926 | 0.021 | 1.879 | 1.935 |
+| base_entropy | qwsw | lorawd | 14 | 1.935 | 0.0 | 1.935 | 1.935 |
+| base_entropy | qwsw | milora | 16 | 1.928 | 0.019 | 1.879 | 1.935 |
+| base_entropy | qwsw | clora | 16 | 1.931 | 0.014 | 1.879 | 1.935 |
+| base_entropy | qwsw | dora | 6 | 1.935 | 0.0 | 1.935 | 1.935 |
+| base_entropy | qwsw | sclora | 14 | 1.935 | 0.0 | 1.935 | 1.935 |
+| base_entropy | qwswm | lora | 31 | 1.933 | 0.01 | 1.879 | 1.935 |
+| base_entropy | qwswm | lora_null | 12 | 1.93 | 0.016 | 1.879 | 1.935 |
+| base_entropy | qwswm | lorawd | 14 | 1.935 | 0.0 | 1.935 | 1.935 |
+| base_entropy | qwswm | milora | 14 | 1.927 | 0.02 | 1.879 | 1.935 |
+| base_entropy | qwswm | clora | 13 | 1.935 | 0.0 | 1.935 | 1.935 |
+| base_entropy | qwswm | dora | 4 | 1.935 | 0.0 | 1.935 | 1.935 |
+| base_entropy | qwswm | sclora | 11 | 1.935 | 0.0 | 1.935 | 1.935 |
+| base_entropy | frc | lora | 16 | 1.823 | 0.02 | 1.81 | 1.852 |
+| base_entropy | frc | lora_null | 26 | 1.823 | 0.02 | 1.81 | 1.852 |
+| base_entropy | frc | lorawd | 121 | 1.823 | 0.019 | 1.81 | 1.852 |
+| base_entropy | frc | lorawdr16 | 9 | 1.819 | 0.019 | 1.81 | 1.852 |
+| base_entropy | frc | milora | 51 | 1.823 | 0.02 | 1.81 | 1.852 |
+| base_entropy | frc | clora | 21 | 1.832 | 0.021 | 1.81 | 1.852 |
+| base_entropy | frc | dora | 3 | 1.824 | 0.024 | 1.81 | 1.852 |
+| base_entropy | frc | sclora | 24 | 1.826 | 0.021 | 1.81 | 1.852 |
+| base_entropy | frc | pissa | 4 | 1.821 | 0.021 | 1.81 | 1.852 |
+| base_entropy | frm | lora | 3 | 1.852 | 0.0 | 1.852 | 1.852 |
+| base_entropy | frm | lora_null | 4 | 1.842 | 0.021 | 1.81 | 1.852 |
+| base_entropy | frm | lorawd | 105 | 1.828 | 0.021 | 1.81 | 1.852 |
+| base_entropy | frm | milora | 12 | 1.831 | 0.022 | 1.81 | 1.852 |
+| base_entropy | frm | clora | 10 | 1.823 | 0.02 | 1.81 | 1.852 |
+| base_entropy | frm | dora | 3 | 1.824 | 0.024 | 1.81 | 1.852 |
+| base_entropy | frm | sclora | 6 | 1.838 | 0.022 | 1.81 | 1.852 |
+| base_entropy | frm | pissa | 1 | 1.852 |  | 1.852 | 1.852 |
+| base_entropy | lrsw | corda [WITHHELD] | 23 | 1.825 | 0.02 | 1.81 | 1.852 |
+| base_entropy | qwsw | corda [WITHHELD] | 4 | 1.921 | 0.028 | 1.879 | 1.935 |
+| base_entropy | frc | cordapp [WITHHELD] | 8 | 1.852 | 0.0 | 1.852 | 1.852 |
+| base_entropy | frm | cordapp [WITHHELD] | 3 | 1.852 | 0.0 | 1.852 | 1.852 |

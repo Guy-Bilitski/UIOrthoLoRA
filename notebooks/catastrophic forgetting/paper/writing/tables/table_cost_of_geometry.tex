@@ -12,14 +12,17 @@
 \centering
 \small
 \setlength{\tabcolsep}{6pt}
-\caption{\textbf{The cost of geometry.} Every structure-modifying adapter pays
-extra cost relative to LoRA{+}wd for no retention at matched adaptation. Train
-wall-clock
+\caption{\textbf{Training cost and retention at matched adaptation.} Cost
+relative to LoRA{+}wd, with the retention gap at matched adaptation alongside.
+Train wall-clock
 (registry medians) and init taxes are measured; CLoRA memory is the analytical
 resident size of its frozen block ($k{=}1024$; $6.69$\,GB at $k{=}2048$), not
 metered peak. The last column (mean over four families; negative $=$ below the
 LoRA{+}wd envelope) is the operating-point retention gap, directionally
 consistent with the verified operating-point tables, not independently re-derived.
+Plain LoRA, which modifies no structure, sits $2.2$ points below the envelope as
+well, so the gaps in that column are not specific to the structure-modifying
+adapters.
 $^{\ast}$SC-LoRA's Llama deficit tracks its calibration corpus
 (Section~\ref{sec:results:rq1}), not its subspace constraint.}
 \label{tab:cost}

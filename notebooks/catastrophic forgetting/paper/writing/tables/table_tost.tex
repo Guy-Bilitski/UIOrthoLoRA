@@ -6,8 +6,10 @@
 \setlength{\tabcolsep}{3.5pt}
 \caption{\textbf{Equivalence to LoRA{+}wd at matched update magnitude
 (TOST).} Pooled model: retention on $\log_{10}\dw$ and method dummies
-(reference LoRA{+}wd) with family fixed effects; CR1 cluster-robust errors
-at the recipe-cell level ($n{=}1034$, $G{=}343$ cells). A method is
+(reference LoRA{+}wd) with family fixed effects; CR1 (cluster-robust,
+Liang--Zeger with the small-sample correction) standard errors
+at the recipe-cell level ($n{=}1034$, $G{=}343$ cells, the deduplicated pool of
+Appendix~\ref{app:pool}). A method is
 equivalent at margin $m$ iff the $90\%$ CI of its offset lies inside
 $(-m,+m)$. LoRA{+}wd (r16) and MiLoRA{+}wd are weight-decay arms of the
 reference itself; MiLoRA{+}wd has $n{=}2$ runs. Per-family offsets:

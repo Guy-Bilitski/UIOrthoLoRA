@@ -1,0 +1,14 @@
+method,attempted,quarantined,rate_pct,attempted_band,quarantined_band,rate_band_pct,lrs_diverged,families_diverged
+CorDA++,11,4,36.4,11,4,36.4,"1e-3,3e-4,5e-4,7e-4","frc:3/8,frm:1/3"
+CorDA,28,8,28.6,26,6,23.1,"1e-3,2e-3,5e-4",lrsw:8/23
+DoRA,77,7,9.1,73,3,4.1,"1e-3,2e-3,5e-3",lrsw:7/25
+lorawd_var,141,9,6.4,141,9,6.4,"1e-3,7e-4",frm:9/72
+MiLoRA,162,9,5.6,162,9,5.6,"1e-3,7e-4","frc:2/51,frm:6/16,qwswm:1/23"
+LoRA+wd,148,8,5.4,146,6,4.1,"1e-3,2e-3","frm:3/27,lrsw:2/27,qwsw:1/23,qwswm:2/24"
+LoRA,179,7,3.9,179,7,3.9,"1e-3,5e-4,7e-4","frm:6/21,qwswm:1/47"
+SC-LoRA,113,4,3.5,113,4,3.5,1e-3,"frc:3/24,qwsw:1/23"
+LoRA-Null,97,3,3.1,97,3,3.1,1e-3,frc:3/26
+CLoRA,124,1,0.8,121,0,0.0,5e-3,lrsw:1/28
+LoRA+wd(r16),10,0,0.0,10,0,0.0,,
+milorawd,2,0,0.0,2,0,0.0,,
+PiSSA,5,0,0.0,5,0,0.0,,

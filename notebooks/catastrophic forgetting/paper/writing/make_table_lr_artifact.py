@@ -93,7 +93,7 @@ print("wrote",out)
 #       VERBATIM literal (do not re-derive it from the caption above), and
 #       MiLoRA's 79.9 carries the $^{\dagger}$ seed-42 footnote the caption
 #       explains.
-paper_caption = r"""\caption{\textbf{The single-rate advantage of every structure-modifying adapter
+paper_caption = r"""\caption{\textbf{The single-rate advantage of four of the five structure-modifying adapters
 carries the ingredients of a learning-rate artifact.} For each method we take its
 best-looking single learning rate, the rate with the highest commonsense
 adaptation among those keeping retention $\ge 24$. At that fixed rate the method

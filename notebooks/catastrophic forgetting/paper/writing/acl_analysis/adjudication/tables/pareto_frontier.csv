@@ -1,0 +1,12 @@
+family,method,lr,k,adapt,ret,n_seeds
+llama_cs,LoRA+wd,5e-4,,81.75,25.86,4
+llama_cs,LoRA+wd,1e-4,,72.82,27.36,4
+llama_cs,LoRA+wd,5e-5,,41.72,27.56,3
+llama_math,LoRA+wd,2e-4,,66.79,33.57,3
+qwen_cs,LoRA+wd,7e-5,,87.77,39.92,1
+qwen_cs,LoRA+wd,5e-4,,87.43,40.07,3
+qwen_cs,LoRA+wd,1e-4,,86.85,40.7,3
+qwen_cs,LoRA+wd,3e-4,,86.05,41.02,3
+qwen_cs,LoRA+wd,1.5e-4,,85.55,41.03,1
+qwen_math,SC-LoRA,5e-5,,77.23,47.71,3
+qwen_math,SC-LoRA,2e-5,,68.64,48.19,3

@@ -49,8 +49,10 @@ def make_tost():
 \setlength{\tabcolsep}{3.5pt}
 \caption{\textbf{Equivalence to LoRA{+}wd at matched update magnitude
 (TOST).} Pooled model: retention on $\log_{10}\dw$ and method dummies
-(reference LoRA{+}wd) with family fixed effects; CR1 cluster-robust errors
-at the recipe-cell level ($n{=}1034$, $G{=}343$ cells). A method is
+(reference LoRA{+}wd) with family fixed effects; CR1 (cluster-robust,
+Liang--Zeger with the small-sample correction) standard errors
+at the recipe-cell level ($n{=}1034$, $G{=}343$ cells, the deduplicated pool of
+Appendix~\ref{app:pool}). A method is
 equivalent at margin $m$ iff the $90\%$ CI of its offset lies inside
 $(-m,+m)$. LoRA{+}wd (r16) and MiLoRA{+}wd are weight-decay arms of the
 reference itself; MiLoRA{+}wd has $n{=}2$ runs. Per-family offsets:
@@ -84,8 +86,10 @@ def make_mde():
 \caption{\textbf{Minimum detectable retention effects of the head-to-head
 design} (two-sided paired $t$, $\alpha{=}.05$, power $.8$, exact noncentral
 computation) at the observed common seeds and the empirical SD of paired
-per-seed deltas vs LoRA{+}wd. Cell SD = median within-cell retention SD
-over that family's multi-seed cells. Per-comparison values:
+per-seed deltas vs LoRA{+}wd. Cell SD = median, over the cells that enter
+that family's head-to-head comparisons, of the within-cell retention SD; it
+is not a median over all of that family's multi-seed cells.
+Per-comparison values:
 \texttt{rq1\_stats/power\_notes.csv}.}
 \label{tab:mde}
 \resizebox{\columnwidth}{!}{%
