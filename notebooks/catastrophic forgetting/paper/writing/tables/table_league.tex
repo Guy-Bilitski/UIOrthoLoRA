@@ -1,0 +1,35 @@
+% NEW (round-5, ACL repositioning). League table for the Four-Instruments
+% section: which single metric predicts retention. Source:
+% acl_analysis/correlations/{findings.md section 2, 03_league_table.py,
+% league_table.md}; all cells CONFIRMED exactly by the independent verification
+% pass (verification_report.md B4 -- reproduced to the value and the cluster-t).
+% Same-sample n=911 (CE-and-geometry pool), delta-R^2 over family fixed effects,
+% cluster-robust (cluster = recipe cell) per 09 Q1. spec_max is listed under
+% MAGNITUDE (r=+0.93 with log F_Delta family-demeaned; 06 section 5, 09 Q1c).
+% \footnotesize + tightened headers to clear a prior 21pt overfull hbox.
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{\textbf{The four instruments, ranked as single predictors of
+retention.} Same-sample $\Delta R^2$ over family fixed effects
+($n\!=\!911$, cluster-robust). The three magnitude measures top the table;
+behavioral drift (KL) is a near-substitute but downstream; learning rate is the
+fifth of the ten ranked metrics; every update-shape geometry metric is last.
+$\dw$ is the best single member. Condensed from the ten-metric ranking; the last
+row groups the remaining geometry terms.}
+\label{tab:league}
+\begin{tabular}{l l c c}
+\toprule
+Metric & Block & $\Delta R^2$ & $R^2$ range \\
+\midrule
+$\log\dw$              & magnitude  & $+0.420$ & 0.69--0.86 \\
+$\log\smax$            & magnitude  & $+0.349$ & 0.57--0.75 \\
+$\log\lVert\Delta W\rVert_F$ & magnitude & $+0.348$ & 0.50--0.83 \\
+KL drift (CE)          & behavioral & $+0.340$ & 0.41--0.86 \\
+$\log(\text{LR})$      & training   & $+0.207$ & 0.22--0.52 \\
+stable rank            & geometry   & $+0.116$ & 0.08--0.67 \\
+amp$_{\rm top}$/$e_{\rm top}$ & geometry & $\le\!+0.032$ & 0.00--0.24 \\
+\bottomrule
+\end{tabular}
+\end{table}

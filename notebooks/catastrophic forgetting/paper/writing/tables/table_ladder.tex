@@ -1,0 +1,36 @@
+% NEW (round-5, ACL repositioning). The nested delta-R^2 ladder: the one-table
+% version of "magnitude first, geometry second". Numbers FROZEN (key_numbers.md
+% section 19.1, n=1034, run-level, family fixed effects, quarantine-included).
+% CIs recomputed 2026-07-30 by acl_analysis/rq1_stats/04_ladder_ci.py for the
+% ladder's OWN blocks (B=2000 cell-level bootstrap); the earlier CIs were
+% borrowed from 09-Q1's 2-metric shape-unique share, a different estimand.
+% No VERIFY-PENDING markers: every value is a frozen/verified anchor.
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{\textbf{What each block of predictors adds to retention.} Nested
+regression of retention on blocks added in order, pooled over all 1{,}034
+adapters with family fixed effects (quarantine-included). Update magnitude
+($\dw$) adds $+0.395$ of $R^2$; the geometry block
+($e_{\rm top}$, stable rank, spectral norm) adds
+$+0.017$ ($\approx\!23\times$ less); method identity adds $+0.006$. 95\% CIs are
+cell-level cluster bootstraps ($B\!=\!2000$; magnitude adds more than the
+geometry block in $2000/2000$ replicates). Standardized
+$\beta(\log\dw)\!=\!-0.744$
+$[-0.894,-0.615]$ vs.\ geometry $|\beta|\!\le\!0.138$; cluster-robust
+$t(\log\dw)\!=\!-7.9$.}
+\label{tab:ladder}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{l c c c}
+\toprule
+Block added (nested) & $R^2$ & $\Delta R^2$ & 95\% CI \\
+\midrule
+Family fixed effects           & 0.390 & --      & -- \\
+$+\ \log\dw$ (magnitude)        & 0.785 & $+0.395$ & $[+0.309,+0.483]$ \\
+$+$ geometry ($e_{\rm top}$, $\log\smax$, stable rank) & 0.802 & $+0.017$ & $[+0.007,+0.032]$ \\
+$+$ method identity             & 0.808 & $+0.006$ & $[+0.003,+0.018]$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

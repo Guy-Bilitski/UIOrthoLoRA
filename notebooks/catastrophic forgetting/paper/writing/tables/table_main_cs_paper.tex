@@ -1,24 +1,34 @@
 % PAPER-LOCAL variant of table_main_cs.tex (the generated asset is left untouched).
-% Changes vs the generated table (provenance: analysis_a1_a4.py, split LoRA-Null
-% convention, 2026-07-02):
-%   (1) LoRA-Null added as its own row (78.9 / 23.6 / 31.0 / 0.696 / 54.6 @ lr5e-4).
-%   (2) Robustness column added: # of the 7 swept LRs keeping core retention >= 24
-%       (= base ceiling - 2pp). Source: key_numbers.md section 14.
-% Do NOT regenerate via the canonical generator; it would drop these edits.
-\begin{tabular}{l l c c c c c c}
+% ROUND-5 update (ACL repositioning, 2026-07-18; reconciled 2026-07-19 against the
+% independent verification pass). adapt/ret are multi-seed (3-5 seed) best-adapt
+% cell means from acl_analysis/adjudication/{01_op_points.py,
+% tables/op_points_llama_cs.csv} -- operating-point framework CONFIRMED
+% (verification_report.md B6; LoRA+wd op point 81.75+/-0.17 / 25.86+/-0.37 exact).
+% The prior standalone SD(ret) column was DROPPED: its 0.43/3.06 values are the
+% median-over-families of per-family median within-cell SDs, not Llama-CS-specific
+% (verifier B6) -- convention mismatch. F_Delta = seed-42 op-point magnitude
+% (key_numbers section 3; LoRA+wd 0.399 multi-seed-confirmed). Safe LRs = seed-42
+% rule (key_numbers section 14). LoRA-Null split convention. CorDA withheld.
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{l l c c c c}
 \toprule
-Method & Config & CS-8 $\uparrow$ & Ret-core $\uparrow$ & Ret-broad $\uparrow$ & $F_{\Delta}$ $\downarrow$ & $\sigma_{\max}$ & Safe LRs (/7) $\uparrow$ \\
+Method & Config & CS-8 $\uparrow$ & Ret $\uparrow$ & $F_{\Delta}$ $\downarrow$ & Safe/7 $\uparrow$ \\
 \midrule
-\textit{Base (no-FT)} & -- & -- & \textit{26.0} & -- & \textit{0} & -- & -- \\
+\textit{Base (no-FT)} & -- & -- & \textit{26.0} & \textit{0} & -- \\
 \midrule
-LoRA+wd(0.3) & lorawd wd0p3, lr5e-4 & \textbf{81.6} & \textbf{25.6} & 33.2 & \textbf{0.394} & 34.3 & \textbf{6/7} \\
-SC-LoRA & sclora r32, lr5e-5 & 80.1 & 22.5 & 32.5 & 0.559 & 11.3 & 1/7 \\
-MiLoRA & milora r32, lr3e-4 & 79.9$^{\dagger}$ & 24.7 & 33.6 & 0.543 & 48.5 & 5/7 \\
-LoRA & lora r16, lr3e-4 & 79.1 & 24.4 & 32.7 & 0.623 & 40.7 & 5/7 \\
-LoRA-Null & lora\_null r16, lr5e-4 & 78.9 & 23.6 & 31.0 & 0.696 & 54.6 & 5/7 \\
-CLoRA & clora k1024, lr5e-4 & 78.4 & 21.9 & 30.1 & 0.643 & 29.8 & 5/7 \\
-DoRA & dora r16, lr2e-4 & 78.3 & 24.8 & 32.9 & 0.445 & 38.8 & 4/7 \\
+LoRA+wd(0.3) & wd0.3, 5e-4 & \textbf{81.8}{\footnotesize$\pm$0.2} & \textbf{25.9}{\footnotesize$\pm$0.4} & \textbf{0.40} & \textbf{6} \\
+SC-LoRA$^{\ast}$ & r32 & 80.6 & 24.6 & 0.56 & 1 \\
+LoRA & r16, 3e-4 & 79.2 & 23.9 & 0.62 & 5 \\
+LoRA-Null & r16, 5e-4 & 78.9 & 21.8 & 0.70 & 5 \\
+CLoRA & k1024, 5e-4 & 78.3 & 21.6 & 0.64 & 5 \\
+MiLoRA$^{\dagger}$ & r32, 3e-4 & 77.2 & 21.4 & 0.54 & 5 \\
+DoRA$^{\dagger}$ & r16, 2e-4 & 76.2 & 19.2 & 0.45 & 4 \\
 \bottomrule
-\end{tabular}
-% single seed s42; ranks/configs not matched across methods; each method at its
-% best-adapt LR (sweep-only). Safe LRs = # of 7 rates with core retention >= 24.
+\end{tabular}%
+}
+% Multi-seed best-adaptation cell means; each method at its own best-adapt LR.
+% Ranks/configs not matched -- the exhibit is the relation, not a method ranking.
+% F_Delta is the seed-42 operating-point magnitude; Safe LRs = # of 7 rates keeping
+% core retention >= 24 (seed-42 rule, key_numbers section 14). Footnote meanings
+% (asterisk = SC-LoRA E4 calibration artifact; dagger = MiLoRA/DoRA answer-format
+% seed collapse, retention intact) are given in the caption in paper.tex.

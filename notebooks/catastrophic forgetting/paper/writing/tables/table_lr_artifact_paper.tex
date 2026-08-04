@@ -14,18 +14,22 @@
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{\textbf{The ``win'' of every structured adapter carries the ingredients of
-a learning-rate artifact.} For each method we take its \emph{best-looking single
-learning rate} (the LR that maximises commonsense adaptation while keeping retention
-$\ge 24$). At that fixed LR the method can beat plain LoRA \emph{run at the same LR}
-(columns 2--4). But once the learning rate is \emph{swept}, LoRA+wd traces a Pareto
-frontier that sits on or above the method's best single-LR point on \emph{both} axes
+\caption{\textbf{The single-rate advantage of every structure-modifying adapter
+carries the ingredients of a learning-rate artifact.} For each method we take its
+best-looking single learning rate, the rate with the highest commonsense
+adaptation among those keeping retention $\ge 24$. At that fixed rate the method
+can beat plain LoRA run at the same rate (columns 2--4). Once the learning rate
+is swept, LoRA+wd traces a retention-adaptation frontier that sits on or above
+the method's best single-rate point on both axes
 (columns 5--6). \emph{Single seed (42); the retention margins are sub-1\,pp and within
-documented seed noise---the point is that no fixed-LR advantage survives a symmetric
+documented seed noise; the point is that no fixed-rate advantage survives a symmetric
 sweep, not the size of the gap.} Adapt = commonsense accuracy; Ret = mean(BBH,
 MMLU-Pro). Llama-2-7B, 7 LRs. CorDA is withheld (see Limitations).
-$^{\dagger}$MiLoRA's 79.9 is a seed-fragile cell (three-seed $57.7\!\pm\!22.7$;
-Table~\ref{tab:cs}).}
+$^{\dagger}$$79.9$ is MiLoRA's \emph{seed-42} best-adapt cell (lr$3\!\times\!10^{-4}$);
+across seeds that cell is a format-collapse basin ($79.9/58.7/34.5$, i.e.\
+$57.7\!\pm\!22.7$), so the multi-seed exhibit (Table~\ref{tab:grand}) selects a
+different, lower best-adapt mean ($77.2$). Retention stays curve-consistent
+throughout.}
 \label{tab:lr_artifact}
 \begin{tabular}{l cc c cc}
 \toprule

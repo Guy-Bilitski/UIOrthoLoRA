@@ -1,31 +1,24 @@
-% Claims x evidence x pending-control map (E6). Hand-maintained; keep in sync with
-% Limitations. Experiment codes: B4 = eval-matched calibration + sensitivity arm
-% (LANDED for SC-LoRA, 4 cells 07-09/10; CorDA/LoRA-Null expansion queued);
-% B5a = param-matched LoRA+wd control (LANDED 07-12/13: r16 control + plain-LoRA
-% rank ladder; the r16-collapse-basin seed replicate is queued);
-% B5c = seeds 43/44 on headline cells (LANDED: s43 x7, s44 x7 — DoRA s44 landed);
-% C5 = base-ceiling calibration (LANDED for Llama-2 07-12: core 25.89, broad
-% 35.26; Qwen ceilings still open); Qwen math = the Qwen2.5-7B math grid
-% (LANDED 2026-07-14, qualitative: n=56 s42 cells, BBH-only, r=-0.70).
+% Claims x evidence x pending-control map. Hand-maintained; keep in sync with the
+% Limitations section. ROUND-5 update (ACL repositioning, 2026-07-18): numbers to
+% frozen key_numbers section 18/19; "first-order predictor", never "mechanism".
 \begin{table*}[t]
 \centering
 \small
 \setlength{\tabcolsep}{5pt}
-\caption{\textbf{What each claim rests on, and the named experiment that closes its
-gap.} Evidence strength is stated at the level the current data supports.}
+\caption{\textbf{What each claim rests on, and the control that closes its gap.}
+Evidence strength is stated at the level the current data supports.}
 \label{tab:claims}
-\begin{tabular}{p{0.30\textwidth} p{0.34\textwidth} p{0.28\textwidth}}
+\begin{tabular}{p{0.30\textwidth} p{0.40\textwidth} p{0.22\textwidth}}
 \toprule
-Claim & Evidence strength & Pending control \\
+Claim & Evidence strength & Open control \\
 \midrule
-1. Magnitude law (mechanism) & complete 49-cell grid; $r\!=\!-0.86$/$-0.92$; LOMO-predictive; headline cells three-seed (B5c landed, all seven adapters); Qwen math replicates qualitatively ($n\!=\!56$, BBH-only, $r\!=\!-0.70$) & Qwen commonsense seeds; Qwen base ceilings \\
-\quad geometry inert given $\dw$ & on-curve intercepts and slopes jointly n.s.; full-pool $F$ SC-LoRA-driven, seed-42-only & seed-averaged ANCOVA recompute \\
-\quad SC-LoRA deviation & resolved: seeds 43/44 ($22.5\!\to\!25.6/25.8$) and B4 eval-matched calibration ($\to\!26.5$--$27.0$) both return it to the curve; three-seed math cell on the law (residual $-1.8$\,pp) & extend B4 arm to CorDA/LoRA-Null \\
-2. LR-artifact diagnosis & ingredients shown from our own sweep; seed half landed (B5c) & reproduce-a-published-win \\
-3. LoRA{+}wd corollary & edges plain LoRA outside three-seed noise on both axes; matches/edges the elaborate adapters; 6/7 safe rates; B5a landed: r16 control reproduces the operating point at half the parameters, rank ladder moves along the curve & r16-collapse-basin seed replicate; wd knob for the other frontier arms \\
-\quad CorDA placement & withheld (calibration bug; re-run in progress) & CorDA nq\_open re-run + B4; CorDA++ \\
-Broad-retention texture & calibrated (C5 landed: broad ceiling 35.26); TruthfulQA immunity real (constant $\approx\!-3$\,pp offset, not a floor) & Qwen base ceilings \\
-Second model (Qwen2.5-7B) & commonsense replicates in full ($n\!=\!49$, $r\!=\!-0.86$; single seed); math replicates qualitatively ($n\!=\!56$, BBH-only, $r\!=\!-0.70$, slope $-14.4$\,pp/decade) & Qwen commonsense seeds; Qwen base ceilings \\
+1. Magnitude relation (first-order predictor) & pooled $r\!=\!-0.847$ ($n\!=\!1035$), per-family $-0.83$ to $-0.93$; within-cell micro-test $-0.713$; E1 intervention on-curve $15/15$, random-direction $-3.05$\,pp; two models, two tasks & cross-architecture E1 (Qwen); Qwen base ceilings \\
+\quad geometry adds little given $\dw$ & nested ladder $\Delta R^2$: magnitude $+0.395$, geometry $+0.017$, method $+0.006$ (cluster-bootstrap CIs; ordering $2000/2000$) & --- (scoped to LoRA-variant family) \\
+\quad SC-LoRA deviation & E4 eval-matched calibration: $-3.39\!\to\!+0.92$\,pp above curve ($n\!=\!20/24$) --- a calibration artifact, not geometry & extend E4 to CorDA/LoRA-Null \\
+2. Geometry adds little beyond $\dw$ & ladder $+0.017$; league table (geometry last); fingerprint recovers design but not retention & seed-averaged geometry recompute \\
+3. LR is a proxy; LoRA{+}wd matches/edges & fixed-LR strata $r\!\le\!-0.7$; partials; multi-seed Pareto $P\!=\!1.00$ in 3/4 families; in-harness math $66.8$ vs CLoRA $60.8$; param-matched r16 control & reproduce-a-published-win; wd knob for other arms \\
+\quad CorDA placement & withheld (calibration/port bug); 7 of 8 assessed & CorDA nq\_open re-run \\
+Second model / scale & Qwen CS full ($n\!=\!151$), Qwen math ($n\!=\!164$, $r\!=\!-0.830$); 284B shape-fingerprint recurs (sign test $p\!\approx\!0.03$), no retention claim & Qwen seeds; 284B retention evals \\
 \bottomrule
 \end{tabular}
 \end{table*}

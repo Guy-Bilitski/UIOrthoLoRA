@@ -1,0 +1,39 @@
+% NEW (round-5, ACL repositioning). The "cost of geometry" overhead table.
+% Source: acl_analysis/adjudication/{findings.md, tables/overheads.md, 05_overheads.py}.
+% Verification status (verification_report.md): train wall-clock and init-tax are
+% [EXTERNAL] measured constants traceable to the pre-existing registry /
+% INTERESTING_INSIGHTS.md section 7 / fig_efficiency.py (DoRA 2.15x, CLoRA GB) --
+% CONFIRMED-as-sourced (item 3, "analytical, not metered peak" label kept). The
+% "Ret @ matched adapt" column is the adjudication verdict layer's LR-re-matching
+% interpolation (verifier item 2: NOT independently re-derived, directionally
+% consistent with the verified op-point tables) -- caption sources it accordingly.
+% CLoRA memory is an ANALYTICAL resident size (frozen-P block), not metered peak.
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\caption{\textbf{The cost of geometry.} Every structure-modifying adapter pays
+extra cost relative to LoRA{+}wd for no retention at matched adaptation. Train
+wall-clock
+(registry medians) and init taxes are measured; CLoRA memory is the analytical
+resident size of its frozen block ($k{=}1024$; $6.69$\,GB at $k{=}2048$), not
+metered peak. The last column (mean over four families; negative $=$ below the
+LoRA{+}wd envelope) is the operating-point retention gap, directionally
+consistent with the verified operating-point tables, not independently re-derived.
+$^{\ast}$SC-LoRA's Llama deficit tracks its calibration corpus
+(Section~\ref{sec:results:rq1}), not its subspace constraint.}
+\label{tab:cost}
+\begin{tabular}{l c l c c}
+\toprule
+Method & Train & Initialization tax & Deploy $\Delta$ & Ret @ matched adapt \\
+\midrule
+\textbf{LoRA{+}wd} & $1.00\times$ & none (AdamW flag) & rank-$r$ & \textit{reference} \\
+LoRA        & $1.00\times$ & none & rank-$r$ & $-2.2$\,pp \\
+MiLoRA      & $1.00\times$ & $160$ weight SVDs & rank-$2r$ & $-2.8$\,pp \\
+LoRA-Null   & $1.00\times$ & $256$ calib.\ forwards $+$ eigh & rank-$r$ & $-3.2$\,pp \\
+CLoRA       & $1.17\times$ & $k{\times}d$ eigh $+$ frozen-$P$ ($+3.34$\,GB) & rank-$r$ & $-4.2$\,pp \\
+DoRA        & $2.15\times$ & none & rank-$r$ & $-4.2$\,pp \\
+SC-LoRA     & $0.99\times$ & $512$ calib.\ forwards $+$ eigh & rank-$r$ & $-4.6$\,pp$^{\ast}$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
