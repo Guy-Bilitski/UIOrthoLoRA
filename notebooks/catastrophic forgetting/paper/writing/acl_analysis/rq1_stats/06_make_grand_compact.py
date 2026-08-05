@@ -33,13 +33,10 @@ for line in src:
         cells = [c.strip() for c in s[:-2].split("&")]
         assert len(cells) == 10, f"unexpected column count {len(cells)}: {s}"
         row = " & ".join(cells[:5]) + r" \\"
-        # PI edit 2026-08-04 (Overleaf d175f60): the dagger markers and their
-        # caption legend are removed from the compact body table; the ast on
-        # SC-LoRA stays. Smash it: unsmashed superscripts exceed the line
-        # height and drift the two side-by-side half-tables out of alignment.
-        row = re.sub(r"\$\^\{\\dagger\}\$", "", row)
-        row = re.sub(r"\$\^\{(\\ast)\}\$",
-                     r"\\smash{$^{\1}$}", row)
+        # PI decisions (2026-08-04/05): the compact body table carries no
+        # marker superscripts at all; both markers stay, defined, in the
+        # full appendix table (tab:grand-full).
+        row = re.sub(r"\$\^\{(\\ast|\\dagger)\}\$", "", row)
         cur[1].append(row)
 
 assert len(blocks) == 4, f"expected 4 blocks, got {len(blocks)}"
