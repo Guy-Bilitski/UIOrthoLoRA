@@ -26,6 +26,7 @@
 \usepackage{amsmath,amssymb}
 \usepackage{amsfonts}
 \usepackage{xcolor}
+\usepackage{colortbl} % cell shading in tables/table_geometry_battery.tex
 
 \graphicspath{{figures/}}
 
@@ -49,25 +50,25 @@ Fine-Tuning?}
 % ===========================================================================
 \begin{abstract}
 % ===========================================================================
-A growing family of parameter-efficient fine-tuning (PEFT) adapters aims
-to adapt a pretrained model to a new task while preserving its general
-capabilities, mostly by controlling where the weight update lands; each
-was introduced under a different forgetting protocol, and which property
-of a trained adapter governs retention has therefore remained open. We
-measured eight LoRA-family adapter methods, swept over a
-seven-point learning-rate grid and up to five seeds, on Llama-2-7B and Qwen2.5-7B across commonsense and math
-tuning: a pool of $1{,}035$ adapters scored under one procedure for (i)
-the adaptation-retention operating point, (ii) the update's magnitude,
-(iii) its geometry features, and (iv) its KL drift from the base
-model. In $25$ Holm-corrected comparisons, no adapter is significantly
-better than plain LoRA with weight decay. Magnitude is a strong
-predictor of retention (pooled $r = -0.847$), while update geometry,
-though it identifies the producing method, adds a tiny explained
-retention variance once magnitude is known. Adapter performance varies
-strongly with the learning rate, which acts only through the magnitude it
-sets, so comparisons at one shared rate are unreliable. The Retention benchmarks degrade in one fixed order in every setting, so reported forgetting depends on the benchmark chosen.
-To first order, what tracks forgetting is the size of the update, not its
-geometry.
+Many parameter-efficient fine-tuning (PEFT) adapters aim to preserve a
+pretrained model's general capabilities, often by controlling where the
+weight update lands. Each was introduced under its own forgetting protocol,
+so the designs have not been compared on common ground. We evaluate five
+retention-aware adapters and three reference arms on Llama-2-7B and
+Qwen2.5-7B, across commonsense and math tuning, sweeping all but one over a
+seven-point learning-rate grid with multiple seeds. This yields a pool of
+$1{,}035$ runs evaluated under a common procedure for adaptation, retention,
+update magnitude, geometry, and KL drift. Across $25$ Holm-corrected
+comparisons, no adapter significantly outperforms plain LoRA with weight
+decay. Beyond this head-to-head result, the shared measurement reveals the
+dynamics behind retention: update magnitude strongly predicts it (pooled
+$r=-0.847$), while geometry identifies the designs that constrain the
+update but adds little predictive power once magnitude is known. The
+learning rate affects retention through the update magnitude it produces,
+so comparisons at a single shared rate partly reflect how well that rate
+suits each method. Finally, retention benchmarks degrade in the same order
+across all settings, so reported forgetting depends on the benchmark used
+to measure it.
 \end{abstract}
 
 % ===========================================================================
@@ -78,168 +79,226 @@ capabilities when it is fine-tuned on a narrow task, is an obstacle to deploying
 (PEFT), and in particular LoRA~\citep{hu2021lora}, was expected to reduce it:
 restricting the update to a low-rank correction $\Delta W = BA$ leaves the
 bulk of the pretrained weights untouched. Forgetting nonetheless persists, and
-a family of adapters has grown up to address it. These methods reason about which directions to protect in the
-singular basis of the pretrained weight (PiSSA~\citep{meng2024pissa},
-MiLoRA~\citep{wang2024milora}, OPLoRA~\citep{xiong2025oplora}), in a
-calibration-data covariance basis (CorDA~\citep{yang2024corda},
-CorDA++~\citep{yang2025cordapp}, SC-LoRA~\citep{luo2025sclora},
-LoRA-Null~\citep{tang2025loranull}), or through an orthogonality penalty
-(CLoRA~\citep{clora}, O-LoRA~\citep{wang2023olora}). The initialization-based designs share the premise that where the update lands governs retention.
+a family of adapters has grown up to address it, choosing which directions to protect in the singular basis of the pretrained weight, in a calibration-data covariance basis, or through an orthogonality penalty (Section~\ref{sec:related}). These designs share the premise that where the update lands governs retention.
 
-\paragraph{The gap.} Three things make it hard to know whether that premise holds. First, each adapter was introduced and evaluated on
-different benchmarks and often with a different notion of forgetting, so their retention numbers are not comparable. CLoRA~\citep{clora} reports reasoning benchmarks, the data-aware methods report closed-book factoid QA, MiLoRA reports a language-modeling loss, and PiSSA and DoRA report
-no forgetting metric at all. Second, PEFT results vary strongly with the
-learning rate and the random seed, and per-adapter tuning, which we show is critical, is often overlooked. A comparison under these conditions cannot separate what an adapter's design contributes from how well it happens to be tuned. Third, the factors that cause, or at least track, forgetting are still not established. CLoRA examined one such factor, the size of the update's effect on the output, and we show it is not specific to that method: update magnitude explains most of the retention variance across every adapter we measure. We therefore include LoRA with weight decay (LoRA{+}wd), plain LoRA with one knob that controls only the magnitude, as the reference baseline.
+\paragraph{The gap.} Three things make it hard to know whether that premise
+holds. First, each adapter was introduced under its own benchmarks and its own
+notion of forgetting, so their retention numbers are not comparable:
+CLoRA~\citep{clora} reports reasoning benchmarks, the data-aware methods
+closed-book factoid QA, MiLoRA a language-modeling loss, and PiSSA and DoRA no
+forgetting metric at all. Second, PEFT results vary strongly with the learning
+rate and the random seed, so a comparison that does not tune each method
+separately cannot separate what a design contributes from how well it happens
+to be tuned. Third, the size of the update is a candidate that no comparison of
+these adapters has tested, although published work points at it from outside
+that comparison (Section~\ref{sec:related}). What is missing is the
+measurement that would decide it: one retention axis and one magnitude axis,
+with each method tuned at its own rate. We therefore include LoRA with weight
+decay (LoRA{+}wd), plain LoRA with one knob aimed at the magnitude alone,
+as the reference baseline.
 
 \paragraph{This work.} We bring the adapters onto one measurement. Every
-adapter is tuned in a single training harness and measured under four metrics computed identically for all of them: (i) the adaptation-retention
-operating point, (ii) the effective update magnitude (CLoRA's $\mathbb{F}$
-diagnostic, which we adopt as a method-neutral magnitude axis $\dw$), (iii) the geometry of the update relative to the base weight's spectrum, and (iv) the KL drift of the adapted model from its base, measured with one forward pass. Each method is
-swept over seven learning rates and multiple seeds, across two architectures (Llama-2-7B and Qwen2.5-7B) and two task types (commonsense and math), giving a frozen pool of $1{,}035$ trained adapters.
+adapter is tuned in a single training harness and scored under four metrics
+computed identically for all of them: the adaptation-retention operating
+point, the update's magnitude (CLoRA's $\mathbb{F}$ diagnostic, which we
+adopt as a method-neutral magnitude axis $\dw$), its geometry relative to the
+base weight's spectrum, and its KL drift from the base model
+(Section~\ref{sec:method:metrics}). Each method is swept over seven learning
+rates and multiple seeds, across two architectures (Llama-2-7B and
+Qwen2.5-7B) and two task types (commonsense and math), giving a frozen pool
+of $1{,}035$ trained adapters.
 Against this pool we ask four questions:
 \begin{itemize}
   \item \textbf{RQ1.} Compared under one protocol and swept over rates and seeds, is any retention-aware adapter significantly better than a plain magnitude control (LoRA with adapter weight decay), in adaptation or retention?
   \item \textbf{RQ2.} What governs the adaptation-retention outcome: the
   magnitude of the update, or the subspace it lands in?
   \item \textbf{RQ3.} Can the KL drift serve as a practical retention monitor?
-  \item \textbf{RQ4.} Do retention benchmarks degrade in a universal order as forgetting progresses?
+  \item \textbf{RQ4.} Do retention benchmarks degrade in the same order as forgetting progresses?
 \end{itemize}
-Our contributions are: (i) the protocol itself, eight LoRA-family adapters (with DoRA as a reparameterization baseline and LoRA{+}wd as the magnitude-only control) under four identically computed metrics, swept over rates and seeds, with cluster-robust, multiplicity-corrected inference;
-(ii) the answers to RQ1 and RQ2: no adapter is significantly better than LoRA{+}wd, while update magnitude tracks retention (pooled $r = -0.847$) and geometry adds about $23$ times less explained variance in a nested model and fingerprints method identity; and (iii) two
-measurement products, a drift-based retention monitor (RQ3) and a universal benchmark fragility ordering (RQ4).
+Our contributions are: (i) a common measurement for the retention-aware
+adapter family, eight LoRA-family adapters (with DoRA as a reparameterization
+baseline and LoRA{+}wd as the magnitude-only control) under four identically
+computed metrics, swept over rates and seeds, with cluster-robust,
+multiplicity-corrected inference; (ii) a frozen pool of $1{,}035$ trained
+adapters with their per-run metrics and the statistics behind every exhibit,
+released so that the analyses here can be re-run and extended; and (iii) four
+measured answers, that no adapter is significantly better than a plain
+magnitude control, that retention tracks the size of the update while its
+placement in the base weight's spectrum adds far less, that KL drift serves as
+a retention monitor, and that the retention benchmarks degrade in one fixed
+order.
 
-\paragraph{What we observe.} No method is significantly better than
-LoRA{+}wd across $25$ Holm-corrected paired comparisons, and at matched update magnitude five of the seven adapters compared against it are statistically equivalent within $\pm3$ retention points. Method identity adds almost nothing once the size of the update is known ($\Delta R^2 = +0.006$). A within-cell test and a direct rescaling intervention indicate the magnitude relation is not merely a by-product of the training recipe, and because different adapters convert the same learning rate into different magnitudes, single-rate comparisons carry the ingredients of a tuning artifact that a per-method sweep removes. The KL drift, one forward pass per model, predicts held-out retention within about two points on Llama and flags large damage in every setting. The retention benchmarks degrade in one fixed order in all six run families, so how much forgetting is reported depends on the benchmark chosen.
-% Guy: claude, please add here 1-2 sentences from the results on what additionally we observed. Very short and concentrated!
-%% CLAUDE: done - added the last two sentences above (the RQ3 drift monitor and the RQ4 fragility order); also completed the "at matched update magnitude" clause with the equivalence result per our chat.
+\paragraph{What we observe.} Brought onto one measurement, the premise does
+not hold up. No adapter is significantly better than LoRA{+}wd on either
+axis, and at matched update magnitude the only departures from it are
+deficits: five of the seven swept adapters are equivalent to the control
+within $\pm3$ retention points, and the two that are not, PiSSA and
+SC-LoRA, fall $7.1$ and $4.1$ points below it. What separates runs is how
+large the update is, not where it lands: magnitude predicts retention at
+pooled $r=-0.847$, while geometry adds $+0.017$ of $R^2$ and method
+identity $+0.006$ once magnitude is known. Because different adapters turn
+the same learning rate into different magnitudes, a comparison at one
+shared rate partly measures how well that rate suits each method; the
+per-method sweep removes this.
 
 % ===========================================================================
 \section{Related Work}\label{sec:related}
 % ===========================================================================
-\paragraph{Retention-aware PEFT adapters.} The adapters we study are best
-organized by the basis in which they decide which directions to protect. A
-first group reasons in the static SVD basis of the pretrained weight:
-PiSSA~\citep{meng2024pissa} trains the principal singular directions,
-MiLoRA~\citep{wang2024milora} the minor ones, and
-OPLoRA~\citep{xiong2025oplora} projects the update into the orthogonal
-complement of the top subspace. A second group reasons in a
-data- or activation-covariance basis, freezing the components a calibration
-corpus exercises: CorDA~\citep{yang2024corda},
-CorDA++~\citep{yang2025cordapp}, SC-LoRA~\citep{luo2025sclora}, and
-LoRA-Null~\citep{tang2025loranull}. A third group constrains the update with
-an orthogonality penalty: O-LoRA~\citep{wang2023olora} learns each new task in
-a subspace orthogonal to previously learned ones, and CLoRA~\citep{clora}
-generalizes the same penalty to one-stage fine-tuning against a fixed
-subspace. The initialization-based designs share the premise that
-\emph{where} the update lands governs forgetting; CLoRA's stated premise is
-that forgetting tracks the scale of the induced output change, with the
-penalty as its lever. DoRA~\citep{liu2024dora}, which reparameterizes each
-adapted weight into a magnitude vector and a direction, targets adaptation
-quality and makes no retention claim; we include it as a widely used
-reparameterization baseline. Each of these methods was introduced and
-evaluated on its own, under its own protocol and benchmarks, which is what our
-common measurement is meant to change. Our battery evaluates representative
-candidates from each group (PiSSA and MiLoRA; SC-LoRA and LoRA-Null; CLoRA)
-rather than every method. CLoRA is the closest single-method
-antecedent: it reports forgetting on our benchmarks and introduced the
-magnitude diagnostic we adopt, and its published numbers are faithful and
-recur as external corroboration (Appendix~\ref{app:clora}). Our delta is
-cross-method: whether geometry adds anything beyond magnitude across the
-family, and whether plain LoRA{+}wd reaches the same operating points at
-matched capacity.
+\paragraph{Retention-aware PEFT adapters.} These adapters share a geometric
+premise, and in this literature the geometry of an update means one specific
+thing: the pretrained weight comes with an ordering of directions, its major
+components at one end and its minor components at the other, and a design
+decides at which end the update is placed. The ordering is read either from
+the singular value decomposition of the weight itself or from the second
+moment of the activations a calibration corpus produces, and the designs
+differ mainly in which end they select. PiSSA~\citep{meng2024pissa} places the
+update in the major components and SC-LoRA~\citep{luo2025sclora} in the major
+directions of the output second moment; MiLoRA~\citep{wang2024milora} places
+it in the minor components and LoRA-Null~\citep{tang2025loranull} in the least
+activated input directions; CorDA~\citep{yang2024corda} and
+CorDA++~\citep{yang2025cordapp} select in a context-oriented decomposition; and
+OPLoRA~\citep{xiong2025oplora} withholds it from the major subspace
+altogether. Our geometry coordinates measure that placement directly, as the
+share of the update's energy in the major and the minor singular subspaces of
+the base weight on the input and the output side
+(Section~\ref{sec:method:metrics}). A separate group falls outside this
+construct, constraining the update with an orthogonality penalty against a
+subspace that is not ordered by size: O-LoRA~\citep{wang2023olora} learns each
+new task in a subspace orthogonal to previously learned ones, and
+CLoRA~\citep{clora} generalizes the penalty to one-stage fine-tuning against a
+fixed subspace, with the stated premise that forgetting tracks the scale of
+the induced output change rather than where the update lands. DoRA~\citep{liu2024dora} targets adaptation quality and
+makes no retention claim; we include it as a widely used reparameterization
+baseline. We evaluate one representative per group (PiSSA and MiLoRA;
+SC-LoRA and LoRA-Null; CLoRA).
+CLoRA supplies the experimental frame we build on: it reports forgetting on
+the benchmarks we use, it introduced the magnitude diagnostic we adopt as
+$\dw$, our dense Llama grids start from its published configuration, and
+its published numbers recur as external corroboration of ours
+(Appendix~\ref{app:clora}). We widen that frame to the whole family: the
+same protocol over all the adapters, asking whether geometry adds anything
+beyond magnitude and whether plain LoRA{+}wd reaches the same operating
+points at matched capacity.
 
-\paragraph{What governs forgetting.} In the broader continual-learning
-literature, regularization methods penalize movement away from previous
-weights and replay methods rehearse stored data~\citep{wang2024clsurvey,
-rolnick2019replay}; we study the PEFT adapter family, where the update is
-low-rank by construction and no data is replayed. That forgetting grows as the
-weights move farther from their pretrained values is an old observation.
-EWC~\citep{kirkpatrick2017ewc} and L$^2$-SP~\citep{li2018l2sp} penalize
-deviation from the pretrained weights, with and without a geometric
-weighting; \citet{kalajdzievski2024scaling} fit scaling laws in which
-forgetting grows with parameters tuned and steps taken, both proxies for
-update size; and \citet{biderman2024lora} report that LoRA forgets less
-than full fine-tuning while learning less. Single-method evidence inside
-the adapter family points the same
-way~\citep{wang2024milora,tang2025loranull}. None of these measures a
-common magnitude axis across methods or sweeps the learning rate per
-method, so none can ask whether the adapters differ once tuning is
-equalized (RQ1) or whether geometry adds anything beyond magnitude (RQ2).
-Concurrent work of \citet{lee2026lr} shows that the peak \emph{adaptation}
-of several LoRA variants converges once each is tuned at its own learning
-rate; our learning-rate analysis (Section~\ref{sec:results:rq2}) reaches
-the analogous conclusion for retention and traces it to the update
-magnitude each rate produces.
+\paragraph{Update size.} Continual learning typically either penalizes
+movement away from previous weights or replays stored
+data~\citep{wang2024clsurvey,rolnick2019replay}; the adapter family we study
+does neither. The link between weight movement and forgetting is
+longstanding: EWC~\citep{kirkpatrick2017ewc} and L$^2$-SP~\citep{li2018l2sp}
+penalize distance from the pretrained weights directly,
+\citet{kalajdzievski2024scaling} fits scaling laws in which forgetting grows
+with the parameters tuned and the steps taken, and \citet{biderman2024lora}
+report that LoRA forgets less than full fine-tuning while also learning
+less. Recent work points at update magnitude as the quantity behind these
+observations. \citet{zhang2025primacy} treat the learning rate, the scaling
+factor, and the initialization as three controls on update magnitude, and
+attribute spectral initialization's advantage to the magnitude it induces
+rather than to its directions, though for adaptation quality rather than
+retention. \citet{huang2025fapm} prune adapters by the size of the update
+relative to the pretrained weight, \citet{koubbi2026meanfield} derive a
+sharp transition from a non-forgetting to a forgetting regime as the
+perturbation grows, and single-method reports within the adapter family
+point the same way~\citep{wang2024milora,tang2025loranull}. None of this
+work measures magnitude against placement across the retention-aware
+family; that comparison is what our protocol adds.
+
+\paragraph{Update geometry.} \citet{shuttleworth2025illusion} read fine-tuned
+weights on a different coordinate, the spectrum of the adapted matrix
+$W_0{+}\Delta W$: LoRA introduces new leading singular directions
+near-orthogonal to the pretrained ones, and scaling them down after training
+improves modeling of the pretraining distribution at a small cost in task
+accuracy. That coordinate is a property of the resulting weight rather than a place a
+design puts its update, so it lies outside the construct above, and their
+outcome is the pretraining distribution rather than benchmark retention, so
+nothing we measure tests their claim. Their lever also
+moves with ours, since raising the rate or the scaling factor both enlarges
+the update and adds those directions, so the two studies read the same
+lever on different coordinates. Concurrent work presses the same point from
+the other side: \citet{xie2026intruder} derive a per-layer critical update
+strength from the base spectrum and report norm-matched interventions in which
+threshold-crossing layers, rather than update size, carry the forgetting.
+Their unit is the layer and their coordinate is the adapted spectrum; ours is
+the adapter and the placement of $\Delta W$, measured across methods at
+equalized tuning, so the two measurements can disagree without either being
+wrong, and reconciling them is the natural next experiment (Limitations).
+
+\paragraph{Tuning as a confound.} \citet{lee2026lr} sweep the rate per method
+and find that peak \emph{adaptation} converges across several LoRA variants;
+we reach the analogous conclusion for retention and trace it to the magnitude
+each rate produces (Section~\ref{sec:results:rq2}). What none of this work does is place the
+adapter family on one retention measurement with a common magnitude axis, so
+none of it can ask whether the adapters differ once tuning is equalized (RQ1)
+or how far geometry adds to magnitude within the family (RQ2).
 
 % ===========================================================================
-\section{Methodology}\label{sec:method}
+\section{Measurement setup}\label{sec:method}
 % ===========================================================================
 
 %% agent: from here
 %% agent: to here - all this section more relevant to the introduction. Here we should focus on what we offer or contribute here to fix it
 %% CLAUDE: done - deleted the gap restatement (it already lives in the
 %% Introduction's "The gap" paragraph) and opened directly with what we build.
-We conducted a common measurement for the retention-aware adapter family.
-It has three components,
-each serving the research questions of Section~\ref{sec:intro}:
-(i) a unified
-reimplementation of the main retention-aware adapter families together with
-standard reference methods, so that RQ1 rests on a fair, like-for-like
-comparison under one protocol; (ii) a training protocol that sweeps learning
-rates and seeds per method, so that RQ1 separates what a design contributes
-from how well it happens to be tuned; and (iii) four metrics computed
-identically for every trained adapter: the adaptation-retention operating
-point, which is the outcome, and the three candidate governing axes of RQ2,
-update magnitude, update geometry, and KL drift, the last of which
-RQ3 additionally evaluates as a monitor. RQ4 reuses the retention
-evaluations themselves, read per benchmark.
+We built one common measurement for the retention-aware adapter family: a
+unified reimplementation of the designs of Section~\ref{sec:related} with
+standard reference methods, a protocol that sweeps learning rates and seeds
+per method, and four metrics computed identically for every trained adapter.
 
 % ---------------------------------------------------------------------------
 \subsection{Adapters under study}\label{sec:method:adapters}
 % ---------------------------------------------------------------------------
 All methods build on LoRA~\citep{hu2021lora}, which adds a trainable low-rank
-correction $\Delta W = BA$ to selected frozen weight matrices. The
-retention-aware variants constrain or initialize this correction in the
-three ways described in Section~\ref{sec:related}: an orthogonality penalty
-(CLoRA), initialization from the base weight's singular spectrum (PiSSA,
-MiLoRA), and initialization from calibration-data activations (SC-LoRA,
-LoRA-Null); per-method configurations and coverage are in
-Appendix~\ref{app:configs}. We compare them against plain LoRA,
-DoRA~\citep{liu2024dora}, and LoRA with weight decay (LoRA{+}wd), plain LoRA
-with AdamW weight decay on the adapter matrices, which needs no
-initialization pass or auxiliary loss and serves as the simplest possible
-magnitude control. DoRA reparameterizes each adapted weight into a learnable
-magnitude and a direction: where LoRA{+}wd bounds the update's magnitude,
-DoRA makes magnitude an explicitly learned quantity, so the pair brackets
-the axis our second research question tests.
+correction $\Delta W = BA$ to selected frozen weight matrices, and constrain or
+initialize that correction in the ways set out in Section~\ref{sec:related}. We
+compare them against plain LoRA, DoRA~\citep{liu2024dora}, which makes the
+update's magnitude an explicitly learned quantity, and LoRA with weight decay
+(LoRA{+}wd), plain LoRA with AdamW weight decay on the adapter matrices, which
+needs no initialization pass or auxiliary loss and is the simplest possible
+magnitude control. Its decay was set once before the campaign and not revisited,
+and it is swept in its own right in the two grid settings alongside CLoRA's
+subspace dimension and LoRA's rank (Appendix~\ref{app:sweep}).
 
-%% agent: from here:
-%% agent: until here- I think that those two chapters can be merged into one with many details moved to the appendix (keeping the main message here). Here also - soften the wordings to "the adapter papers each fix one shared rate...", we don't want to offend anyone, and must be extremely accurate here
-%% CLAUDE: done - merged into one paragraph below; the held-fixed/varying
-%% inventory and the control scopes moved to Appendix A. The sentence about
-%% shared rates is softened and made precise: published evaluations
-%% "typically" report one rate, framed as a comparability limitation across
-%% papers, with no fault assigned to any single paper.
-%% Guy: still too elaborated. We can simply say that we use a a unified fair evaluation protocol and refer to the appendix. Every structured adapter is implemented from the papers themselves, and that's it. Then we can emphasize the power of our sweeps and how important is this tuning, which also can be shorter. Please use your judgement here to keep only the really important things.
-%% CLAUDE: done - cut to three sentences: (1) unified protocol, methods
-%% implemented from their papers, details in appendix; (2) why the sweep
-%% matters (same rate = different effective dose per method, so single-rate
-%% comparisons measure tuning); (3) what we sweep and the two controls in
-%% one clause each. Held-fixed inventory, rank note, and selection rule all
-%% now live only in Appendix A.
-\paragraph{Unified implementation and fair comparison.}\label{sec:method:protocol}
-Every adapter is implemented from its original paper inside one training
-loop and evaluated under one protocol (implementation and configuration
-details in Appendix~\ref{app:details}). The sweep is what makes the
-comparison fair: different initializations transmit the same learning rate
-into very different effective update magnitudes
-(Section~\ref{sec:results:rq2}), so a comparison at one shared rate partly
-measures tuning rather than design. We therefore sweep the same seven-point
-rate grid for every method, report each at its own best-adaptation rate
-over up to five seeds per cell, and add two controls: an eval-matched
-calibration for the data-aware initializations and a parameter-matched
-LoRA{+}wd at plain LoRA's rank (Section~\ref{sec:results:rq1}).
+Every adapter is implemented from its original paper inside one training loop
+and evaluated under one protocol. The sweep is what makes the comparison fair,
+because the same rate becomes a very different update magnitude under different
+initializations (Section~\ref{sec:results:rq2}). We therefore sweep the same
+seven-point rate grid for every method except PiSSA, which enters at its recipe
+rate only, report each at its own best-adaptation rate over up to five seeds per
+cell, and add two controls: an eval-matched calibration for the data-aware
+initializations (Appendix~\ref{app:sweep}) and a parameter-matched
+LoRA{+}wd at plain LoRA's rank (Section~\ref{sec:results:rq1}). Per-method configurations, coverage and the
+full protocol are in Appendix~\ref{app:details}.
 
+% ===========================================================================
+\subsection{Data, models and scale}\label{sec:method:setup}
+% ---------------------------------------------------------------------------
+We fine-tune Llama-2-7B~\citep{touvron2023llama2} and
+Qwen2.5-7B~\citep{qwen2025qwen25} on commonsense reasoning, with the eight-task
+LLM-Adapters suite~\citep{hu2023llmadapters}, and on mathematics, with
+MetaMathQA~\citep{yu2023metamath} evaluated on GSM8K~\citep{cobbe2021gsm8k}:
+four model $\times$ task settings. Adaptation is mean accuracy over the eight
+commonsense tasks (CS-8) or GSM8K exact match. Core retention is the mean of two
+held-out benchmarks the fine-tuning data does not touch,
+BBH~\citep{suzgun2023bbh} and MMLU-Pro~\citep{wang2024mmlupro}; without
+fine-tuning core retention stands at $26.0$ on Llama-2-7B and $44.4$ on
+Qwen2.5-7B. In the math settings it is BBH alone,
+because MetaMath-tuned models answer MMLU-Pro in a format our parser does not
+reliably extract, a parsing artifact rather than forgetting.
+MMLU~\citep{hendrycks2021mmlu}, ARC-Challenge~\citep{clark2018arc} and
+TruthfulQA~\citep{lin2022truthfulqa} are scored on every run but stay out of
+headline retention, and retention runs the
+lm-evaluation-harness~\citep{evalharness} on full benchmark sets without
+subsampling.
+
+Six to eight adapters run over the shared rate grid in each setting, three seeds
+per configuration by default. On Llama we add two denser grids that hold the
+training recipe fixed and vary one magnitude knob instead, weight decay,
+CLoRA's $k$, or LoRA rank, for the analyses of Section~\ref{sec:results:rq2};
+they start from CLoRA's published configuration, which we thereby also
+reproduce (Appendix~\ref{app:clora}). Together they form the frozen analysis pool of
+$1{,}035$ adapters over $344$ configurations; rosters, seed coverage, knob
+ranges and inclusion rules are in Appendix~\ref{app:details}. The experimental
+stack, the pool and the statistics scripts behind every exhibit will be
+released.
 
 % ---------------------------------------------------------------------------
 \subsection{Metrics}\label{sec:method:metrics}
@@ -247,47 +306,32 @@ LoRA{+}wd at plain LoRA's rank (Section~\ref{sec:results:rq1}).
 For every trained adapter we compute four measurements. The first is the
 outcome pair the adapters are designed to improve; the remaining three are
 candidate explanations for it, one per axis raised in the prior literature.
-The statistical protocol that turns these measurements into answers is
-stated where it is used, at the opening of Section~\ref{sec:results}.
 
-\paragraph{Metric 1: adaptation-retention operating points.} Adaptation is
+\paragraph{Metric 1: operating points.} Adaptation is
 accuracy on the fine-tuning task's evaluation suite; retention is accuracy on
 held-out general benchmarks that the fine-tuning data does not cover
-(Section~\ref{sec:experiments} lists both). For each method we consider its
+(Section~\ref{sec:method:setup} lists both). For each method we consider its
 swept operating points (cell means over seeds) in the adaptation-retention
 plane and report the observed retention-adaptation frontier, so methods are
 compared as frontiers rather than as single configurations.
 
 \paragraph{Metric 2: update magnitude.} Our magnitude measure is the mean
-normalized output displacement that the update induces on real token traffic,
-which is CLoRA's $\mathbb{F}$ diagnostic~\citep{clora}. With $\mathcal{L}$ the
-set of adapted modules, $\Delta W_\ell$ the total update of module $\ell$
-(including any initialization residual, so that a zero-step run gives
-$\Delta W = 0$), $N_\ell$ the number of probe tokens observed at module
-$\ell$, and $x_{\ell,t}$ the input activation of token $t$ captured
-by forward hooks on a fixed probe set of $100$ prompts, identical for every
-run of both task types (Appendix~\ref{app:metrics}),
-\begin{equation}\label{eq:fdelta}
-  \dw \;=\; \frac{1}{\sum_{\ell} N_\ell}
-  \sum_{\ell\in\mathcal{L}} \sum_{t=1}^{N_\ell}
-  \frac{\lVert \Delta W_\ell\, x_{\ell,t} \rVert_2}{\lVert x_{\ell,t} \rVert_2}.
-\end{equation}
-We prefer $\dw$ over the Frobenius and spectral norms because it is
-activation-weighted, measuring how much the update actually displaces the
-model's outputs; it is also empirically the strongest of ten candidate
-measures (Table~\ref{tab:league}, Appendix~\ref{app:exhibits}).
+normalized output displacement the update induces on real token traffic, the
+average of $\lVert \Delta W_\ell\, x \rVert_2 / \lVert x \rVert_2$ over every
+adapted module $\ell$ and every token of a fixed probe set, which is CLoRA's
+$\mathbb{F}$ diagnostic~\citep{clora}. The update $\Delta W_\ell$ includes any
+initialization residual, so a zero-step run gives $\Delta W = 0$; the probe set,
+the hooks and the exact expression are in Appendix~\ref{app:metrics}. We prefer
+$\dw$ over the Frobenius and spectral norms because it is activation-weighted,
+measuring how much the update actually displaces the model's outputs, and it is
+empirically the strongest of ten candidate measures
+(Table~\ref{tab:league}, Appendix~\ref{app:exhibits}).
 
-\paragraph{Metric 3: update geometry.} The geometric hypothesis shared by the
-spectrum-based and data-aware families is that the location of the update
-relative to the base weight's spectrum governs retention. We test it with
-measurements taken from the trained adapters themselves.
+\paragraph{Metric 3: update geometry.} We measure the placement of
+Section~\ref{sec:related}, the end of the base weight's spectrum the update
+occupies, on the trained adapters themselves.
 Each saved update $\Delta W = (\alpha/r)BA$ is compared against the singular
 value decomposition of the corresponding base weight $W_0$. On the output
-%% Guy: please refer to an appendix that explains exactly how we project it.
-%% CLAUDE: done - added a "Geometry projection" paragraph to Appendix A with
-%% the exact computation (thin-QR factorization, the energy-fraction formula,
-%% and the Frobenius-weighted aggregation over the 160 matrices), transcribed
-%% from geo_drift_phase2.py, and referenced it here.
 side, we project the update's singular directions, weighted by their singular
 values, onto the major (top-$256$) and minor (bottom-$256$) left singular
 subspaces of
@@ -299,415 +343,225 @@ We also compute the update's stable rank,
 $\lVert\Delta W\rVert_F^2 / \smax^2$ with $\smax$ the largest singular
 value of $\Delta W$: the number of directions that effectively carry the
 update (near $1$ when a single direction dominates).
-Together these describe where the update sits in the base spectrum and how
-it is shaped, the quantity the geometric adapters are designed to control.
+The four energy shares are the placement of Section~\ref{sec:related},
+measured at a fixed boundary of $256$ directions; the stable rank describes
+the update's shape and is not a placement measure.
 
 \paragraph{Metric 4: KL drift.} In the spirit of the loss-drift
 proxies of \citet{wang2024milora} and \citet{kalajdzievski2024scaling}, we
 measure the cross-entropy of the adapted model to its base on held-out
-neutral text (the WikiText-103 test set); since CE and KL to base differ only by the base model's entropy
-(a per-model constant), we quote the KL form. It requires one forward pass
-per model, no benchmark harness, and no access to the adapter weights, so it
-is also the cheapest of the four metrics to obtain.
-
-% ===========================================================================
-\section{Experiments}\label{sec:experiments}
-% ===========================================================================
-\paragraph{Models and tasks.} The primary models are Llama-2-7B, and Qwen2.5-7B. We fine-tune on two task types: commonsense
-reasoning, using the eight-task LLM-Adapters suite~\citep{hu2023llmadapters},
-and mathematics, using MetaMathQA~\citep{yu2023metamath} with evaluation on
-GSM8K~\citep{cobbe2021gsm8k}.
-%agent: citations?
-%% CLAUDE: done - MetaMathQA (Yu et al., 2023) and GSM8K (Cobbe et al., 2021)
-%% cited; BBH and MMLU-Pro cited below; entries added to references.bib.
-This gives four
-model $\times$ task settings. Adaptation is the mean accuracy over the eight
-commonsense tasks (CS-8) or GSM8K exact match.
-
-\paragraph{Training and evaluation protocol.}
-Every run fine-tunes under one shared recipe in which the learning rate and
-seed are the only swept variables (weight decay, CLoRA's $k$, and rank vary
-only where a method's recipe or a stated control requires it). Adaptation is
-evaluated generatively under each suite's standard protocol, and retention
-runs the lm-evaluation-harness in process on the full benchmark sets, with
-no subsampling; the complete training and decoding configuration is in
-Appendix~\ref{app:details}.
-
-\paragraph{Retention benchmarks.} Core retention is the mean of two held-out
-benchmarks the fine-tuning data does not touch: BBH~\citep{suzgun2023bbh}
-(answer-only, 3-shot) and
-MMLU-Pro~\citep{wang2024mmlupro} % agent: citations?
-%% CLAUDE: done - BBH (Suzgun et al., 2023) and MMLU-Pro (Wang et al., 2024)
-%% cited; entries added to references.bib.
-(5-shot, chain of thought). The no-fine-tuning core ceiling is $26.0$
-on Llama-2-7B (BBH $33.1$, MMLU-Pro $19.0$) and $44.4$ on Qwen2.5-7B (BBH
-$47.9$, MMLU-Pro $40.8$).
-%%agent: from here
-%% agent: to here: ISn't it obvious?
-%% CLAUDE: done - deleted the "read each adapter against its own base"
-%% sentence; it follows from the ceilings being stated per model.
-%%agent: from here
-For the \emph{math} settings retention is BBH alone, because MetaMath-tuned
-models answer MMLU-Pro in a format the parser does not reliably extract, a
-parsing artifact rather than forgetting (Appendix~\ref{app:details}).
-%%agent: from here
-%% agent: until here - what is this and why?
-%% agent: this final chapter - Many not so important details distracting us from the real thing
-%% CLAUDE: done - compressed the two flagged passages. Why the extra
-%% benchmarks exist: we evaluated a broad five-benchmark suite on every run;
-%% MMLU, ARC-Challenge, and TruthfulQA are kept out of headline retention
-%% because ARC-Challenge is one of the fine-tuning tasks (contamination) and
-%% TruthfulQA reverses direction across the two models. That is now one
-%% sentence; the supporting details (the at-most-0.09 correlation shift, the
-%% per-model TruthfulQA behavior) moved to Appendix A, and the TruthfulQA
-%% finding itself is a result in Section 5.4.
-Three further benchmarks (MMLU, ARC-Challenge, TruthfulQA) were evaluated on
-every run but stay out of headline retention: ARC-Challenge is itself one of
-the commonsense fine-tuning tasks, and TruthfulQA reverses direction across
-the two models (Appendix~\ref{app:details}).
-%% Guy: What? why are the retention benchmarks reported in different location? and why the main, most important table of results is pushed so down in the paper?
-%% CLAUDE: done, two parts. (1) The benchmarks are DEFINED only here; what
-%% lives elsewhere is one FINDING about them (the TruthfulQA reversal), which
-%% belongs with the results since it is one of our results (RQ4). I removed
-%% the forward pointer from this sentence so the definition paragraph is
-%% self-contained. (2) The main table: you caught a real layout bug, not an
-%% editorial choice - when I trimmed the operating-point table to 4 columns
-%% I made it a single-column float, which was too tall for a column, so
-%% LaTeX silently deferred it to page 20. Rebuilt as a full-width float (two
-%% half-tables, Llama left / Qwen right) anchored at the start of Results;
-%% it now lands on the first Results page (p.6), directly next to its text.
-
-
-\paragraph{Scale of the study.}
-%% Guy: all of this seems to be more relevant to the appendix, maybe with a little thing from the main body (training and evaluation protocol?). If we specify number of adapters, etc. Then you need to explain why to me. If this is because we are missing experiments, it should be documented in the missing experiments md and reported to me. If this is fine, then you need to explain it properly.
-%% CLAUDE: done - body now keeps three sentences (total scale, the two-pool
-%% convention in plain words, CorDA withholding + release); the per-family
-%% counts, seed-coverage detail, and per-exhibit convention rules moved to
-%% Appendix A "Run pool and conventions" which already carries them. On your
-%% question WHY the counts are uneven (180/120/151/164/276/144): it is a mix
-%% of design and loss, and both parts are documented. By design: the two
-%% dense Llama grids are intentionally larger (they carry the wd/k/rank
-%% dose-response curves), and methods have different sweep widths (e.g.
-%% PiSSA recipe-rate only). By loss: some swept Qwen cells were trained but
-%% never benchmark-evaluated before the fleet was lost - that is
-%% MISSING_EXPERIMENTS.md item 12 (qwsw 27 + qwswm 22 cells) plus the E3
-%% second wave (item 11), both already in the md and reported to you in its
-%% tier list. The frozen pool itself is complete and self-consistent; the
-%% missing cells would only densify it.
-%% Guy (chat, round 3): unclear what was going on here, how we got to 1035,
-%% and why CLoRA reproduction appears here; reader should simply understand
-%% exactly what training was done.
-%% CLAUDE: done - rewrote the paragraph as a plain two-part description of
-%% the training itself: (1) the sweeps: every method x every rate x 3-5
-%% seeds in each of the four model x task settings; (2) the two Llama dose
-%% grids: same protocol, but varying each magnitude knob (wd, k, rank). The
-%% CLoRA reproduction is now one clause with a pointer to Appendix C, as you
-%% asked; the term "faithful-recipe" is anchored there and detailed only in
-%% the appendix. 1,035 is then stated for what it is: the count of trained
-%% runs that completed evaluation, with the exact inclusion rules in App A.
-%% All ranges below re-verified against the frozen pool before writing
-%% (wd 0-0.5, k 64-2048, rank 8-128, 344 configurations).
-%% TRAINING GAPS in this chapter's design (must-fix list, all already in
-%% MISSING_EXPERIMENTS.md and requiring retraining since no 7B checkpoints
-%% survived): (a) LoRA-Null was never swept on the Llama math setting
-%% (roster 6 there vs 7-8 elsewhere); (b) PiSSA has no sweep anywhere
-%% (recipe-rate only; disclosed design boundary, item "not planned");
-%% (c) qwsw 27 + qwswm 22 swept cells trained but never benchmark-evaluated
-%% (item 12) and the Qwen mid-rate second wave (item 11); (d) PiSSA/CorDA++
-%% math seeds (item 13) would move the single-seed PiSSA math row to 3
-%% seeds.
-The core experiment is the same in all four model $\times$ task settings:
-six to eight adapters per setting are trained over the shared seven-point
-learning-rate grid, with three seeds per configuration by default ($615$
-runs; rosters, grid extensions, and seed coverage in
-Appendix~\ref{app:sweep}). Two further Llama grids vary each magnitude
-knob at fixed protocol, weight decay from $0$ to $0.5$, CLoRA's $k$ from
-$64$ to $2{,}048$, and LoRA rank from $8$ to $128$, for the knob analyses
-of Section~\ref{sec:results:rq2}; they start from CLoRA's published
-configuration, which we thereby also reproduce
-(Appendix~\ref{app:clora}), and add $420$ runs over $126$ configurations.
-Together these form the frozen analysis pool: $1{,}035$ adapters over
-$344$ configurations (inclusion rules and control arms in
-Appendix~\ref{app:pool}). Table~\ref{tab:grand} reports, for each setting
-and method, the configuration with the highest mean adaptation as mean
-$\pm$ SD over its seeds (selection details in Appendix~\ref{app:sweep}).
-The full experimental stack, with the frozen run pool and the statistics
-scripts behind every exhibit, will be released.
+neutral text (the WikiText-103 test set)~\citep{merity2017wikitext}; since CE and KL to base differ only by the base model's entropy
+(a per-model constant), we quote the KL form.
 
 % ===========================================================================
 \section{Results}\label{sec:results}
 \input{tables/table_grand_compact.tex}
 % ===========================================================================
-\paragraph{How we test.} Three counts recur throughout this section. A
-\emph{cell} is one configuration of Section~\ref{sec:experiments} (one
-method $\times$ learning rate $\times$ task $\times$ model), so runs in a
-cell differ only in the random seed; the frozen pool's $1{,}035$ runs
-cover $344$ cells, and $290$ of those cells have three or more seeds. The
-runs group into six \emph{run families}: one sweep per model $\times$
-task setting plus the two denser Llama grids (Appendix~\ref{app:pool}),
-so four of the six are Llama and two are Qwen. Seeds within a cell are
-correlated (intraclass correlation $\approx 0.78$, meaning most retention
-variance lies between cells rather than between seeds), so every test is
-cluster-robust at the cell level or within-cell, with Holm correction
-across the paired method comparisons and equivalence (TOST) bounds
-wherever we assert ``no difference''. The design detects retention
-effects of roughly two to five points at typical cells, with some Qwen
-comparisons far less sensitive (Table~\ref{tab:mde},
-Appendix~\ref{app:exhibits}), so non-significance is never read as
-equality. Operating-point and frontier exhibits follow the adjudication
-convention of Appendix~\ref{app:details} (diverged runs excluded; math
-retention scored as BBH); two further scope notes are in
+\paragraph{How we test.} A \emph{cell} is one configuration of
+Section~\ref{sec:method:setup}, so runs in a cell differ only in the random
+seed; cells group into six \emph{run families}: the four learning-rate
+sweeps, one per model $\times$ task setting, and the two denser Llama grids
+of Section~\ref{sec:method:setup} that vary a magnitude knob at a fixed
+recipe (family sizes in Appendix~\ref{app:pool}).
+Seeds within a cell are correlated, so every test is cluster-robust at the
+cell level or paired within cells, with Holm correction across the method
+comparisons. The design detects retention effects of roughly two to five
+points at typical cells and coarser ones on Qwen (Table~\ref{tab:mde}).
+Run conventions, exclusions, and scope notes are in
 Appendix~\ref{app:pool}.
 
 % ---------------------------------------------------------------------------
 \subsection{No adapter is significantly better than plain LoRA with weight decay}\label{sec:results:rq1}
 % ---------------------------------------------------------------------------
 
-\paragraph{Operating points.} Table~\ref{tab:grand} reports every method at
-its best-adaptation operating point. LoRA{+}wd is the top-retaining method
-in three of the four settings and trails the leader by $0.2$ points
-(difference of cell means) in the
-fourth (Qwen math, below), while sitting at or near the top of the
-adaptation column at the lowest drift in each Llama block.
-
-\paragraph{Corrected pairwise tests.} At the operating points we ran $26$
-method $\times$ setting comparisons against LoRA{+}wd, $25$ testable with
-paired per-seed $t$ tests over $2$--$4$ common seeds (the untestable one,
-single-seed PiSSA on Llama math, is far below on both axes). After Holm
-correction across all $25$,
+\paragraph{Operating points and corrected tests.} Table~\ref{tab:grand} reports
+every swept method at its best-adaptation operating point. LoRA{+}wd is the top-retaining method in
+three of the four settings and trails the leader by $0.17$ points in the
+fourth, while sitting at or near the top of the adaptation column in each
+Llama block. At those operating points we ran $26$ method $\times$ setting
+comparisons against LoRA{+}wd with paired per-seed $t$ tests; $25$ are
+testable, and the one that is not, single-seed PiSSA on Llama math, is far
+below on both axes. After Holm correction,
 \textbf{no method is significantly better than LoRA{+}wd on either axis}.
 Two comparisons are significantly worse on retention and five on
-adaptation, with deficits of $2.6$ to $7.6$ points; the full battery,
-with every delta, CI, and corrected $p$, is
-Appendix~\ref{app:head2head}. These are within-harness comparisons of
-swept reproductions at matched capacity; they do not bear on the published
-CLoRA results, which our faithful-recipe replication treats as the
-reference point (Appendix~\ref{app:clora}). Descriptively, LoRA{+}wd is
-never the lower-retention arm in the $26$ comparisons
-(Figure~\ref{fig:pareto}, Appendix~\ref{app:exhibits}).
+adaptation, by $2.6$ to $7.6$ points; every delta, CI, and corrected $p$ is
+in Appendix~\ref{app:head2head}. These are within-harness comparisons at
+matched capacity; they do not bear on the published CLoRA results, which
+our faithful-recipe replication treats as the reference point
+(Appendix~\ref{app:clora}).
 
-\paragraph{Equivalence bounds.} Non-significance is not equality: with two
-to four seeds, a real difference of a few points can go undetected. An
-equivalence test (TOST) therefore asks the opposite question, whether each
-method's retention offset from LoRA{+}wd, estimated at matched update
-magnitude, stays inside a margin $m$ (its $90\%$ confidence interval
-entirely within $(-m,+m)$). At $m\!=\!3$ points, five of the seven adapters
-compared against LoRA{+}wd are equivalent to it. The two that fail are not
-hidden winners: both lie below the reference, PiSSA at $-7.1$ points and
-SC-LoRA at $-4.1$, the latter consistent with the calibration-corpus effect
-under ``The one suggestive reversal'' below (specification, CIs, and tighter
-margins: Table~\ref{tab:tost}, Appendix~\ref{app:exhibits}). Differences
-below about $2$ points remain open at this design's power.
+\paragraph{Equivalence bounds.} An equivalence test (TOST) asks whether each
+method's retention offset from LoRA{+}wd at matched update magnitude stays
+inside a margin of $3$ points: five of the seven adapters do. The two that
+fail lie below the reference, PiSSA at $-7.1$ points and SC-LoRA at $-4.1$
+(specification and tighter margins in Table~\ref{tab:tost}; PiSSA's
+single-rate scope note in Appendix~\ref{app:configs}). Differences below
+about $2$ points remain open at this design's power.
 
 \paragraph{The capacity control.} Ranks are not matched across methods
-(on commonsense LoRA{+}wd runs at rank $32$ and plain LoRA at $16$; on math
-every arm follows the published rank-$64$ recipe;
-Appendix~\ref{app:configs}), so LoRA{+}wd's edge could come simply from
-more trainable parameters. Two controls say otherwise: LoRA{+}wd retrained
-at rank $16$, plain LoRA's parameter count, reproduces the rank-$32$
-operating point (retention $26.27$ at $\dw\!=\!0.334$, against
-$25.9\!\pm\!0.4$ at $0.40$); and raising plain LoRA's rank at the fixed
-standard rate $3\!\times\!10^{-4}$ buys no retention, it grows the update
-and slides the run \emph{down} the shared curve. Parameter count matters
-only through the update magnitude it produces.
+(Appendix~\ref{app:configs}), so LoRA{+}wd's edge could come simply from more
+trainable parameters. Two controls say otherwise. LoRA{+}wd retrained at
+rank $16$, plain LoRA's parameter count, reproduces the reference's
+retention and update size over five seeds ($26.61\!\pm\!0.23$ at
+$\dw\!=\!0.347\!\pm\!0.014$, against $25.9\!\pm\!0.4$ at $0.40$), though one
+of the five seeds collapses on the adaptation suite ($74.6\!\pm\!13.0$
+against the rank-$32$ arm's $81.8\!\pm\!0.2$). And raising plain LoRA's rank
+at the fixed standard rate buys no retention: it grows the update and slides
+the run \emph{down} the shared curve. Parameter count matters only through
+the update magnitude it produces.
 
-\paragraph{The one suggestive reversal.} One comparison out of the $26$
-runs the other way. SC-LoRA on Qwen math reaches GSM8K $77.2\!\pm\!0.8$, a
-gain of $8.26$ adaptation points over LoRA{+}wd (paired seed differences) at
-tied retention
-(BBH difference $+0.17$, within this cell's detectable effect). The gain
-does not survive correction: the raw paired $p\!=\!0.035$ over three seed
-pairs becomes $p_{\text{Holm}}\!=\!0.21$ within the setting and $0.46$
-across the $25$-test battery, so we report it as suggestive rather than
-significant. Two observations bound what it can mean. First, the winning
-cell is itself low-magnitude ($\dw\!=\!0.107$): SC-LoRA wins by adapting
-more at a small update, not by tolerating a large one. Second, on Llama
-commonsense the choice of SC-LoRA's calibration corpus alone moved it by
-about $4$ points, and no such control exists for Qwen math, so we
-attribute the gain to the data-aware initialization as configured rather
-than to subspace geometry. SC-LoRA is also the study's most seed-fragile
-method (Table~\ref{tab:grand}).
+\paragraph{The one suggestive reversal.} One comparison of the $26$ runs
+the other way: SC-LoRA on Qwen math reaches GSM8K $77.2\!\pm\!0.8$, $8.26$
+adaptation points above LoRA{+}wd at tied retention (BBH $+0.17$). It does
+not survive correction (raw paired $p\!=\!0.035$,
+$p_{\text{Holm}}\!=\!0.21$), so we report it as suggestive. The winning cell
+is low-magnitude ($\dw\!=\!0.107$), so SC-LoRA wins by adapting more at a
+small update rather than by tolerating a large one. On Llama commonsense the
+choice of SC-LoRA's calibration corpus alone moved it by about $4$ points,
+so we attribute the gain to the data-aware initialization as configured; no
+such control exists for Qwen math, and SC-LoRA is the study's most
+seed-fragile method (Table~\ref{tab:grand}).
 
 % ---------------------------------------------------------------------------
-\subsection{Retention tracks update magnitude; geometry fingerprints methods}\label{sec:results:rq2}
+\subsection{Retention tracks update magnitude; geometry identifies the designs that constrain it}\label{sec:results:rq2}
 % ---------------------------------------------------------------------------
-The update magnitude is the strongest single predictor of retention in the study, and the prediction is robust to how the update was produced; the learning rate matters only
-through the magnitude it sets. The update geometry is shaped by
-each method's design clearly enough to identify the method from its
-trained weights, but it adds little to predicting retention once
-magnitude is known.
+Update magnitude is the strongest single predictor of retention in the study,
+and the prediction is robust to how the update was produced. The geometry is
+shaped by each design clearly enough to identify the method from its trained
+weights, but where the update lands adds little once magnitude is known.
 
 \paragraph{Magnitude predicts retention.} Figure~\ref{fig:hero} plots
 core retention against the effective update magnitude $\dw$ on Llama-2-7B
-commonsense: adapters of every design interleave along a single downward
-curve, with method identity nowhere a second axis. Pooled over all
-$1{,}035$ runs the correlation with $\log_{10}\dw$ is $-0.847$, and the
-pooled number is not an artifact of mixing settings: within every one of
-the six run families (one per sweep or grid, Appendix~\ref{app:pool}) the
-correlation is comparably strong, $-0.830$ to $-0.929$, and it extends
-to a third training task outside the main two (MedMCQA on Llama,
-$-0.878$). Nor is it noise:
-within-cell seed scatter is $0.3$--$2.7$ points against the
-$15$--$30$ point range the relation spans. The curve is knee-shaped:
-retention is flat to mildly declining up to a per-family threshold (the
-\emph{knee}) and falls steeply above it, at $-7.5$ to $-40.8$ points per
-decade of $\dw$; the steepness differs across families, so the claim is a
-shared shape with per-family constants, not one universal curve (fit
-details in Appendix~\ref{app:exhibits}). Adaptation is only partly
-determined by the update size, and it peaks at the retention knee and
-falls beyond it, so training past the knee loses on both axes at once
-(Appendix~\ref{app:exhibits}).
+commonsense: adapters of all designs
+interleave along a single downward curve. Pooled over all
+$1{,}035$ runs, the correlation with $\log_{10}\dw$ is $-0.847$, and within every one of the six run families, it is
+$-0.830$ to $-0.929$; the corresponding plot for each family is in Figure~\ref{fig:family-scatter} (Appendix~\ref{app:exhibits}). Within-cell
+seed scatter is $0.3$--$2.7$ points against the roughly $20$ to $40$ points each family's retention spans, from which we conclude that the relation reflects the update magnitude rather than run-to-run noise. \\ 
+The curve is knee-shaped: retention is flat while $\dw$ stays below a per-family threshold (the \emph{knee}) and, once $\dw$ exceeds that threshold, falls
+by $7.5$ to $40.8$ points per decade of $\dw$, one shared shape with per-family constants (fit details in Appendix~\ref{app:exhibits}). \\
+The adaptation peaks at the retention knee and
+falls beyond it, so training past the knee loses on both axes at once.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.74\columnwidth]{fig0_hero.png}
   \caption{Core retention (mean of BBH and MMLU-Pro) versus $\dw$ (log scale)
-  for all $448$ Llama-2-7B commonsense runs in the frozen pool. Adapters of all
-  designs interleave along one curve; the knee is near
+  for the $448$ Llama-2-7B commonsense runs in the frozen pool that fall inside the axes; The adapters of all
+  designs interleave along one curve, and the knee is near
   $\dw \approx 0.4$. The star marks the LoRA{+}wd operating point of Table~\ref{tab:grand}.}
   \label{fig:hero}
 \end{figure}
 
-\paragraph{The relation between update magnitude and retention is not an
-artifact of the training recipe.} Large updates usually come from
-aggressive recipes (a high learning rate, no weight decay), so one could
-object that the recipe is what destroys retention and the update size
-merely reflects it. Three checks say otherwise. First, holding the recipe
-completely fixed: runs that differ only in the random seed still end up
-with slightly different update sizes by chance, and those chance
-differences still predict retention ($r\!=\!-0.713$ over the $954$ runs in
-the $290$ multi-seed cells). Second, changing the size with no training at
-all: rescaling a trained adapter's update by a constant changes its size
-and nothing else, and $15$ of $15$ rescaled adapters land on the retention
-curve of Figure~\ref{fig:hero}, while same-size updates in random
-directions land $3.05$ points below them (Llama commonsense, the one
-setting where this intervention ran; Appendix~\ref{app:exhibits}). Third,
-different knobs produce the same curve: weight decay, CLoRA's subspace
-dimension $k$, and LoRA rank each move $\dw$ monotonically, and once $\dw$
-is known, which knob produced it adds at most $\Delta R^2 = 0.006$
-(Figure~\ref{fig:dose}, Appendix~\ref{app:exhibits}); even full
-fine-tuning traces the same flat-then-falling shape, $4$--$9$ points below
-the LoRA-family curve. In all three checks, what tracks forgetting is the
-size of the update, not how it was produced.
+\paragraph{Not an artifact of the recipe.} Large updates usually come from
+aggressive recipes, so the recipe rather than the update size could be what
+destroys retention. Three checks say otherwise. First, holding the recipe
+fixed, the chance differences in update size between runs that differ only
+in seed still predict retention ($r\!=\!-0.713$, $954$ runs). Second,
+changing the size with no training at all, $15$ rescaled adapters track the
+curve of Figure~\ref{fig:hero}, while $9$ same-size updates in random
+directions land $3.05$ points below them (Appendix~\ref{app:exhibits}).
+Third, which knob produced the magnitude, weight decay, CLoRA's $k$, or
+LoRA rank, adds at most $\Delta R^2 = 0.006$ once $\dw$ is known
+(Figure~\ref{fig:dose}).
 
-\paragraph{The learning rate acts only through the magnitude it sets, so
-single-rate comparisons are unreliable.} Holding the rate fixed, update
-magnitude still predicts retention (correlation $-0.58$ to $-0.91$ per run
-family); holding the magnitude fixed, the rate predicts almost nothing
-($-0.17$ to $+0.29$). But the same rate produces a different update size
-for each method, so the winner of a comparison at one shared rate, the
-usual design, is partly decided by which method that rate happens to suit.
-Our grid shows the size of the effect: of the five adapters that modify
-LoRA's structure (CLoRA, MiLoRA, SC-LoRA, LoRA-Null, DoRA), four beat
-plain LoRA at their own best single rate, by up to $+26$ adaptation points
-(Figure~\ref{fig:lrartifact}, Appendix~\ref{app:exhibits}), yet once every
-method is swept over rates, the LoRA{+}wd frontier sits on or above all of
-them. LoRA{+}wd is also the least sensitive to the choice of rate, holding
-retention within $2$ points of base in $26$ of $29$ rate-by-setting cells
-against SC-LoRA's $6$ of $25$ (relative to base, and to family-best retention
-on Qwen commonsense; Figure~\ref{fig:lrband},
-Appendix~\ref{app:exhibits}; per-adapter sweeps in
-Appendix~\ref{app:lrsweep}).
+\paragraph{The learning rate acts through magnitude.} 
+The trend of Figure~\ref{fig:hero} may simply reflect that larger learning rates cause greater retention loss. Thus, we tested which of the two variables carries the
+signal on the existing pool of runs. First, we
+compared runs trained at the same learning rate, which still differ in update magnitude through method, rank, weight decay,  and seed; among them, the magnitude still predicts retention within every grid rate at or above $10^{-4}$ in every family ($r \le -0.7$). Second, by controlling for the magnitude, the rate predicts almost nothing (partial correlation $-0.17$ to $+0.29$ per family), while controlling for the
+rate, magnitude keeps most of its signal ($-0.58$ to $-0.91$). We conclude that learning rate affects retention through update magnitude. Consequently, a shared learning rate does not imply comparable update sizes across methods, so comparisons at a single rate may partly reflect how well that rate suits each method. We quantify this effect and each method's learning-rate sensitivity in Appendix~\ref{app:exhibits} (Figure~\ref{fig:lrartifact}) and Appendix~\ref{app:lrsweep}.
 
-\paragraph{Geometry adds little once magnitude is known.} The
-retention-aware designs are built on the idea that where the update
-points, not only how large it is, decides forgetting. So we ask directly:
-if the update's size is already known, how much better does also knowing
-its geometry predict retention? We predict each run's retention from
-progressively more information and record how much each addition improves
-the prediction (Table~\ref{tab:ladder}, Appendix~\ref{app:exhibits}). Knowing only the run family explains
-$R^2\!=\!0.390$ of the variance in retention. Adding the update's size
-raises that by $+0.395$. Adding its geometry, meaning $e_{\mathrm{top}}$
-(the fraction of the update's energy in the base model's top singular
-subspace), stable rank, and the spectral norm, raises it by a further
-$+0.017$, about
-one twenty-third of the size step. Adding which method produced the
-update raises it by $+0.006$. The result does not depend on the order in
-which the predictors enter: size beats geometry in all $2{,}000$
-bootstrap replicates (order-free split, definitions, and CIs in
-Table~\ref{tab:ladder} and Appendix~\ref{app:exhibits}). One accounting,
-adding KL drift as a third predictor, is far less decisive; it is
-disclosed in full in Appendix~\ref{app:exhibits}.
+\paragraph{Geometry beyond magnitude.}If the update's size is already known, how much does knowing where it lands improve prediction of retention? We answer with a regression on the 1,034 pooled runs, adding predictor blocks sequentially and recording the increase in explained variance ($R^2$): run family explains $0.390$, update size adds $+0.395$, geometry adds only $+0.017$, and method identity adds $+0.006$ (Table~\ref{tab:ladder}). The result is not an artifact of this ordering: a variance decomposition attributes $+0.296$ uniquely to size versus only $+0.016$ uniquely to geometry, and size contributes more than geometry in all $2{,}000$ bootstrap replicates. Thus, once the update size is known, where the update lands adds little predictive power for retention. Further analyses, including coarser and placement-only decompositions, are reported in Appendix~\ref{app:exhibits}.
 
-\paragraph{Geometry identifies the method that produced the update.} The
-same geometry measurements identify each design from its trained weights
-alone. At matched $\dw$ the update's stable rank separates the methods, from
-about $4.5$ for DoRA to about $18$ for PiSSA. The energy fractions place
-each update in the subspace its own paper targets: MiLoRA in the minor
-singular directions, SC-LoRA in the principal input directions, LoRA-Null in
-the principal output directions. Each design does control the geometry it
-sets out to control; that control does not change retention (the small,
-model-dependent residual is in Appendix~\ref{app:exhibits}), and it costs
-more than setting weight decay in AdamW, in train time, memory, or an
-initialization pass (Table~\ref{tab:cost}, Appendix~\ref{app:exhibits}).
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_geometry_detect.pdf}
+\caption{How far each method's update, at its Table~\ref{tab:grand}
+operating point, sits from plain updates (LoRA, LoRA{+}wd, DoRA) trained at
+the same learning rate. Each bar is the largest ratio across four measures
+of where the update's energy lies; one means indistinguishable from plain,
+and the shaded band is the $99$th percentile among the plain runs alone.
+Labels name the measure that differs most, starred where the two base
+models disagree.}
+\label{fig:geometry}
+\end{figure}
+
+\paragraph{Geometry identifies the designs.}
+The small geometry step does not mean that the constraints fail to shape the updates. Figure~\ref{fig:geometry} compares each method's trained update with plain updates trained at the same learning rate, using four measures of where the update's energy lies (computation in Appendix~\ref{app:geoproj}). Every method that constrains update geometry separates from the plain adapters on both base models (SC-LoRA, MiLoRA, and LoRA-Null), while the three plain methods remain within the band produced by resampling the plain runs. CLoRA is the exception, consistent with its constraint acting on a randomly drawn subspace that these measures do not capture. Because the measures are scale-invariant energy shares, they cannot reflect update magnitude by construction. Thus, the constraints clearly alter update geometry, but this geometric variation has limited predictive power for retention: after fitting retention on magnitude and method within each family, the remaining method differences reach about five points among the swept methods, compared with roughly $20$--$40$ points spanned by the magnitude relationship (Appendix~\ref{app:exhibits}).
+
+\paragraph{Outside the family, the shape holds, but the level does not.}
+Does the relation extend beyond LoRA-style adapters? We add three full
+fine-tuning runs of the Llama commonsense setup, spanning small to large
+updates. Retention decreases monotonically with $\dw$, so the shape of the
+relationship extends beyond the adapter family. The level does not: all
+three runs fall below the LoRA-family curve. Only one falls within the
+magnitude range covered by the family, allowing a direct comparison without
+extrapolation. At $\dw \approx 0.4$, it retains $17.1$, compared with a mean
+of $25.6$ across the $72$ Llama commonsense family runs in the same magnitude
+band, and below every one of them. We interpret this gap as an upper bound:
+$\dw$ measures changes only in the five weight matrices targeted by the
+adapters, whereas full fine-tuning updates all parameters. Its true update
+is therefore larger than the measured one, and the family curve would be
+lower at that larger magnitude. Thus, the curve's absolute level should be
+interpreted as a within-family result.
 
 % ---------------------------------------------------------------------------
 \subsection{KL drift tracks retention and needs no benchmark run}\label{sec:results:rq3}
 % ---------------------------------------------------------------------------
 Following the loss-drift proxy of
-MiLoRA~\citep{wang2024milora}, we measure KL drift for every
-adapter: the KL divergence from the adapted model's next-token
-distribution to the base model's on held-out text (Metric 4,
-Section~\ref{sec:method:metrics}). Two observations. First, it works, and
-it is the same signal as magnitude: it correlates with retention at
-$-0.63$ to $-0.92$ per run family, yet adds only $+0.005$ of retention
-variance beyond magnitude, while magnitude adds $+0.085$ beyond it
-(Appendix~\ref{app:exhibits}). Second, it is the cheapest of the four
-metrics (one forward pass, no benchmark harness, no adapter weights), and
-on Llama it can stand in for the benchmark itself: using runs where both
-measurements exist, we fit per run family a curve that converts a drift
-value into a predicted retention score, accurate to $1.3$--$2.0$
-retention points on cells the fit never saw (Figure~\ref{fig:ceproxy},
-Appendix~\ref{app:exhibits}). On Qwen the estimate is coarser (off by
-roughly $4$--$6$ points), but drift still flags damaged runs in all six
-run families; detection statistics and two qualifications are in
-Appendix~\ref{app:exhibits}. Update magnitude and drift also identify,
-before any benchmark is run, which cells will be unstable across seeds
-(Appendix~\ref{app:exhibits}).
+MiLoRA~\citep{wang2024milora}, we measure the KL divergence from the
+adapted model's next-token distribution to the base model's on held-out
+text (Metric 4, Section~\ref{sec:method:metrics}). It is the same signal
+as magnitude, correlating with retention at $-0.63$ to $-0.92$ per run
+family while adding only $+0.005$ of retention variance beyond magnitude,
+against magnitude's $+0.085$ beyond it. What makes it useful is its cost:
+one forward pass, no benchmark harness, no adapter weights. On Llama it
+can stand in for the benchmark, a per-family curve converting drift into
+predicted retention to within $1.3$--$2.0$ points on cells the fit never
+saw (Figure~\ref{fig:ceproxy}); on Qwen the estimate is coarser, off by
+roughly $4$--$6$ points, but drift still flags damaged runs in all six run
+families, and drift and magnitude both identify which cells will be
+unstable across seeds before any benchmark is run (detection statistics,
+two qualifications, and the instability result in
+Appendix~\ref{app:exhibits}).
 
 % ---------------------------------------------------------------------------
 \subsection{Retention benchmarks degrade in a fixed order}\label{sec:results:rq4}
 % ---------------------------------------------------------------------------
-When a model forgets, its capabilities do not fade evenly. Ranked by how
-fast each retention benchmark loses accuracy as the update grows
-(normalized by its base score), MMLU-Pro falls fastest, BBH next, MMLU
-slowly, and TruthfulQA barely responds; on the four Llama run families
-TruthfulQA actually \emph{rises}, so we report the broad retention
-aggregate with and without it (Appendix~\ref{app:exhibits}). This order
-is not a quirk of one setup: it is exactly the same in all six run
-families, both models and both tasks (Kendall's $W\!=\!1.000$, the value
-for perfect agreement, $p\!=\!4.4\times10^{-4}$; per-benchmark slopes and
-the excluded, training-contaminated ARC-Challenge in
-Table~\ref{tab:fragility}, Appendix~\ref{app:exhibits}). The
-consequence is that two studies could fine-tune the same model, measure
-retention on different benchmarks, and honestly report opposite
-conclusions; the benchmark choice is silently part of any reported
-forgetting number. Our core retention metric averages BBH and MMLU-Pro,
-the sensitive end of this order, so the forgetting reported in this paper
-is the strict measurement.
+Ranked by how quickly accuracy declines as the update grows, normalized by
+each benchmark's base score, MMLU-Pro is the most sensitive, followed by
+BBH, MMLU, and TruthfulQA. On the four Llama run families, TruthfulQA
+actually \emph{improves}, so we report the broad retention aggregate both
+with and without it. This ordering is highly consistent: it is identical
+across all six run families, spanning both models and both tasks
+(Kendall's $W=1.000$, indicating perfect agreement; the corresponding
+$p$-values are $4.4\times10^{-4}$ when treating the six families as
+independent and $0.0074$ when treating the four distinct model-by-task
+settings as the independent units; see Table~\ref{tab:fragility} and
+Appendix~\ref{app:exhibits}). The consequence is important: two studies
+could fine-tune the same model, evaluate retention on different
+benchmarks, and honestly reach opposite conclusions about forgetting.
+Benchmark choice is therefore part of the reported forgetting measurement.
+Our core retention metric averages BBH and MMLU-Pro, the two most sensitive
+benchmarks in this ordering, making the forgetting reported in this paper
+the stricter measurement.
 
 % ===========================================================================
 \section{Conclusion}\label{sec:conclusion}
 % ===========================================================================
 We measured eight LoRA-family adapters under one protocol and four
-identically computed metrics, across two architectures and two task
-types. On RQ1,
-no adapter is significantly better than plain LoRA with weight decay on
-either axis in the Holm-corrected battery, and five of the seven adapters
-compared against it are statistically equivalent within three retention
-points at matched update size; the two that fail lie below it. On RQ2,
-retention tracks update size in every run family; geometry identifies the
-method but adds little explained retention variance once size is known;
-and the learning rate acts only through the size it sets, so shared-rate
-comparisons are unreliable. On RQ3, KL drift is a practical
-monitor: one forward pass per model predicts held-out retention to about
-two points on Llama, coarser on Qwen, and flags large damage in every
-run family. On RQ4, retention benchmarks degrade in one fixed
-order, so reported forgetting depends on the benchmark chosen. We do not
-claim geometry can never help: across every family, recipe, and adapter
-we measured, what tracks forgetting is, to first order, the size of the
-update rather than its geometry, a size single-rate comparisons typically
-do not report.
+identically computed metrics, across two architectures and two task types.
+No adapter is significantly better than plain LoRA with weight decay.
+Retention tracks update magnitude in every run family, while where the
+update lands adds little once magnitude is known, even though it clearly
+identifies the designs that constrain the update. KL drift provides a
+single-forward-pass proxy for retention. Retention benchmarks also degrade
+in the same order in every setting we measure. We do not claim that no
+geometric property can help; among the properties we measured, update
+magnitude is the one that consistently tracks forgetting, and it is a
+quantity that single-rate comparisons typically do not report. Outside the
+family, full fine-tuning preserves the shape of the magnitude--retention
+relationship but not its level. What we did not measure is stated in the
+Limitations.
 
 % ===========================================================================
 \section*{Limitations}
@@ -722,7 +576,19 @@ do not report.
         Qwen is the most valuable missing experiment.
   \item \textbf{Scope of the evidence.} All assessed adapters are LoRA
         variants, so the geometry ceiling of $\Delta R^2 = +0.017$ is
-        established for that family alone, and the sensitivity of the
+        established for that family alone. We measure the
+        placement construct of Section~\ref{sec:related} at its two ends, the
+        major and the minor $256$ directions of the base weight, which is
+        where every design we study places or withholds its update: the
+        largest target subspace among them has $128$ dimensions, so both
+        blocks contain it with margin. We make no claim about the middle of
+        the spectrum, which no design in this family targets. Two things lie
+        outside the construct and we measure neither: the spectrum of the
+        adapted matrix $W_0{+}\Delta W$, where new leading directions could
+        carry an effect~\citep{shuttleworth2025illusion}, and the target of
+        the penalty-based designs, a fixed subspace that is not ordered by
+        size, which is why CLoRA leaves no trace in these coordinates. The
+        sensitivity of the
         data-aware initializations to their calibration corpus is probed by a
         single control (SC-LoRA, Llama commonsense, $20$ of $24$ cells;
         Appendix~\ref{app:sweep}). Retention evidence is 7B only: the
@@ -732,11 +598,14 @@ do not report.
         (commonsense and math) plus one bridging domain (MedMCQA) under one
         shared training configuration (Appendix~\ref{app:details}), so we do
         not claim universality across instruction-tuning regimes.
-  \item \textbf{CorDA is withheld.} We could not calibrate CorDA and CorDA++
-        comparably to the other adapters in our harness, so they are excluded
-        from every exhibit; OPLoRA
-        and O-LoRA are discussed but not evaluated. This is a real gap, since
-        CorDA is among the adapters most likely to stress the geometry result.
+  \item \textbf{One adapter per design family.} Sweeping every published
+        adapter over learning rates, seeds and two task types was beyond the
+        compute we had, so we sampled one representative from each of the
+        design families set out in Section~\ref{sec:related}, and the results
+        speak to those families through the members we ran rather than to
+        every method in them. CorDA and CorDA++ could not be calibrated
+        comparably to the rest of the harness and are excluded from every
+        exhibit; OPLoRA and O-LoRA are discussed but not evaluated.
   \item \textbf{Some comparisons are underpowered.} The design detects
         retention differences of roughly two to five points at typical cells,
         and as much as $30$ to $50$ points in two seed-unstable Qwen
@@ -759,13 +628,36 @@ do not report.
         statistics turn on that choice, the sign of the pooled
         adaptation-retention association and the number of families in which
         KL drift outpredicts update magnitude. The primary results do not turn
-        on it. Math retention is BBH alone
+        on it. On Qwen the key and value
+        projections have only $512$ output directions, so the major and minor
+        blocks exhaust them and the contrast there is a half-and-half split
+        rather than a comparison of two ends; those matrices carry $3.0\%$
+        of the update's squared energy on Qwen on average (median $2.9\%$,
+        maximum $23.7\%$ over the $369$ runs with per-matrix records), and
+        recomputing the coordinates with k/v excluded moves them by about
+        $0.01$ at the median and leaves the near-zero Qwen residual
+        association in place. Math retention is BBH alone
         because our answer parser does not reliably extract MMLU-Pro answers
-        from MetaMathQA-tuned models (Section~\ref{sec:experiments}). DoRA's
+        from MetaMathQA-tuned models (Section~\ref{sec:method:setup}). DoRA's
         $\dw$ omits the forward-time magnitude rescaling, so its magnitude
         coordinate is a lower bound; the correction can only increase its
-        already-positive residual.
+        already-positive residual. Our rank sweep holds $\alpha/r$ fixed, so
+        raising rank raises $\dw$; under the $\alpha/\sqrt{r}$ convention of
+        rank-stabilized LoRA~\citep{kalajdzievski2023rslora} it need not, and
+        we make no claim about that regime.
 \end{enumerate}
+
+\section*{Practical reading and its risk}
+Constraining the geometry costs more than setting weight decay in AdamW, in
+train time, memory, or an initialization pass (Table~\ref{tab:cost},
+Appendix~\ref{app:exhibits}), so on our measurements the cheaper knob is not
+the weaker one, and a practitioner who wants to limit forgetting can start
+there. The same results carry a caution. Because how much forgetting is
+reported depends on the benchmark chosen
+(Section~\ref{sec:results:rq4}), someone selecting a retention benchmark can,
+without intending to, make an adapted model look safer than it is, which
+matters wherever an adapted model is deployed on the strength of a retention
+number.
 
 \bibliography{references}
 
@@ -792,7 +684,12 @@ method is configured as its own paper specifies.
 \paragraph{PiSSA.} PiSSA is run only at its recipe learning rate
 ($3\!\times\!10^{-4}$) on the two dense Llama grids (four commonsense seeds,
 one math seed). It receives no learning-rate sweep, so it enters the pooled
-regressions but not the sweep-based operating-point comparisons.
+regressions but not the sweep-based operating-point comparisons. Its
+equivalence offset (Table~\ref{tab:tost}) is therefore read at a single rate
+and is not tuning-controlled in the sense of
+Section~\ref{sec:results:rq2}; it is also excluded from the per-method
+geometry comparison, where spanning no magnitude range would leave its slope
+unidentified.
 
 \paragraph{CorDA and CorDA{+}{+}.} Both are withheld from all quantitative
 results because their calibration on the current port is not faithful to the
@@ -811,6 +708,24 @@ learning-rate grid, $\{2,5\}\times10^{-5}$, $\{1,2,3,5\}\times10^{-4}$, and
 $10^{-3}$, and each is reported at its own best-adaptation rate, so
 comparisons are between operating points chosen by one rule rather than at a
 shared rate.
+
+\paragraph{Method knobs and how they were set.} Besides the learning
+rate each method carries one principal knob, and in the two grid settings
+that knob is swept: LoRA{+}wd's adapter weight decay over
+$\{0, 0.1, 0.2, 0.3, 0.5\}$, CLoRA's subspace dimension $k$ over
+$\{128, 256, 512, 1024, 2048\}$ on Llama commonsense and
+$\{64, 128, 256\}$ on Llama math, and plain LoRA's rank over
+$\{8, 16, 32\}$. In the four sweep settings every method runs at one fixed
+knob value and only the rate varies. LoRA{+}wd's value there, decay $0.3$, was fixed once
+before the campaign from a small pilot on a reduced evaluation, in which
+retention rose monotonically with decay while adaptation stayed at its
+plateau: we took the largest decay that left adaptation intact and did not
+revisit it after any number reported here was seen. The grid settings then
+measured the whole decay frontier, so the reference arm is reported across its
+knob and not only at the pilot's value, and once $\dw$ is known, which knob
+produced it adds at most $\Delta R^2 = 0.006$
+(Section~\ref{sec:results:rq2}), so a different decay moves the arm along the
+shared curve rather than above it.
 
 \paragraph{Rosters.} Sweep rosters per setting: eight arms on Llama
 commonsense (the seven compared adapters plus a two-run MiLoRA{+}wd transfer
@@ -835,8 +750,9 @@ used a reduced MetaMathQA subset ($100$K examples), while the denser math grid
 runs the published full recipe ($395$K), which is why the grid is the primary
 arm for that setting.
 
-\paragraph{Seed coverage.} The primary settings run up to five seeds ($42$ to
-$46$) per cell, one cell being one method $\times$ rate $\times$ task
+\paragraph{Seed coverage.} The four sweeps run three seeds per cell by
+default (seeds $42$--$44$, extended to $45$ in some cells) and the Llama
+commonsense grid runs up to five ($42$--$46$), one cell being one method $\times$ rate $\times$ task
 $\times$ model, and we report cell means with within-cell standard
 deviations. The per-family and per-cell seed counts are in
 Appendix~\ref{app:pool}.
@@ -891,18 +807,31 @@ operating characteristic analysis for large-damage detection. For RQ4:
 ceiling-normalized degradation slopes, ranked within family and tested with
 Kendall's $W$.
 
+\paragraph{Software versions.} The training stack is Python $3.12.3$, PyTorch
+$2.12.0$, Transformers $5.10.2$, Accelerate $1.13.0$, Datasets $5.0.0$, TRL
+$1.5.1$ and bitsandbytes $0.49.2$, with the adapters implemented in a local
+fork of PEFT at version \texttt{0.17.2.dev0}. The complete pinned list ships
+with the release.
+%% TODO(guy): version for lm-evaluation-harness. It cannot be read off the
+%% repo: requirements-freeze.txt records that the harness is not installed in
+%% the surviving venv and that the version used on the fleet is unrecorded (the
+%% same gap is listed in RELEASE_README.md). handoff/00_OPERATING_STATE.md
+%% mentions lm-eval 0.4.12, but that line describes an earlier environment
+%% whose peft pin (0.19.1) does not match the freeze (0.17.2.dev0), so it is
+%% not evidence for the pooled runs. Left out of the prose rather than guessed.
+
 \subsection{Run pool and conventions}\label{app:pool}
 
 \paragraph{What one run is.} Each pooled adapter is one full fine-tune of a
 quintuple: (model, task, adapter method, learning rate, seed), with models
-$\in$ \{Llama-2-7B, Qwen-2.5-7B\}, tasks $\in$ \{commonsense-8, math/GSM8K\},
+$\in$ \{Llama-2-7B, Qwen2.5-7B\}, tasks $\in$ \{commonsense-8, math/GSM8K\},
 the method rosters of Appendix~\ref{app:sweep}, the seven-point
 learning-rate grid with its extensions, and seeds $42$ to $46$. Each run is a
 full fine-tune, three epochs under the method's own recipe with the
 configuration of Appendix~\ref{app:traincfg}, followed by in-process
 evaluation on the adaptation and retention suites. The dense-grid runs carry
 one further coordinate, the magnitude knob being varied (weight decay $0$ to
-$0.5$, CLoRA's $k$ from $64$ to $2{,}048$, or LoRA rank $8$ to $128$), which
+$0.5$, CLoRA's $k$ from $64$ to $2{,}048$, or LoRA rank $8$ to $32$), which
 makes them sextuples.
 
 \paragraph{Inclusion rules.} The frozen pool is defined by two rules applied
@@ -924,7 +853,10 @@ the weight-decay, $k$, and rank series against update magnitude, and the
 rosters of Appendix~\ref{app:sweep} are not the same width in every setting.
 Of the $344$ cells, $290$ have three or more seeds; among the sweep cells,
 $148$ configurations have three seeds, $27$ have four, and $43$ have one or
-two, while $115$ of the $126$ grid configurations have three to five.
+two, while $115$ of the $126$ grid configurations have three to five. Seeds
+within a cell are strongly correlated (intraclass correlation
+$\approx 0.78$): most retention variance lies between cells rather than
+between seeds, which is why the body's tests cluster at the cell level.
 
 \paragraph{Quarantine.} Runs that diverged, meaning they reached a NaN loss or
 collapsed below chance accuracy, are flagged as quarantined; there are $71$ of
@@ -949,7 +881,10 @@ is built after that was corrected.
 head-to-head exhibits (Table~\ref{tab:head2head},
 Table~\ref{tab:grand-full}, Figure~\ref{fig:pareto}) are read off these same
 runs under one convention: quarantined runs excluded, one recipe per family,
-and math retention scored as BBH.
+and math retention scored as BBH. One deviation from the freeze is disclosed
+here: seven runs that finished after the freeze (one Llama commonsense, six
+Qwen) are included in these adjudicated exhibits but in no pooled statistic;
+re-running the ladder with them moves its steps by at most $0.002$.
 
 \paragraph{Scope of those comparisons.} Two notes qualify every
 operating-point comparison in the body. Each method is reported at the
@@ -1015,7 +950,14 @@ on every adapted module over $100$ held-out evaluation prompts, drawn from the
 commonsense adaptation evaluation splits and identical for every run of both
 task types (batch $8$, maximum length $256$; tokens with $\lVert x\rVert_2 \le
 10^{-6}$ masked). The axis is therefore the effective update magnitude on one
-fixed probe distribution, the same probe set for every run in the pool.
+fixed probe distribution, the same probe set for every run in the pool. With
+$\mathcal{L}$ the adapted modules, $N_\ell$ the probe tokens seen at module
+$\ell$ and $x_{\ell,t}$ the input activation of token $t$,
+\begin{equation}\label{eq:fdelta}
+  \dw \;=\; \frac{1}{\sum_{\ell} N_\ell}
+  \sum_{\ell\in\mathcal{L}} \sum_{t=1}^{N_\ell}
+  \frac{\lVert \Delta W_\ell\, x_{\ell,t} \rVert_2}{\lVert x_{\ell,t} \rVert_2}.
+\end{equation}
 
 \paragraph{Residual initializations.} For adapters that initialize from a
 residual of the base weight, that initialization residual is included in
@@ -1040,6 +982,21 @@ campaign at roughly $1{,}550$ to $2{,}600$ B200-GPU-hours over the $1{,}035$
 pooled runs. That figure is an order-of-magnitude estimate from run counts and
 per-cell times, not a metered total, and it excludes the withheld arms and the
 attempts that produced no scored evaluation.
+
+\paragraph{Licences and intended use.} Llama-2-7B is released under the Llama 2
+Community License Agreement, Qwen2.5-7B under Apache 2.0, and the
+DeepSeek-V4-Flash checkpoint used in the 284B arm under the MIT licence. Among
+the datasets, the LLM-Adapters suite releases its code under Apache 2.0 and its
+data under ODC-BY; MetaMathQA, GSM8K, BBH, MMLU and MMLU-Pro are under the MIT
+licence; TruthfulQA and MedMCQA are under Apache 2.0; ARC is under CC BY-SA
+4.0; and the WikiText-103 text is under CC BY-SA 3.0 with GFDL, inherited from
+Wikipedia. The lm-evaluation-harness is under the MIT licence. Every one of
+these artifacts is distributed for research on language models, and this study
+uses each of them for that purpose and in English only, the language they were
+collected in. The promised release is built inside a fork of the PEFT library
+and will carry that codebase's Apache 2.0 licence; the frozen run pool, the
+metric stores and the analysis scripts are released under the same terms, for
+research use.
 
 % ===========================================================================
 \section{The corrected head-to-head battery}\label{app:head2head}
@@ -1126,7 +1083,30 @@ describe the relation as one shape with per-family constants rather than one
 universal curve. Runs reach the flat region below the knee mainly when the
 recipe has an explicit magnitude knob: plain LoRA at the standard
 $3\!\times\!10^{-4}$ has no below-knee grid cell at all ($0$ of $4$), against
-$12$ of $26$ for LoRA{+}wd.
+$12$ of $26$ for LoRA{+}wd. The relation extends to a third training task
+outside the main two: MedMCQA on Llama, $r\!=\!-0.878$ over four runs.
+Figure~\ref{fig:family-scatter} shows the six per-family scatter plots
+behind these constants.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_family_scatter.png}
+\caption{Retention against update magnitude $\dw$ (log scale), one panel per
+run family, every on-pool run shown as one point colored by method. The solid
+line is the binned median; the dashed line is the base model's core
+retention (the correlational pool scores every family, math included, on core
+retention; the metric definitions are in Section~\ref{sec:method:metrics}). In
+every family the runs of all methods interleave along a single flat-then-falling
+trend: retention holds near the base ceiling while updates stay small and
+falls once they grow past the knee. The correlation between log update
+magnitude and retention is strongly negative in all six families, ranging
+from $r=-0.83$ to $r=-0.93$
+(lrsw $r=-0.886$, $n=180$; lrswm $r=-0.865$, $n=120$;
+qwsw $r=-0.840$, $n=151$; qwswm $r=-0.830$, $n=164$, or $-0.695$ on its
+format-collapse-clean subset, $n=155$;
+frc $r=-0.928$, $n=276$; frm $r=-0.929$, $n=144$).}
+\label{fig:family-scatter}
+\end{figure*}
 
 \paragraph{The rescaling intervention (Section~\ref{sec:results:rq2}).}
 Rescaling a trained adapter's update by a constant changes its magnitude and
@@ -1141,6 +1121,17 @@ intervention ran on Llama commonsense only.
 correlation between magnitude and retention is $-0.7$ or stronger at every
 rate of $10^{-4}$ and above; below that rate the curve is flat, so there is
 little for the correlation to pick up.
+
+\paragraph{The single-rate comparison artifact
+(Section~\ref{sec:results:rq2}).} Because the same learning rate produces a
+different update size for each method, the winner of a comparison at one
+shared rate is partly decided by which method that rate happens to suit. Our
+grid shows the size of the effect: of the five adapters that modify LoRA's
+structure (CLoRA, MiLoRA, SC-LoRA, LoRA-Null, DoRA), four beat plain LoRA at
+their own best single rate on a single seed, by up to $+26$ adaptation
+points (Figure~\ref{fig:lrartifact}, Table~\ref{tab:lr_artifact}), yet once
+every method is swept over rates, the LoRA{+}wd frontier sits on or above
+all of them. Per-adapter sweeps are in Appendix~\ref{app:lrsweep}.
 
 \paragraph{The safe learning-rate band
 (Section~\ref{sec:results:rq2}).} One rate counts as safe for one method when
@@ -1185,7 +1176,15 @@ $+0.099$ to the two blocks jointly. This paper uses two different geometry
 blocks and each result names the one it uses: the shape-only block here is
 $e_{\mathrm{top}}$ together with stable rank, and it leaves out the spectral
 norm, which is itself a size measure; the ladder of Table~\ref{tab:ladder} uses
-the wider block that includes the spectral norm.
+the wider block that includes the spectral norm. Measuring the placement
+construct of Section~\ref{sec:related} on its own terms gives a smaller
+step, not a larger one: with the block reduced to the four energy shares, so
+that placement is separated from shape and size, geometry adds $+0.008$, and
+adding the two input-side shares to the ladder's block leaves it at
+$+0.017$. Read as single predictors over family fixed effects, stable rank
+reaches $\Delta R^2 = 0.116$ against magnitude's $0.420$ ($n = 911$), a
+factor of about $3.6$ rather than $23$ (per-metric ranking in
+Table~\ref{tab:league}).
 
 \paragraph{The weaker accounting, disclosed
 (Section~\ref{sec:results:rq2}).} Adding KL drift as a third predictor block
@@ -1205,7 +1204,88 @@ Table~\ref{tab:league}; monitor results: Section~\ref{sec:results:rq3}).
 to update shape is the partial correlation $r(\text{stable rank},
 \text{retention} \mid \log\dw)$, which runs from $-0.32$ to $-0.67$ on the
 four Llama families and is near zero on the two Qwen families, so the residual
-effect is real but model-dependent. On the $49$-cell single-seed Llama
+effect is real but model-dependent. Per family it is $-0.595$ on Llama
+commonsense ($n\!=\!180$), $-0.666$ on Llama math ($n\!=\!120$), $-0.333$
+and $-0.323$ on the two denser Llama grids ($n\!=\!275$, $144$), and
+$-0.004$ and $+0.073$ on Qwen commonsense and Qwen math ($n\!=\!151$,
+$164$). Fitting retention on $\log\dw$ and method dummies within a family
+puts the per-method offsets at up to about five points, largest for SC-LoRA on
+Llama and not significant on either Qwen family; the SC-LoRA offset tracks
+the calibration corpus rather than the subspace constraint, as the
+eval-matched calibration control shows (Appendix~\ref{app:sweep}). In the ladder
+of Table~\ref{tab:ladder} the standardized coefficient on $\log\dw$ is
+$-0.744$ $[-0.894, -0.615]$ against $|\beta|\!\le\!0.138$ for every
+geometry measure, with cluster-robust $t(\log\dw)\!=\!-7.9$.
+
+\paragraph{What the geometry ceiling does and does not bound
+(Section~\ref{sec:results:rq2}).} The ceiling bounds geometry effects that
+separate one design from another, since a feature constant within a method
+lies in the span of the method dummies and method identity adds $+0.016$
+over size alone. It does not bound an effect that varies from run to run
+inside a method, and the knobs that would generate the intruder directions
+of \citet{shuttleworth2025illusion}, rank, scaling factor and learning rate,
+vary that way in our pool. Nor does the small step contradict the
+$3.05$-point random-direction penalty of the rescaling intervention above: a
+random subspace takes about its dimensional share of energy at either end of
+the spectrum, which is an ordinary placement, so the penalty the control
+detects is a direction effect that placement does not carry, and the ceiling
+bounds placement, not direction in general. Everything here is computed on
+$\Delta W$ and never on the adapted matrix $W_0{+}\Delta W$, where they
+locate their effect (coordinates and blocks in Appendix~\ref{app:geoproj}).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_geometry.pdf}
+\caption{Whether each design places its update in the subspace its own
+initialization targets, on the Llama-2-7B commonsense sweep, every run
+shown. (a) The energy each design puts in the subspace it targets, as a
+multiple of what a method that targets nothing puts there, so one means no
+difference. (b) The same quantity against update magnitude, where MiLoRA's
+placement falls back toward the reference as updates grow and SC-LoRA's
+does not vary.}
+\label{fig:placement}
+\end{figure*}
+
+\paragraph{The placement each design makes, across run families
+(Section~\ref{sec:results:rq2}).} Figure~\ref{fig:geometry} shows that
+each design leaves a distinctive trace; the stricter question is whether
+that trace lies in the subspace the design's own paper states, which
+Figure~\ref{fig:placement} answers on the
+Llama-2-7B commonsense sweep. Each design is scored on the base-weight
+subspace its own initialization targets, which we read from the
+initialization code rather than from the descriptive text: MiLoRA the
+minor input directions, LoRA-Null the least-activated input directions,
+and SC-LoRA the principal output directions, since SC-LoRA sets its
+up-projection from the top eigenvectors of the output second moment and
+its much larger share in the principal input directions follows from that
+construction rather than from a stated target. Taking each method's own
+target column and comparing the median over the smallest third of its runs
+by update magnitude against the median over the largest third, the ratio
+of large to small is $0.31$ to $0.47$ for MiLoRA over all six run families
+and $0.53$ to $0.83$ for LoRA-Null over four; the correlation between the
+placement and $\log_{10}\dw$ within a family runs from $-0.81$ to $-0.98$
+for MiLoRA and from $-0.66$ to $-0.99$ for LoRA-Null. SC-LoRA shows no
+such relation on its own target: the ratio is $0.92$ to $1.15$ over five
+families and the correlation has no consistent sign, from $-0.63$ to
+$+0.90$. Its placement is also the smallest of the three, $1.05$ to $1.51$
+times the no-target level on Llama and $0.91$ times on Qwen commonsense,
+which is at that level rather than above it. We report a family only where
+the method has at least ten runs in it, which excludes the Llama math grid
+for SC-LoRA and LoRA-Null. PiSSA runs only at its recipe rate and so spans
+no magnitude range, and it is not part of this comparison. Two controls: the energy shares and the
+stable rank are unchanged if the update is multiplied by a constant, so
+none of these quantities can track the update's size by construction, and
+over the same magnitude range the methods that state no target subspace
+stay flat on the same columns, which rules out the reading that any large
+update loses share in any fixed subspace. Within a sweep the update
+magnitude and the learning rate move together, so we describe the relation
+on the magnitude axis that was swept and do not separate the two.
+Finally, one disclosure: in the two commonsense sweeps SC-LoRA's seed-$42$
+runs sit at roughly twice the update magnitude of its seeds $43$ to $45$
+at every learning rate, while those three agree to three decimals with
+each other, which is a larger gap than seed variation produces elsewhere
+in the pool. Those runs are retained in Figure~\ref{fig:placement} and in
+every statistic above; they are the widest points in the SC-LoRA column. On the $49$-cell single-seed Llama
 commonsense subset, allowing each method its own slope on top of its own
 intercept leaves the six on-curve series statistically indistinguishable
 ($F(5,30)\!=\!0.28$, $p\!=\!0.92$). Over all seven series the same tests are
@@ -1215,7 +1295,12 @@ Holding one method out at a time, a pooled
 fit that has never seen it predicts its retention at a mean root-mean-square
 error of $2.5$ points, against $2.2$ for the method-aware in-sample fit.
 Held-out SC-LoRA is the exception, missing by $9.1$ points, which is the
-calibration case of Section~\ref{sec:results:rq1}.
+calibration-corpus effect the eval-matched control isolates
+(Appendix~\ref{app:sweep}). The full geometry
+battery per method and base model, with each design's advertised subspace
+marked, is Table~\ref{tab:geometry-battery}.
+
+\input{tables/table_geometry_battery.tex}
 
 \paragraph{Adaptation and retention over the whole pool
 (Section~\ref{sec:results:rq2}).} Pooled over the frozen pool the two axes are
@@ -1299,16 +1384,15 @@ than to its subspace constraint.
   \centering
   \includegraphics[width=0.92\textwidth]{fig_pareto.png}
   \caption{Adaptation versus retention in the four model $\times$ task
-  settings, each method at its swept operating points, with the observed
+  settings, one point per seed-averaged recipe cell, with the observed
   frontier highlighted; where no frontier line is drawn it consists of a
   single point. LoRA{+}wd is the sole method on the frontier in three of four
-  settings (one-cell weight-decay transfer arms excluded from ranking);
-  SC-LoRA on Qwen math is the exception (text). Read with three qualifiers:
-  the cell-bootstrap probability of LoRA{+}wd being on the frontier is $1.00$
-  in those three settings, but MiLoRA reaches $0.50$ on Llama commonsense, so
-  ``sole'' is a property of the observed points rather than of the resampled
-  ones; and two of the Qwen commonsense frontier cells are single-seed.
-  CorDA withheld.}
+  settings, with SC-LoRA on Qwen math the exception; one-cell weight-decay
+  transfer arms are excluded from the ranking and CorDA is withheld. Three
+  qualifiers on reading it are in Appendix~\ref{app:exhibits}: the frontier
+  is a property of the observed points rather than of resampled ones, MiLoRA
+  reaches a cell-bootstrap probability of $0.50$ on Llama commonsense, and
+  two Qwen commonsense frontier cells are single-seed.}
   \label{fig:pareto}
 \end{figure*}
 
@@ -1331,11 +1415,12 @@ than to its subspace constraint.
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{fig_dose_response.png}
-  \caption{Retention against $\dw$ as each of three knobs is varied
-  (Section~\ref{sec:results:rq2}). Weight decay, CLoRA's null-space dimension
-  $k$, and LoRA rank each move $\dw$ monotonically, and their retention
-  effects land on one per-family curve; the residual retention effect of the
-  knob itself is $\Delta R^2 \le 0.006$ once $\dw$ is known.}
+  \caption{Three ways of changing the update magnitude
+  (Section~\ref{sec:results:rq2}). Panels (a) and (b) show that weight decay,
+  CLoRA's null-space dimension $k$, and LoRA rank each move $\dw$
+  monotonically; panel (c) plots retention against $\dw$ for all three, which
+  land on one curve per run family. Once $\dw$ is known, which knob produced
+  it adds at most $\Delta R^2 = 0.006$ to the retention prediction.}
   \label{fig:dose}
 \end{figure*}
 
@@ -1426,7 +1511,7 @@ CLoRA score from one of ours.
     \toprule
     \# & Method & BBH & $\mathbb{F}$ & $\log_{10}\mathbb{F}$ & In fit? \\
     \midrule
-    -- & Base (LLaMA-2-7B) & 34.91 & -- & -- & no (reference row) \\
+    -- & Base (Llama-2-7B) & 34.91 & -- & -- & no (reference row) \\
     \midrule
     1  & LoRA baseline     & 26.69 & 0.79 & $-0.102$ & yes \\
     2  & LoRA-$r8$         & 26.90 & 0.95 & $-0.022$ & yes \\
@@ -1460,7 +1545,7 @@ CLoRA score from one of ours.
 Because the per-method learning-rate sweep is central to the design
 (Section~\ref{sec:results:rq2}), we report it in full. For each
 model\,$\times$\,task setting, one figure plots adaptation and retention against
-learning rate for every adapter, with each seed drawn as a point, the line the
+learning rate for every adapter (Figures~\ref{fig:lrsweep-lrsw} to~\ref{fig:lrsweep-qwswm}), with each seed drawn as a point, the line the
 per-learning-rate mean, and the shaded band its $\pm$SD envelope; the companion
 table lists the same means, standard deviations, and seed counts. Three things
 are visible throughout: every method is tuned over the same seven-rate grid;
@@ -1473,7 +1558,7 @@ single-rate artifact of Section~\ref{sec:results:rq2}. Two higher rates
 ($2{\times}10^{-3}$, $5{\times}10^{-3}$) were attempted on Llama commonsense
 only and mostly diverged there; the nine scored high-rate runs appear in the
 Llama commonsense table but not in operating-point
-selection. Math panels use BBH retention (Section~\ref{sec:experiments}).
+selection. Math panels use BBH retention (Section~\ref{sec:method:setup}).
 
 \begin{figure*}[t]
   \centering
@@ -1523,7 +1608,7 @@ selection. Math panels use BBH retention (Section~\ref{sec:experiments}).
 % ===========================================================================
 \section{The 284B arm: update shape at scale}\label{app:ds284b}
 % ===========================================================================
-A DeepSeek-V4 arm (a $284$B-parameter mixture of experts with $13$B active
+A DeepSeek-V4 arm~\citep{deepseek2026v4} (a $284$B-parameter mixture of experts with $13$B active
 parameters per token, adapters on the attention projections, rank $16$ with
 $\alpha = 32$) trained the seven swept methods on MedMCQA over three seeds at
 one fixed per-method learning rate. Training completed for all $21$ runs, and

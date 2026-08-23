@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+"""RETIRED 2026-08-06: tab:fingerprint was removed after the design review
+(wrong-side signature attribution risk, jargon-first layout); the body
+geometry exhibit is now tables/table_geometry_battery.tex from
+37_geometry_battery_table.py. Kept for provenance only.
+
+Emit tables/table_geometry_fingerprint.tex: the S5 fingerprint-vs-leverage table.
+
+Two shaded panels in one float (label tab:fingerprint):
+  (a) pooled median stable rank of the update per method (the fingerprint;
+      finding 6 of observatory/findings.md, source 30_m3_geometry.py), shaded
+      light-to-dark by value;
+  (b) partial r(stable rank, retention | log F_delta) per family
+      (m3_residual_corr.csv), shaded by |r|.
+
+All printed numbers are the FROZEN values already quoted in paper.tex S5 and
+verified in the 2026-07-18 verification pass (verification_report.md line ~358).
+The script recomputes them from m3_master.csv / m3_residual_corr.csv and ABORTS
+on any mismatch with the frozen anchors, so it doubles as a consistency check.
+
+Shading is a single-hue sequential ramp (tints of one blue, values printed in
+every cell, max tint capped at 42% so black text keeps contrast); grayscale-
+and CVD-safe by construction since only lightness varies.
+
+Requires \\usepackage{colortbl} in the paper preamble (xcolor already loaded).
+Pure stdlib. Usage: python3 35_m3_fingerprint_table.py
+"""
+import csv
+import math
+import os
+import statistics
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+WRITING = os.path.dirname(os.path.dirname(HERE))          # paper/writing
+MASTER = os.path.join(HERE, "m3_master.csv")
+RESID = os.path.join(HERE, "m3_residual_corr.csv")
+OUT = os.path.join(WRITING, "tables", "table_geometry_fingerprint.tex")
+
+# Frozen anchors: findings.md finding 6 (pooled median stable_rank_w, on-pool).
+FROZEN_SR = {
+    "dora": 4.5, "lora": 5.0, "milora": 8.1, "clora": 8.3,
+    "lora_null": 8.7, "lorawd": 8.9, "sclora": 14.5, "pissa": 18.1,
+}
+# Frozen anchors: m3_residual_corr.csv r_partial(stable_rank_w|logFd),
+# quoted in S5 prose as "-0.3 to -0.67 on Llama, ~0 on Qwen".
+FROZEN_PARTIAL = {
+    "lrsw": -0.595, "lrswm": -0.666, "qwsw": -0.004,
+    "qwswm": 0.073, "frc": -0.333, "frm": -0.323,
+}
+
+METHOD_DISPLAY = {
+    "dora": "DoRA", "lora": "LoRA", "milora": "MiLoRA", "clora": "CLoRA",
+    "lora_null": "LoRA-Null", "lorawd": "LoRA{+}wd", "sclora": "SC-LoRA",
+    "pissa": "PiSSA",
+}
+# Basis labels follow the S2 taxonomy ("organized by basis").
+METHOD_BASIS = {
+    "lora": "unconstrained",
+    "lorawd": "unconstr.{+}decay",
+    "dora": "magn./direction",
+    "clora": "subspace penalty",
+    "milora": "minor SVD init",
+    "lora_null": "act.\\ null init",
+    "sclora": "act.\\ principal init",
+    "pissa": "principal SVD init",
+}
+# Display names follow the Overleaf main.tex app:pool vocabulary: four
+# sweeps (one per model x task) plus the two denser Llama grids. Unmarked
+# rows are the sweeps; the two grids are marked.
+FAMILY_DISPLAY = {
+    "lrsw": "Llama CS", "lrswm": "Llama math",
+    "frc": "Llama CS (grid)", "frm": "Llama math (grid)",
+    "qwsw": "Qwen CS", "qwswm": "Qwen math",
+}
+FAMILY_ORDER = ["lrsw", "lrswm", "frc", "frm", "qwsw", "qwswm"]
+
+MAX_TINT = 42  # cap so black text stays readable on the shaded cell
+
+
+def tint(value, lo, hi):
+    frac = 0.0 if hi <= lo else (value - lo) / (hi - lo)
+    return max(0, min(MAX_TINT, round(frac * MAX_TINT)))
+
+
+def main():
+    by_method = {}
+    with open(MASTER) as fh:
+        for row in csv.DictReader(fh):
+            if row["on_pool"] != "True" or not row["stable_rank_w"]:
+                continue  # 986 of 1004 runs merged with the geometry battery
+            by_method.setdefault(row["method"], []).append(
+                float(row["stable_rank_w"]))
+    # Keep the 8 canonical methods of finding 6 / S5 prose; the pool's extra
+    # variant series (milorawd, lorawdr16) are not part of the fingerprint list.
+    sr = {m: statistics.median(v) for m, v in by_method.items()
+          if m in FROZEN_SR}
+    n_runs = {m: len(by_method[m]) for m in sr}
+
+    # Frozen values are half-up roundings of the 30_m3.log medians
+    # (e.g. PiSSA 18.05 -> 18.1), so allow exactly that slack.
+    for m, frozen in FROZEN_SR.items():
+        got = sr.get(m)
+        if got is None or abs(got - frozen) > 0.0551:
+            sys.exit(f"ANCHOR MISMATCH stable_rank[{m}]: got {got}, frozen {frozen}")
+
+    partial, n_fam = {}, {}
+    with open(RESID) as fh:
+        for row in csv.DictReader(fh):
+            partial[row["family"]] = float(row["r_partial(stable_rank_w|logFd)"])
+            n_fam[row["family"]] = int(row["n"])
+    for f, frozen in FROZEN_PARTIAL.items():
+        if abs(partial[f] - frozen) > 0.0051:
+            sys.exit(f"ANCHOR MISMATCH partial[{f}]: got {partial[f]}, frozen {frozen}")
+
+    methods = sorted(sr, key=sr.get)
+    sr_lo, sr_hi = sr[methods[0]], sr[methods[-1]]
+
+    lines = []
+    a = lines.append
+    a("% AUTO-GENERATED by acl_analysis/observatory/35_m3_fingerprint_table.py")
+    a("% from m3_master.csv (on-pool) + m3_residual_corr.csv (both produced by")
+    a("% 30_m3_geometry.py). Values are the frozen finding-6 / S5-prose anchors;")
+    a("% the generator aborts on any drift. Do not hand-edit; rerun the script.")
+    a("% Needs \\usepackage{colortbl} (xcolor already in the preamble).")
+    a("\\definecolor{geoblue}{RGB}{0,114,178}")
+    a("\\begin{table}[t]")
+    a("\\centering")
+    a("\\footnotesize")
+    a("\\setlength{\\tabcolsep}{3pt}")
+    a("\\renewcommand{\\arraystretch}{1.12}")
+    a("\\resizebox{\\columnwidth}{!}{%")
+    a("\\begin{tabular}[t]{l l r}")
+    a("\\multicolumn{3}{c}{(a) fingerprint} \\\\[1pt]")
+    a("\\toprule")
+    a("Method & Basis & SR($\\Delta W$) \\\\")
+    a("\\midrule")
+    for m in methods:
+        pct = tint(sr[m], sr_lo, sr_hi)
+        # print the FROZEN anchor (what S5 prose quotes), not the recompute:
+        # e.g. PiSSA median 18.046 was logged as 18.05 and frozen as 18.1.
+        a(f"{METHOD_DISPLAY[m]} & {METHOD_BASIS[m]} & "
+          f"\\cellcolor{{geoblue!{pct}}}{FROZEN_SR[m]:.1f} \\\\")
+    a("\\bottomrule")
+    a("\\end{tabular}\\hspace{10pt}")
+    a("\\begin{tabular}[t]{l r}")
+    a("\\multicolumn{2}{c}{(b) leverage at fixed $\\dw$} \\\\[1pt]")
+    a("\\toprule")
+    a("Family & $r_{\\mathrm{partial}}$ \\\\")
+    a("\\midrule")
+    for f in FAMILY_ORDER:
+        pct = tint(abs(partial[f]), 0.0, 0.70)
+        # CSV precision verbatim (3 dp), math mode so the minus sign renders
+        a(f"{FAMILY_DISPLAY[f]} & \\cellcolor{{geoblue!{pct}}}"
+          f"${partial[f]:+.3f}$ \\\\")
+    a("\\bottomrule")
+    a("\\end{tabular}%")
+    a("}")
+    n_lo, n_hi = min(n_runs.values()), max(n_runs.values())
+    a("\\caption{\\textbf{Update geometry identifies the method; at fixed")
+    a("magnitude it moves retention little.} (a) Pooled median stable rank of")
+    a("the trained update per method (run level, descriptive; " + f"{n_lo}"
+      + " to " + f"{n_hi}" + " runs per method), shaded by value. The ordering")
+    a("separates the designs cleanly and the same clusters recur at 284B")
+    a("(Limitations). (b) Partial correlation of stable rank with retention")
+    a("once $\\log_{10}\\dw$ is known, per run family")
+    a("(Appendix~\\ref{app:pool}), shaded by absolute value: moderate on the")
+    a("four Llama families, near zero on both Qwen families. Shading is one")
+    a("blue scale within each panel.}")
+    a("\\label{tab:fingerprint}")
+    a("\\end{table}")
+
+    with open(OUT, "w") as fh:
+        fh.write("\n".join(lines) + "\n")
+    print(f"wrote {OUT}")
+    print("stable rank:", {METHOD_DISPLAY[m]: round(sr[m], 1) for m in methods})
+    print("runs/method:", {METHOD_DISPLAY[m]: n_runs[m] for m in methods})
+    print("partials   :", {FAMILY_DISPLAY[f]: partial[f] for f in FAMILY_ORDER})
+
+
+if __name__ == "__main__":
+    main()

@@ -41,7 +41,7 @@ SC-LoRA & 27.9{\footnotesize$\pm$0.5} & 60.5{\footnotesize$\pm$0.5} & 0.86{\foot
 \toprule
 \textbf{Method} & \textbf{Ret} $\uparrow$ & \textbf{Adapt} $\uparrow$ & $\dw$ $\downarrow$ & \textbf{KL} $\downarrow$ \\
 \midrule
-\multicolumn{5}{c}{\textbf{Qwen-2.5-7B, commonsense}} \\
+\multicolumn{5}{c}{\textbf{Qwen2.5-7B, commonsense}} \\
 \midrule
 \textit{Base model} & \textit{44.4} & -- & \textit{0} & \textit{0} \\
 LoRA+wd & \textbf{40.1{\footnotesize$\pm$0.7}} & \textbf{87.4{\footnotesize$\pm$0.2}} & 0.25{\footnotesize$\pm$0.00} & 0.23{\footnotesize$\pm$0.00} \\
@@ -52,7 +52,7 @@ LoRA & 38.0{\footnotesize$\pm$0.9} & 86.4{\footnotesize$\pm$0.4} & \textbf{0.12{
 MiLoRA & 36.7{\footnotesize$\pm$0.1} & 86.4{\footnotesize$\pm$1.0} & 0.28{\footnotesize$\pm$0.01} & 0.48{\footnotesize$\pm$0.02} \\
 SC-LoRA & 27.9{\footnotesize$\pm$16.0} & 87.2{\footnotesize$\pm$0.1} & 0.35{\footnotesize$\pm$0.08} & -- \\
 \midrule
-\multicolumn{5}{c}{\textbf{Qwen-2.5-7B, math}} \\
+\multicolumn{5}{c}{\textbf{Qwen2.5-7B, math}} \\
 \midrule
 \textit{Base model} & \textit{47.9} & -- & \textit{0} & \textit{0} \\
 SC-LoRA & \textbf{47.7{\footnotesize$\pm$0.2}} & \textbf{77.2{\footnotesize$\pm$0.8}} & 0.11{\footnotesize$\pm$0.00} & 0.10{\footnotesize$\pm$0.00} \\
@@ -66,8 +66,11 @@ CLoRA & 40.0{\footnotesize$\pm$0.1} & 70.5{\footnotesize$\pm$1.0} & 0.44{\footno
 \end{tabular}
 \end{minipage}
 \caption{Each method at its best adaptation operating point, one block
-per model and task, sorted by retention. Ret, Adapt, $\dw$, and KL are
-mean $\pm$ SD over seeds. The full
+per model and task, sorted by retention. Ret is accuracy on the
+held-out general benchmarks, Adapt is accuracy on the fine-tuning
+task, $\dw$ is the size of the weight update, and KL is the drift of
+the next-token distribution from the base model; all are mean $\pm$
+SD over seeds. The full
 version with the five geometry columns is Table~\ref{tab:grand-full}
 (Appendix~\ref{app:exhibits}).}
 \label{tab:grand}

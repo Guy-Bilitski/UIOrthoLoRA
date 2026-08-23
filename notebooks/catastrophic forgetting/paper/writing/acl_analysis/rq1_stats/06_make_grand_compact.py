@@ -66,11 +66,15 @@ out = [
     r"\begin{minipage}[t]{0.49\textwidth}\centering",
     *half_table(blocks[2:]),
     r"\end{minipage}",
-    # Caption is the PI's shortened version (Overleaf d175f60); do not
-    # re-expand it.
+    # Caption shortened by the PI (Overleaf d175f60); 2026-08-08 he approved
+    # naming the four metrics in words (audit finding: the headline table
+    # never said what its columns measure). Keep it to these three sentences.
     r"\caption{Each method at its best adaptation operating point, one block",
-    r"per model and task, sorted by retention. Ret, Adapt, $\dw$, and KL are",
-    r"mean $\pm$ SD over seeds. The full",
+    r"per model and task, sorted by retention. Ret is accuracy on the",
+    r"held-out general benchmarks, Adapt is accuracy on the fine-tuning",
+    r"task, $\dw$ is the size of the weight update, and KL is the drift of",
+    r"the next-token distribution from the base model; all are mean $\pm$",
+    r"SD over seeds. The full",
     r"version with the five geometry columns is Table~\ref{tab:grand-full}",
     r"(Appendix~\ref{app:exhibits}).}",
     r"\label{tab:grand}",

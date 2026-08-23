@@ -22,6 +22,79 @@ The new RQ1 statistics layer (`acl_analysis/rq1_stats/`: Holm-corrected
 head-to-heads, TOST equivalence, MDE power notes + independent verifier) IS
 committed and reproducible.
 
+**REVIEW-DRIVEN RE-PRIORITISATION (2026-08-09, revised same day).** The ARR review
+(`comprehensive-review-08082026/`, Overall 3.0) put one weakness on the paper's central
+axis, the geometry claim. Two of its three limbs have since been closed without any
+GPU: the ladder now measures the placement construct directly
+(`rq1_stats/09_placement_refit.py`), and the fixed 256 boundary is a PI-settled scope
+decision rather than a gap. What is left of it is the adapted-matrix spectrum, which
+is Tier 0 below and is now **narrower than when it was written**.
+
+**Open priority question.** Tier 0 (intruder dimensions) answers an objection the paper
+has already scoped out and answers it on a construct we say is not ours. Item 3 (Qwen
+rescale ladder) closes a gap the paper itself declares in Limitation 1 as its most
+valuable missing experiment, and the reviewer independently named it the single best
+addition. On one H100 the recommendation is **item 3 first, Tier 0 second**: we are
+more exposed on a promise we made than on a construct we scoped out.
+
+**SUPERSEDED 2026-08-23 (PI decision):** Tier A = Tier 0 FIRST (expanded to
+3 methods x 3 rates x BOTH models, seed 43, per-cell train->eval->evacuate
+chaining), item 3 second; everything else deferred for this submission.
+The PI's own mechanism question (is our magnitude axis the intruder axis?)
+makes Tier 0's adverse branch abstract-critical, so it needs maximum lead
+time. Full finalized spec: `handoff/TIER_A_SPEC_2026-08-23.md`.
+
+---
+
+## Tier 0 — the geometry validation slice (review-critical, one H100)
+
+### 0. Intruder dimensions on a retrained Llama-CS slice
+
+**SCOPE NARROWED 2026-08-09 (PI).** This item was originally two questions, cut
+sensitivity and intruder dimensions. **Cut sensitivity is now out of scope by PI
+decision**: the paper studies the two ends of the ordering, which is where every
+design places or withholds its update, the largest target subspace among them is
+128 dimensions so the 256 boundary contains it with margin, and the paper makes
+no claim about the middle of the spectrum. That is stated in Metric 3 and
+Limitations 2. What remains is the second question only.
+
+**ALSO SETTLED WITHOUT COMPUTE.** The other half of the geometry objection, that
+the ladder did not carry the construct it names, was closed by refit on the
+frozen pool: `acl_analysis/rq1_stats/09_placement_refit.py` shows the published
+block at +0.017, the placement-only block at +0.008, and the published block
+plus the three omitted shares still at +0.017. No GPU was needed.
+
+**What is left.** Every coordinate we compute is on `dW` against the base
+spectrum. The spectrum of `W0+dW` is never computed, which is where Shuttleworth
+et al. (NeurIPS 2025) locate their mechanism: intruder dimensions, new leading
+singular directions of the adapted matrix near-orthogonal to the pretrained
+ones, whose singular values they scale down as a causal intervention against
+forgetting. The paper now reclassifies that as outside our construct, which is
+defensible, but it is the one remaining place a reviewer can press.
+
+**Design.** Llama-2-7B commonsense, standard recipe, three methods spanning the
+magnitude range (LoRA+wd, MiLoRA, SC-LoRA), six rates, one seed: 18 cells,
+keeping the adapters this time. Stage A trains only (~1 H100-day) and answers
+whether intruder dimensions appear in our runs at all and whether their count is
+just a restatement of magnitude. Stage B adds retention and adaptation evals to
+the same cells (~1 more H100-day) and lets the count enter a within-slice
+ladder against retention.
+
+**Prerequisite, no GPU:** re-run `geo_drift_phase1.py` to rebuild
+`results/geo_drift/base_svd/` (currently empty). Extending TOPK/BOTK past 256 is
+no longer needed.
+
+**Risk.** If the intruder count adds explained retention variance beyond
+magnitude, the abstract's second clause changes. Still publishable and arguably
+a better paper, but it must be found by us and not by a reviewer.
+
+**Priority note.** With cut sensitivity out of scope and the placement refit
+done, this is no longer clearly ahead of item 3 below. See the priority note
+there.
+
+**Job file:** none yet. Analysis: a new `W0+dW` spectral pass alongside
+`geo_drift_phase2.py`.
+
 ---
 
 ## Tier 1 — retire "provisional" markers in the paper
@@ -50,6 +123,10 @@ names "Qwen-CS + math rescale ladder (A2)" the single highest-value missing
 run. Requires: retrain a small set of Qwen anchor adapters, then
 `rescale_adapters.py` ladder + random-direction controls + evals. No job file
 exists yet; write one from the E1 spec.
+**Independently named by the ARR reviewer as the single best addition**, and the
+paper's own Limitation 1 already promises it. Fits one H100 (7B); budget roughly
+2 to 3 GPU-days for anchor retrains plus the ladder and controls. **Recommended first
+on the available H100**; see the open priority question in the header.
 
 ---
 
@@ -150,6 +227,7 @@ retention test of the magnitude relation.
 
 | Item | Existing spec |
 |---|---|
+| 0 (geometry slice) | no job file yet - write fresh; closest shape `archive/jobs_superseded/frepro4_b4.txt` |
 | 4 (Qwen CE) | `jobs/qwen_ce_recovery.txt` + ledger `jobs/ce_backfill_qwen.txt` |
 | 1/2 (E4/B4) | template `archive/jobs_superseded/frepro4_b4.txt` |
 | 13 (math seeds) | `jobs/night_final_B.txt` [N1] block (dedupe [N2]/[N3], landed) |

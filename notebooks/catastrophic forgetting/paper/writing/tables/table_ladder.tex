@@ -1,35 +1,37 @@
-% NEW (round-5, ACL repositioning). The nested delta-R^2 ladder: the one-table
-% version of "magnitude first, geometry second". Numbers FROZEN (key_numbers.md
-% section 19.1, n=1034, run-level, family fixed effects, quarantine-included).
-% CIs recomputed 2026-07-30 by acl_analysis/rq1_stats/04_ladder_ci.py for the
-% ladder's OWN blocks (B=2000 cell-level bootstrap); the earlier CIs were
-% borrowed from 09-Q1's 2-metric shape-unique share, a different estimand.
+% Body Table 2 as of 2026-08-07 (promoted from app:exhibits after the design
+% review; it replaced tables/table_geometry_fingerprint.tex, now deleted).
+% The nested delta-R^2 ladder: the one-table version of "magnitude first,
+% geometry second". Numbers FROZEN (key_numbers.md section 19.1, n=1034,
+% run-level, family fixed effects, quarantine-included). CIs recomputed
+% 2026-07-30 by acl_analysis/rq1_stats/04_ladder_ci.py for the ladder's OWN
+% blocks (B=2000 cell-level bootstrap); the earlier CIs were borrowed from
+% 09-Q1's 2-metric shape-unique share, a different estimand.
 % No VERIFY-PENDING markers: every value is a frozen/verified anchor.
+% The standardized betas and the cluster-robust t moved to app:exhibits
+% (the "residual geometry effect" paragraph) to keep the caption to three
+% sentences per the body-exhibit rule.
 \begin{table}[t]
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3pt}
-\caption{\textbf{What each block of predictors adds to retention.} Nested
-regression of retention on blocks added in order, pooled over all 1{,}034
-adapters with family fixed effects (quarantine-included). Update magnitude
-($\dw$) adds $+0.395$ of $R^2$; the geometry block
-($e_{\rm top}$, stable rank, spectral norm) adds
-$+0.017$ ($\approx\!23\times$ less); method identity adds $+0.006$. 95\% CIs are
-cell-level cluster bootstraps ($B\!=\!2000$; magnitude adds more than the
-geometry block in $2000/2000$ replicates). Standardized
-$\beta(\log\dw)\!=\!-0.744$
-$[-0.894,-0.615]$ vs.\ geometry $|\beta|\!\le\!0.138$; cluster-robust
-$t(\log\dw)\!=\!-7.9$.}
+\setlength{\tabcolsep}{4pt}
+\caption{How much of the variation in retention each kind of information
+explains, over the $1{,}034$ adapters whose update geometry was measured.
+Each row adds one kind of information to the row above it: the size of the
+update raises the explained share by $0.395$, three measurements of the
+update's geometry raise it by a further $0.017$, and knowing which method
+produced the update raises it by $0.006$. Intervals are $95\%$ cell-level
+bootstraps, and the size step is larger than the geometry step in all
+$2{,}000$ replicates.}
 \label{tab:ladder}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{l c c c}
 \toprule
-Block added (nested) & $R^2$ & $\Delta R^2$ & 95\% CI \\
+Information used & $R^2$ & increase & 95\% CI \\
 \midrule
-Family fixed effects           & 0.390 & --      & -- \\
-$+\ \log\dw$ (magnitude)        & 0.785 & $+0.395$ & $[+0.309,+0.483]$ \\
-$+$ geometry ($e_{\rm top}$, $\log\smax$, stable rank) & 0.802 & $+0.017$ & $[+0.007,+0.032]$ \\
-$+$ method identity             & 0.808 & $+0.006$ & $[+0.003,+0.018]$ \\
+Run family only                        & 0.390 & --       & -- \\
+$+$ size of the update ($\dw$)          & 0.785 & $+0.395$ & $[+0.309,+0.483]$ \\
+$+$ geometry of the update (3 measures) & 0.802 & $+0.017$ & $[+0.007,+0.032]$ \\
+$+$ which method produced it            & 0.808 & $+0.006$ & $[+0.003,+0.018]$ \\
 \bottomrule
 \end{tabular}%
 }

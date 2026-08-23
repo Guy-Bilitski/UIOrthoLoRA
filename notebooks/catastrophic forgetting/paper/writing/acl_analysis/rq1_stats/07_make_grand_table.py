@@ -53,8 +53,8 @@ REGEN = WRITING / "tables" / "table_grand_regen.tex"
 BLOCKS = [
     ("llama_cs",   r"Llama-2-7B, commonsense",  "op_points_llama_cs.csv",   "lrsw",  "26.0"),
     ("llama_math", r"Llama-2-7B, math",         "op_points_llama_math.csv", "frm",   "33.1"),
-    ("qwen_cs",    r"Qwen-2.5-7B, commonsense", "op_points_qwen_cs.csv",    "qwsw",  "44.4"),
-    ("qwen_math",  r"Qwen-2.5-7B, math",        "op_points_qwen_math.csv",  "qwswm", "47.9"),
+    ("qwen_cs",    r"Qwen2.5-7B, commonsense", "op_points_qwen_cs.csv",    "qwsw",  "44.4"),
+    ("qwen_math",  r"Qwen2.5-7B, math",        "op_points_qwen_math.csv",  "qwswm", "47.9"),
 ]
 
 # the 7 canonical methods of the grand table; adjudication-only extras

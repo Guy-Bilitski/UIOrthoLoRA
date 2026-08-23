@@ -11,130 +11,185 @@
 % cited work here (it appeared only in a stray %TODO comment referring to an
 % unidentified gradient/Fisher-basis "Subspace-Geometry" paper); it is dropped.
 % If that citation is wanted, the correct arXiv ID must be found first.
+%
+% METADATA PASS 2026-08-09 (ARR compliance item: DOI / Anthology id per entry).
+%   * Six entries that cited a preprint were moved to their archival record:
+%     hu2021lora (ICLR 2022), liu2024dora (ICML 2024), wang2024milora
+%     (NAACL 2025), yu2023metamath (ICLR 2024), clora (ACL 2025),
+%     tang2025loranull (AAAI 2026). Each keeps its arXiv id in "note".
+%   * Checked and found preprint-only (no archival version exists as of
+%     2026-08-09, arXiv abs pages carry no journal-ref and no comments field):
+%     yang2025cordapp (2506.13187), luo2025sclora (2505.23724),
+%     xiong2025oplora (2510.13003), kalajdzievski2024scaling (2401.05605),
+%     cobbe2021gsm8k (2110.14168), touvron2023llama2, qwen2025qwen25,
+%     deepseek2026v4, clark2018arc. These carry the arXiv-issued DataCite DOI
+%     (10.48550/arXiv.<id>), which is shown on each paper's arXiv abs page.
+%   * Entries published at ICLR / ICML(PMLR) / NeurIPS / TMLR have no
+%     publisher DOI; they carry venue, volume and pages instead.
+%   * Verified-today entries left untouched by request: shuttleworth2025illusion,
+%     zhang2025primacy, huang2025fapm, koubbi2026meanfield, lee2026lr.
 % ---------------------------------------------------------------------------
 
-@article{hu2021lora,
-  title   = {{LoRA}: Low-Rank Adaptation of Large Language Models},
-  author  = {Hu, Edward J. and Shen, Yelong and Wallis, Phillip and Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and Wang, Lu and Chen, Weizhu},
-  journal = {arXiv preprint arXiv:2106.09685},
-  year    = {2021},
-  note    = {ICLR 2022}
+@inproceedings{hu2021lora,
+  title     = {{LoRA}: Low-Rank Adaptation of Large Language Models},
+  author    = {Hu, Edward J. and Shen, Yelong and Wallis, Phillip and Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and Wang, Lu and Chen, Weizhu},
+  booktitle = {The Tenth International Conference on Learning Representations (ICLR)},
+  year      = {2022},
+  url       = {https://openreview.net/forum?id=nZeVKeeFYf9},
+  note      = {arXiv:2106.09685}
 }
-% VERIFIED: arXiv 2106.09685
+% VERIFIED 2026-08-09: ICLR 2022 poster, OpenReview nZeVKeeFYf9; camera-ready
+% header reads "Published as a conference paper at ICLR 2022". ICLR has no DOI.
+% (Was cited as an arXiv preprint; moved to the archival record.)
 
 @inproceedings{hu2023llmadapters,
   title     = {{LLM-Adapters}: An Adapter Family for Parameter-Efficient Fine-Tuning of Large Language Models},
   author    = {Hu, Zhiqiang and Wang, Lei and Lan, Yihuai and Xu, Wanyu and Lim, Ee-Peng and Bing, Lidong and Xu, Xing and Poria, Soujanya and Lee, Roy Ka-Wei},
   booktitle = {Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  pages     = {5254--5276},
   year      = {2023},
+  doi       = {10.18653/v1/2023.emnlp-main.319},
   note      = {arXiv:2304.01933}
 }
 % VERIFIED 2026-07-03: arXiv 2304.01933, EMNLP 2023; canonical commonsense recipe (r32, alpha64, lr3e-4, bs16, 3 epochs, cutoff 256)
+% VERIFIED 2026-08-09: ACL Anthology 2023.emnlp-main.319, pp. 5254-5276.
 
-@article{liu2024dora,
-  title   = {{DoRA}: Weight-Decomposed Low-Rank Adaptation},
-  author  = {Liu, Shih-Yang and Wang, Chien-Yi and Yin, Hongxu and Molchanov, Pavlo and Wang, Yu-Chiang Frank and Cheng, Kwang-Ting and Chen, Min-Hung},
-  journal = {arXiv preprint arXiv:2402.09353},
-  year    = {2024},
-  note    = {ICML 2024 (Oral)}
+@inproceedings{liu2024dora,
+  title     = {{DoRA}: Weight-Decomposed Low-Rank Adaptation},
+  author    = {Liu, Shih-Yang and Wang, Chien-Yi and Yin, Hongxu and Molchanov, Pavlo and Wang, Yu-Chiang Frank and Cheng, Kwang-Ting and Chen, Min-Hung},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  pages     = {32100--32121},
+  year      = {2024},
+  url       = {https://proceedings.mlr.press/v235/liu24bn.html},
+  note      = {ICML 2024 (Oral); arXiv:2402.09353}
 }
-% VERIFIED: arXiv 2402.09353
+% VERIFIED 2026-08-09: PMLR v235:32100-32121 (proceedings.mlr.press/v235/liu24bn.html).
+% PMLR assigns no DOI. (Was cited as an arXiv preprint; moved to the archival record.)
 
-@article{yang2024corda,
-  title   = {{CorDA}: Context-Oriented Decomposition Adaptation of Large Language Models for Task-Aware Parameter-Efficient Fine-tuning},
-  author  = {Yang, Yibo and Li, Xiaojie and Zhou, Zhongzhu and Song, Shuaiwen Leon and Wu, Jianlong and Nie, Liqiang and Ghanem, Bernard},
-  journal = {Advances in Neural Information Processing Systems (NeurIPS)},
-  year    = {2024},
-  note    = {arXiv:2406.05223}
+@inproceedings{yang2024corda,
+  title     = {{CorDA}: Context-Oriented Decomposition Adaptation of Large Language Models for Task-Aware Parameter-Efficient Fine-tuning},
+  author    = {Yang, Yibo and Li, Xiaojie and Zhou, Zhongzhu and Song, Shuaiwen Leon and Wu, Jianlong and Nie, Liqiang and Ghanem, Bernard},
+  booktitle = {Advances in Neural Information Processing Systems 37 (NeurIPS)},
+  year      = {2024},
+  note      = {arXiv:2406.05223}
 }
-% VERIFIED: arXiv 2406.05223, NeurIPS 2024
+% VERIFIED: arXiv 2406.05223, NeurIPS 2024. NeurIPS proceedings carry no DOI.
 
 @article{yang2025cordapp,
   title   = {Dynamic Context-oriented Decomposition for Task-aware Low-rank Adaptation with Less Forgetting and Faster Convergence},
   author  = {Yang, Yibo and Liu, Sihao and Rao, Chuan and An, Bang and Shen, Tiancheng and Torr, Philip H. S. and Yang, Ming-Hsuan and Ghanem, Bernard},
   journal = {arXiv preprint arXiv:2506.13187},
   year    = {2025},
+  doi     = {10.48550/arXiv.2506.13187},
   note    = {``CorDA++''}
 }
 % VERIFIED: arXiv 2506.13187
+% CHECKED 2026-08-09: no journal-ref and no comments field on the arXiv abs page;
+% preprint-only, so the arXiv DataCite DOI is the only identifier.
 
-@article{wang2024milora,
-  title   = {{MiLoRA}: Harnessing Minor Singular Components for Parameter-Efficient {LLM} Finetuning},
-  author  = {Wang, Hanqing and Xiao, Zeguan and Li, Yixia and Wang, Shuo and Chen, Guanhua and Chen, Yun},
-  journal = {arXiv preprint arXiv:2406.09044},
-  year    = {2024},
-  note    = {NAACL 2025}
+@inproceedings{wang2024milora,
+  title     = {{MiLoRA}: Harnessing Minor Singular Components for Parameter-Efficient {LLM} Finetuning},
+  author    = {Wang, Hanqing and Li, Yixia and Wang, Shuo and Chen, Guanhua and Chen, Yun},
+  booktitle = {Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers)},
+  pages     = {4823--4836},
+  year      = {2025},
+  doi       = {10.18653/v1/2025.naacl-long.248},
+  note      = {arXiv:2406.09044}
 }
 % VERIFIED: arXiv 2406.09044
+% CORRECTED 2026-08-09: the published NAACL 2025 author list has FIVE authors.
+% Zeguan Xiao appears in some third-party reference lists (and in the earlier
+% version of this entry) but is NOT in the ACL Anthology record
+% (2025.naacl-long.248) or the NAACL 2025 accepted-papers listing; removed.
 
-@article{yu2023metamath,
-  title   = {MetaMath: Bootstrap Your Own Mathematical Questions for Large Language Models},
-  author  = {Yu, Longhui and Jiang, Weisen and Shi, Han and Yu, Jincheng and Liu, Zhengying and Zhang, Yu and Kwok, James T. and Li, Zhenguo and Weller, Adrian and Liu, Weiyang},
-  journal = {arXiv preprint arXiv:2309.12284},
-  year    = {2023},
-  note    = {ICLR 2024}
+@inproceedings{yu2023metamath,
+  title     = {{MetaMath}: Bootstrap Your Own Mathematical Questions for Large Language Models},
+  author    = {Yu, Longhui and Jiang, Weisen and Shi, Han and Yu, Jincheng and Liu, Zhengying and Zhang, Yu and Kwok, James T. and Li, Zhenguo and Weller, Adrian and Liu, Weiyang},
+  booktitle = {The Twelfth International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=N8N0hgNDRt},
+  note      = {arXiv:2309.12284}
 }
-% ADDED 2026-07-30 for PI citation request; verify at citation-check pass
+% VERIFIED 2026-08-09: ICLR 2024 (Spotlight), OpenReview N8N0hgNDRt.
+% ICLR has no DOI. (Was cited as an arXiv preprint; moved to the archival record.)
 
 @article{cobbe2021gsm8k,
   title   = {Training Verifiers to Solve Math Word Problems},
   author  = {Cobbe, Karl and Kosaraju, Vineet and Bavarian, Mohammad and Chen, Mark and Jun, Heewoo and Kaiser, Lukasz and Plappert, Matthias and Tworek, Jerry and Hilton, Jacob and Nakano, Reiichiro and Hesse, Christopher and Schulman, John},
   journal = {arXiv preprint arXiv:2110.14168},
-  year    = {2021}
+  year    = {2021},
+  doi     = {10.48550/arXiv.2110.14168}
 }
-% ADDED 2026-07-30 for PI citation request; verify at citation-check pass
+% VERIFIED 2026-08-09: arXiv 2110.14168; no archival version (no journal-ref on
+% the arXiv abs page). arXiv-issued DataCite DOI confirmed on that page.
 
 @inproceedings{suzgun2023bbh,
   title     = {Challenging {BIG-Bench} Tasks and Whether Chain-of-Thought Can Solve Them},
   author    = {Suzgun, Mirac and Scales, Nathan and Sch{\"a}rli, Nathanael and Gehrmann, Sebastian and Tay, Yi and Chung, Hyung Won and Chowdhery, Aakanksha and Le, Quoc V. and Chi, Ed H. and Zhou, Denny and Wei, Jason},
   booktitle = {Findings of the Association for Computational Linguistics: ACL 2023},
-  year      = {2023}
+  pages     = {13003--13051},
+  year      = {2023},
+  doi       = {10.18653/v1/2023.findings-acl.824}
 }
-% ADDED 2026-07-30 for PI citation request; verify at citation-check pass
+% VERIFIED 2026-08-09: ACL Anthology 2023.findings-acl.824, pp. 13003-13051.
 
 @inproceedings{wang2024mmlupro,
   title     = {{MMLU-Pro}: A More Robust and Challenging Multi-Task Language Understanding Benchmark},
   author    = {Wang, Yubo and Ma, Xueguang and Zhang, Ge and Ni, Yuansheng and Chandra, Abhranil and Guo, Shiguang and Ren, Weiming and Arulraj, Aaran and He, Xuan and Jiang, Ziyan and Li, Tianle and Ku, Max and Wang, Kai and Zhuang, Alex and Fan, Rongqi and Yue, Xiang and Chen, Wenhu},
-  booktitle = {Advances in Neural Information Processing Systems 37 (Datasets and Benchmarks)},
-  year      = {2024}
+  booktitle = {Advances in Neural Information Processing Systems 37 (Datasets and Benchmarks Track)},
+  year      = {2024},
+  note      = {arXiv:2406.01574}
 }
-% ADDED 2026-07-30 for PI citation request; verify at citation-check pass
+% VERIFIED 2026-08-09: arXiv 2406.01574, NeurIPS 2024 Datasets and Benchmarks.
+% NeurIPS proceedings carry no DOI.
 
-@article{clora,
-  title   = {Controlled Low-Rank Adaptation with Subspace Regularization for Continued Training on Large Language Models},
-  author  = {Lu, Yuheng and Qian, Bingshuo and Yuan, Caixia and Jiang, Huixing and Wang, Xiaojie},
-  journal = {arXiv preprint arXiv:2410.16801},
-  year    = {2024},
-  note    = {``CLoRA''; ACL 2025 (Long)}
+@inproceedings{clora,
+  title     = {Controlled Low-Rank Adaptation with Subspace Regularization for Continued Training on Large Language Models},
+  author    = {Lu, Yuheng and Qian, Bingshuo and Yuan, Caixia and Jiang, Huixing and Wang, Xiaojie},
+  booktitle = {Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {19165--19181},
+  year      = {2025},
+  doi       = {10.18653/v1/2025.acl-long.940},
+  note      = {``CLoRA''; arXiv:2410.16801}
 }
 % VERIFIED: arXiv 2410.16801
+% VERIFIED 2026-08-09: ACL Anthology 2025.acl-long.940, pp. 19165-19181, Vienna.
+% (Was cited as an arXiv preprint; moved to the archival record.)
 
 @article{luo2025sclora,
   title   = {{SC-LoRA}: Balancing Efficient Fine-tuning and Knowledge Preservation via Subspace-Constrained {LoRA}},
   author  = {Luo, Minrui and Kuang, Fuhang and Wang, Yu and Liu, Zirui and He, Tianxing},
   journal = {arXiv preprint arXiv:2505.23724},
   year    = {2025},
+  doi     = {10.48550/arXiv.2505.23724},
   note    = {arXiv:2505.23724}
 }
 % VERIFIED: arXiv 2505.23724 (OpenReview KAE9YDK0t8)
+% CHECKED 2026-08-09: v3 (2025-10-31) still carries no journal-ref and no
+% comments field; preprint-only.
 
 @article{xiong2025oplora,
   title   = {{OPLoRA}: Orthogonal Projection {LoRA} Prevents Catastrophic Forgetting during Parameter-Efficient Fine-Tuning},
   author  = {Xiong, Yifeng and Xie, Xiaohui},
   journal = {arXiv preprint arXiv:2510.13003},
   year    = {2025},
+  doi     = {10.48550/arXiv.2510.13003},
   note    = {arXiv:2510.13003}
 }
 % VERIFIED: arXiv 2510.13003
+% CHECKED 2026-08-09: v2 (2025-11-08) carries no journal-ref and no comments
+% field; preprint-only.
 
-@article{meng2024pissa,
-  title   = {{PiSSA}: Principal Singular Values and Singular Vectors Adaptation of Large Language Models},
-  author  = {Meng, Fanxu and Wang, Zhaohui and Zhang, Muhan},
-  journal = {Advances in Neural Information Processing Systems (NeurIPS)},
-  year    = {2024},
-  note    = {arXiv:2404.02948, NeurIPS 2024 Spotlight}
+@inproceedings{meng2024pissa,
+  title     = {{PiSSA}: Principal Singular Values and Singular Vectors Adaptation of Large Language Models},
+  author    = {Meng, Fanxu and Wang, Zhaohui and Zhang, Muhan},
+  booktitle = {Advances in Neural Information Processing Systems 37 (NeurIPS)},
+  year      = {2024},
+  note      = {arXiv:2404.02948, NeurIPS 2024 Spotlight}
 }
-% VERIFIED: arXiv 2404.02948
+% VERIFIED: arXiv 2404.02948. NeurIPS proceedings carry no DOI.
 
 @article{biderman2024lora,
   title   = {{LoRA} Learns Less and Forgets Less},
@@ -143,25 +198,31 @@
   year    = {2024},
   note    = {arXiv:2405.09673}
 }
-% VERIFIED 2026-07-02: arXiv 2405.09673, TMLR 2024 (Featured)
+% VERIFIED 2026-07-02: arXiv 2405.09673, TMLR 2024 (Featured). TMLR assigns no DOI.
 
 @article{kalajdzievski2024scaling,
   title   = {Scaling Laws for Forgetting When Fine-Tuning Large Language Models},
   author  = {Kalajdzievski, Damjan},
   journal = {arXiv preprint arXiv:2401.05605},
   year    = {2024},
+  doi     = {10.48550/arXiv.2401.05605},
   note    = {arXiv:2401.05605}
 }
 % VERIFIED 2026-07-02: arXiv 2401.05605
+% CHECKED 2026-08-09: no journal-ref on the arXiv listing and no venue in
+% Semantic Scholar / NASA ADS; preprint-only.
 
 @inproceedings{li2018l2sp,
   title     = {Explicit Inductive Bias for Transfer Learning with Convolutional Networks},
   author    = {Li, Xuhong and Grandvalet, Yves and Davoine, Franck},
   booktitle = {Proceedings of the 35th International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {80},
+  pages     = {2825--2834},
   year      = {2018},
   note      = {``L$^2$-SP''; arXiv:1802.01483}
 }
-% VERIFIED 2026-07-02: arXiv 1802.01483, PMLR v80 pp. 2825-2834
+% VERIFIED 2026-07-02: arXiv 1802.01483, PMLR v80 pp. 2825-2834. PMLR has no DOI.
 
 @article{kirkpatrick2017ewc,
   title   = {Overcoming catastrophic forgetting in neural networks},
@@ -171,47 +232,236 @@
   number  = {13},
   pages   = {3521--3526},
   year    = {2017},
+  doi     = {10.1073/pnas.1611835114},
   note    = {``EWC''}
 }
 % VERIFIED: PNAS 114(13):3521-3526, 2017
+% VERIFIED 2026-08-09: DOI 10.1073/pnas.1611835114 (pnas.org record).
 
-@article{tang2025loranull,
-  title   = {{LoRA-Null}: Low-Rank Adaptation via Null Space for Large Language Models},
-  author  = {Tang, Pengwei and Liu, Yong and Zhang, Dongjie and Wu, Xing and Zhang, Debing},
-  journal = {arXiv preprint arXiv:2503.02659},
-  year    = {2025},
-  note    = {arXiv:2503.02659}
+@inproceedings{tang2025loranull,
+  title     = {Put the Space of {LoRA} Initialization to the Extreme to Preserve Pre-trained Knowledge},
+  author    = {Tang, Pengwei and Hu, Xiaolin and Liu, Yong and Ding, Lizhong and Zhang, Dongjie and Wu, Xing and Zhang, Debing},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume    = {40},
+  number    = {39},
+  pages     = {33232--33240},
+  year      = {2026},
+  doi       = {10.1609/aaai.v40i39.40608},
+  note      = {``LoRA-Null''; arXiv:2503.02659v2}
 }
 % VERIFIED 2026-07-02: arXiv 2503.02659 (later retitled "Put the Space of LoRA Initialization to the Extreme...")
+% CORRECTED 2026-08-09: the entry reproduced the arXiv v1 record (title
+% "LoRA-Null: Low-Rank Adaptation via Null Space for Large Language Models",
+% five authors). The current record is arXiv v2 (2026-01-12) = AAAI 2026, with
+% SEVEN authors (Xiaolin Hu and Lizhong Ding added). Verified against the AAAI
+% OJS article page (ojs.aaai.org/index.php/AAAI/article/view/40608): AAAI-26
+% Technical Track NLP IV, vol. 40 no. 39, pp. 33232-33240,
+% DOI 10.1609/aaai.v40i39.40608. The method is still named LoRA-Null in v2.
 
 @article{lee2026lr,
   title   = {Learning Rate Matters: Vanilla {LoRA} May Suffice for {LLM} Fine-tuning},
   author  = {Lee, Yu-Ang and Ko, Ching-Yun and Chen, Pin-Yu and Yeh, Mi-Yen},
   journal = {arXiv preprint arXiv:2602.04998},
   year    = {2026},
-  note    = {Concurrent work}
+  note    = {arXiv:2602.04998}
 }
-% VERIFIED: arXiv 2602.04998 (submitted 2026-02-04)
+% VERIFIED: arXiv 2602.04998 (submitted 2026-02-04, revised May 2026 -> prior work, not concurrent)
+
+@inproceedings{shuttleworth2025illusion,
+  title     = {{LoRA} vs Full Fine-tuning: An Illusion of Equivalence},
+  author    = {Shuttleworth, Reece and Andreas, Jacob and Torralba, Antonio and Sharma, Pratyusha},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2025},
+  note      = {arXiv:2410.21228}
+}
+% VERIFIED 2026-08-09: arXiv 2410.21228 (v1 2024-10-28, v3 2025-10-22); NeurIPS 2025
+% poster 115207; OpenReview PGNdDfsI6C. Author order confirmed from the arXiv record.
+
+@inproceedings{zhang2025primacy,
+  title     = {The Primacy of Magnitude in Low-Rank Adaptation},
+  author    = {Zhang, Zicheng and Li, Haoran and Zhang, Yifeng and Gong, Guoqiang and Wang, Jiaxing and Liu, Pengzhang and Jiang, Qixia and Hu, Junxing},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2025},
+  note      = {arXiv:2507.06558}
+}
+% VERIFIED 2026-08-09: arXiv 2507.06558 (v1 2025-07-09, v2 2025-12-25); NeurIPS 2025
+% poster 115720; OpenReview s4LnWgjacg. Scope note: the outcome variable is adaptation
+% quality / convergence, NOT retention -- do not cite it for a forgetting result.
+
+@inproceedings{huang2025fapm,
+  title     = {Mitigating Catastrophic Forgetting in Large Language Models with Forgetting-aware Pruning},
+  author    = {Huang, Wei and Cheng, Anda and Wang, Yinggui},
+  booktitle = {Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing},
+  pages     = {21842--21856},
+  year      = {2025},
+  note      = {arXiv:2509.08255}
+}
+% VERIFIED 2026-08-09: ACL Anthology 2025.emnlp-main.1108; arXiv 2509.08255.
+% Scope note: the ratio is a pruning criterion on dense task vectors, not a LoRA study.
+
+@inproceedings{koubbi2026meanfield,
+  title     = {Understanding Catastrophic Forgetting in {LoRA} via Mean-Field Attention Dynamics},
+  author    = {Koubbi, Hugo and Hernandez, Louis and Boussard, Matthieu},
+  booktitle = {Proceedings of the 43rd International Conference on Machine Learning},
+  year      = {2026},
+  note      = {arXiv:2402.15415v2; v1 was a different paper, cite v2}
+}
+% VERIFIED 2026-08-09: arXiv 2402.15415 v2 (2026-05-13) is a RETITLED, REPLACED paper --
+% v1 (2024-02) was "The Impact of LoRA on the Emergence of Clusters in Transformers" and
+% is NOT about forgetting. Cite v2 only. Comments field: "New version accepted at
+% ICML 2026, with new results and without previous results."
 
 @inproceedings{wang2023olora,
   title     = {Orthogonal Subspace Learning for Language Model Continual Learning},
   author    = {Wang, Xiao and Chen, Tianze and Ge, Qiming and Xia, Han and Bao, Rong and Zheng, Rui and Zhang, Qi and Gui, Tao and Huang, Xuanjing},
   booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2023},
+  pages     = {10658--10671},
   year      = {2023},
+  doi       = {10.18653/v1/2023.findings-emnlp.715},
   note      = {arXiv:2310.14152}
 }
+% VERIFIED 2026-08-09: ACL Anthology 2023.findings-emnlp.715, pp. 10658-10671.
 
 @article{wang2024clsurvey,
   title   = {A Comprehensive Survey of Continual Learning: Theory, Method and Application},
   author  = {Wang, Liyuan and Zhang, Xingxing and Su, Hang and Zhu, Jun},
   journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  volume  = {46},
+  number  = {8},
+  pages   = {5362--5383},
   year    = {2024},
+  doi     = {10.1109/TPAMI.2024.3367329},
   note    = {arXiv:2302.00487}
 }
+% VERIFIED 2026-08-09: IEEE TPAMI 46(8):5362-5383, DOI 10.1109/TPAMI.2024.3367329.
 
 @inproceedings{rolnick2019replay,
   title     = {Experience Replay for Continual Learning},
   author    = {Rolnick, David and Ahuja, Arun and Schwarz, Jonathan and Lillicrap, Timothy and Wayne, Gregory},
-  booktitle = {Advances in Neural Information Processing Systems},
+  booktitle = {Advances in Neural Information Processing Systems 32 (NeurIPS)},
   year      = {2019}
 }
+% NeurIPS proceedings carry no DOI.
+
+% ---------------------------------------------------------------------------
+% Models, datasets and software used in this study.
+% ADDED 2026-08-09 (ARR compliance item: these artifacts were used throughout
+% but never cited). Each is cited once, at its first substantive mention.
+% ---------------------------------------------------------------------------
+
+@article{touvron2023llama2,
+  title   = {Llama 2: Open Foundation and Fine-Tuned Chat Models},
+  author  = {Touvron, Hugo and Martin, Louis and Stone, Kevin and Albert, Peter and Almahairi, Amjad and Babaei, Yasmine and Bashlykov, Nikolay and Batra, Soumya and Bhargava, Prajjwal and Bhosale, Shruti and others},
+  journal = {arXiv preprint arXiv:2307.09288},
+  year    = {2023},
+  doi     = {10.48550/arXiv.2307.09288},
+  note    = {arXiv:2307.09288}
+}
+% VERIFIED 2026-08-09: arXiv 2307.09288 (v2, 2023-07-19), 68 authors, no
+% archival version. arXiv-issued DataCite DOI shown on the abs page.
+
+@article{qwen2025qwen25,
+  title   = {Qwen2.5 Technical Report},
+  author  = {{Qwen Team}},
+  journal = {arXiv preprint arXiv:2412.15115},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2412.15115},
+  note    = {arXiv:2412.15115}
+}
+% VERIFIED 2026-08-09: arXiv 2412.15115 (v1 2024-12-19, v2 2025-01-03),
+% authored by the Qwen Team (An Yang et al.); no archival version.
+
+@article{deepseek2026v4,
+  title   = {{DeepSeek-V4}: Towards Highly Efficient Million-Token Context Intelligence},
+  author  = {{DeepSeek-AI}},
+  journal = {arXiv preprint arXiv:2606.19348},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2606.19348},
+  note    = {arXiv:2606.19348; the arm in this paper uses the released
+             DeepSeek-V4-Flash checkpoint (284B total, 13B active)}
+}
+% VERIFIED 2026-08-09: arXiv 2606.19348 (v1 2026-04-26), DeepSeek-AI and 318
+% further authors; linked from the deepseek-ai/DeepSeek-V4-Flash model card.
+
+@inproceedings{merity2017wikitext,
+  title     = {Pointer Sentinel Mixture Models},
+  author    = {Merity, Stephen and Xiong, Caiming and Bradbury, James and Socher, Richard},
+  booktitle = {5th International Conference on Learning Representations (ICLR)},
+  year      = {2017},
+  note      = {introduces the WikiText-2 / WikiText-103 corpora; arXiv:1609.07843}
+}
+% VERIFIED 2026-08-09: arXiv 1609.07843 (2016-09-26); ICLR 2017. ICLR has no DOI.
+
+@inproceedings{hendrycks2021mmlu,
+  title     = {Measuring Massive Multitask Language Understanding},
+  author    = {Hendrycks, Dan and Burns, Collin and Basart, Steven and Zou, Andy and Mazeika, Mantas and Song, Dawn and Steinhardt, Jacob},
+  booktitle = {9th International Conference on Learning Representations (ICLR)},
+  year      = {2021},
+  url       = {https://openreview.net/forum?id=d7KBjmI3GmQ},
+  note      = {``MMLU''; arXiv:2009.03300}
+}
+% VERIFIED 2026-08-09: ICLR 2021, OpenReview d7KBjmI3GmQ (github.com/hendrycks/test
+% is labelled "Measuring Massive Multitask Language Understanding | ICLR 2021").
+% ICLR has no DOI.
+
+@article{clark2018arc,
+  title   = {Think you have Solved Question Answering? {Try ARC}, the {AI2} Reasoning Challenge},
+  author  = {Clark, Peter and Cowhey, Isaac and Etzioni, Oren and Khot, Tushar and Sabharwal, Ashish and Schoenick, Carissa and Tafjord, Oyvind},
+  journal = {arXiv preprint arXiv:1803.05457},
+  year    = {2018},
+  doi     = {10.48550/arXiv.1803.05457},
+  note    = {``ARC''; arXiv:1803.05457}
+}
+% VERIFIED 2026-08-09: arXiv 1803.05457 (2018-03-14); no archival version.
+
+@inproceedings{lin2022truthfulqa,
+  title     = {{TruthfulQA}: Measuring How Models Mimic Human Falsehoods},
+  author    = {Lin, Stephanie and Hilton, Jacob and Evans, Owain},
+  booktitle = {Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {3214--3252},
+  year      = {2022},
+  doi       = {10.18653/v1/2022.acl-long.229},
+  note      = {arXiv:2109.07958}
+}
+% VERIFIED 2026-08-09: ACL Anthology 2022.acl-long.229, pp. 3214-3252, Dublin.
+
+@misc{evalharness,
+  title     = {A framework for few-shot language model evaluation},
+  author    = {Gao, Leo and Tow, Jonathan and Abbasi, Baber and Biderman, Stella and Black, Sid and DiPofi, Anthony and Foster, Charles and Golding, Laurence and Hsu, Jeffrey and Le Noac'h, Alain and Li, Haonan and McDonell, Kyle and Muennighoff, Niklas and Ociepa, Chris and Phang, Jason and Reynolds, Laria and Schoelkopf, Hailey and Skowron, Aviya and Sutawika, Lintang and Tang, Eric and Thite, Anish and Wang, Ben and Wang, Kevin and Zou, Andy},
+  year      = {2023},
+  month     = {12},
+  publisher = {Zenodo},
+  version   = {v0.4.0},
+  doi       = {10.5281/zenodo.10256836},
+  url       = {https://zenodo.org/records/10256836},
+  note      = {``lm-evaluation-harness''}
+}
+% VERIFIED 2026-08-09: copied from the project's own CITATION.bib on the main
+% branch of github.com/EleutherAI/lm-evaluation-harness (key `eval-harness`,
+% Zenodo v0.4.0, DOI 10.5281/zenodo.10256836). This is the canonical citation
+% for the software; it is NOT a claim about the version this study ran (see the
+% TODO in the appendix -- the fleet version is unrecorded).
+
+@article{kalajdzievski2023rslora,
+  title   = {A Rank Stabilization Scaling Factor for Fine-Tuning with {LoRA}},
+  author  = {Kalajdzievski, Damjan},
+  journal = {arXiv preprint arXiv:2312.03732},
+  year    = {2023},
+  note    = {arXiv:2312.03732}
+}
+% VERIFIED 2026-08-10: arXiv 2312.03732 (submitted 2023-11-28). The alpha/sqrt(r)
+% rsLoRA convention is THIS paper, not shuttleworth2025illusion and not
+% kalajdzievski2024scaling (2401.05605), which is the forgetting scaling-laws paper
+% by the same author. Three distinct works; do not merge.
+
+@article{xie2026intruder,
+  title   = {The Intruder Threshold: A Spectral Law for {LoRA} Fine-Tuning},
+  author  = {Xie, Peng},
+  journal = {arXiv preprint arXiv:2607.23711},
+  year    = {2026},
+  note    = {arXiv:2607.23711; concurrent work}
+}
+% VERIFIED 2026-08-10: arXiv 2607.23711 (submitted 2026-07-26, ~2 weeks before our
+% deadline -> genuinely concurrent). Single author. Claims norm-matched interventions
+% attribute forgetting to threshold-crossing layers rather than update magnitude;
+% threshold computed from the BASE spectrum, intervention on the adapted spectrum.

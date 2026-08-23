@@ -115,8 +115,8 @@ ax.annotate("Rings = each method's best-looking single-LR point.\n"
             fontsize=9, color="#333",
             bbox=dict(boxstyle="round,pad=0.5", fc="#fffbe6", ec="#c9a227", lw=1.0))
 
-ax.set_xlabel(r"Adaptation  —  commonsense accuracy [%]   $\rightarrow$ better")
-ax.set_ylabel(r"Retention  —  mean(BBH, MMLU-Pro) [%]   $\rightarrow$ better")
+ax.set_xlabel(r"Adaptation: commonsense accuracy [%], higher is better")
+ax.set_ylabel(r"Retention: mean of BBH and MMLU-Pro [%], higher is better")
 ax.set_title("Claim 2 (diagnosis): structured adapters' 'wins' carry the ingredients of a learning-rate artifact\n"
              "sweep the LR and LoRA+wd's frontier sits on or above every method",
              fontsize=13.5, pad=12)
