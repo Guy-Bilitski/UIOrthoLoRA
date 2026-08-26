@@ -232,6 +232,7 @@ or how far geometry adds to magnitude within the family (RQ2).
 
 % ===========================================================================
 \section{Measurement setup}\label{sec:method}
+\input{tables/table_grand_compact.tex}
 % ===========================================================================
 
 %% agent: from here
@@ -355,7 +356,6 @@ neutral text (the WikiText-103 test set)~\citep{merity2017wikitext}; since CE an
 
 % ===========================================================================
 \section{Results}\label{sec:results}
-\input{tables/table_grand_compact.tex}
 % ===========================================================================
 \paragraph{How we test.} A \emph{cell} is one configuration of
 Section~\ref{sec:method:setup}, so runs in a cell differ only in the random
@@ -475,18 +475,28 @@ rate, magnitude keeps most of its signal ($-0.58$ to $-0.91$). We conclude that 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{fig_geometry_detect.pdf}
-\caption{How far each method's update, at its Table~\ref{tab:grand}
-operating point, sits from plain updates (LoRA, LoRA{+}wd, DoRA) trained at
-the same learning rate. Each bar is the largest ratio across four measures
-of where the update's energy lies; one means indistinguishable from plain,
-and the shaded band is the $99$th percentile among the plain runs alone.
-Labels name the measure that differs most, starred where the two base
-models disagree.}
+\caption{For each method we
+measure the energy its update concentrates in four components: the major
+and the minor SVD components of the base weight, on the input and on the
+output side. Each energy is divided by the pooled median of the same energy
+over the methods that state no target subspace (LoRA, LoRA{+}wd, DoRA) at
+the same learning rate; each bar shows the most prominent of the four
+ratios for that model, and its label names the component. A ratio of one means indistinguishable from an
+unconstrained update, and the shaded band is the $99$th percentile of the
+same statistic among the plain runs alone (metric and construction:
+Appendix~\ref{app:geoproj}).}
 \label{fig:geometry}
 \end{figure}
 
 \paragraph{Geometry identifies the designs.}
-The small geometry step does not mean that the constraints fail to shape the updates. Figure~\ref{fig:geometry} compares each method's trained update with plain updates trained at the same learning rate, using four measures of where the update's energy lies (computation in Appendix~\ref{app:geoproj}). Every method that constrains update geometry separates from the plain adapters on both base models (SC-LoRA, MiLoRA, and LoRA-Null), while the three plain methods remain within the band produced by resampling the plain runs. CLoRA is the exception, consistent with its constraint acting on a randomly drawn subspace that these measures do not capture. Because the measures are scale-invariant energy shares, they cannot reflect update magnitude by construction. Thus, the constraints clearly alter update geometry, but this geometric variation has limited predictive power for retention: after fitting retention on magnitude and method within each family, the remaining method differences reach about five points among the swept methods, compared with roughly $20$--$40$ points spanned by the magnitude relationship (Appendix~\ref{app:exhibits}).
+Figure~\ref{fig:geometry} tests whether each design's update lands where
+an unconstrained update lands, on four components of the base weight's
+spectrum (metric and construction in Appendix~\ref{app:geoproj}). The
+concentration indeed surfaces the design:
+every method that constrains update geometry separates from the plain
+adapters on both base models (SC-LoRA, MiLoRA, and LoRA-Null), while the
+three plain methods remain within the band produced by resampling the
+plain runs. CLoRA is the exception, consistent with its constraint acting on a randomly drawn subspace that these measures do not capture. Because the measures are scale-invariant energy shares, they cannot reflect update magnitude by construction. Thus, the constraints clearly alter update geometry, but this geometric variation has limited predictive power for retention: after fitting retention on magnitude and method within each family, the remaining method differences reach about five points among the swept methods, compared with roughly $20$--$40$ points spanned by the magnitude relationship (Appendix~\ref{app:exhibits}).
 
 \paragraph{Outside the family, the shape holds, but the level does not.}
 Does the relation extend beyond LoRA-style adapters? We add three full
@@ -916,32 +926,59 @@ with the release, together with the frozen pool
 
 \subsection{Geometry projection}\label{app:geoproj}
 
-\paragraph{Phase one: the base spectrum.} For each adapted matrix we cache a
-truncated singular value decomposition of the base weight $W_0$: its top-$256$
-and bottom-$256$ left singular vectors ($U_{\mathrm{top}},
-U_{\mathrm{bot}}$) and the corresponding right singular vectors
-($V_{\mathrm{top}}, V_{\mathrm{bot}}$).
+\paragraph{Reference directions.} For each adapted matrix we decompose the
+base weight $W_0$ once and cache four sets of $256$ unit vectors: its $256$
+largest and $256$ smallest left singular vectors ($U_{\mathrm{top}},
+U_{\mathrm{bot}}$, the output side) and the corresponding right singular
+vectors ($V_{\mathrm{top}}, V_{\mathrm{bot}}$, the input side).
 
-\paragraph{Phase two: the update factorization.} Each update is factorized
-from its saved low-rank factors without ever forming the dense matrix: a thin
-QR decomposition of $(\alpha/r)B$ and of $A^{\!\top}$, followed by an $r
-\times r$ singular value decomposition of the core, gives $\Delta W =
-U_{\Delta} \Sigma V_{\Delta}^{\!\top}$ with singular values $s_1 \ge \dots \ge
-s_r$.
+\paragraph{Update directions.} The update $\Delta W = (\alpha/r)BA$ has $r$
+output directions $u_1,\dots,u_r$, $r$ input directions $v_1,\dots,v_r$, and
+strengths $s_1 \ge \dots \ge s_r$: its singular value decomposition.
+(Implementation note: the code obtains this decomposition from the saved
+low-rank factors, through a thin QR decomposition of each factor and an
+$r \times r$ decomposition of their core, so the dense matrix is never
+formed; the result is identical to a direct decomposition.)
 
-\paragraph{The energy fractions.} The output-side energy fraction is
+\paragraph{The energy shares.} For one update direction $u_i$, let $c_i$ be
+the squared length of its projection onto the reference set: $c_i$ is one
+when $u_i$ lies entirely inside the $256$ reference directions and zero when
+it is orthogonal to all of them. The share is the average of these overlaps
+weighted by squared strength, so a direction the update barely uses barely
+counts:
 \begin{equation*}
-  e_{\mathrm{top}} = \lVert U_{\mathrm{top}}^{\!\top} U_{\Delta}
-  \mathrm{diag}(s) \rVert_F^2 \,/\, \sum_i s_i^2,
+  e_{\mathrm{top}} = \frac{\sum_i s_i^2\, c_i}{\sum_i s_i^2}
+  = \frac{\lVert U_{\mathrm{top}} U_{\mathrm{top}}^{\!\top}\, \Delta W
+  \rVert_F^2}{\lVert \Delta W \rVert_F^2},
 \end{equation*}
-that is, the share of the update's squared singular mass whose left directions
-fall inside the base model's top-$256$ subspace. Replacing
-$U_{\mathrm{top}}$ by $U_{\mathrm{bot}}$, $V_{\mathrm{top}}$, or
-$V_{\mathrm{bot}}$ gives $e_{\mathrm{bot}}$ and the two input-side variants.
+the fraction of the update's squared Frobenius norm that survives projection
+onto the base model's $256$ principal output directions. Repeating this with
+$U_{\mathrm{bot}}$, and with the input directions $v_i$ against
+$V_{\mathrm{top}}$ and $V_{\mathrm{bot}}$, gives the other three shares.
+Dividing by $\sum_i s_i^2$ makes each share scale-free, so it cannot carry
+magnitude information. A raw share has no meaningful zero, since a random
+direction already lands about its dimensional share in any reference set
+(near $6\%$ for $256$ of $4096$ directions), which is why the figure reads
+shares relative to the no-target methods below.
 
 \paragraph{Aggregation.} Per-adapter values are means over the $160$ adapted
 matrices, weighted by each matrix's Frobenius norm. Stable rank and effective
 rank aggregate the same way.
+
+\paragraph{How Figure~\ref{fig:geometry} is computed.} Each method enters
+at its Table~\ref{tab:grand} operating point. For each of the four shares,
+the method's median is divided by the pooled median of the three no-target
+methods (plain LoRA, LoRA{+}wd, DoRA) trained at the same learning rate in
+the same family, keeping whichever of the ratio and its reciprocal is
+larger, so placing half the reference energy counts as a two-fold difference
+just as placing twice it does. Each model's bar is the largest of the four
+fold-differences, labeled with the share that produced it; one means the
+update is indistinguishable from a method that targets nothing. The shaded
+band is the $99$th percentile of the same largest-fold statistic within
+the no-target runs alone, resampling training cells over $4{,}000$ draws,
+so the selection of the maximum is applied to the null as well: a bar
+inside the band is indistinguishable from sampling variation among plain
+runs.
 
 \subsection{Metric implementation}\label{app:metrics}
 

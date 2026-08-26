@@ -166,32 +166,29 @@ def main():
     ax.annotate("sampling noise", (band, -0.75), textcoords="offset points",
                 xytext=(-3, 0), ha="right", va="center", fontsize=6.2,
                 color=figstyle.INK2, style="italic")
+    # one label per BAR (PI decision 2026-08-25): the two models disagree on
+    # the winning component for 3 of the 4 constrained methods, so naming
+    # only the longer bar's component (with a star for disagreement) hid
+    # half the picture. No stars any more.
     for m in order:
         if m in NO_TARGET:
             continue
-        # label the column that won on the LONGEST bar, which is the bar the
-        # text sits beside; and if the two models disagree, say so rather than
-        # silently showing one of them.
-        best_fam = max(ARMS, key=lambda a: per_arm[a[0]][m][0])[0]
-        other_fam = [a[0] for a in ARMS if a[0] != best_fam][0]
-        best = per_arm[best_fam][m][0]
-        col = per_arm[best_fam][m][1]
-        if not col:
-            continue
-        txt = SUBSPACE[col]
-        if per_arm[other_fam][m][1] != col:
-            txt += "*"
-        ax.annotate(txt, (best, ypos[m]), textcoords="offset points",
-                    xytext=(5, -2.4), fontsize=6.2, color=figstyle.INK2)
+        for (fam, _lab, _c), off in zip(ARMS, (+h / 2, -h / 2)):
+            val, col = per_arm[fam][m][0], per_arm[fam][m][1]
+            if not col:
+                continue
+            ax.annotate(SUBSPACE[col], (val, ypos[m] + off),
+                        textcoords="offset points", xytext=(4, -1.6),
+                        fontsize=5.8, color=figstyle.INK2)
     ax.set_yticks([ypos[m] for m in order])
     ax.set_yticklabels([DISPLAY[m] for m in order], fontsize=7.2)
     ax.invert_yaxis()
     ax.set_xlim(0, 5.9)
     ax.set_ylim(ypos[order[-1]] + 0.6, -1.35)   # headroom for "sampling noise"
-    ax.set_xlabel("largest fold-difference across four energy measures\n"
-                  r"($1\times$ = indistinguishable)",
+    ax.set_xlabel("largest fold-difference over the four components\n"
+                  r"($1\times$ = same as the unconstrained methods)",
                   fontsize=7.2)
-    ax.set_title("distance from a no-target update", fontsize=8,
+    ax.set_title("the design's trace in the trained update", fontsize=8,
                  loc="left")
     ax.tick_params(labelsize=7)
     # two-line group labels: single lines collide with the per-bar subspace
