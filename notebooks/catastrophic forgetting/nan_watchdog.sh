@@ -28,6 +28,13 @@ orphan_sweep() {
   # never sweep before our pool has actually been observed running, otherwise a
   # watchdog started ahead of its pool would kill unrelated training.
   [ "$SEEN_POOL" = 1 ] || return 0
+  # CRITICAL (fixed 2026-08-28 after this killed a healthy job): if ANY gpu_pool is
+  # running, its train_cs children are legitimate and must not be touched. Only
+  # sweep when no pool of any tag is alive -- then a train_cs really is an orphan.
+  if pgrep -f "gpu_pool.py" >/dev/null; then
+    echo "[nanwd] $(date -Is) our pool is gone but another pool is running -- not sweeping; exiting" >> "$LOG"
+    exit 0
+  fi
   for p in $(pgrep -f "train_cs.py"); do
     echo "[nanwd] $(date -Is) ORPHAN train_cs $p (no ${TAG} pool running) -> kill -9" >> "$LOG"
     kill -9 "$p" 2>/dev/null
@@ -47,8 +54,11 @@ while true; do
     [ -z "$run" ] && continue
     pid=$(pgrep -f "train_cs.py .*--run_name ${run}( |$)" | head -1)
     if [ -n "$pid" ]; then
-      echo "[nanwd] $(date -Is) NaN detected in $f (run $run) -> killing pid $pid" >> "$LOG"
-      kill "$pid" 2>/dev/null
+      echo "[nanwd] $(date -Is) NaN detected in $f (run $run) -> SIGKILL pid $pid" >> "$LOG"
+      # SIGKILL, not SIGTERM: a graceful shutdown holds GPU memory for many seconds,
+      # and gpu_pool starts the NEXT job immediately -> transient co-tenancy, which
+      # is what causes the next Qwen cell to NaN (observed 2026-08-28, jobs 3->4).
+      kill -9 "$pid" 2>/dev/null
       touch "$marker"
     else
       # training already finished/killed; just mark so we don't re-scan forever
