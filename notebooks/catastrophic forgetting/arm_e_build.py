@@ -26,6 +26,11 @@ def main():
     ap.add_argument("--topk", type=int, default=10)
     ap.add_argument("--tau", type=float, default=0.5)
     ap.add_argument("--out_root", default="/home/kfir/cf_models")
+    ap.add_argument("--match", choices=["magnitude", "perturbation"], default="magnitude",
+                    help="magnitude: ||dW_E|| = ||dW_B||  (comparable to B and C on the axis "
+                         "that predicts retention).  perturbation: ||dW_E - dW_A|| = "
+                         "||dW_B - dW_A||  (equal energy REMOVED, the literal spec form). "
+                         "They differ a lot because the removal is not orthogonal to the rest.")
     a = ap.parse_args()
     run = os.path.basename(a.adapter.rstrip("/"))
     meta = json.load(open(os.path.join(a.out_root, f"{run}__{a.tag}ablB", "ablation_meta.json")))
@@ -48,6 +53,15 @@ def main():
         mc = (Uf.T @ U_ad).abs().max(dim=0).values
         idx = [j for j in range(len(mc)) if mc[j] < a.tau]
         PI[name] = U_ad[:, idx] if idx else U_ad[:, :0]
+    def pert_energy(alpha):
+        """||dW_E - dW_A||^2 = alpha^2 ||P_perp dW||^2."""
+        tot = 0.0
+        for n,(A,B) in pairs.items():
+            sB = scaling * B; U = PI[n]
+            D = alpha * (sB - (U @ (U.T @ sB)) if U.shape[1] else sB * 1.0)
+            tot += float(((D.T @ D) * (A @ A.T)).sum())
+        return tot
+
     def energy(alpha):
         tot = 0.0
         for n,(A,B) in pairs.items():
@@ -55,18 +69,30 @@ def main():
             BE = (1-alpha)*sB + (alpha*(U @ (U.T @ sB)) if U.shape[1] else 0.0)
             tot += float(((BE.T @ BE) * (A @ A.T)).sum())
         return tot
-    e0 = energy(0.0); target = (target_ratio**2) * e0
-    lo, hi = 0.0, 1.0
-    for _ in range(40):
-        mid = (lo+hi)/2
-        if energy(mid) > target: lo = mid
-        else: hi = mid
+    e0 = energy(0.0)
+    if a.match == "magnitude":
+        target = (target_ratio**2) * e0
+        lo, hi = 0.0, 1.0
+        for _ in range(40):
+            mid = (lo+hi)/2
+            if energy(mid) > target: lo = mid
+            else: hi = mid
+    else:                                   # perturbation-matched (spec form)
+        target = meta["pert_energy_B"] if "pert_energy_B" in meta else None
+        if target is None:
+            raise SystemExit("need pert_energy_B in the arm-B meta; rerun intruder_ablate")
+        lo, hi = 0.0, 1.0
+        for _ in range(40):
+            mid = (lo+hi)/2
+            if pert_energy(mid) < target: lo = mid
+            else: hi = mid
     alpha = (lo+hi)/2
-    print(f"[armE] alpha={alpha:.4f} -> ||dW_E||/||dW|| = {(energy(alpha)/e0)**0.5:.4f} "
-          f"(target {target_ratio:.4f})", flush=True)
+    print(f"[armE:{a.match}] alpha={alpha:.4f} -> ||dW_E||/||dW||={(energy(alpha)/e0)**0.5:.4f} "
+          f"| removed-energy={pert_energy(alpha):.1f}", flush=True)
     from safetensors.torch import load_file, save_file
     T = load_file(os.path.join(a.adapter, "adapter_model.safetensors"))
-    out_run = f"{run}__{a.tag}ablE"; out = os.path.join(a.out_root, out_run); os.makedirs(out, exist_ok=True)
+    suffix = "E" if a.match == "magnitude" else "Ep"
+    out_run = f"{run}__{a.tag}abl{suffix}"; out = os.path.join(a.out_root, out_run); os.makedirs(out, exist_ok=True)
     newT = {}
     for k, W in T.items():
         m = IP.re.search(r"model\.layers\.(\d+)\.(?:self_attn|mlp)\.(\w+_proj)\.lora_([AB])\.weight", k)
@@ -76,7 +102,8 @@ def main():
         newT[k] = BE.to(W.dtype)
     save_file(newT, os.path.join(out, "adapter_model.safetensors"))
     json.dump(dict(cfg, lora_alpha=cfg["r"], use_rslora=False), open(os.path.join(out,"adapter_config.json"),"w"), indent=1)
-    json.dump({"source_run": run, "arm": "E", "alpha": alpha, "matched_norm_ratio": target_ratio,
+    json.dump({"source_run": run, "arm": suffix, "match": a.match, "alpha": alpha,
+               "removed_energy": pert_energy(alpha), "norm_ratio": (energy(alpha)/e0)**0.5, "matched_norm_ratio": target_ratio,
                "note": "non-intruder content removed at matched magnitude (mirror of arm B)"},
               open(os.path.join(out,"arm_e_meta.json"),"w"), indent=1)
     print(f"[armE] wrote {out}", flush=True)
