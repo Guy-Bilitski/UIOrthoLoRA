@@ -328,25 +328,25 @@ measuring how much the update actually displaces the model's outputs, and it is
 empirically the strongest of ten candidate measures
 (Table~\ref{tab:league}, Appendix~\ref{app:exhibits}).
 
-\paragraph{Metric 3: update geometry.} We measure the placement of
-Section~\ref{sec:related}, the end of the base weight's spectrum the update
-occupies, on the trained adapters themselves.
-Each saved update $\Delta W = (\alpha/r)BA$ is compared against the singular
-value decomposition of the corresponding base weight $W_0$. On the output
-side, we project the update's singular directions, weighted by their singular
-values, onto the major (top-$256$) and minor (bottom-$256$) left singular
-subspaces of
-$W_0$ (exact computation in Appendix~\ref{app:geoproj}),
-giving the energy fractions $e_{\mathrm{top}}$ and $e_{\mathrm{bot}}$;
-the same projection on the input side, against the right singular subspaces,
-gives $e^{\mathrm{in}}_{\mathrm{top}}$ and $e^{\mathrm{in}}_{\mathrm{bot}}$.
-We also compute the update's stable rank,
-$\lVert\Delta W\rVert_F^2 / \smax^2$ with $\smax$ the largest singular
-value of $\Delta W$: the number of directions that effectively carry the
-update (near $1$ when a single direction dominates).
-The four energy shares are the placement of Section~\ref{sec:related},
-measured at a fixed boundary of $256$ directions; the stable rank describes
-the update's shape and is not a placement measure.
+\paragraph{Metric 3: update geometry.} Many retention-aware designs are built
+around where the update sits along the base weight's spectrum, some placing it
+in the major components and some in the minor ones
+(Section~\ref{sec:related}); we thus measure that placement on the trained
+adapters themselves. For each saved update $\Delta W = (\alpha/r)BA$ we take
+the singular value decomposition of the corresponding base weight $W_0$ and
+ask how much of the update falls in its $256$ strongest directions and how
+much in its $256$ weakest. This gives four energy shares: two on the output
+side, $e_{\mathrm{top}}$ and $e_{\mathrm{bot}}$, against the left singular
+vectors of $W_0$, and two on the input side,
+$e^{\mathrm{in}}_{\mathrm{top}}$ and $e^{\mathrm{in}}_{\mathrm{bot}}$,
+against the right ones. Each share is the fraction of the update's energy
+landing in that set of directions, and therefore records where the update
+goes and never how large it is; Appendix~\ref{app:geoproj} gives the
+calculation step by step. Separately we compute the update's stable rank,
+$\lVert\Delta W\rVert_F^2 / \smax^2$ with $\smax$ its largest singular value,
+which counts how many directions effectively carry the update and is near $1$
+when a single direction dominates. Stable rank describes the update's shape
+rather than its placement.
 
 \paragraph{Metric 4: KL drift.} In the spirit of the loss-drift
 proxies of \citet{wang2024milora} and \citet{kalajdzievski2024scaling}, we

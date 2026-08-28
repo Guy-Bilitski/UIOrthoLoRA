@@ -1,5 +1,0 @@
-=== MAIN TABLE [math] (rep = max core-retention at GSM8K>=5) ===
-method    config              GSM8K    ret_core ret_broad  ||dW||F   svmax  n
-BASE      (no-FT)                --        26.0        --        0      --
-*LoRA     lora_r16_lr2e5       33.9        26.1      33.9    0.330     7.0  1
-*LoRA+wd  lorawd_wd0p3_l       35.1        26.2      34.0    0.320     8.0  1
