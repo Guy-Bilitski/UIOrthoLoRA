@@ -928,20 +928,22 @@ with the release, together with the frozen pool
 
 \paragraph{The calculation.} The inputs are the base weight $W_0$ and the
 update $\Delta W = (\alpha/r)BA$, two matrices of the same shape. Take the
-singular value decomposition of $W_0$ and keep its first $256$ left singular
-vectors as the columns of $U_{\mathrm{top}}$. Then
-\begin{equation*}
-  e_{\mathrm{top}} = \frac{\lVert U_{\mathrm{top}}^{\!\top}\, \Delta W
+singular value decomposition of $W_0$, keep its first $256$ left singular
+vectors as the columns of $U_{\mathrm{top}}$ and its last $256$ as the columns
+of $U_{\mathrm{bot}}$. Then
+\begin{align*}
+  e_{\mathrm{top}} &= \frac{\lVert U_{\mathrm{top}}^{\!\top}\, \Delta W
+  \rVert_F^2}{\lVert \Delta W \rVert_F^2}, \\[2pt]
+  e_{\mathrm{bot}} &= \frac{\lVert U_{\mathrm{bot}}^{\!\top}\, \Delta W
   \rVert_F^2}{\lVert \Delta W \rVert_F^2},
-\end{equation*}
+\end{align*}
 where $\lVert\cdot\rVert_F^2$ squares every entry of a matrix and adds the
 results. That is the entire measure: the share of the update's squared entries
-that remains once only its components along the base weight's $256$ strongest
-output directions are kept.
+that remains once only its components along the base weight's $256$ strongest,
+or its $256$ weakest, output directions are kept.
 
-\paragraph{The four shares.} Using the last $256$ left singular vectors
-$U_{\mathrm{bot}}$ in place of $U_{\mathrm{top}}$ gives $e_{\mathrm{bot}}$.
-Multiplying on the right instead, by the first or the last $256$ right
+\paragraph{The other two shares.} Multiplying on the right instead, by the
+first or the last $256$ right
 singular vectors, gives the two input-side shares
 $e^{\mathrm{in}}_{\mathrm{top}}$ from $\Delta W\,V_{\mathrm{top}}$ and
 $e^{\mathrm{in}}_{\mathrm{bot}}$ from $\Delta W\,V_{\mathrm{bot}}$. The
