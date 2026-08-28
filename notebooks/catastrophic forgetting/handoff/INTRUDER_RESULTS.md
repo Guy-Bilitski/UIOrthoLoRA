@@ -27,12 +27,23 @@ Per adapted weight matrix:
 1. Compute the top-64 singular triplet of `W0 + dW` by warm-started subspace iteration
    using matrix-vector products only (`W0 @ V + scaling * B @ (A @ V)`). The dense sum is
    never formed. Verified against dense SVD to `<1e-3` relative error on singular values.
-2. For each of those 64 left singular vectors, take the **maximum |cosine| against the
+2. For each of those left singular vectors, take the **maximum |cosine| against the
    full set of pretrained left singular vectors** of `W0` (all 4096, not a top-k subset).
    The full basis is precomputed once per model by `geo_fullref.py`.
 3. A direction is an intruder if that maximum is below threshold `tau`.
-   Reported at `tau = 0.5, 0.7, 0.9`. Headline uses the paper's canonical setting:
-   **`tau = 0.5` within the top `k = 10`**.
+
+**Window: `k = 10`, `tau = 0.5`** — Shuttleworth's main-text setting, and the setting
+used for every number and every intervention below. An earlier pass used `k = 64`; that
+is retained only as a sensitivity check because the deeper window reaches into the base
+model's near-degenerate bulk (see the caveat in 6e) and inflates counts.
+
+**What "intruder" does and does not mean.** `W0` is square and full rank, so its 4096
+left singular vectors span the whole space — no direction is outside their span. The
+criterion tests whether a direction is aligned with any *single* pretrained singular
+vector. Measured on `L0.down_proj`: 200 random unit directions had max|cos| ~= 0.059,
+so **100% of random directions count as intruders at tau = 0.5**. A direction spread
+evenly over m base vectors scores `1/sqrt(m)` (m=4 -> 0.50, m=16 -> 0.25). So the label
+means "delocalised across the pretrained spectrum", not "outside it".
 
 Matrices covered: `q_proj, k_proj, v_proj, up_proj, down_proj` in every layer.
 - Llama-2-7B: 32 layers x 5 = **160 matrices** (10,240 top-64 slots; 1,600 top-10 slots)
@@ -94,6 +105,8 @@ gave **24.87 / 80.00**. A 0.29 pp difference for a 7x speedup.
 
 ## 5. The intervention (how "removing intruders" was done)
 
+**Applied to every adapter configuration** (model family x method x learning rate x seed).
+
 Script: `intruder_ablate.py`. For each trained adapter, three modified copies were built
 on CPU and written as ordinary PEFT adapters (rank r+1, alpha set so PEFT's scaling is
 exactly 1), so the frozen eval pipeline scores them unmodified.
@@ -106,15 +119,24 @@ exactly 1), so the frozen eval pipeline scores them unmodified.
   targeting. This is the paper's own E1 rescaling intervention used as a control.
 - **D — removed then resized.** Arm B scaled back up to the *source's* norm.
 
-Measured amounts:
+**The deletion is itself a magnitude reduction — that is the entire reason arm C exists.**
+Comparing arm B against the untouched source would confound geometry with size; arm C
+removes exactly the same amount of size without touching geometry.
 
-| source | matrices with an intruder | ||dW||^2 before | after removal | norm ratio |
-|---|---|---|---|---|
-| Llama LoRA+wd | 158 / 160 | 71,788.9 | 65,292.5 | **0.9537** |
-| Llama MiLoRA | 160 / 160 | 1,669,474.6 | 1,459,986.1 | **0.9352** |
+Measured amounts at the locked `k = 10` window:
 
-So the surgery removes ~9 % of update energy (4.6 % of norm) for LoRA+wd, ~12.5 % energy
-(6.5 % of norm) for MiLoRA.
+| source | matrices with a top-10 intruder | ||dW||^2 before | after removal | **energy removed** | **norm ratio** |
+|---|---|---|---|---|---|
+| Llama LoRA+wd | 135 / 160 | 71,788.9 | 64,766.7 | **9.78 %** | **0.9498** |
+| Llama MiLoRA | 160 / 160 | 1,669,474.6 | 1,459,986.1 | **12.55 %** | **0.9352** |
+
+Arm C is scaled by exactly that norm ratio; arm D by its reciprocal (1.0528 / 1.0693).
+
+Rank of the deleted direction: for **MiLoRA it is rank 0 in all 160 matrices** — the
+single largest direction of the update is always an intruder, so the k=10 and k=64 arms
+are identical there. For **LoRA+wd** the median rank is 0 and 135/160 matrices have their
+first intruder inside the top 10 (at k=64 it was 158/160, removing 9.05 % of energy at
+norm ratio 0.9537 — the k=64 numbers in 6b are from that earlier build).
 
 Additionally `scale_adapter.py` built uniform-scaled copies at **1.05x** and **1.12x** of
 each source, giving a measured local curve of retention vs update size with direction
@@ -212,21 +234,41 @@ LoRA+wd case (which sits below the forgetting knee, where retention is insensiti
 
 ---
 
-## 7. What is left to run
+## 7. Final protocol (locked 2026-08-28)
 
-Queue `jobs/tierA_final4.txt`, tag `tierAj`, one process on the GPU at a time.
-Per training cell: ~3.1 h train + ~40 min eval = **~3.8 h**. Eval-only jobs: ~40 min.
+For **every adapter configuration** = model family x method x learning rate x seed:
 
-| phase | what | cells | ETA (from 2026-08-28 07:30) |
-|---|---|---|---|
-| **B** | Llama design quartet at matched size: MiLoRA lr3e-4 (F~0.50), SC-LoRA lr1e-4 (F~0.35), CLoRA lr3e-4 (F~0.44). LoRA+wd (F 0.41) already done. Answers "does any design create fewer intruders at the same update size?" on Llama. | 3 | **~19:00 Aug 28** |
-| **C** | Qwen quartet: LoRA+wd lr3e-4, MiLoRA lr1e-4, SC-LoRA lr5e-5, CLoRA lr2e-4 (F 0.18-0.28). Cross-architecture version of the same question. | 4 | **~10:00 Aug 29** |
-| **D** | Exp 2 anchors (Qwen rescale ladder: Qwen-CS and Qwen-math, plain LoRA and LoRA+wd). Separate experiment, reviewer-requested. | 4 | **~01:00 Aug 30** |
-| **E** | Magnitude-spread and below-knee cells; strengthens the intruder-vs-size trend statistics. Droppable. | 11 | ~Aug 31-Sep 1 |
+1. Train with the frozen pool recipe (section 3).
+2. Evaluate: task ability + retention + F_delta (section 4).
+3. Measure intruders at **k = 10, tau = 0.5**, full-basis criterion (section 2). Automatic
+   via `auto_intruder.sh`, ~10 min CPU per adapter.
+4. Build and evaluate the three intervention arms **B / C / D** (section 5). Arm
+   construction is automatic via `auto_ablate.sh` (CPU, ~3 min); the eval lines are
+   appended to `jobs/pending_ablation.txt` and run as a batch on the GPU.
+5. Also evaluate the source under the same protocol (`__rl50`) so the D-vs-source pair is
+   valid.
 
-Intruder scoring of each new adapter runs automatically on CPU (`auto_intruder.sh`),
-~10 min per adapter, so geometry is ready as soon as retention is.
+Cost per configuration: ~3.1 h train + ~0.7 h eval + 3 x ~0.7 h arm evals ~= **5.8 h**.
 
-Open item: the causal result above is Llama-only. Phase C provides the Qwen replication.
-If the machine has to be released early, phases B and C are the ones that matter; phase E
-is padding.
+---
+
+## 8. What is left to run
+
+| phase | what | configs | GPU time | ETA (from 2026-08-28 08:30) |
+|---|---|---|---|---|
+| **A** | k=10 arm evals for the two Llama cells already trained (LoRA+wd rebuild + MiLoRA) + MiLoRA source re-eval | — | ~4.7 h | **~13:00 Aug 28** |
+| **B** | Llama design quartet at matched size: MiLoRA lr3e-4 (F~0.50, training now), SC-LoRA lr1e-4 (F~0.35), CLoRA lr3e-4 (F~0.44). With LoRA+wd (F 0.41) already done this answers "does any design create fewer intruders at the same update size?" | 3 | ~17.4 h | **~08:00 Aug 29** |
+| **C** | Qwen quartet: LoRA+wd lr3e-4, MiLoRA lr1e-4, SC-LoRA lr5e-5, CLoRA lr2e-4 (F 0.18-0.28). Cross-architecture replication of both the design contrast and the causal result. | 4 | ~23.2 h | **~07:00 Aug 30** |
+| **D** | Exp 2 anchors (Qwen rescale ladder; separate experiment, reviewer-requested) | 4 | ~15 h | ~22:00 Aug 30 |
+| **E** | Magnitude-spread / below-knee cells — strengthen the trend statistics only. Droppable. | 11 | ~64 h | Sep 1+ |
+
+If the machine has to go early: **B** gives the design comparison on Llama, **C** makes it
+cross-architecture and replicates the causal result beyond Llama. **E** is padding.
+
+Open items:
+- The causal result is currently **Llama-only**; phase C provides the Qwen replication.
+- A **subspace-overlap** metric (energy of a direction inside the base top-r subspace,
+  rotation-invariant within degenerate blocks) would be a rank-robust complement to the
+  max-cosine criterion. CPU-only, ~10 min per adapter, not yet run.
+- A partial-`lambda` sweep (scaling intruder singular values down rather than deleting
+  them) would match Shuttleworth's intervention more closely. Not yet run.

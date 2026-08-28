@@ -139,7 +139,7 @@ def build(args):
         ablate = arm in ("B", "D")                      # does this arm remove the intruder?
         scale = {"B": 1.0, "C": alpha_C, "D": alpha_D}[arm]
         r_new = r0 + (1 if ablate else 0)
-        out_run = f"{run}__abl{arm}"
+        out_run = f"{run}__{args.tag}abl{arm}"
         out_dir = os.path.join(args.out_root, out_run)
         os.makedirs(out_dir, exist_ok=True)
         newT = {}
@@ -196,7 +196,11 @@ def main():
     ap.add_argument("--out_root", default="/home/kfir/cf_models")
     ap.add_argument("--evac_dest", default="/home/kfir/tierA_evac")
     ap.add_argument("--python_bin", default="/home/kfir/guyb/UIOrthoLoRA/.venv/bin/python")
-    ap.add_argument("--topk", type=int, default=64)
+    ap.add_argument("--topk", type=int, default=10,
+                    help="window of top singular directions searched for the intruder; "
+                         "10 = Shuttleworth main-text setting (default since 2026-08-28)")
+    ap.add_argument("--tag", default="",
+                    help="suffix tag: arms are written as <run>__<tag>abl{B,C,D}")
     ap.add_argument("--iters", type=int, default=8)
     ap.add_argument("--tau", type=float, default=0.5)
     ap.add_argument("--ret_limit", type=int, default=1500)
