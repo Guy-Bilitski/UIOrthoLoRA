@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-08-28. Bring-up state from the first session. The campaign plan it describes (18-cell LR sweep) was replaced. Current spec: handoff/EXPERIMENT_FINAL.md**
+
 # H200 session state — 2026-08-26 ~15:00 UTC (for Claude resume)
 
 If resuming with full conversation context (`claude --continue`), this file is

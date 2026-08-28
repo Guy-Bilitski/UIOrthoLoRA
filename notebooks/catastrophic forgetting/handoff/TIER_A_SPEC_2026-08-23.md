@@ -1,3 +1,5 @@
+> **SUPERSEDED for Experiment 1 by handoff/EXPERIMENT_FINAL.md (2026-08-28): the LR sweep was replaced by one Pareto operating point per design plus the A-F causal interventions, and its far-above rates were 4-7x too hot (measured). Experiment 2 (Qwen rescale ladder) sections still stand.**
+
 # Tier A experiment spec — intruder slice + Qwen rescale ladder (2026-08-23)
 
 Hardware: **one H100** (single card, jobs strictly serial). Submission in ~40

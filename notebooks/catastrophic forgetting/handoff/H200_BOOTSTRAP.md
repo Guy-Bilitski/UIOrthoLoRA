@@ -1,3 +1,5 @@
+> **PARTLY SUPERSEDED 2026-08-28. Environment/bring-up sections remain accurate; the experiment plan (18 cells, LR sweep, evacuation targets) was replaced by handoff/EXPERIMENT_FINAL.md.**
+
 # H200 bootstrap — Tier A campaign (written 2026-08-26, dev box)
 
 You (Claude) are waking up in a fresh clone of this repo on the H200 machine.

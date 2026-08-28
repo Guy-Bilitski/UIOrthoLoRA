@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-08-28, folded into handoff/EXPERIMENT_FINAL.md (which adds arms Ep and F). Kept for the record.**
+
 # Intruder-dimension experiment — plan and current results
 
 Updated 2026-08-28 14:40 UTC. Repo: `notebooks/catastrophic forgetting/`, branch `ortho_new`.
