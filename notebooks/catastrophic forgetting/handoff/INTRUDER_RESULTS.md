@@ -121,6 +121,18 @@ exactly 1), so the frozen eval pipeline scores them unmodified.
   uniformly until its Frobenius norm equals arm B's. Same size change, no geometry
   targeting. This is the paper's own E1 rescaling intervention used as a control.
 - **D — removed then resized.** Arm B scaled back up to the *source's* norm.
+- **E — non-intruder removal (specificity control).** Removes NON-intruder content until
+  the magnitude equals arm B's. The naive form (delete non-intruder directions of
+  `W0+dW`) does not work: those directions are base-aligned, so removing them forces the
+  update to cancel `W0` and `||dW||` *grows* ~13% (measured). Arm E instead operates on
+  the update's own decomposition, `dW_E = (1-a) dW + a P_I dW` with `a` solved so
+  `||dW_E|| = ||dW_B||`; at `a = 1` it keeps only the intruder component -- the exact
+  mirror of arm B. Built by `arm_e_build.py`; folds into the rank-32 factors.
+
+**B, C and E all remove the SAME update energy** and differ only in *what* is removed,
+which separates two questions:
+- **Q1, where adaptation lives:** hold removed energy fixed, compare B vs C vs E.
+- **Q2, where forgetting comes from:** hold magnitude fixed, compare B vs C and D vs A.
 
 **The deletion is itself a magnitude reduction — that is the entire reason arm C exists.**
 Comparing arm B against the untouched source would confound geometry with size; arm C
@@ -131,6 +143,7 @@ Measured amounts at the locked protocol (`k = 10`, delete ALL intruders in the w
 | source | matrices touched | directions deleted | ||dW||^2 before | after | **energy removed** | **norm ratio** |
 |---|---|---|---|---|---|---|
 | Llama LoRA+wd | 135 / 160 | **908** | 71,788.9 | 49,411.5 | **31.2 %** | **0.8296** |
+| Llama LoRA+wd, arm E (non-intruder removal, a=0.2944) | -- | -- | 71,788.9 | 49,411.5 | 31.2 % | 0.8296 (matched) |
 | Llama MiLoRA | 160 / 160 | **1595** | 1,669,474.6 | 775,034.0 | **53.6 %** | **0.6814** |
 
 Arm C is scaled by exactly that norm ratio; arm D by its reciprocal (LoRA+wd 0.8296 / 1.2054; MiLoRA 0.6814 / 1.4677).
@@ -284,6 +297,23 @@ Queue `jobs/tierA_master.txt` (tag `tierAm`), one process on the GPU at a time.
 | **1** | B/C/D for config 1 -- **the corrected causal result** (k=10, all intruders) | ~2 h | **~13:00 Aug 28** |
 | **2** | configs 3-7 (train + eval), each auto-gaining its own B/C/D arms | ~29 h + ~10 h arms | **~Aug 29 late / Aug 30** |
 | 3 | bonus: B/C/D for the off-Pareto high-magnitude MiLoRA lr1e-3 cell | ~2 h | after |
+
+Also runs automatically per config: `auto_ablate.sh` now builds arms B, C, D **and E**
+and queues all their evals plus the `__rl50` source re-eval.
+
+**Supporting analysis** (`magnitude_residuals.py`): the magnitude law is fitted on the
+FROZEN POOL (which has F_delta and retention but no intruder measurements, its
+checkpoints having been lost in 2026-07), then each slice config is scored by its
+residual against that law and compared with intruder energy share. Measured:
+Llama `retention = 18.49 - 6.96 log F` (R^2 0.914, n=60); Qwen `11.68 - 14.08 log F`
+(R^2 0.732, n=57). First three configs give residuals -0.08 / +1.76 / +1.94 with
+intruder energy 0.433 / 0.553 / 0.924 -- i.e. more intruder energy goes with
+BETTER-than-predicted retention, the opposite sign to the intruder hypothesis.
+Correlation withheld until >= 4 configs are scored.
+
+**Wording for the paper:** "we find no evidence that intruder dimensions are the source
+of forgetting; at matched update magnitude, removing them does not improve retention and
+substantially impairs adaptation" -- not "intruders do not cause forgetting".
 
 Open items:
 - A **subspace-overlap** metric (rotation-invariant within degenerate spectral blocks)

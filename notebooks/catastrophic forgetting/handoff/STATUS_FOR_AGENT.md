@@ -40,17 +40,43 @@ against ALL 4096 pretrained left singular vectors is < 0.5. 160 matrices per Lla
 (q,k,v,up,down x 32 layers). Note: this measures "not aligned with any single pretrained
 direction", i.e. delocalised — 100% of random directions qualify.
 
-**Causal intervention** — three modified copies per config, all evaluated identically:
+**Causal intervention** — five arms per config, all evaluated on identical documents:
 
-| arm | what it is |
-|---|---|
-| **B** | delete EVERY intruder in the top-10 window from every matrix (this also shrinks the update) |
-| **C** | take the ORIGINAL update and shrink it uniformly to exactly B's magnitude (size control, no geometry) |
-| **D** | arm B rescaled back up to the SOURCE magnitude |
+| arm | what it is | magnitude |
+|---|---|---|
+| **A** | source, unmodified (re-scored at the same protocol as `<run>__rl50`) | 1.00 |
+| **B** | delete EVERY intruder in the top-10 window from every matrix | shrinks to ~0.83 |
+| **C** | shrink the WHOLE update uniformly to exactly B's magnitude (size control) | = B |
+| **E** | remove NON-intruder content until the magnitude equals B's (specificity control) | = B |
+| **D** | arm B rescaled back up to the SOURCE magnitude | = A |
 
-Two magnitude-matched contrasts: **B vs C** and **D vs source**. If deleting intruders
-helps retention beyond the size change, geometry is causal; if not, forgetting is a
-size effect.
+B, C and E all remove the SAME amount of update energy and differ only in WHAT is
+removed. That gives two clean questions:
+
+- **Q1 "where does adaptation live?"** — hold removed energy fixed, compare B vs C vs E.
+  If only B destroys task accuracy, intruder directions carry the adaptation.
+- **Q2 "where does forgetting come from?"** — hold magnitude fixed, compare B vs C and
+  D vs A. If removing intruders does not improve retention, intruder structure does not
+  explain forgetting; the frozen pool then supplies the magnitude law that does.
+
+Note on arm E: the naive version (delete non-intruder directions of W0+dW) does NOT
+work -- those directions are base-aligned, so removing them forces the update to cancel
+W0 and ||dW|| GROWS ~13%. Arm E instead operates on dW's own decomposition,
+dW_E = (1-a)dW + a P_I dW with a chosen so ||dW_E|| = ||dW_B||; at a=1 it keeps only
+the intruder component, the exact mirror of B.
+
+**Supporting analysis** (`magnitude_residuals.py`): the frozen pool has (F_delta,
+retention) for ~60 Llama and ~57 Qwen adapters but NO intruder measurements (its
+checkpoints were lost in 2026-07 -- that is why the slice is retrained). So the
+magnitude law is fitted on the POOL, and each slice config is scored by its residual
+against that law; the question is whether intruder ENERGY explains those residuals.
+Measured fit: Llama retention = 18.49 - 6.96*log F (R^2 = 0.914, n=60);
+Qwen = 11.68 - 14.08*log F (R^2 = 0.732, n=57).
+
+**Wording discipline for the paper:** the claim is "we find no evidence that intruder
+dimensions are the source of forgetting; at matched update magnitude, removing them
+does not improve retention and substantially impairs adaptation" -- NOT "intruders do
+not cause forgetting", which is stronger than the intervention supports.
 
 ## 3. Results so far
 
@@ -85,7 +111,20 @@ Deleting all 908 intruders removes 31.2 % of the update energy (||dW||^2 71,788.
 same amount *targeted at intruder directions* destroys the task (80 -> 2.8) and makes
 retention slightly WORSE. Intruder dimensions carry the fine-tuning, not the forgetting.
 
-### 3c. What is NOT done
+### 3c. Magnitude-law residuals (corroboration, not the main claim)
+
+| config | F | retention | predicted by pool law | residual | intruder energy |
+|---|---|---|---|---|---|
+| Llama LoRA+wd 5e-4 | 0.395 | 24.87 | 24.95 | **-0.08** | 0.433 |
+| Llama MiLoRA 3e-4 | 0.558 | 24.31 | 22.55 | **+1.76** | 0.553 |
+| Llama MiLoRA 1e-3 | 1.501 | 17.60 | 15.66 | **+1.94** | 0.924 |
+
+Magnitude alone predicts LoRA+wd to within 0.08 pp. The two higher-intruder-energy
+configs sit ABOVE the line, i.e. they retain better than magnitude predicts -- the
+opposite sign to the intruder hypothesis. Three points only; the correlation is
+withheld until >= 4 configs are scored.
+
+### 3d. What is NOT done
 
 - Causal test for configs 2-7 (arms for MiLoRA 1e-3 are built and queued; others follow
   automatically as each config finishes).

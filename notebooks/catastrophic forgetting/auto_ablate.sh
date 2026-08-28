@@ -5,10 +5,13 @@
 # (model x method x lr x seed) gets:
 #   1. intruder measurement at k=10 / tau=0.5 vs the FULL pretrained left basis
 #      (auto_intruder.sh)
-#   2. three magnitude-controlled intervention arms, evaluated identically:
+#   2. the full intervention set A-E, all evaluated identically:
+#        A = source, unmodified (run as <run>__rl50 at the same protocol)
 #        B = ALL intruders in the top-10 window removed          (shrinks ||dW||)
 #        C = whole update uniformly shrunk to B's ||dW||         (size control)
 #        D = B rescaled back to the source ||dW||                (size restored)
+#        E = NON-intruder content removed at B's ||dW||          (specificity control)
+#      B/C/E all remove the SAME energy, differing only in what is removed.
 #
 # This script does step 2's CPU half: it builds the arms and appends their eval
 # job lines to jobs/pending_ablation.txt. The GPU evals are run as a separate
@@ -42,7 +45,12 @@ while true; do
     echo "[autoabl] $(date -Is) building k10 arms for $run" >> "$LOG"
     if "$PY" intruder_ablate.py --adapter "$d" --base_model "$base" \
          --topk 10 --n_remove all --tag k10all --with-renorm >> "logs/ablate_${run}.log" 2>&1; then
-      for arm in B C D; do
+      # arm E: non-intruder removal at matched magnitude (mirror of B)
+      "$PY" arm_e_build.py --adapter "$d" --base_model "$base" --tag k10all \
+          >> "logs/arm_e_${run}.log" 2>&1 \
+        && echo "[autoabl] $(date -Is) built arm E for $run" >> "$LOG" \
+        || echo "[autoabl] $(date -Is) arm E FAILED for $run" >> "$LOG"
+      for arm in B C D E; do
         rn="${run}__k10allabl${arm}"
         grep -q -- "--run_name ${rn} " "$PEND" 2>/dev/null && continue
         echo "$PY eval_one_gpu.py --adapter /home/kfir/cf_models/$rn --run_name $rn --base_model $base --adapt_task cs --ret_suite broad --ret_limit 50 --eval_limit 200 --ret_max_gen 512 && bash evacuate_cell.sh /home/kfir/cf_models/$rn /home/kfir/tierA_evac" >> "$PEND"
