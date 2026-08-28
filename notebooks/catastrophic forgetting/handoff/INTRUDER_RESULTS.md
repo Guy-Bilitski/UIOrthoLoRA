@@ -51,7 +51,7 @@ Matrices covered: `q_proj, k_proj, v_proj, up_proj, down_proj` in every layer.
 
 Validation: `intruder_pass.py --selftest` builds synthetic `W0` with planted directions
 and checks the detector recovers them exactly — 6/6 cases pass, including a case that
-distinguishes a genuinely new direction from one merely aligned with the base model's
+distinguishes a direction unaligned with every individual base singular vector from one aligned with the base model's
 *mid*-spectrum (this is why the full basis, not a top-256 subset, is used).
 
 Also recorded per matrix: intruder energy share (sum of squared singular values of

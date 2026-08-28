@@ -26,6 +26,16 @@ def main():
     ap.add_argument("--topk", type=int, default=10)
     ap.add_argument("--tau", type=float, default=0.5)
     ap.add_argument("--out_root", default="/home/kfir/cf_models")
+    ap.add_argument("--complement", action="store_true",
+                    help="project onto the NON-intruder top-k directions instead of the "
+                         "intruder ones. With --alpha 1.0 this gives arm H: keep only the "
+                         "top-10 non-intruder directions. G vs H isolates CONCENTRATION "
+                         "from IDENTITY (same window, same concentration, opposite selection).")
+    ap.add_argument("--alpha", type=float, default=None,
+                    help="force alpha instead of solving for a match. alpha=1.0 gives arm G: "
+                         "dW_G = P_I dW, i.e. KEEP ONLY the intruder component and discard "
+                         "everything else -- the mirror of arm B, and a gentle intervention "
+                         "on both sides (no concentrated deletion of leading directions).")
     ap.add_argument("--match", choices=["magnitude", "perturbation"], default="magnitude",
                     help="magnitude: ||dW_E|| = ||dW_B||  (comparable to B and C on the axis "
                          "that predicts retention).  perturbation: ||dW_E - dW_A|| = "
@@ -51,7 +61,10 @@ def main():
                                            V_seed=Vs, iters=8)
         Uf = torch.load(os.path.join(fullu, name + ".pt"), map_location="cpu", weights_only=True)["U"].float()
         mc = (Uf.T @ U_ad).abs().max(dim=0).values
-        idx = [j for j in range(len(mc)) if mc[j] < a.tau]
+        if a.complement:
+            idx = [j for j in range(len(mc)) if mc[j] >= a.tau]   # NON-intruders
+        else:
+            idx = [j for j in range(len(mc)) if mc[j] < a.tau]    # intruders
         PI[name] = U_ad[:, idx] if idx else U_ad[:, :0]
     def pert_energy(alpha):
         """||dW_E - dW_A||^2 = alpha^2 ||P_perp dW||^2."""
@@ -70,7 +83,9 @@ def main():
             tot += float(((BE.T @ BE) * (A @ A.T)).sum())
         return tot
     e0 = energy(0.0)
-    if a.match == "magnitude":
+    if a.alpha is not None:
+        lo = hi = a.alpha
+    elif a.match == "magnitude":
         target = (target_ratio**2) * e0
         lo, hi = 0.0, 1.0
         for _ in range(40):
@@ -91,7 +106,8 @@ def main():
           f"| removed-energy={pert_energy(alpha):.1f}", flush=True)
     from safetensors.torch import load_file, save_file
     T = load_file(os.path.join(a.adapter, "adapter_model.safetensors"))
-    suffix = "E" if a.match == "magnitude" else "Ep"
+    suffix = (("H" if a.complement else "G") if (a.alpha is not None and abs(a.alpha - 1.0) < 1e-9)
+              else ("E" if a.match == "magnitude" else "Ep"))
     out_run = f"{run}__{a.tag}abl{suffix}"; out = os.path.join(a.out_root, out_run); os.makedirs(out, exist_ok=True)
     newT = {}
     for k, W in T.items():

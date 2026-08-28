@@ -208,3 +208,47 @@ Currently **6 / 56** arm evaluations complete.
   costs ~2.5 minutes.
 - `auto_intruder.sh` scores each finished adapter; `auto_ablate.sh` builds arms B-F and
   queues their evaluations. Both CPU-only.
+
+---
+
+## 12. Precise language (agreed 2026-08-28)
+
+`W0` is full rank, so its singular vectors span the whole space. An intruder is therefore
+**NOT** "a direction outside the pretrained structure/span" — that is mathematically
+false. The correct statement is:
+
+> An intruder is a leading direction of the updated matrix that is **not aligned with any
+> individual pretrained singular direction** (max |cos| < 0.5 over all of them), i.e. it
+> is delocalised across the pretrained spectrum.
+
+Measured support: 200 random unit directions score max|cos| ~ 0.059, so 100 % of random
+directions qualify at tau = 0.5.
+
+## 13. Emerging reading (to be confirmed by the Qwen quartet and by G/H)
+
+Three separable axes, each with its own controlled contrast:
+
+| axis | driver | evidence |
+|---|---|---|
+| **retention** | update **magnitude** | B vs C (-2.72), D vs A (-4.63); pool law R^2 0.914 |
+| **adaptation** | **dominant spectral structure**, not intruder identity | B vs F: task 2.81 vs 2.69 — deleting 908 directions destroys the task either way |
+| **retention consequences of *which* directions** | **intruder vs base-aligned identity** | B vs F: retention 22.98 vs 4.26 (+18.7 pp) — removing base-aligned directions is far more damaging to pretrained capability |
+
+The third axis is the subtle one: intruder and base-aligned directions are similarly
+important for the adapted task, but they have very different relationships to the
+pretrained capability.
+
+**Superseded claim.** An earlier reading — "intruder dimensions carry the task
+adaptation" — is NOT supported: arm F destroys the task just as thoroughly. It was
+stated before the control existed and is withdrawn.
+
+**Open, deferred until the agreed 7 configurations are complete:** the 2x2 completion
+
+| | intruder | non-intruder |
+|---|---|---|
+| delete | B (done) | F (done) |
+| keep only | **G** (built) | **H** (built) |
+
+G vs H holds concentration fixed and flips identity; it is the remaining test of whether
+adaptation depends on identity at all. Both arms are built and parked in
+`jobs/pending_ablation.txt` — they do NOT compete with the agreed configurations.

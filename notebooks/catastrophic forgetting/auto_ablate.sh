@@ -53,7 +53,7 @@ while true; do
       for arm in B C D E; do
         rn="${run}__k10allabl${arm}"
         grep -q -- "--run_name ${rn} " "$PEND" 2>/dev/null && continue
-        echo "$PY eval_one_gpu.py --adapter /home/kfir/cf_models/$rn --run_name $rn --base_model $base --adapt_task cs --ret_suite broad --ret_limit 50 --eval_limit 200 --ret_max_gen 512 && bash evacuate_cell.sh /home/kfir/cf_models/$rn /home/kfir/tierA_evac" >> "$PEND"
+        echo "$PY eval_one_gpu.py --adapter /home/kfir/cf_models/$rn --run_name $rn --base_model $base --adapt_task cs --ret_suite broad --ret_limit 50 --eval_limit 200 --ret_max_gen 512 && $PY forgetting_ce.py --runs $rn --adapters_root /home/kfir/cf_models --base_model $base --max_length 1024 --max_blocks 0 --batch_size 2 && bash evacuate_cell.sh /home/kfir/cf_models/$rn /home/kfir/tierA_evac" >> "$PEND"
       done
       # source re-eval under the identical protocol (needed for the D-vs-source pair)
       rn="${run}__rl50"
