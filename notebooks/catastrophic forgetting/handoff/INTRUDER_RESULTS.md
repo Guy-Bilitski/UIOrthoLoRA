@@ -238,39 +238,54 @@ LoRA+wd case (which sits below the forgetting knee, where retention is insensiti
 
 ## 7. Final protocol (locked 2026-08-28)
 
-For **every adapter configuration** = model family x method x learning rate x seed:
+**One configuration per adapter design: its best PARETO operating point**, taken from the
+frozen pool's measured (adaptation, retention) frontier -- the point closest to the
+utopia corner (max adaptation, max retention), normalised. Different learning rates per
+design are NOT run: with a full causal intervention on every configuration, the LR spread
+was only serving a correlation that the intervention supersedes.
 
-1. Train with the frozen pool recipe (section 3).
-2. Evaluate: task ability + retention + F_delta (section 4).
-3. Measure intruders at **k = 10, tau = 0.5**, full-basis criterion (section 2). Automatic
-   via `auto_intruder.sh`, ~10 min CPU per adapter.
-4. Build and evaluate the three intervention arms **B / C / D** (section 5). Arm
-   construction is automatic via `auto_ablate.sh` (CPU, ~3 min); the eval lines are
-   appended to `jobs/pending_ablation.txt` and run as a batch on the GPU.
-5. Also evaluate the source under the same protocol (`__rl50`) so the D-vs-source pair is
-   valid.
+| # | design | LR | pool F / retention / adaptation |
+|---|---|---|---|
+| 1 | Llama LoRA+wd | 5e-4 | 0.410 / 25.04 / 82.05 (on frontier; already trained) |
+| 2 | Llama MiLoRA | 3e-4 | no pool run -- measured by us |
+| 3 | Llama CLoRA | 3e-4, k=1024 | 0.451 / 24.54 / 79.93 |
+| 4 | Qwen LoRA+wd | 1e-4 | 0.137 / 41.01 / 87.48 |
+| 5 | Qwen MiLoRA | 1e-4 | 0.184 / 39.74 / 87.53 |
+| 6 | Qwen SC-LoRA | 2e-5 | 0.170 / 39.78 / 87.04 |
+| 7 | Qwen CLoRA | 2e-4, k=1024 | 0.211 / 38.92 / 87.14 |
 
-Cost per configuration: ~3.1 h train + ~0.7 h eval + 3 x ~0.7 h arm evals ~= **5.8 h**.
+**Llama SC-LoRA is dropped**: its only pool run is lr 1e-3, which collapsed to 0.64
+retention (F_delta 7.38), so no trustworthy operating point exists for it.
+
+**Qwen SC-LoRA note**: its *max-adaptation* point (lr 1e-4) sits at 9.44 retention -- the
+seed-dependent collapse behind Table 1's `27.9 +- 16.0`. The Pareto point (2e-5) is both
+stable and higher on both axes, so it is used instead.
+
+Per configuration:
+1. Train on the frozen pool recipe (section 3).
+2. Evaluate task ability + retention + F_delta (section 4).
+3. Measure intruders at **k = 10, tau = 0.5**, full-basis criterion (section 2) --
+   automatic via `auto_intruder.sh`, ~10 min CPU.
+4. Build and evaluate **B / C / D** (section 5), deleting ALL intruders in the top-10
+   window -- automatic via `auto_ablate.sh`, plus a `__rl50` source re-eval so the
+   D-vs-source pair is valid.
+
+Cost ~5.8 GPU-h per configuration.
 
 ---
 
 ## 8. What is left to run
 
-| phase | what | configs | GPU time | ETA (from 2026-08-28 08:30) |
-|---|---|---|---|---|
-| **A** | k=10 arm evals for the two Llama cells already trained (LoRA+wd rebuild + MiLoRA) + MiLoRA source re-eval | — | ~4.7 h | **~13:00 Aug 28** |
-| **B** | Llama design quartet at matched size: MiLoRA lr3e-4 (F~0.50, training now), SC-LoRA lr1e-4 (F~0.35), CLoRA lr3e-4 (F~0.44). With LoRA+wd (F 0.41) already done this answers "does any design create fewer intruders at the same update size?" | 3 | ~17.4 h | **~08:00 Aug 29** |
-| **C** | Qwen quartet: LoRA+wd lr3e-4, MiLoRA lr1e-4, SC-LoRA lr5e-5, CLoRA lr2e-4 (F 0.18-0.28). Cross-architecture replication of both the design contrast and the causal result. | 4 | ~23.2 h | **~07:00 Aug 30** |
-| **D** | Exp 2 anchors (Qwen rescale ladder; separate experiment, reviewer-requested) | 4 | ~15 h | ~22:00 Aug 30 |
-| **E** | Magnitude-spread / below-knee cells — strengthen the trend statistics only. Droppable. | 11 | ~64 h | Sep 1+ |
+Queue `jobs/tierA_master.txt` (tag `tierAm`), one process on the GPU at a time.
 
-If the machine has to go early: **B** gives the design comparison on Llama, **C** makes it
-cross-architecture and replicates the causal result beyond Llama. **E** is padding.
+| stage | what | GPU time | ETA (from 2026-08-28 09:15) |
+|---|---|---|---|
+| in flight | config 2 (Llama MiLoRA 3e-4) finishing its chain | ~1.5 h | ~10:45 Aug 28 |
+| **1** | B/C/D for config 1 -- **the corrected causal result** (k=10, all intruders) | ~2 h | **~13:00 Aug 28** |
+| **2** | configs 3-7 (train + eval), each auto-gaining its own B/C/D arms | ~29 h + ~10 h arms | **~Aug 29 late / Aug 30** |
+| 3 | bonus: B/C/D for the off-Pareto high-magnitude MiLoRA lr1e-3 cell | ~2 h | after |
 
 Open items:
-- The causal result is currently **Llama-only**; phase C provides the Qwen replication.
-- A **subspace-overlap** metric (energy of a direction inside the base top-r subspace,
-  rotation-invariant within degenerate blocks) would be a rank-robust complement to the
-  max-cosine criterion. CPU-only, ~10 min per adapter, not yet run.
-- A partial-`lambda` sweep (scaling intruder singular values down rather than deleting
-  them) would match Shuttleworth's intervention more closely. Not yet run.
+- A **subspace-overlap** metric (rotation-invariant within degenerate spectral blocks)
+  would complement the max-cosine criterion. CPU-only, not yet run.
+- Exp 2 (Qwen rescale ladder) is a separate experiment, not in this queue.
