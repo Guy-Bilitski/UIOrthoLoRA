@@ -926,44 +926,58 @@ with the release, together with the frozen pool
 
 \subsection{Geometry projection}\label{app:geoproj}
 
-\paragraph{Reference directions.} For each adapted matrix we decompose the
-base weight $W_0$ once and cache four sets of $256$ unit vectors: its $256$
-largest and $256$ smallest left singular vectors ($U_{\mathrm{top}},
-U_{\mathrm{bot}}$, the output side) and the corresponding right singular
-vectors ($V_{\mathrm{top}}, V_{\mathrm{bot}}$, the input side).
-
-\paragraph{Update directions.} The update $\Delta W = (\alpha/r)BA$ has $r$
-output directions $u_1,\dots,u_r$, $r$ input directions $v_1,\dots,v_r$, and
-strengths $s_1 \ge \dots \ge s_r$: its singular value decomposition.
-(Implementation note: the code obtains this decomposition from the saved
-low-rank factors, through a thin QR decomposition of each factor and an
-$r \times r$ decomposition of their core, so the dense matrix is never
-formed; the result is identical to a direct decomposition.)
-
-\paragraph{The energy shares.} For one update direction $u_i$, let $c_i$ be
-the squared length of its projection onto the reference set: $c_i$ is one
-when $u_i$ lies entirely inside the $256$ reference directions and zero when
-it is orthogonal to all of them. The share is the average of these overlaps
-weighted by squared strength, so a direction the update barely uses barely
-counts:
+\paragraph{The calculation.} The inputs are the base weight $W_0$ and the
+update $\Delta W = (\alpha/r)BA$, two matrices of the same shape. Take the
+singular value decomposition of $W_0$ and keep its first $256$ left singular
+vectors as the columns of $U_{\mathrm{top}}$. Then
 \begin{equation*}
-  e_{\mathrm{top}} = \frac{\sum_i s_i^2\, c_i}{\sum_i s_i^2}
-  = \frac{\lVert U_{\mathrm{top}} U_{\mathrm{top}}^{\!\top}\, \Delta W
+  e_{\mathrm{top}} = \frac{\lVert U_{\mathrm{top}}^{\!\top}\, \Delta W
   \rVert_F^2}{\lVert \Delta W \rVert_F^2},
 \end{equation*}
-the fraction of the update's squared Frobenius norm that survives projection
-onto the base model's $256$ principal output directions. Repeating this with
-$U_{\mathrm{bot}}$, and with the input directions $v_i$ against
-$V_{\mathrm{top}}$ and $V_{\mathrm{bot}}$, gives the other three shares.
-Dividing by $\sum_i s_i^2$ makes each share scale-free, so it cannot carry
-magnitude information. A raw share has no meaningful zero, since a random
-direction already lands about its dimensional share in any reference set
-(near $6\%$ for $256$ of $4096$ directions), which is why the figure reads
-shares relative to the no-target methods below.
+where $\lVert\cdot\rVert_F^2$ squares every entry of a matrix and adds the
+results. That is the entire measure: the share of the update's squared entries
+that remains once only its components along the base weight's $256$ strongest
+output directions are kept.
+
+\paragraph{The four shares.} Using the last $256$ left singular vectors
+$U_{\mathrm{bot}}$ in place of $U_{\mathrm{top}}$ gives $e_{\mathrm{bot}}$.
+Multiplying on the right instead, by the first or the last $256$ right
+singular vectors, gives the two input-side shares
+$e^{\mathrm{in}}_{\mathrm{top}}$ from $\Delta W\,V_{\mathrm{top}}$ and
+$e^{\mathrm{in}}_{\mathrm{bot}}$ from $\Delta W\,V_{\mathrm{bot}}$. The
+denominator is always $\lVert\Delta W\rVert_F^2$. The principal and the minor
+share do not sum to one: on a matrix with $4096$ output directions the two
+sets cover $512$ of them, and the middle of the spectrum is counted by
+neither.
+
+\paragraph{The same quantity, one update direction at a time.} Write the
+update's own singular value decomposition as directions $u_1,\dots,u_r$ with
+strengths $s_1 \ge \dots \ge s_r$, and let $c_i = \lVert
+U_{\mathrm{top}}^{\!\top} u_i \rVert^2$ be the fraction of direction $u_i$
+lying inside the $256$ reference directions, one when it lies entirely inside
+them and zero when it is orthogonal to all of them. Then $e_{\mathrm{top}} =
+\sum_i s_i^2 c_i / \sum_i s_i^2$: every direction the update pushes in
+contributes its overlap with the reference set, weighted by how hard the
+update pushes there, so a direction the update barely uses barely counts.
+
+\paragraph{Scale and baseline.} Dividing by $\lVert\Delta W\rVert_F^2$ makes
+each share scale-free, so multiplying the update by a constant leaves it
+unchanged and the shares cannot carry magnitude information. A raw share also
+has no meaningful zero, since a random direction already lands about its
+dimensional share in any reference set, near $6\%$ for $256$ of $4096$
+directions. The figure below therefore reads every share relative to the
+methods that target nothing.
 
 \paragraph{Aggregation.} Per-adapter values are means over the $160$ adapted
 matrices, weighted by each matrix's Frobenius norm. Stable rank and effective
 rank aggregate the same way.
+
+\paragraph{Implementation.} The decomposition of $W_0$ is computed once per
+adapted matrix and cached. The update is never formed densely: the code works
+from the saved factors $B$ and $A$, through a thin QR decomposition of each
+and an $r \times r$ decomposition of their core, which also supplies the
+singular values used for stable rank. The shares it returns are identical to
+those of the direct computation above.
 
 \paragraph{How Figure~\ref{fig:geometry} is computed.} Each method enters
 at its Table~\ref{tab:grand} operating point. For each of the four shares,
