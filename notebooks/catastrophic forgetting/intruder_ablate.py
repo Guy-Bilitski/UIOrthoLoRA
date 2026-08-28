@@ -54,12 +54,18 @@ torch.set_num_threads(int(os.environ.get("GEO_THREADS", "16")))
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def pick_intruder(maxcos, S, tau):
-    """Highest-ranking direction with max|cos| < tau -> (index, singular value)."""
-    for j in range(len(maxcos)):
-        if maxcos[j] < tau:
-            return j, float(S[j])
-    return None, 0.0
+def pick_intruders(maxcos, S, tau, n_remove):
+    """Indices of intruder directions to delete, within the top-k window.
+
+    n_remove="all" (default, locked with Guy 2026-08-28): delete EVERY intruder in
+    the window. Deleting only the single highest-ranked one is a very weak
+    intervention when a matrix has ~10 of them, and cannot answer "do intruder
+    dimensions carry the forgetting". n_remove="1" reproduces Shuttleworth's
+    rank-1 surgery and is kept as a sensitivity arm."""
+    idx = [j for j in range(len(maxcos)) if maxcos[j] < tau]
+    if not idx:
+        return []
+    return idx if n_remove == "all" else idx[:int(n_remove)]
 
 
 def fro2_lowrank(B, A):
@@ -107,14 +113,16 @@ def build(args):
         stats["n_matrices"] += 1
         e_dw = fro2_lowrank(scaling * B, A)
         stats["dw_energy"] += e_dw
-        j, s_j = pick_intruder(maxcos, S_ad, args.tau)
-        if j is None:
+        idx = pick_intruders(maxcos, S_ad, args.tau, args.n_remove)
+        if not idx:
             stats["dw_energy_B"] += e_dw          # unmodified matrix
             continue
         stats["n_with_intruder"] += 1
-        stats["intruder_ranks"].append(j)
-        stats["removed_energy"] += s_j ** 2
-        Uc, Vc = U_ad[:, j:j + 1] * s_j, V_ad[:, j:j + 1]
+        stats["intruder_ranks"].append(idx[0])
+        stats["n_removed_total"] = stats.get("n_removed_total", 0) + len(idx)
+        s_sel = S_ad[idx]
+        stats["removed_energy"] += float((s_sel ** 2).sum())
+        Uc, Vc = U_ad[:, idx] * s_sel, V_ad[:, idx]
         corr[name] = (Uc, Vc)
         # exact ||dW - s_j u v^T||_F^2 via the folded factors
         Bf = torch.cat([scaling * B, -Uc], dim=1)
@@ -134,11 +142,14 @@ def build(args):
     stats["norm_ratio_B_over_orig"] = ratio_B
     print(f"[ablate] ||dW_B||/||dW|| = {ratio_B:.4f}  -> arm C scale {alpha_C:.4f} "
           f"(orig), arm D scale {alpha_D:.4f} (ablated)", flush=True)
+    m_max = max((c[0].shape[1] for c in corr.values()), default=1)
+    print(f"[ablate] removing {stats.get('n_removed_total', 0)} directions across "
+          f"{stats['n_with_intruder']} matrices (max {m_max} in one matrix)", flush=True)
     jobs = []
     for arm in ("B", "C") + (("D",) if args.with_renorm else ()):
         ablate = arm in ("B", "D")                      # does this arm remove the intruder?
         scale = {"B": 1.0, "C": alpha_C, "D": alpha_D}[arm]
-        r_new = r0 + (1 if ablate else 0)
+        r_new = r0 + (m_max if ablate else 0)
         out_run = f"{run}__{args.tag}abl{arm}"
         out_dir = os.path.join(args.out_root, out_run)
         os.makedirs(out_dir, exist_ok=True)
@@ -199,6 +210,9 @@ def main():
     ap.add_argument("--topk", type=int, default=10,
                     help="window of top singular directions searched for the intruder; "
                          "10 = Shuttleworth main-text setting (default since 2026-08-28)")
+    ap.add_argument("--n_remove", default="all",
+                    help='"all" = delete every intruder in the top-k window (default); '
+                         '"1" = Shuttleworth rank-1 surgery (sensitivity arm)')
     ap.add_argument("--tag", default="",
                     help="suffix tag: arms are written as <run>__<tag>abl{B,C,D}")
     ap.add_argument("--iters", type=int, default=8)

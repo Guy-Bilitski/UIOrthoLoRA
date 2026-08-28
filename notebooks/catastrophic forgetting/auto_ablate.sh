@@ -6,7 +6,7 @@
 #   1. intruder measurement at k=10 / tau=0.5 vs the FULL pretrained left basis
 #      (auto_intruder.sh)
 #   2. three magnitude-controlled intervention arms, evaluated identically:
-#        B = top intruder direction removed from every matrix   (shrinks ||dW||)
+#        B = ALL intruders in the top-10 window removed          (shrinks ||dW||)
 #        C = whole update uniformly shrunk to B's ||dW||         (size control)
 #        D = B rescaled back to the source ||dW||                (size restored)
 #
@@ -26,7 +26,7 @@ export GEO_THREADS=6
 LOG=logs/auto_ablate.log
 PEND=jobs/pending_ablation.txt
 touch "$PEND"
-echo "[autoabl] $(date -Is) polling every ${POLL}s (k=10 arms)" >> "$LOG"
+echo "[autoabl] $(date -Is) polling every ${POLL}s (k=10, ALL intruders)" >> "$LOG"
 
 while true; do
   for d in /home/kfir/cf_models/*/; do
@@ -34,16 +34,16 @@ while true; do
     case "$run" in *__*) continue ;; esac          # skip derived adapters
     [ -f "$d/.evacuated" ] || continue             # cell must be complete
     [ -f "results/intruder/${run}.json" ] || continue
-    [ -d "/home/kfir/cf_models/${run}__k10ablB" ] && continue
+    [ -d "/home/kfir/cf_models/${run}__k10allablB" ] && continue
     case "$run" in
       *_qwsw*|*_qwswm*) base="Qwen/Qwen2.5-7B" ;;
       *)                base="meta-llama/Llama-2-7b-hf" ;;
     esac
     echo "[autoabl] $(date -Is) building k10 arms for $run" >> "$LOG"
     if "$PY" intruder_ablate.py --adapter "$d" --base_model "$base" \
-         --topk 10 --tag k10 --with-renorm >> "logs/ablate_${run}.log" 2>&1; then
+         --topk 10 --n_remove all --tag k10all --with-renorm >> "logs/ablate_${run}.log" 2>&1; then
       for arm in B C D; do
-        rn="${run}__k10abl${arm}"
+        rn="${run}__k10allabl${arm}"
         grep -q -- "--run_name ${rn} " "$PEND" 2>/dev/null && continue
         echo "$PY eval_one_gpu.py --adapter /home/kfir/cf_models/$rn --run_name $rn --base_model $base --adapt_task cs --ret_suite broad --ret_limit 50 --eval_limit 200 --ret_max_gen 512 && bash evacuate_cell.sh /home/kfir/cf_models/$rn /home/kfir/tierA_evac" >> "$PEND"
       done

@@ -111,9 +111,12 @@ Script: `intruder_ablate.py`. For each trained adapter, three modified copies we
 on CPU and written as ordinary PEFT adapters (rank r+1, alpha set so PEFT's scaling is
 exactly 1), so the frozen eval pipeline scores them unmodified.
 
-- **B — intruders removed.** In every matrix, find the highest-ranking intruder direction
-  (`tau=0.5`, full-basis criterion) and subtract `s_j * u_j * v_j^T` from `W0 + dW`.
-  Rank-1 per matrix, matching Shuttleworth's own surgical intervention.
+- **B — intruders removed.** In every matrix, find **every** intruder direction within
+  the top-10 window (`tau=0.5`, full-basis criterion) and subtract all of them,
+  `sum_j s_j * u_j * v_j^T`, from `W0 + dW`. Up to 10 directions per matrix.
+  (A rank-1 variant -- delete only the highest-ranked intruder, as in Shuttleworth's own
+  figure -- was built and then dropped on 2026-08-28: with ~10 intruders in a matrix,
+  removing one is too weak to test whether intruders carry the forgetting.)
 - **C — uniform shrink (the control).** Take the *original* update and scale it down
   uniformly until its Frobenius norm equals arm B's. Same size change, no geometry
   targeting. This is the paper's own E1 rescaling intervention used as a control.
@@ -123,20 +126,19 @@ exactly 1), so the frozen eval pipeline scores them unmodified.
 Comparing arm B against the untouched source would confound geometry with size; arm C
 removes exactly the same amount of size without touching geometry.
 
-Measured amounts at the locked `k = 10` window:
+Measured amounts at the locked protocol (`k = 10`, delete ALL intruders in the window):
 
-| source | matrices with a top-10 intruder | ||dW||^2 before | after removal | **energy removed** | **norm ratio** |
-|---|---|---|---|---|---|
-| Llama LoRA+wd | 135 / 160 | 71,788.9 | 64,766.7 | **9.78 %** | **0.9498** |
-| Llama MiLoRA | 160 / 160 | 1,669,474.6 | 1,459,986.1 | **12.55 %** | **0.9352** |
+| source | matrices touched | directions deleted | ||dW||^2 before | after | **energy removed** | **norm ratio** |
+|---|---|---|---|---|---|---|
+| Llama LoRA+wd | 135 / 160 | **908** | 71,788.9 | 49,411.5 | **31.2 %** | **0.8296** |
+| Llama MiLoRA | 160 / 160 | **1595** | 1,669,474.6 | 775,034.0 | **53.6 %** | **0.6814** |
 
-Arm C is scaled by exactly that norm ratio; arm D by its reciprocal (1.0528 / 1.0693).
+Arm C is scaled by exactly that norm ratio; arm D by its reciprocal (LoRA+wd 0.8296 / 1.2054; MiLoRA 0.6814 / 1.4677).
 
-Rank of the deleted direction: for **MiLoRA it is rank 0 in all 160 matrices** — the
-single largest direction of the update is always an intruder, so the k=10 and k=64 arms
-are identical there. For **LoRA+wd** the median rank is 0 and 135/160 matrices have their
-first intruder inside the top 10 (at k=64 it was 158/160, removing 9.05 % of energy at
-norm ratio 0.9537 — the k=64 numbers in 6b are from that earlier build).
+How many intruders there are, per window: LoRA+wd has 908/1600 top-10 slots (56.8 %) and
+2,986/8,640 in ranks 11-64 (34.6 %); MiLoRA has 1,595/1,600 (99.7 %) and 3,430/8,640
+(39.7 %). So intruders are densest at the very top of the adapted spectrum -- for MiLoRA
+the single largest direction of the update is an intruder in **all 160** matrices.
 
 Additionally `scale_adapter.py` built uniform-scaled copies at **1.05x** and **1.12x** of
 each source, giving a measured local curve of retention vs update size with direction
