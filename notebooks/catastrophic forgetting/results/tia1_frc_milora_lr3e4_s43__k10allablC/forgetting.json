@@ -1,0 +1,13 @@
+{
+  "forgetting_ce": 1.938710795409211,
+  "base_entropy": 1.8100700801922662,
+  "forgetting_kl": 0.12864071521694487,
+  "n_positions": 337590,
+  "run_name": "tia1_frc_milora_lr3e4_s43__k10allablC",
+  "max_length": 1024,
+  "n_blocks": 330,
+  "wall_s": 27.6,
+  "method": "LORA",
+  "adapter_r": 64,
+  "fdelta": 0.3449
+}

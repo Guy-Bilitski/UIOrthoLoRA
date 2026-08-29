@@ -160,15 +160,40 @@ intruder hypothesis. **n = 4 — descriptive only, do not report as a regression
   which is why arm F (count-matched) and the planned dose-response are needed to
   interpret it.
 
-## 8. Positioning against the literature
+## 8. Positioning against the literature — EXTENSION, NOT REFUTATION
 
-Shuttleworth et al. established that intruder dimensions exist and correlate with
-forgetting; Xie derived when they appear. Our result does not contradict either: the
-phenomenon is real and we reproduce it (56–99 % of top-ranked directions are intruders in
-every adapter we measured). What we add is the magnitude control they omit, and with it
-the finding that **intruder structure and forgetting are separable** — intruders mark
-where the update is spectrally novel, but the retention cost is governed by how far the
-weights move, not by that novelty.
+Frame this as taking the intruder line of work a step further. We do not dispute anything
+Shuttleworth et al. or Xie measured, and we reproduce the phenomenon: intruders are
+present in every adapter we examined.
+
+| | Shuttleworth et al. (2410.21228) | this work |
+|---|---|---|
+| comparison | LoRA vs full fine-tuning | across retention-aware LoRA designs |
+| LoRA rank | **r = 1 and r = 8** for the causal experiments (r <= 256 for existence) | **r = 32** (deployment scale) |
+| operating point | fixed learning rate | each design's best Pareto point |
+| intervention | scale the top intruder direction by lambda | delete ALL top-10 intruders **plus magnitude-matched controls (C, D, E, F)** |
+| outcome measured | pre-training loss / perplexity | retention benchmarks (BBH, MMLU-Pro) |
+| magnitude controlled | no | yes -- this is the addition |
+
+**Why our intruder proportions are so much higher than theirs.** A rank-1 LoRA can
+introduce at most one new direction per matrix, so at most 1 of 10 slots can be an
+intruder. At r = 32 the update can populate the whole top-10 window, and we measure
+57-99 %. We are not contradicting their counts; we are in a regime where the statistic
+saturates. Their choice of r = 1 / r = 8 for the causal work is itself evidence that the
+metric needs a small update to be discriminative.
+
+**The one correction we make is to interpretation, not to results.** Because
+sigma_1(dW) > sigma_1(W0) in *every* matrix we measured, the top of the adapted spectrum
+is dominated by the update, so "top-10 direction not aligned with any single pretrained
+singular vector" is close to a restatement of "this is the update's own leading
+direction". At deployment-scale rank and magnitude the intruder count is therefore
+largely definitional, and once magnitude is controlled it carries no additional
+information about retention.
+
+**Suggested framing sentence.** *Intruder dimensions are real and ubiquitous, but at
+realistic adapter rank they are largely a restatement of where the update lives; the
+retention cost of fine-tuning is governed by how far the weights move, not by the
+spectral novelty of the directions they move along.*
 
 ## 9. Where the numbers live
 
