@@ -6,6 +6,7 @@ Everything produced in the 2026-08 H200 campaign, and where it lives. Start here
 
 | doc | what it is |
 |---|---|
+| **`handoff/INTRUDER_FOR_PAPER.md`** | **Start here if you are writing the paper.** What the experiment adds, precise definitions, the results table, the claims you MAY make, the claims you must NOT make (including one we withdrew), limitations, and positioning against Shuttleworth/Xie. |
 | **`handoff/EXPERIMENT_FINAL.md`** | **THE spec.** Question, 7 configurations, training, evaluation, intruder criterion, the 7 arms A–F, what each contrast tests, analysis plan, wording discipline. Supersedes all earlier plans. |
 | `handoff/INTRUDER_RESULTS.md` | Long-form results and methods: measured numbers, the calibration checks, and the caveats to state in the paper. |
 | `handoff/TIERA_RUN_LOG.md` | Chronological log: what was run, what broke, what was ruled out. The record of *why* the design is what it is. |
@@ -20,6 +21,7 @@ Everything produced in the 2026-08 H200 campaign, and where it lives. Start here
 | `intruder_ablate.py` | Builds arms **B / C / D**. |
 | `arm_e_build.py` | Builds arm **E** (`--match magnitude`) and **Ep** (`--match perturbation`). |
 | `arm_f_build.py` | Builds arm **F** (count-matched random non-intruder deletion, `--draw N`). |
+| `build_final_queue.py` | Emits the remaining evaluation queue, deduped against `results/`. Safe to re-run; emits less as work completes. |
 | `scale_adapter.py` | Uniform-scaled copies of an adapter → local magnitude curve. |
 | `intruder_report.py` | R1/R2/R3 readouts plus the paired ablation read-out. |
 | `magnitude_residuals.py` | Fits the magnitude law on the frozen pool, scores each config's residual against intruder energy. |

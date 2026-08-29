@@ -139,7 +139,7 @@ def build(args):
     ratio_B = (stats["dw_energy_B"] / stats["dw_energy"]) ** 0.5
     alpha_C = ratio_B                      # applied to the ORIGINAL factors
     alpha_D = 1.0 / ratio_B                # applied to the ABLATED factors
-    stats["norm_ratio_B_over_orig"] = ratio
+    stats["norm_ratio_B_over_orig"] = ratio_B
     # ||dW_B - dW_A||^2 : the energy of the CHANGE (not the magnitude drop). Needed by
     # arm E's perturbation-matched variant; the two differ because the removed part is
     # not orthogonal to the rest of the update.
@@ -148,7 +148,7 @@ def build(args):
         c = corr.get(n)
         if c is not None:
             pe += fro2_lowrank(c[0], c[1].T)
-    stats["pert_energy_B"] = pe_B
+    stats["pert_energy_B"] = pe
     print(f"[ablate] ||dW_B||/||dW|| = {ratio_B:.4f}  -> arm C scale {alpha_C:.4f} "
           f"(orig), arm D scale {alpha_D:.4f} (ablated)", flush=True)
     m_max = max((c[0].shape[1] for c in corr.values()), default=1)
