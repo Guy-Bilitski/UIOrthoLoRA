@@ -16,10 +16,25 @@ import os, json, csv, argparse
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, "results")
 
+# The six Llama adapter designs. Learning rates for LoRA / DoRA come from Table 1
+# (paper/table_main_cs.tex, each method at its best-adapt LR); LoRA-Null is not in
+# Table 1 and is picked by the same rule from the pool sweep.
+# RANK IS NOT MATCHED across designs: lorawd/milora/clora are r32, and lora/dora/
+# lora-null are r16 because that is where Table 1's frontier sits. Within-configuration
+# contrasts (B-C, B-E, B-F) are unaffected; the cross-configuration intruder FRACTION is
+# rank-confounded, which is why rank is a column.
+# DoRA is measured through its W0-relative conversion (dora_to_lora.py): same dW, plain
+# LoRA form, so the unmodified arm machinery applies.
 CONFIGS = [
-    ("Llama-2-7B", "LoRA+wd", "5e-4", "tia1_frc_lorawd_wd0p3_lr5e4_s43"),
-    ("Llama-2-7B", "MiLoRA",  "3e-4", "tia1_frc_milora_lr3e4_s43"),
-    ("Llama-2-7B", "CLoRA",   "3e-4", "tia1_frc_clora_k1024_lr3e4_s44"),
+    ("Llama-2-7B", "LoRA+wd",   "5e-4", "tia1_frc_lorawd_wd0p3_lr5e4_s43"),
+    ("Llama-2-7B", "MiLoRA",    "3e-4", "tia1_frc_milora_lr3e4_s43"),
+    ("Llama-2-7B", "CLoRA",     "3e-4", "tia1_frc_clora_k1024_lr3e4_s44"),
+    ("Llama-2-7B", "LoRA",      "3e-4", "tia1_frc_lora_r16_lr3e4_s43"),
+    ("Llama-2-7B", "LoRA-Null", "5e-4", "tia1_frc_loranull_r16_lr5e4_s43"),
+    # DoRA was dropped (Guy, 2026-08-30): its ~6 h training was the long pole and the five
+    # designs below already carry the result. dora_to_lora.py remains in the repo, selftest
+    # green, if it is ever wanted -- it converts a DoRA adapter to a W0-relative LoRA
+    # carrying the same dW, after which the unmodified arm pipeline applies.
     ("Qwen2.5-7B", "LoRA+wd", "1e-4", "tia1_qwsw_lorawd_wd0p3_lr1e4_s43"),
     ("Qwen2.5-7B", "MiLoRA",  "1e-4", "tia1_qwsw_milora_lr1e4_s43"),
     ("Qwen2.5-7B", "SC-LoRA", "2e-5", "tia1_qwsw_sclora_lr2e5_s43"),

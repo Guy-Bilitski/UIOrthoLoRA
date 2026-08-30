@@ -90,3 +90,40 @@ the harm may be the surgery rather than the directions' identity — the __sc1p0
 __sc1p12 uniform-scale curve now running quantifies this as an on-curve residual;
 (2) we use full removal (lambda=0) and accuracy-based retention, they used partial
 lambda and loss; (3) single seed per cell.
+
+## 2026-08-29 — Qwen smoke gate was wrong; DoRA found unsupported by the pipeline
+
+**Qwen "eager" smoke test passed a gate it should have failed.** The gate counted only
+`'grad_norm': 'nan'` lines. The run had zero of those and 354 `'grad_norm': 'inf'`,
+preceded by 141 large-but-finite gradients, with loss diverging 1.17 -> 9.70 -> 16.24 and
+never recovering. It ran healthily for ~410 steps (loss ~1.0, grad ~0.35), then blew up in
+a single logging window. The full Qwen experiment was launched on that false pass and was
+killed ~5 minutes in (~5 GPU-minutes lost).
+
+Signature comparison — every historical Qwen failure is pure NaN, this one is pure inf:
+
+| log | nan | inf | large-finite | last step |
+|---|---|---|---|---|
+| tierA1_0 / tierAg_5 / tierAm_* (SDPA) | 6–3189 | 0 | 0 | 190–16758 |
+| qwen_smoke (eager) | 0 | 354 | 141 | 6489 |
+
+So eager attention changed the *failure mode*, not the outcome. Both are consistent with a
+bf16 overflow; under the fused kernel it surfaces as NaN immediately, under eager as a
+finite blow-up over ~10 steps. **Not asserted as a root cause** — three earlier root-cause
+claims in this log were retracted. `max_grad_norm` is at the HF default of 1.0, so clipping
+was already active and did not prevent it.
+
+Gate replaced by `train_healthy()` in `overnight_lora_dora.sh`, which requires all three:
+no `nan` grad_norm, no `inf` grad_norm, and final loss < 3.0. Validated against four logs:
+rejects qwen_smoke (inf) and tierA1_0 (nan), accepts tierAj_0 (0.663) and tierAgo_0 (0.627).
+
+**DoRA cannot go through the intruder pipeline as written.** `intruder_pass.load_adapter`
+reads only `lora_A`/`lora_B` and returns `dW = (alpha/r) * B @ A`; it handles `use_rslora`
+but has no `use_dora` branch and never reads `lora_magnitude_vector`. DoRA's real update is
+`m * (W0 + s BA)/||W0 + s BA||_col - W0`, so intruder measurement and all of B/C/D/E/Ep/F
+would be computed from the wrong `dW`, and writing modified factors back would leave the
+magnitude vector stale. It would produce plausible but wrong numbers. Requested for the
+2026-08-29 overnight run and deliberately excluded; **MiLoRA at lr 5e-4 substituted**, which
+also gives a within-design magnitude ladder (MiLoRA is already measured at F=0.558 where the
+intervention works and F=1.501 where arms B/D hit the floor). Adding DoRA support means
+changing `load_adapter` and every arm writer — a real change, not a flag.

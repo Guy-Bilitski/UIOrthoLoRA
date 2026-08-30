@@ -214,3 +214,6 @@ notebooks/catastrophic forgetting/results/geo_drift/base_svd/
 # results book (auto-generated presentation tables) must be tracked despite **/*.md
 !notebooks/catastrophic forgetting/results_book/
 !notebooks/catastrophic forgetting/results_book/*.md
+
+# External reference clone (upstream LLM-Adapters), not part of this repo
+notebooks/catastrophic forgetting/repro/LLM-Adapters/

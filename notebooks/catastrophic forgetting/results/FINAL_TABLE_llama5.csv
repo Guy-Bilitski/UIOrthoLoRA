@@ -1,0 +1,71 @@
+model,method,lr,run,intruder_frac,intruder_energy,arm,fdelta,task,retention
+Llama-2-7B,LoRA+wd,5e-4,tia1_frc_lorawd_wd0p3_lr5e4_s43,0.5675,0.43257314482470977,A,0.3951,80.0,24.87
+Llama-2-7B,LoRA+wd,5e-4,tia1_frc_lorawd_wd0p3_lr5e4_s43,0.5675,0.43257314482470977,B,0.3675,2.81,22.98
+Llama-2-7B,LoRA+wd,5e-4,tia1_frc_lorawd_wd0p3_lr5e4_s43,0.5675,0.43257314482470977,C,0.3273,61.69,25.7
+Llama-2-7B,LoRA+wd,5e-4,tia1_frc_lorawd_wd0p3_lr5e4_s43,0.5675,0.43257314482470977,D,0.4416,8.81,20.24
+Llama-2-7B,LoRA+wd,5e-4,tia1_frc_lorawd_wd0p3_lr5e4_s43,0.5675,0.43257314482470977,E,0.3261,55.12,26.18
+Llama-2-7B,LoRA+wd,5e-4,tia1_frc_lorawd_wd0p3_lr5e4_s43,0.5675,0.43257314482470977,Ep,0.2201,31.25,27.17
+Llama-2-7B,LoRA+wd,5e-4,tia1_frc_lorawd_wd0p3_lr5e4_s43,0.5675,0.43257314482470977,F,0.4319,2.69,4.26
+Llama-2-7B,MiLoRA,3e-4,tia1_frc_milora_lr3e4_s43,0.784375,0.5534146430902183,A,0.5577,80.0,24.28
+Llama-2-7B,MiLoRA,3e-4,tia1_frc_milora_lr3e4_s43,0.784375,0.5534146430902183,B,0.4699,1.06,19.88
+Llama-2-7B,MiLoRA,3e-4,tia1_frc_milora_lr3e4_s43,0.784375,0.5534146430902183,C,0.3449,79.0,26.08
+Llama-2-7B,MiLoRA,3e-4,tia1_frc_milora_lr3e4_s43,0.784375,0.5534146430902183,D,0.7529,15.94,11.93
+Llama-2-7B,MiLoRA,3e-4,tia1_frc_milora_lr3e4_s43,0.784375,0.5534146430902183,E,0.4708,77.88,25.96
+Llama-2-7B,MiLoRA,3e-4,tia1_frc_milora_lr3e4_s43,0.784375,0.5534146430902183,Ep,0.4708,77.69,25.68
+Llama-2-7B,MiLoRA,3e-4,tia1_frc_milora_lr3e4_s43,0.784375,0.5534146430902183,F,0.6719,0.0,0.0
+Llama-2-7B,CLoRA,3e-4,tia1_frc_clora_k1024_lr3e4_s44,0.62,0.46144746540812775,A,0.4402,76.19,24.4
+Llama-2-7B,CLoRA,3e-4,tia1_frc_clora_k1024_lr3e4_s44,0.62,0.46144746540812775,B,0.3284,43.5,25.55
+Llama-2-7B,CLoRA,3e-4,tia1_frc_clora_k1024_lr3e4_s44,0.62,0.46144746540812775,C,0.3162,72.62,27.7
+Llama-2-7B,CLoRA,3e-4,tia1_frc_clora_k1024_lr3e4_s44,0.62,0.46144746540812775,D,0.4591,28.31,19.69
+Llama-2-7B,CLoRA,3e-4,tia1_frc_clora_k1024_lr3e4_s44,0.62,0.46144746540812775,E,0.3057,43.81,26.08
+Llama-2-7B,CLoRA,3e-4,tia1_frc_clora_k1024_lr3e4_s44,0.62,0.46144746540812775,Ep,0.3057,43.88,25.68
+Llama-2-7B,CLoRA,3e-4,tia1_frc_clora_k1024_lr3e4_s44,0.62,0.46144746540812775,F,0.4831,0.0,0.0
+Llama-2-7B,LoRA,3e-4,tia1_frc_lora_r16_lr3e4_s43,0.859375,0.5725506645161659,A,0.6063,79.38,23.12
+Llama-2-7B,LoRA,3e-4,tia1_frc_lora_r16_lr3e4_s43,0.859375,0.5725506645161659,B,0.4483,10.81,24.5
+Llama-2-7B,LoRA,3e-4,tia1_frc_lora_r16_lr3e4_s43,0.859375,0.5725506645161659,C,0.3109,76.44,28.96
+Llama-2-7B,LoRA,3e-4,tia1_frc_lora_r16_lr3e4_s43,0.859375,0.5725506645161659,D,0.9299,1.06,3.24
+Llama-2-7B,LoRA,3e-4,tia1_frc_lora_r16_lr3e4_s43,0.859375,0.5725506645161659,E,,,
+Llama-2-7B,LoRA,3e-4,tia1_frc_lora_r16_lr3e4_s43,0.859375,0.5725506645161659,Ep,,,
+Llama-2-7B,LoRA,3e-4,tia1_frc_lora_r16_lr3e4_s43,0.859375,0.5725506645161659,F,0.7228,0.0,0.0
+Llama-2-7B,LoRA-Null,5e-4,tia1_frc_loranull_r16_lr5e4_s43,0.93625,0.6870364676229656,A,0.7015,78.5,22.04
+Llama-2-7B,LoRA-Null,5e-4,tia1_frc_loranull_r16_lr5e4_s43,0.93625,0.6870364676229656,B,0.952,0.5,3.08
+Llama-2-7B,LoRA-Null,5e-4,tia1_frc_loranull_r16_lr5e4_s43,0.93625,0.6870364676229656,C,0.4222,77.56,27.4
+Llama-2-7B,LoRA-Null,5e-4,tia1_frc_loranull_r16_lr5e4_s43,0.93625,0.6870364676229656,D,1.7281,0.0,0.0
+Llama-2-7B,LoRA-Null,5e-4,tia1_frc_loranull_r16_lr5e4_s43,0.93625,0.6870364676229656,E,,,
+Llama-2-7B,LoRA-Null,5e-4,tia1_frc_loranull_r16_lr5e4_s43,0.93625,0.6870364676229656,Ep,,,
+Llama-2-7B,LoRA-Null,5e-4,tia1_frc_loranull_r16_lr5e4_s43,0.93625,0.6870364676229656,F,0.8921,0.0,0.0
+Qwen2.5-7B,LoRA+wd,1e-4,tia1_qwsw_lorawd_wd0p3_lr1e4_s43,,,A,,,
+Qwen2.5-7B,LoRA+wd,1e-4,tia1_qwsw_lorawd_wd0p3_lr1e4_s43,,,B,,,
+Qwen2.5-7B,LoRA+wd,1e-4,tia1_qwsw_lorawd_wd0p3_lr1e4_s43,,,C,,,
+Qwen2.5-7B,LoRA+wd,1e-4,tia1_qwsw_lorawd_wd0p3_lr1e4_s43,,,D,,,
+Qwen2.5-7B,LoRA+wd,1e-4,tia1_qwsw_lorawd_wd0p3_lr1e4_s43,,,E,,,
+Qwen2.5-7B,LoRA+wd,1e-4,tia1_qwsw_lorawd_wd0p3_lr1e4_s43,,,Ep,,,
+Qwen2.5-7B,LoRA+wd,1e-4,tia1_qwsw_lorawd_wd0p3_lr1e4_s43,,,F,,,
+Qwen2.5-7B,MiLoRA,1e-4,tia1_qwsw_milora_lr1e4_s43,,,A,,,
+Qwen2.5-7B,MiLoRA,1e-4,tia1_qwsw_milora_lr1e4_s43,,,B,,,
+Qwen2.5-7B,MiLoRA,1e-4,tia1_qwsw_milora_lr1e4_s43,,,C,,,
+Qwen2.5-7B,MiLoRA,1e-4,tia1_qwsw_milora_lr1e4_s43,,,D,,,
+Qwen2.5-7B,MiLoRA,1e-4,tia1_qwsw_milora_lr1e4_s43,,,E,,,
+Qwen2.5-7B,MiLoRA,1e-4,tia1_qwsw_milora_lr1e4_s43,,,Ep,,,
+Qwen2.5-7B,MiLoRA,1e-4,tia1_qwsw_milora_lr1e4_s43,,,F,,,
+Qwen2.5-7B,SC-LoRA,2e-5,tia1_qwsw_sclora_lr2e5_s43,,,A,,,
+Qwen2.5-7B,SC-LoRA,2e-5,tia1_qwsw_sclora_lr2e5_s43,,,B,,,
+Qwen2.5-7B,SC-LoRA,2e-5,tia1_qwsw_sclora_lr2e5_s43,,,C,,,
+Qwen2.5-7B,SC-LoRA,2e-5,tia1_qwsw_sclora_lr2e5_s43,,,D,,,
+Qwen2.5-7B,SC-LoRA,2e-5,tia1_qwsw_sclora_lr2e5_s43,,,E,,,
+Qwen2.5-7B,SC-LoRA,2e-5,tia1_qwsw_sclora_lr2e5_s43,,,Ep,,,
+Qwen2.5-7B,SC-LoRA,2e-5,tia1_qwsw_sclora_lr2e5_s43,,,F,,,
+Qwen2.5-7B,CLoRA,2e-4,tia1_qwsw_clora_k1024_lr2e4_s44,,,A,,,
+Qwen2.5-7B,CLoRA,2e-4,tia1_qwsw_clora_k1024_lr2e4_s44,,,B,,,
+Qwen2.5-7B,CLoRA,2e-4,tia1_qwsw_clora_k1024_lr2e4_s44,,,C,,,
+Qwen2.5-7B,CLoRA,2e-4,tia1_qwsw_clora_k1024_lr2e4_s44,,,D,,,
+Qwen2.5-7B,CLoRA,2e-4,tia1_qwsw_clora_k1024_lr2e4_s44,,,E,,,
+Qwen2.5-7B,CLoRA,2e-4,tia1_qwsw_clora_k1024_lr2e4_s44,,,Ep,,,
+Qwen2.5-7B,CLoRA,2e-4,tia1_qwsw_clora_k1024_lr2e4_s44,,,F,,,
+Llama-2-7B,MiLoRA (high-F),1e-3,tia1_frc_milora_lr1e3_s43,0.996875,0.9239953462034464,A,1.5011,65.69,17.6
+Llama-2-7B,MiLoRA (high-F),1e-3,tia1_frc_milora_lr1e3_s43,0.996875,0.9239953462034464,B,1.1047,0.0,0.0
+Llama-2-7B,MiLoRA (high-F),1e-3,tia1_frc_milora_lr1e3_s43,0.996875,0.9239953462034464,C,1.0609,70.06,20.11
+Llama-2-7B,MiLoRA (high-F),1e-3,tia1_frc_milora_lr1e3_s43,0.996875,0.9239953462034464,D,1.5863,0.0,0.0
+Llama-2-7B,MiLoRA (high-F),1e-3,tia1_frc_milora_lr1e3_s43,0.996875,0.9239953462034464,E,,,
+Llama-2-7B,MiLoRA (high-F),1e-3,tia1_frc_milora_lr1e3_s43,0.996875,0.9239953462034464,Ep,,,
+Llama-2-7B,MiLoRA (high-F),1e-3,tia1_frc_milora_lr1e3_s43,0.996875,0.9239953462034464,F,,,

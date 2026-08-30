@@ -1,0 +1,38 @@
+{
+  "run_name": "tia1_frc_clora_k1024_lr3e4_s44__k10allablD",
+  "method": "LORA",
+  "adapter": "/home/kfir/cf_models/tia1_frc_clora_k1024_lr3e4_s44__k10allablD",
+  "per_dataset": {
+    "boolq": 45.5,
+    "piqa": 32.5,
+    "social_i_qa": 20.0,
+    "hellaswag": 25.5,
+    "winogrande": 37.5,
+    "ARC-Easy": 25.0,
+    "ARC-Challenge": 21.0,
+    "openbookqa": 19.5
+  },
+  "fdelta": {
+    "fdelta_token_weighted": 0.4591,
+    "dw_sv_mean": 8.3202,
+    "dw_sv_max": 14.6124,
+    "n_matrices": 160
+  },
+  "headline": {
+    "cs_avg": 28.31,
+    "adapt_task": "cs",
+    "bbh": 30.52,
+    "mmlu_pro": 8.86,
+    "mmlu": 31.82,
+    "arc_c": 38.0,
+    "truthfulqa": 41.98,
+    "retention_mean": 19.69,
+    "retention_bbh": 30.52,
+    "retention_broad": 30.24,
+    "fdelta": 0.4591,
+    "dw_sv_max": 14.6124,
+    "dw_sv_mean": 8.3202
+  },
+  "git_commit": "7875a209fd0971b64a3b14c15c69b191636d1fe6",
+  "evaluated_at": "2026-08-29T18:22:23+00:00"
+}
