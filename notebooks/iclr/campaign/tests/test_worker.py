@@ -76,6 +76,8 @@ def fixture_job(tmp_path, condition):
         if condition == "P1_RANDPROJ"
         else {},
         diagnostic_cutoffs=[2, 4, 8],
+        diagnostic_device="cpu",
+        diagnostic_workers=2,
         orientation_seeds=[[17, 42]],
         attention_implementation="eager",
         lora_alpha=8.0,

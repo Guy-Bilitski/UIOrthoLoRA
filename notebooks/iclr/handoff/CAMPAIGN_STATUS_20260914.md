@@ -1,8 +1,58 @@
 # ICLR campaign startup and continuation — 2026-09-14
 
-Status: CPU preparation advanced; **no pretrained smoke, calibration or training
-run launched as of 13:05 UTC**. The resource gate is now resolved. The full P0–P8 objective is active and incomplete. This document
+Status: first GPU P0 attempt **interrupted at a saved step-0 boundary** after
+measuring a diagnostics bottleneck; optimized retry is being prepared.
+The resource gate is resolved. The full P0–P8 objective is active and incomplete. This document
 does not amend the authoritative experiment design or freeze a confirmation grid.
+
+## GPU P0 update — first attempt ended 13:18:07 UTC
+
+Code and the successful 104-test/four-audit/source-fingerprint preflight were
+rebased and pushed normally to `ortho_new` at `707b9d69` before launch.
+Preflight: `data/campaign_v1/preflight/20260914T130653Z_13f60f28/report.json`.
+The first persistent controller used the dedicated tmux server
+`iclr_6aa54397_20260914`, session `smoke_gpu2`. Run ID:
+`20260914T130831Z_d8fc9d01b1fb`, physical GPU 2, seed 31415, P1_MIX instrument,
+P0 smoke stage. Durable path below the assigned output root:
+`runs/iclr_6aa54397/P1_MIX/rte/seed_31415/20260914T130831Z_d8fc9d01b1fb/`.
+
+Real pretrained GPU forward/effective-delta, merge/unmerge, disabled-adapter and
+original-MLM-head checks passed. Maximum classifier merge error was 3.73e-8;
+disabled-versus-original error 7.45e-8; original MLM-logit CPU/GPU comparison
+maximum error 6.10e-5 (declared float32 P0 atol/rtol 1e-4). These checks do not
+establish trained outcomes.
+
+Initial full P3 diagnostics took **10.872–11.494 seconds per module**, mean
+11.110 seconds, on GPU float64. A CPU evaluation of the first saved query layer,
+with the same five cutoffs and three orientation draws, took **1.673 seconds**.
+This one-layer placement comparison is not a full training-throughput estimate.
+GPU initialization diagnostics also exposed tiny arithmetic-only learned-delta
+energies (7.51e-19 to 7.79e-19): CPU-computed insertion buffers were subtracted
+from CUDA-computed float32 deltas. These are not learned updates and their
+normalized fractions must not be interpreted scientifically. The optimized
+worker pins effective-delta arithmetic to CPU consistently with insertion state,
+uses float64 metric algebra, and supports four ordered CPU diagnostic workers.
+Training remains explicitly on the assigned CUDA device. No old observations
+were replaced to hide either the overhead or roundoff issue.
+
+An explicit stop request let the worker finish initial diagnostics and save its
+step-0 optimizer/scheduler/RNG/data/model checkpoint. It exited normally with
+scientific status **interrupted**, no optimizer steps performed. The supervisor
+observed child exit before settling its lease. Elapsed/charged reservation:
+575.39/575.40 seconds (approximately 0.160 GPU-hours); retained run bytes:
+1,569,605,285. Both immutable run/engine manifests, source archive, reference,
+checkpoint, observations, costs-to-date, logs and execution receipt remain.
+No process from another project was inspected or touched.
+
+The durable scientific ledger is `campaign_outputs_v1/run_ledger.jsonl`; resource
+events are in `campaign_outputs_v1/accounting_v1/reservations.jsonl`.
+Counts: P0 completed 0, interrupted 1; calibration 0; confirmation 0/66;
+extensions 0. The next smoke must use a **new retry ID** naming this attempt.
+P0 is not complete. Whole-run validation, timed calibration and full ETA remain
+pending. Initial 50 GiB storage is sufficient for the smoke; an increase to
+200 GiB was requested because six full-FT trajectories alone require roughly
+67 GiB for uncompressed float32 model and Adam states. No increase is assumed
+until the author answers.
 
 ## Continuation update — 13:05 UTC (supersedes resource-pending entries below)
 

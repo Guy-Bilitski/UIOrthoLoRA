@@ -5,12 +5,16 @@ will require their own validated phase gates, not a renamed smoke configuration.
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+import copy
 from dataclasses import asdict
 import json
 import math
 import os
 from pathlib import Path
+import resource
 import signal
+import statistics
 import time
 
 import torch
@@ -49,6 +53,16 @@ def source_hashes():
     return {str(p.relative_to(ROOT)): sha256(p) for p in sorted((ROOT / "notebooks/iclr/campaign").rglob("*.py"))}
 
 
+def _tensor_bytes(value):
+    if torch.is_tensor(value):
+        return value.numel() * value.element_size()
+    if isinstance(value, dict):
+        return sum(_tensor_bytes(x) for x in value.values())
+    if isinstance(value, (list, tuple)):
+        return sum(_tensor_bytes(x) for x in value)
+    return 0
+
+
 def validate_job(job, *, synthetic_cpu_test=False):
     required = {
         "schema_version",
@@ -85,6 +99,8 @@ def validate_job(job, *, synthetic_cpu_test=False):
         "experiment_id",
         "p0_atol",
         "p0_rtol",
+        "diagnostic_device",
+        "diagnostic_workers",
     }
     if required - job.keys():
         raise ValueError(f"Missing complete job fields: {sorted(required - job.keys())}")
@@ -96,6 +112,14 @@ def validate_job(job, *, synthetic_cpu_test=False):
         raise ValueError("Calibration/confirmation require implemented phase admission; smoke is not confirmation")
     if job["condition"] not in P1_CONDITIONS + EARLY_P5 or job["task"] not in {"rte", "mrpc"}:
         raise ValueError("Unsupported common-protocol condition/task")
+    if (
+        job["diagnostic_device"] not in {"cpu", "cuda:0"}
+        or type(job["diagnostic_workers"]) is not int
+        or not 1 <= job["diagnostic_workers"] <= 4
+    ):
+        raise ValueError("Pin CPU/CUDA diagnostic placement and one to four CPU diagnostic workers")
+    if job["diagnostic_device"] == "cuda:0" and job["diagnostic_workers"] != 1:
+        raise ValueError("CUDA diagnostics must remain single-worker on the assigned device")
     settings = TrainSettings(**job["train_settings"])
     settings.validate()
     if settings.task != job["task"] or settings.seed != job["seed"]:
@@ -190,23 +214,45 @@ def make_observers(reference, job, task_examples, probe_examples, device, heartb
 
     @torch.no_grad()
     def diagnose(model):
-        reports = {}
-        effective = effective_attention_weights(model)
-        for i, (name, module) in enumerate(attention_modules(model).items()):
+        modules = attention_modules(model)
+        # Evaluate the effective delta consistently in the declared diagnostic
+        # arithmetic. CPU insertion buffers must not be compared with a freshly
+        # evaluated CUDA delta as if float32 kernel roundoff were learned change.
+        if job["diagnostic_device"] == "cpu":
+            modules = {
+                name: copy.deepcopy(module).cpu() if next(module.parameters()).device.type != "cpu" else module
+                for name, module in modules.items()
+            }
+
+        @torch.no_grad()
+        def report_one(item):
+            i, (name, module) = item
             if heartbeat:
                 heartbeat("diagnostic_module", index=i, name=name)
             if isinstance(module, SpectralLinear):
-                reports[name] = diagnose_layer(module, job["diagnostic_cutoffs"], job["orientation_seeds"])
+                report = diagnose_layer(module, job["diagnostic_cutoffs"], job["orientation_seeds"])
             else:
-                k = min(effective[name].shape) - job["spectral_config"]["tail_size"]
-                reports[name] = diagnose_effective_matrix(
-                    effective[name],
+                effective = (
+                    module.base.weight.detach() + module.delta_total()
+                    if hasattr(module, "delta_total")
+                    else module.weight.detach()
+                )
+                k = min(effective.shape) - job["spectral_config"]["tail_size"]
+                report = diagnose_effective_matrix(
+                    effective,
                     refs[name],
                     initial_effective[name],
                     k,
                     job["diagnostic_cutoffs"],
                     job["orientation_seeds"],
                 )
+            return name, report
+
+        if job["diagnostic_workers"] == 1:
+            reports = dict(map(report_one, enumerate(modules.items())))
+        else:
+            with ThreadPoolExecutor(max_workers=job["diagnostic_workers"]) as executor:
+                reports = dict(executor.map(report_one, enumerate(modules.items())))
         head_energy = sum(
             (p.double() - reference.reference["model"][name].to(p).double()).square().sum().item()
             for name, p in model.named_parameters()
@@ -219,6 +265,9 @@ def make_observers(reference, job, task_examples, probe_examples, device, heartb
                 for kind in ("total", "initial", "learned_since_insertion")
             },
             head_displacement_energy=head_energy,
+            diagnostic_device=job["diagnostic_device"],
+            diagnostic_workers=job["diagnostic_workers"],
+            effective_delta_arithmetic="float32 at declared diagnostic device; metric algebra float64",
         )
         if job["condition"] == "P5_FULL_FT":
             result["full_ft_parameter_displacement"] = full_ft_displacement(model, reference.reference["model"])
@@ -295,6 +344,16 @@ def measure_inference(model, inputs, job, device):
     expected = model(**inputs).logits
     unmerged = timed()
     synchronize()
+    merge_repeats = []
+    for _ in range(job["inference_repeats"] if layers else 0):
+        before = time.perf_counter()
+        for layer in layers.values():
+            layer.merge()
+        synchronize()
+        merge_repeats.append(time.perf_counter() - before)
+        for layer in layers.values():
+            layer.unmerge()
+        synchronize()
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
     before = time.perf_counter()
@@ -313,7 +372,9 @@ def measure_inference(model, inputs, job, device):
             layer.unmerge()
     return dict(
         merge_applicable=bool(layers),
-        merge_seconds=merge_seconds if layers else None,
+        merge_seconds=statistics.median(merge_repeats) if layers else None,
+        merge_repeat_seconds=merge_repeats,
+        final_merge_seconds=merge_seconds if layers else None,
         merge_peak_cuda_allocated=peak,
         unmerged_inference_seconds=unmerged,
         merged_inference_seconds=merged,
@@ -385,6 +446,7 @@ def execute_job(job, *, resources=None, gpu_id=None, gpu_uuid=None, wall_seconds
         svd_start = time.perf_counter()
         refs = capture_attention_references(model)
         svd_seconds = time.perf_counter() - svd_start
+        setup_peak_cpu_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
         layers, random_bases = {}, {}
         cfg = SpectralConfig(**job["spectral_config"])
         with preserve_rng():
@@ -499,6 +561,19 @@ def execute_job(job, *, resources=None, gpu_id=None, gpu_uuid=None, wall_seconds
         costs.update(
             svd_setup_seconds=svd_seconds,
             svd_device="cpu",
+            process_peak_cpu_rss_after_svd=setup_peak_cpu_rss,
+            process_peak_cpu_rss_scope="process high-water mark through SVD setup, including prior model loading",
+            frozen_basis_tensor_bytes=sum(
+                _tensor_bytes({key: ref[key] for key in ("u_ref", "v_ref", "s_ref")}) for ref in refs.values()
+            ),
+            optimizer_state_tensor_bytes=_tensor_bytes(reference.read(result["fixed_step_checkpoint"])["optimizer"]),
+            trainable_tensor_bytes=sum(p.numel() * p.element_size() for p in model.parameters() if p.requires_grad),
+            orthogonal_map_cost=dict(
+                applicable=bool(cfg.rotation_size),
+                rotation_size=cfg.rotation_size,
+                measured_separately=False,
+                reason="No orthogonal map is constructed for k_vec=0",
+            ),
             setup_cpu_seconds=setup_cpu_seconds,
             device_placement_peak_allocated=setup_peak,
             parameter_inventory=parameter_inventory(model),
@@ -509,6 +584,16 @@ def execute_job(job, *, resources=None, gpu_id=None, gpu_uuid=None, wall_seconds
             else None,
             excluded_initial_steps=job["cost_exclude_initial_steps"],
             raw_steps_sha256=sha256(directory / "engine/steps.jsonl"),
+            training_peak_cuda_allocated=max((r["step_peak_allocated"] or 0 for r in step_records), default=0)
+            if device.type == "cuda"
+            else None,
+            training_peak_cuda_reserved=max((r["step_peak_reserved"] or 0 for r in step_records), default=0)
+            if device.type == "cuda"
+            else None,
+            gradient_accumulation=settings.accumulation_steps,
+            training_precision=settings.precision,
+            diagnostic_device=job["diagnostic_device"],
+            diagnostic_workers=job["diagnostic_workers"],
         )
         write_json_new(directory / "p7_costs.json", costs)
         heartbeat("independent_checkpoint_reproduction")
@@ -518,6 +603,7 @@ def execute_job(job, *, resources=None, gpu_id=None, gpu_uuid=None, wall_seconds
         if device.type == "cuda":
             torch.cuda.empty_cache()
         reports = []
+        locked_endpoints = {}
         for i, entry in enumerate(result["checkpoint_history"]):
             heartbeat("validating_checkpoint", index=i, step=entry["step"])
             report_path = directory / f"checkpoint_validation_{i:03d}.json"
@@ -535,6 +621,30 @@ def execute_job(job, *, resources=None, gpu_id=None, gpu_uuid=None, wall_seconds
                 rtol=job["reproduction_rtol"],
             )
             reports.append(str(report_path))
+            roles = [
+                key
+                for key in ("fixed_step_checkpoint", "best_validation_checkpoint")
+                if result[key] == entry["checkpoint_path"]
+            ]
+            if roles:
+                with preserve_rng(), torch.no_grad():
+                    endpoint_model = roberta_from_saved_reference(reference.reference).to(device)
+                    reference.restore(entry["checkpoint_path"], endpoint_model, restore_random_state=False)
+                    endpoint_model.eval()
+                    metrics = evaluate_examples(
+                        endpoint_model, task_examples["locked_evaluation"], job["task"], device, job["eval_batch_size"]
+                    )
+                    for role in roles:
+                        locked_endpoints[role] = dict(
+                            checkpoint_path=entry["checkpoint_path"],
+                            step=entry["step"],
+                            metrics=metrics,
+                            checkpoint_sha256=sha256(Path(entry["checkpoint_path"]) / "state.pt"),
+                        )
+                    del endpoint_model
+        if set(locked_endpoints) != {"fixed_step_checkpoint", "best_validation_checkpoint"}:
+            raise ValueError("Missing locked evaluation endpoint")
+        write_json_new(directory / "locked_endpoints.json", locked_endpoints)
         write_json_new(
             directory / "worker_result.json",
             dict(

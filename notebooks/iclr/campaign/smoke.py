@@ -85,6 +85,8 @@ def main():
         regularization_coefficient=1e-3,
         random_projector_seeds={},
         diagnostic_cutoffs=[16, 64, 128, 256, 512],
+        diagnostic_device="cpu",
+        diagnostic_workers=4,
         orientation_seeds=[[17, 42], [123, 2021], [1054, 31415]],
         attention_implementation="eager",
         lora_alpha=8.0,
