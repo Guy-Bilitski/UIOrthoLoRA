@@ -1,0 +1,1489 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2026
+
+% The authors should use one of these tracks.
+% Before accepting by the NeurIPS conference, select one of the options below.
+% 0. "default" for submission
+\usepackage{neurips_2026}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{multirow}
+\usepackage{adjustbox}
+\usepackage[table]{xcolor}
+\usepackage{amssymb}
+\usepackage{enumitem}
+% the "default" option is equal to the "main" option, which is used for the Main Track with double-blind reviewing.
+% 1. "main" option is used for the Main Track
+%  \usepackage[main]{neurips_2026}
+% 2. "position" option is used for the Position Paper Track
+%  \usepackage[position]{neurips_2026}
+% 3. "eandd" option is used for the Evaluations & Datasets Track
+ % \usepackage[eandd]{neurips_2026}
+ % if you want to opt-in for a de-anomymized submission (not recommended, but OK):
+ %\usepackage[eandd, nonanonymous]{neurips_2026}
+% 4. "creativeai" option is used for the Creative AI Track
+%  \usepackage[creativeai]{neurips_2026}
+% 5. "sglblindworkshop" option is used for the Workshop with single-blind reviewing
+ % \usepackage[sglblindworkshop]{neurips_2026}
+% 6. "dblblindworkshop" option is used for the Workshop with double-blind reviewing
+%  \usepackage[dblblindworkshop]{neurips_2026}
+
+% After being accepted, the authors should add "final" behind the track to compile a camera-ready version.
+% 1. Main Track
+ % \usepackage[main, final]{neurips_2026}
+% 2. Position Paper Track
+%  \usepackage[position, final]{neurips_2026}
+% 3. Evaluations & Datasets Track
+ % \usepackage[eandd, final]{neurips_2026}
+% 4. Creative AI Track
+%  \usepackage[creativeai, final]{neurips_2026}
+% 5. Workshop with single-blind reviewing
+%  \usepackage[sglblindworkshop, final]{neurips_2026}
+% 6. Workshop with double-blind reviewing
+%  \usepackage[dblblindworkshop, final]{neurips_2026}
+% Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote.
+% For workshops (5., 6.), the authors should add the name of the workshop, "\workshoptitle" command is used to set the workshop title.
+% \workshoptitle{WORKSHOP TITLE}
+
+% "preprint" option is used for arXiv or other preprint submissions
+ % \usepackage[preprint]{neurips_2026}
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2026}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+
+% Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote. 
+\title{UIOrthoLoRA: Spectrum-Aware Orthogonal Adaptation for Parameter-Efficient Fine-Tuning}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  David S.~Hippocampus\thanks{Use footnote for providing further information
+    about author (webpage, alternative address)---\emph{not} for acknowledging
+    funding agencies.} \\
+  Department of Computer Science\\
+  Cranberry-Lemon University\\
+  Pittsburgh, PA 15213 \\
+  % examples of more authors
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+
+\begin{document}
+
+
+\maketitle
+
+\begin{abstract}
+Parameter-efficient fine-tuning (PEFT) adapts pretrained models with small trainable modules, but most adapters do not explicitly control how updates interact with the singular structure of the frozen weights. We study PEFT in the pretrained singular coordinate system and introduce a spectrum-aware adaptation framework that separates preserved pretrained components from task-specific adaptation. The framework first exposes a fixed-basis bottleneck: when adaptation is restricted to a prescribed low-spectrum basis, performance depends on how well that basis aligns with the desired task-specific perturbation. To address this limitation, we introduce compact orthogonal adaptation within the selected low-spectrum subspace, allowing directional flexibility while keeping the parameter cost tied to the spectral budget. We further instantiate these ideas with unit-invariant diagonal scalers, yielding practical adapters that provide coordinate-level flexibility while allowing us to bound scaler-induced mixing between preserved leading components and adapted tail components. Empirically, our proposed variants achieve the strongest average performance among the compared baselines on RoBERTa-base and RoBERTa-large GLUE, with the linear variant achieving strong results using substantially fewer trainable parameters. Additional generation results, retention-oriented experiments, and a diagnostic
+soft-mixing ablation support the broader preservation-adaptation perspective.
+\end{abstract}
+
+
+\section{Introduction}
+Parameter-efficient fine-tuning (PEFT) has become a central approach for adapting large pretrained language models while updating only a small fraction of their parameters. Low-Rank Adaptation (LoRA)~\citep{hu2022lora} is among the most widely used PEFT methods, showing that additive low-rank updates can achieve strong downstream performance with substantially lower memory and parameter cost than full fine-tuning. Beyond efficiency, LoRA also provides an important empirical insight: fine-tuning updates tend to amplify task-relevant singular directions that are already present in the pretrained weights. We refer to this view as the \emph{pretraining-finetuning paradigm}: pretraining establishes a rich set of representational directions, while fine-tuning primarily recalibrates their task-specific importance.
+
+This perspective suggests that the singular structure of pretrained weights is not merely a tool for compression or initialization, but a meaningful coordinate system for adaptation. Recent PEFT methods have increasingly moved in this direction. AdaLoRA, VeRA, MiLoRA, and PiSSA~\citep{zhang2023adalora, kopiczko2023vera, wang2025milora, meng2024pissa} use low-rank, spectral, or SVD-inspired structure to improve rank allocation, initialization, or parameter efficiency. However, many existing methods use the pretrained spectrum indirectly, for example through initialization, random bases, or soft allocation rules. They do not explicitly analyze how the adapter update decomposes in the pretrained singular coordinates throughout training.
+
+In this work, we study PEFT directly in the singular coordinate system of the pretrained weight matrices. We distinguish between two levels of the proposed construction. First, we introduce idealized spectral adapters that make the preservation-adaptation structure explicit. Second, we introduce their practical unit-invariant variants, which add lightweight diagonal coordinate scalers.
+
+We begin with a structurally transparent adapter, \textbf{LinLoRA}, which freezes the pretrained singular vectors and learns only singular-value coefficients in the complementary tail block. In this idealized form, the pretrained and fine-tuned components occupy orthogonal blocks of the fixed pretrained basis, giving a direct mechanism for separating preserved information from injected task-specific information.
+
+This strict structure also exposes a limitation. Because LinLoRA adapts within a fixed representational basis, its effectiveness depends on whether the prescribed tail basis aligns with the dominant directions of the optimal task-specific perturbation. We formalize this as a \emph{fixed-basis adaptation bottleneck}: under a PAC-Bayesian perturbation perspective, a fixed-basis adapter can reduce the residual error bound only to the extent that its adaptation subspace captures the relevant task directions. If this alignment fails, the adapter may leave the leading components of the optimal perturbation uncaptured.
+
+To address this bottleneck while preserving parameter efficiency, we introduce \textbf{OrthoLoRA}. Rather than learning dense new basis matrices, OrthoLoRA freezes the pretrained tail singular vectors and learns compact orthogonal rotations \(R_U\) and \(R_V\) within the selected tail subspace. This allows the adapter to rotate its basis toward task-relevant directions while keeping the parameter cost tied to the spectral budget rather than to the full input and output dimensions. In particular, the additional trainable cost scales as \(\mathcal{O}(k_{vec}^2)\), rather than \(\mathcal{O}(d_{out}k_{vec}+d_{in}k_{vec})\).
+
+We then introduce the unit-invariant variants of these adapters by adding trainable diagonal scalers \(E\) and \(D\), inspired by the unit-invariant SVD perspective of \citet{uhlmann2018generalized}. The prefix \textbf{UI} denotes this unit-invariant extension. Thus, \textbf{UILinLoRA} is the unit-invariant version of LinLoRA: it keeps the fixed-basis, magnitude-only spectral structure, but adds the diagonal scalers. Similarly, \textbf{UIOrthoLoRA} is the unit-invariant version of OrthoLoRA: it combines compact orthogonal rotations with the same diagonal scalers.
+
+The diagonal scalers relax the strict confinement of pure LinLoRA and OrthoLoRA by allowing unit-level coordinate adaptation around the pretrained tail subspace. This added flexibility is important in practical settings, where task-specific perturbations may not be perfectly aligned with the original pretrained singular geometry. At the same time, the relaxation is not unstructured: we analyze the UIOrthoLoRA update in pretrained singular coordinates and derive explicit bounds on the scaler-induced mixing between preserved leading components and adapted tail components.
+
+Empirically, the main paper evaluates UILinLoRA and UIOrthoLoRA on GLUE using RoBERTa-base and RoBERTa-large results. On RoBERTa-base, UIOrthoLoRA achieves the highest average score among the compared VeRA, LoRA, and RandLoRA baselines, reaching 85.5 with 0.4M trainable parameters. UILinLoRA also remains strong, reaching 84.68 with only 0.08M trainable parameters, highlighting the efficiency of spectral magnitude adaptation. Additional generation and retention-oriented experiments are reported in the appendix as supporting evidence that the proposed spectral parameterization remains expressive while preserving the paper's main preservation-adaptation motivation.
+Our main contributions are:
+\begin{itemize}
+    \item \textbf{Spectrum-aware PEFT and the fixed-basis bottleneck.}
+    We formulate adapter updates in the singular coordinate system of pretrained weights, introduce LinLoRA as a fixed-basis spectral adapter, and show that its effectiveness depends on alignment between the tail basis and the dominant task-specific perturbation directions.
+
+    \item \textbf{Compact orthogonal adaptation with controlled mixing.}
+    We introduce OrthoLoRA, which adds compact tail-subspace rotations, and UIOrthoLoRA, which further adds unit-invariant diagonal scalers. We derive bounds on the resulting leading-tail mixing induced by the scalers.
+
+    \item \textbf{Empirical validation.}
+    We show strong parameter efficiency on RoBERTa-base and RoBERTa-large on GLUE,
+    report additional generation and retention-oriented experiments, and include a diagnostic soft-mixing ablation showing that the derived leading-tail mixing quantities can be regularized to reduce spectral leakage in practice.
+\end{itemize}
+
+\section{Related Work}
+\subsection{Parameter-Efficient Fine-Tuning and the Spectral Shift}
+Low-Rank Adaptation (LoRA)~\citep{hu2022lora} introduced an efficient way to fine-tune pretrained models by learning low-rank additive updates while keeping the backbone frozen. Subsequent methods such as QLoRA~\citep{dettmers2023qlora}, VeRA~\citep{kopiczko2023vera}, DoRA~\citep{liu2024dora}, and FourierFT~\citep{gao2024parameter} further improved the parameter, memory, or update structure of PEFT methods. While these works primarily focus on efficient adaptation, recent literature has increasingly turned to the spectral properties of pretrained weights to guide adapter design.
+
+Methods such as AdaLoRA~\citep{zhang2023adalora}, PiSSA~\citep{meng2024pissa}, MiLoRA~\citep{wang2025milora}, LoRA-XS~\citep{balazy2024lora}, SVFT~\citep{lingam2024svft}, and CorDA~\citep{yang2024corda} leverage Singular Value Decomposition (SVD), spectral importance, or decomposition-based initialization to allocate adaptation capacity more effectively. In parallel, RandLoRA~\citep{albert2025randlora} provides statistical guarantees for the expressiveness of random projections, motivated by the empirical success of random-basis methods such as NoLA~\citep{koohpayegani2023nola} and VeRA~\citep{kopiczko2023vera}.
+
+Building on the empirical insight of LoRA that fine-tuning updates amplify task-relevant directions already present in pretrained weights~\citep{hu2022lora}, we pursue a different spectral trajectory. Rather than approximating expressiveness through random bases or using SVD mainly for initialization or rank allocation, UIOrthoLoRA directly parameterizes adaptation in pretrained singular coordinates. By preserving selected pretrained singular directions and introducing compact orthogonal rotations in the low-spectrum subspace, our method provides an explicit structural mechanism for balancing adaptation with preservation.
+
+\subsection{Foundations of Generalization.}
+The empirical success of low-rank adaptation is closely connected to intrinsic dimensionality. \citet{li2018measuring} introduced methods for measuring the intrinsic dimension of neural objective landscapes, and \citet{aghajanyan2020intrinsic} showed that large pretrained language models can often be fine-tuned effectively in surprisingly low-dimensional subspaces. This supports the view that successful adaptation may require only a restricted task-specific subspace rather than updates over the full parameter space.
+
+In parallel, PAC-Bayesian analyses connect generalization to perturbation size and spectral properties of neural networks. \citet{neyshabur2017pac, neyshabur2018pacbayesian} derive bounds involving spectral norms and layer-wise perturbations, suggesting that controlling the geometry and magnitude of weight updates is central to generalization. Our approach is motivated by the intersection of these perspectives: UIOrthoLoRA restricts adaptation to structured subspaces derived from the pretrained spectrum, while its orthogonality and scaler-induced mixing analysis provide explicit control over how the update interacts with preserved pretrained singular structure.
+
+
+
+\section{OrthoLoRA - Structurally Preservative Parameter-Efficient Fine Tuning}
+
+\subsection{Low-Rank Adaptation in Pretrained Singular Coordinates}
+
+Let $W^{pre} \in \mathbb{R}^{m \times n}$ be a weight matrix of a large pretrained model. Let $U^{pre} \in \mathbb{R}^{m \times m}, \Sigma_R \in \mathbb{R}^{m \times n}, V^{pre} \in \mathbb{R}^{n \times n}$ be the singular values and directions matrices obtained from singular value decomposition (SVD) of $W^{pre}$, where $R \leq \min\{m,n\}$ denotes the numerical rank of $W^{pre}$.
+
+The additive nature of the adapter is expressed by:
+\[
+W = W^{pre} + \Delta W
+\]
+\citet{hu2022lora} concluded that the learned low-rank update, $\Delta W = BA$, amplifies task-specific singular directions that already exist within the pre-trained weights, $W^{pre}$. We characterize this mechanism as the \textbf{pretraining-finetuning paradigm}\label{def}: the critical feature directions are established during pretraining, while fine-tuning serves mainly to recalibrate their relative importance. Motivated by this insight, our approach explicitly leverages the pre-trained singular vectors, focusing on adapting their corresponding amplitudes:
+$\Delta W^{\ell \ell} = U^{pre} \underline{\Sigma}_r (V^{pre})^\top
+$
+
+Let $r = \min\{m,n\} - R$ be the number of low tail singular values of $W^{pre}$. By the properties of SVD, the diagonal of $\Sigma_R$ contains the $R$ non-zero pretrained singular values and $r$ zeros. The matrix $\underline{\Sigma}_r$ is defined to have $0$ on the diagonal where the pretrained singular values exist, and trainable parameters in the remaining $r$ diagonal positions. Together, their sum forms a diagonal matrix of rank $\min\{m,n\}$. Underlined quantities denote trainable parameters, while non-underlined quantities are frozen components obtained from the pretrained SVD.
+
+Due to the linear behavior of the trainable components, we call this variant \textbf{LinLoRA}.
+
+\subsection{LinLoRA Components Analysis}
+
+Let $W^{\ell \ell} = W^{pre} + \Delta W^{\ell \ell}$ be the matrix of the model after adaptation.
+\[
+W^{\ell \ell}
+= W^{pre} + \Delta W^{\ell \ell}
+= U^{pre}\Sigma_R (V^{pre})^\top + U^{pre} \Sigma_r (V^{pre})^\top
+= U^{pre}(\Sigma_R + \Sigma_r)(V^{pre})^\top
+\]
+To cleanly express the addition, we formally define the block structures of the singular-value matrices. Let
+\[
+\Sigma_R =
+\begin{bmatrix}
+\Sigma'_R & 0 \\
+0 & 0
+\end{bmatrix},
+\qquad
+\Sigma_r =
+\begin{bmatrix}
+0 & 0 \\
+0 & \Sigma'_r
+\end{bmatrix}
+\implies
+\Sigma_R + \Sigma_r
+=
+\begin{bmatrix}
+\Sigma'_R & 0 \\
+0 & \Sigma'_r
+\end{bmatrix}.
+\]
+where $\Sigma'_R$ contains the preserved pretrained singular values, and $\Sigma'_r$ contains the learnable adapted singular values.
+
+Let
+\[
+M^{pre}
+=
+\Sigma_R(V^{pre})^\top
+=
+\begin{bmatrix}
+\Sigma'_R (V_R^{pre})^\top \\
+0
+\end{bmatrix}
+=
+\begin{bmatrix}
+M'^{pre} \\
+0
+\end{bmatrix}.
+\]
+Therefore, $W^{pre}=U^{pre}M^{pre}$. Substituting this back into the composite matrix gives:
+\[
+W^{\ell \ell}
+=
+U^{pre}
+\begin{bmatrix}
+M'^{pre} \\
+\Delta M^{\ell \ell}
+\end{bmatrix}
+=
+U^{pre}M^{\ell \ell},
+\Delta M^{\ell \ell}
+=
+\Sigma'_r (V_r^{pre})^\top.
+\]
+
+To summarize, we have established the structural relationship
+\[
+W^{pre}
+=
+U^{pre}
+\begin{bmatrix}
+M'^{pre} \\
+0
+\end{bmatrix},
+\qquad
+W^{\ell \ell}
+=
+U^{pre}
+\begin{bmatrix}
+M'^{pre} \\
+\Delta M^{\ell \ell}
+\end{bmatrix}.
+\]
+
+\subsection{Information Stability and Preservation}
+
+\noindent \textbf{Theorem 1} (LinLoRA Retains Pre-trained Information).
+\textit{
+LinLoRA injects fine-tuning information through $\Delta M^{\ell \ell}$
+strictly orthogonally to the pre-trained information, while preserving the
+pretrained SVD basis during training.
+}
+\[
+W^{\ell \ell}h_{i-1}
+=
+\underbrace{\sum\limits_{j=1}^{R} z^{pre}_j U^{pre}_j}_{\text{pre-trained information}}
++
+\underbrace{\sum\limits_{j=R+1}^{R+r} z^{ft}_j U^{pre}_j}_{\text{fine-tuned information}} .
+\]
+Here, the coefficients are induced by $M^{\ell \ell}h_{i-1}
+=
+\begin{bmatrix}
+z^{pre} \\
+z^{ft}
+\end{bmatrix}
+$. \textit{Proof is provided in Appendix~\ref{app:proof-linlora-retention}.}
+
+\noindent \textbf{Proposition 1} (Fixed-Basis Adaptation Bottleneck). \textit {Assume the pretraining-finetuning paradigm introduced above, namely that the principal singular directions of the pretrained model approximate those of the task-optimal model. Then a fixed-basis adapter, such as LinLoRA, can reduce the PAC-Bayesian perturbation bound only to the extent that its fixed adaptation subspace aligns with the dominant directions of the optimal task-specific perturbation. If this alignment fails, then in the worst case the resulting bound need not improve over the pretrained model.}
+
+\begin{proof}
+Let $W^{opt} \in \mathbb{R}^{m \times n}$ denote a task-optimal weight matrix, with singular value decomposition
+$W^{opt} = U^{opt}\Sigma^{opt}(V^{opt})^\top.$
+Under the pretraining-finetuning paradigm~\ref{def}, we assume that the dominant pretrained singular components approximate the dominant components of the task-optimal solution:
+\[
+U_R^{pre} \approx U_R^{opt}, \quad
+(V_R^{pre})^\top \approx (V_R^{opt})^\top,
+\quad
+\Sigma_R^{pre} \approx \Sigma_R^{opt}.
+\implies
+W^{opt} \approx W_R^{pre} + \Delta W_r^{opt},
+\]
+Thus, the task-optimal weights can be decomposed as $W_R^{pre}$ denotes the dominant pretrained component and $\Delta W_r^{opt}$ denotes the residual task-specific perturbation required to reach the task-optimal solution.
+
+Following the perturbation analysis of \citet{neyshabur2018pacbayesian}, the change in the network output induced by a layer-wise perturbation can be bounded by
+\[
+\Delta L
+\leq
+e \|x\|_2
+\left(
+\prod_{i=1}^{d} \|W_i^{opt}\|_2
+\right)
+\sum_{i=1}^{d}
+\frac{\|\Delta W_i\|_2}{\|W_i^{opt}\|_2}.
+\]
+For the pretrained model, the relevant discrepancy from the task-optimal model is $\Delta W_{r,i}^{opt}$ at each layer. Therefore,
+\[
+\Delta L(W^{pre})
+\leq
+C
+\sum_{i=1}^{d}
+\frac{\|\Delta W_{r,i}^{opt}\|_2}{\|W_i^{opt}\|_2}
+\text{\qquad where\qquad }
+C
+=
+e \|x\|_2
+\prod_{i=1}^{d}
+\|W_i^{opt}\|_2.
+\]
+
+After training a fixed-basis adapter such as LinLoRA, the model captures an adapter perturbation $\Delta W_{r,i}^{\ell \ell}$ in each layer. The remaining discrepancy from the task-optimal perturbation is therefore
+$\Delta W_{r,i}^{opt} - \Delta W_{r,i}^{\ell \ell}.$ 
+Substituting this residual perturbation into the same bound gives
+\[
+\Delta L(W^{\ell \ell})
+\leq
+C
+\sum_{i=1}^{d}
+\frac{\|\Delta W_{r,i}^{opt} - \Delta W_{r,i}^{\ell \ell}\|_2}{\|W_i^{opt}\|_2}.
+\]
+
+The behavior of this residual depends on the relationship between the fixed adapter basis and the singular directions of the optimal perturbation. Let $k$ denote the effective rank of $\Delta W_r^{opt}$, and let $r$ denote the adaptation rank of the fixed-basis adapter.
+
+\textbf{Case 1: sufficient capacity and optimal directional alignment.} If $r \geq k$ and the fixed adapter basis aligns with the singular directions of $\Delta W_r^{opt}$, then the adapter can represent the full task-specific perturbation. Under ideal optimization,
+\[
+\|\Delta W_{r,i}^{opt} - \Delta W_{r,i}^{\ell \ell}\|_2
+\to
+0
+\qquad
+\text{for all } i.
+\]
+Consequently, $\Delta L(W^{\ell \ell}) \to 0$
+so the perturbation bound is reduced relative to the pretrained model.
+
+\textbf{Case 2: insufficient capacity or suboptimal directional alignment.} If $r < k$, or if the fixed adapter basis does not align with the dominant singular directions of $\Delta W_r^{opt}$, then the adapter may fail to capture the leading components of the optimal perturbation. By the Eckart-Young-Mirsky theorem, the best rank-$r$ approximation would leave a residual controlled by the next singular value, $\sigma_{r+1}(\Delta W_{r,i}^{opt})$. However, a fixed basis that is not aligned with the dominant singular directions need not achieve this optimal residual. In the worst case, the leading singular component remains uncaptured, so
+\[
+\|\Delta W_{r,i}^{opt} - \Delta W_{r,i}^{\ell \ell}\|_2
+\approx
+\sigma_1(\Delta W_{r,i}^{opt})
+\implies
+\Delta L(W^{\ell \ell})
+\lesssim
+C
+\sum_{i=1}^{d}
+\frac{\sigma_1(\Delta W_{r,i}^{opt})}{\|W_i^{opt}\|_2}
+\]
+
+which is of the same order as the pretrained discrepancy bound. Hence, without directional alignment, a fixed-basis adapter is not guaranteed to improve the perturbation bound.
+
+This establishes that fixed-basis adaptation is bottlenecked by the alignment between its prescribed adaptation subspace and the dominant singular directions of the task-optimal perturbation.
+\end{proof}
+
+\subsection{OrthoLoRA: Alleviating the Fixed-Basis Bottleneck Within the Selected Tail Subspace}\label{sec}
+
+Proposition~1 exposes a vulnerability in fixed-basis adapters: to reduce the PAC-Bayesian perturbation bound under the idealized analysis, the adapter representational basis must be aligned with the optimal one. To address this, we introduce \textbf{OrthoLoRA} (Orthogonal Low-Rank Adaptation). Unlike LinLoRA, which learns magnitudes in a fixed pretrained basis, OrthoLoRA introduces trainable orthogonal rotations within the selected low-spectrum subspace.
+
+\subsubsection{The Direct Resolution: Full Orthogonal Adaptation}
+
+The mathematically direct way to address Proposition~1 is to operate within the optimal low-spectrum subspace directions. In this resolution, one would discard the fixed low-spectrum subspace vectors entirely and learn a completely new, dense orthogonal basis $\hat{U}_{new} \in \mathbb{R}^{d_{out} \times k_{vec}}$ and $\hat{V}_{new} \in \mathbb{R}^{d_{in} \times k_{vec}}$ from scratch.
+
+However, this approach fails to decouple the parameter count from the underlying matrix dimensions, inheriting the same structural bottleneck as standard LoRA. Specifically, learning dense orthogonal bases directly scales with the matrix dimensions, requiring $\mathcal{O}(d_{out} \cdot k_{vec} + d_{in} \cdot k_{vec})$ trainable parameters.
+
+\subsubsection{Our Approach: Parameter-Efficient Unitary Shifts}
+
+To bridge this gap, OrthoLoRA introduces a novel parameterization based on unitary shifts. We recognize a fundamental property of linear subspaces: any orthogonal basis within the optimal low-spectrum subspace can be perfectly represented as an orthogonal transformation of the existing basis vectors.
+
+Instead of discarding the pre-trained low-spectrum subspace, we freeze the original singular vectors corresponding to the tail components ($U_{r}, V_{r}$) and introduce highly compact, learnable orthogonal transformation matrices $R_U, R_V \in \mathbb{O}(k_{vec})$. By applying these matrices as right multipliers:
+\[
+\bar{U}_{r} = U_{r} \cdot R_U,
+\quad
+\bar{V}_{r} = V_{r} \cdot R_V
+\]
+We allow the adapter to rotate its basis strictly within the selected low-spectrum subspace. Consequently, the adapter can better align its orthogonal directions with task-relevant components of the optimal perturbation that are expressible within this subspace. By capturing the most dominant optimal directions, the adapter drives the theoretical error bound down the singular value spectrum:
+\[
+\Delta L(W^{ortho})
+\leq
+e \|x\|_2
+\left(
+\prod_{i=1}^d
+\|W^{opt}_{i}\|_2
+\right)
+\sum_{i=1}^d
+\frac{\sigma_{r+1}(\Delta W_{r,i}^{opt})}{\|W^{opt}_{i}\|_2}
+\]
+This formulation yields two advantages. First, because $R_U$ and $R_V$ are dimensioned solely by the adaptation rank ($k_{vec} \times k_{vec}$), the parameter cost plummets from $\mathcal{O}(d_{out} \cdot k_{vec})$ to $\mathcal{O}(k_{vec}^2)$. Second, because the pretrained \(U_r\) and \(V_r\) are structurally orthogonal
+to the dominant principal components by definition, any orthogonal rotations
+\(R_U\) and \(R_V\) applied to them keep the rotated bases
+\(\bar{U}_r\) and \(\bar{V}_r\) orthogonal to the preserved leading singular subspaces.
+
+\section{UIOrthoLoRA - Unit Invariant Flexibility for Structural Adaptation}
+\label{sec:uiortholora}
+
+While OrthoLoRA addresses the fixed-basis bottleneck by allowing rotations within
+the pretrained low-spectrum subspace, it still relies on a strong form of the
+pretraining-finetuning paradigm: the assumption that task-relevant adaptation
+can be expressed entirely within the singular geometry inherited from
+pretraining.
+
+To relax this assumption while retaining structural preservation, we introduce
+trainable diagonal scalers $E$ and $D$, inspired by the unit-invariant SVD
+perspective of \citet{uhlmann2018generalized}. These scalers apply lightweight
+diagonal transformations to the output and input coordinates, respectively:
+\[
+\Delta W^{ui}
+=
+\underline E U_r \underline R_U \underline \Sigma'_r \underline R_V^\top V_r^\top \underline D .
+\]
+Thus, $R_U$ and $R_V$ provide directional flexibility within the pretrained
+low-spectrum subspace, while $E$ and $D$ provide unit-level coordinate
+adaptation around this subspace.
+
+This diagonal scaling eases the strict reliance on the pretrained singular basis. Although the update remains tied to the UI-SVD parameterization, $E$ and $D$ can induce controlled mixing between pretrained singular coordinates. This gives the adapter additional flexibility to express task-specific perturbations that are not perfectly aligned with the original tail singular directions. The linear version, UILinLoRA, disables the orthogonal rotations ($R_U = R_V = I$), and keeps diagonal scalers in place.
+
+\subsection{Scaler-Induced Mixing in Pretrained Singular Coordinates}
+Throughout this section, \(U\), \(V\), and their partitions \(U_R, U_r, V_R, V_r\) refer to the pretrained singular bases. The diagonal scalers $E$ and $D$ relax the strict confinement assumption of
+OrthoLoRA. To analyze their effect, define the rotated tail bases $\bar{U}_r := U_r R_U, \bar{V}_r := V_r R_V .$
+Since $R_U$ and $R_V$ are orthogonal, $\bar{U}_r$ and $\bar{V}_r$ span the same
+tail subspaces as $U_r$ and $V_r$, respectively. Therefore, without the diagonal
+scalers, OrthoLoRA remains exactly confined to the pretrained tail singular
+block.
+
+With unit-invariant scaling, the update becomes
+\[
+\Delta W^{ui}
+=
+\underline E \bar{U}_r \underline \Sigma'_r \bar{V}_r^\top  \underline D .
+\]
+The scalers $E$ and $D$ can change how the rotated tail directions are expressed
+in the original feature coordinates. This gives the adapter additional
+flexibility, but it may also introduce coupling with the preserved leading
+singular structure.
+
+To quantify this effect, we write the perturbation in the pretrained singular coordinates: \\ $C := U^\top \Delta W^{ui} V$.
+Partitioning $C$ according to the leading-tail decomposition gives
+\[
+C
+=
+\begin{bmatrix}
+C_{11} & C_{12} \\
+C_{21} & C_{22}
+\end{bmatrix}
+=
+\begin{bmatrix}
+U_R^\top E \bar{U}_r \Sigma'_r \bar{V}_r^\top D V_R
+&
+U_R^\top E \bar{U}_r \Sigma'_r \bar{V}_r^\top D V_r
+\\[0.5em]
+U_r^\top E \bar{U}_r \Sigma'_r \bar{V}_r^\top D V_R
+&
+U_r^\top E \bar{U}_r \Sigma'_r \bar{V}_r^\top D V_r
+\end{bmatrix}.
+\]
+
+The blocks have the following interpretation:
+\[
+C_{11}: \text{direct leakage into the preserved leading block},
+\]
+\[
+C_{12}, C_{21}: \text{cross-coupling between leading and tail coordinates},
+\]
+\[
+C_{22}: \text{adaptation internal to the tail block}.
+\]
+
+We define the left and right scaler-induced mixing terms as
+\[
+M_E := U_R^\top E \bar{U}_r,
+\quad
+M_D := V_R^\top D \bar{V}_r
+\text{\quad with magnitudes \quad}
+\mu_E := \|M_E\|_2,
+\quad
+\nu_D := \|M_D\|_2 .
+\]
+
+Here, $\mu_E$ measures how much the scaled left tail basis $E\bar{U}_r$ enters
+the preserved left subspace, and $\nu_D$ measures how much the scaled right tail
+basis $D\bar{V}_r$ enters the preserved right subspace.
+
+\noindent \textbf{Proposition 2} (Scaler-Induced Mixing Bounds).
+\textit{
+Let
+\[
+\Delta W^{ui}
+=
+E \bar{U}_r \Sigma'_r \bar{V}_r^\top D, \quad
+C := U^\top \Delta W^{ui} V
+=
+\begin{bmatrix}
+C_{11} & C_{12} \\
+C_{21} & C_{22}
+\end{bmatrix}.
+\]
+Then the perturbation blocks satisfy
+}
+\[
+\|C_{11}\|_2
+\leq
+\mu_E \|\Sigma'_r\|_2 \nu_D,
+\]
+\[
+\|C_{12}\|_2
+\leq
+\mu_E \|\Sigma'_r\|_2 \|D\|_2,
+\]
+\[
+\|C_{21}\|_2
+\leq
+\|E\|_2 \|\Sigma'_r\|_2 \nu_D,
+\]
+\[
+\|C_{22}\|_2
+\leq
+\|E\|_2 \|\Sigma'_r\|_2 \|D\|_2.
+\]
+
+
+\textit{Proof is provided in Appendix~\ref{app:proof-proposition-2-scaler-induces-mixing-bounds}.}
+
+\noindent \textbf{Corollary 1} (Exact Tail Confinement as a Special Case).
+\textit{
+If $\mu_E = 0$ and $\nu_D = 0$, then:
+\[
+C_{11}=0,\qquad C_{12}=0,\qquad C_{21}=0 
+\implies
+C
+=
+\begin{bmatrix}
+0 & 0 \\
+0 & C_{22}
+\end{bmatrix}.
+\]
+}
+
+This means that the update is confined entirely to the tail block in pretrained
+singular coordinates. In particular, pure OrthoLoRA corresponds to the special
+case $E=I$ and $D=I$, for which
+\[
+U_R^\top \bar{U}_r = 0,
+\qquad
+V_R^\top \bar{V}_r = 0,
+\]
+so the update remains strictly orthogonal to the preserved leading singular
+structure.
+
+\noindent \textbf{Remark} (Interpretation).
+The diagonal scalers $E$ and $D$ should be viewed as a controlled relaxation of
+strict tail confinement. When $E=I$ and $D=I$, UIOrthoLoRA adapts only within the pretrained tail subspace. When $E$ and $D$ are learned, the adapter can reweight
+the input and output coordinates, allowing the effective adapted directions
+$E\bar{U}_r$ and $D\bar{V}_r$ to deviate from the original tail coordinates.
+
+This deviation is not unstructured: it is exactly measured by
+\[
+\mu_E = \|U_R^\top E\bar{U}_r\|_2,
+\qquad
+\nu_D = \|V_R^\top D\bar{V}_r\|_2.
+\]
+Thus, $E$ and $D$ provide additional expressive capacity, while the quantities
+$\mu_E$ and $\nu_D$ quantify the extent to which this capacity interacts with
+the preserved dominant singular structure.
+
+
+\noindent \textbf{Theorem 2} (Approximate Tail Preservation under Small Mixing).
+Let
+\[
+C := U^\top \Delta W^{ui} V
+=
+\begin{bmatrix}
+C_{11} & C_{12} \\
+C_{21} & C_{22}
+\end{bmatrix},
+\quad
+C_{\mathrm{tail}}
+=
+\begin{bmatrix}
+0 & 0 \\
+0 & C_{22}
+\end{bmatrix}
+\]
+be the UIOrthoLoRA update written in the pretrained singular coordinates, and its pure tail-block component. Then
+\[
+\|C-C_{\mathrm{tail}}\|_2
+\leq
+\|\Sigma'_r\|_2
+\sqrt{
+(\mu_E\nu_D)^2
++
+(\mu_E\|D\|_2)^2
++
+(\|E\|_2\nu_D)^2
+}.
+\]
+Consequently, if $\|E\|_2$, $\|D\|_2$, and $\|\Sigma'_r\|_2$ remain bounded, and $\mu_E \to 0,
+\nu_D \to 0 \\
+\implies
+\|C-C_{\mathrm{tail}}\|_2 \to 0.
+$
+
+Thus, small scaler-induced mixing implies that the UIOrthoLoRA update remains
+approximately confined to the pretrained tail singular block, even though the
+diagonal scalers $E$ and $D$ relax strict tail confinement.
+
+\textit{Proof is provided in Appendix~\ref{app:proof-thm-2-approximate-tail-preservation}.}
+
+Appendix~\ref{app:soft_mixing_ablation} provides a diagnostic ablation showing
+that these mixing quantities can also be used as soft regularizers: penalizing
+both left- and right-side mixing reduces measured off-tail leakage and
+leading-subspace drift on 5 GLUE tasks while maintaining task performance.
+
+
+\noindent \textbf{Remark} (Gap-Dependent Dominant Subspace Stability).
+The mixing bounds above control how much the UIOrthoLoRA update enters the
+preserved leading block in pretrained singular coordinates. A complementary
+view is obtained from standard singular subspace perturbation theory. Let
+\[
+\gamma := \sigma_R(W^{pre}) - \sigma_{R+1}(W^{pre}) > 0
+\]
+denote the spectral gap between the preserved leading singular components and
+the remaining tail components. If $\|\Delta W^{ui}\|_2 < \gamma$, then the leading left and right singular subspaces of $W^{pre}+\Delta W^{ui}$
+remain close to those of \(W^{pre}\), with subspace movement scaling on the
+order of
+\[
+\mathcal{O}\left(\frac{\|\Delta W^{ui}\|_2}{\gamma}\right).
+\]
+Since $\|\Delta W^{ui}\|_2
+\leq
+\|E\|_2\|\Sigma'_r\|_2\|D\|_2,
+$
+the overall scaled update magnitude controls global dominant-subspace drift,
+while the sharper block-level quantity $\|C_{11}\|_2
+\leq
+\mu_E\|\Sigma'_r\|_2\nu_D
+$
+controls direct leakage into the preserved leading singular coordinates.
+
+\section{Experiments}
+\label{sec:experiments}
+
+Our primary empirical evaluation tests whether the proposed spectrum-aware
+parameterization remains effective on standard natural language understanding
+tasks under compact trainable parameter budgets. We evaluate UILinLoRA and
+UIOrthoLoRA on six GLUE validation tasks using RoBERTa-base and RoBERTa-large. Full training
+details, adapter placement, optimization settings, and evaluation metrics are
+provided in Appendix~\ref{app:training_details}.
+
+We compare against representative PEFT baseline results reported by
+\citet{albert2025randlora}, including VeRA, LoRA, and RandLoRA, and report
+validation performance together with the corresponding trainable parameter
+budgets. As shown in 
+Table~\ref{tab:glue_results_base_large}, UIOrthoLoRA achieves the strongest
+RoBERTa-base average among the compared methods, reaching 85.5 with 0.4M
+trainable parameters. UILinLoRA, which removes the orthogonal rotations and
+keeps only the magnitude-based spectral adaptation with diagonal scalers,
+remains highly competitive, reaching 84.68 with only 0.08M trainable parameters
+on RoBERTa-base and achieving the strongest RoBERTa-large average among the
+compared proposed variants. These results suggest that pretrained singular
+coordinates provide an effective basis for parameter-efficient adaptation, while
+compact orthogonal rotations can provide additional expressiveness in some
+settings without substantially increasing the trainable footprint.
+
+Beyond the main GLUE results, we include three additional empirical studies in
+the appendix. Appendix~\ref{app:soft_mixing_ablation} reports a diagnostic
+soft-mixing regularization ablation that directly tests the leading-tail
+mixing quantities from our analysis. Appendix~\ref{app:gpt2_generation_results}
+reports GPT-2 Medium generation results, and
+Appendices~\ref{app:retention_adaptation_protocol}
+through~\ref{app:retention_adaptation_results} report a retention-oriented
+evaluation protocol and results, which further motivate the
+preservation-adaptation perspective underlying UIOrthoLoRA.
+
+\begin{table}[ht]
+\centering
+\caption{RoBERTa-base and RoBERTa-large performance on GLUE validation sets. Scores are validation results in \%; “$\pm$” indicates standard deviation over seeds.}
+\label{tab:glue_results_base_large}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+\textbf{Method} & \textbf{Params} & \textbf{SST-2} & \textbf{MRPC} & \textbf{CoLA} & \textbf{QNLI} & \textbf{RTE} & \textbf{STS-B} & \textbf{Avg.} \\
+\midrule
+
+\multicolumn{9}{c}{\textbf{RoBERTa-base}} \\
+\midrule
+VeRA-1024   & 0.26M & 91.9{\scriptsize$\pm$0.4} & 88.4{\scriptsize$\pm$1.2} & 59.9{\scriptsize$\pm$2.2} & 90.5{\scriptsize$\pm$0.4} & 74.9{\scriptsize$\pm$1.5} & 90.4{\scriptsize$\pm$0.2} & 82.7  \\
+LoRA-4      & 0.7M  & 94.4{\scriptsize$\pm$0.5} & 87.3{\scriptsize$\pm$0.2} & 58.4{\scriptsize$\pm$0.8} & \textbf{92.7}{\scriptsize$\pm$0.2} & 71.5{\scriptsize$\pm$1.2} & 90.5{\scriptsize$\pm$0.1} & 82.4  \\
+RandLoRA-64 & 0.7M  & 92.2{\scriptsize$\pm$0.3} & 88.0{\scriptsize$\pm$1.5} & 59.4{\scriptsize$\pm$2.1} & 91.3{\scriptsize$\pm$0.4} & 74.7{\scriptsize$\pm$1.9} & 90.3{\scriptsize$\pm$0.2} & 82.6  \\
+\addlinespace
+UIOrthoLoRA & 0.4M  & \textbf{94.8}{\scriptsize$\pm$0.3} & \textbf{92.0}{\scriptsize$\pm$1.0} & 64.4{\scriptsize$\pm$1.0} & 92.4{\scriptsize$\pm$0.1} & \textbf{78.7}{\scriptsize$\pm$1.0} & \textbf{90.7}{\scriptsize$\pm$0.1} & \textbf{85.5} \\
+UILinLoRA   & 0.08M & 93.1{\scriptsize$\pm$1.0} & 90.0{\scriptsize$\pm$1.0} & \textbf{65.8}{\scriptsize$\pm$1.0} & 92.4{\scriptsize$\pm$0.2} & 76.2{\scriptsize$\pm$1.0} & 90.6{\scriptsize$\pm$0.1} & 84.68 \\
+
+\midrule
+\multicolumn{9}{c}{\textbf{RoBERTa-large}} \\
+\midrule
+VeRA-256     & 0.26M & 95.8{\scriptsize$\pm$0.3} & 89.3{\scriptsize$\pm$1.2} & 65.3{\scriptsize$\pm$1.1} & 94.1{\scriptsize$\pm$0.3} & 81.6{\scriptsize$\pm$0.8} & 91.8{\scriptsize$\pm$0.1} & 86.3 \\
+LoRA-4       & 1.8M  & 95.5{\scriptsize$\pm$0.2} & 87.2{\scriptsize$\pm$0.7} & 64.7{\scriptsize$\pm$1.2} & 94.5{\scriptsize$\pm$0.1} & 83.6{\scriptsize$\pm$0.4} & 91.8{\scriptsize$\pm$0.1} & 86.2 \\
+RandLoRA-100 & 1.8M  & 95.5{\scriptsize$\pm$0.3} & 90.1{\scriptsize$\pm$0.4} & 67.4{\scriptsize$\pm$0.3} & 94.1{\scriptsize$\pm$0.3} & 84.5{\scriptsize$\pm$0.3} & 91.4{\scriptsize$\pm$0.6} & 87.2 \\
+\addlinespace
+UIOrthoLoRA  & 0.6M    & \textbf{96.3}{\scriptsize$\pm$0.3} & 92.5{\scriptsize$\pm$0.2} & 67.4{\scriptsize$\pm$0.5} & \textbf{95.0}{\scriptsize$\pm$0.1} & 86.0{\scriptsize$\pm 0.2$} & \textbf{92.1}{\scriptsize$\pm$0.2} & 88.2 \\
+UILinLoRA    & 0.22M    & \textbf{96.3}{\scriptsize$\pm$0.2} & \textbf{93.4}{\scriptsize$\pm$0.7} & \textbf{68.7}{\scriptsize$\pm$1.0} & 94.7{\scriptsize$\pm$0.1} & \textbf{86.0}{\scriptsize$\pm$1.1} & 92.0{\scriptsize$\pm$0.2} & \textbf{88.5} \\
+
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+
+\vspace{0.3em}
+\end{table}
+
+
+\section{Conclusion}
+
+We introduced a framework for parameter-efficient fine-tuning that studies adapter updates directly in the singular coordinate system of pretrained weights. LinLoRA provides a transparent fixed-basis construction that separates preserved pretrained components from task-specific adaptation, but also exposes a fixed-basis bottleneck on the low-tail subspace. UILinLoRA is the unit-invariant version of this construction: it preserves the magnitude-only spectral structure of LinLoRA while adding trainable diagonal scalers.
+
+OrthoLoRA addresses the fixed-basis limitation by learning compact orthogonal rotations inside the selected low-spectrum subspace, improving directional flexibility while keeping the additional parameter cost tied to the spectral budget. UIOrthoLoRA is the unit-invariant version of OrthoLoRA: it combines these compact rotations with trainable diagonal scalers, which relax strict tail confinement. Our analysis quantifies the resulting mixing between leading and tail pretrained singular coordinates, giving an explicit view of the preservation-adaptation trade-off.
+
+Additional generation results, retention-oriented experiments, and a
+soft-mixing regularization ablation further support the view that pretrained
+singular coordinates provide a useful structure for efficient adaptation
+without eliminating downstream expressiveness. The soft-mixing ablation
+specifically shows that the scaler-induced mixing quantities derived in our
+analysis can be regularized to reduce off-tail leakage and leading-subspace
+drift while maintaining task performance within single-seed variation.
+
+Overall, the results suggest that spectrum-aware PEFT parameterizations offer
+a principled way to control how task-specific updates interact with pretrained
+model structure. The theoretical analysis identifies explicit quantities that
+measure leading-tail mixing induced by unit-invariant diagonal scalers, and the
+appendix provides preliminary evidence that these quantities can also serve as
+practical regularizers. Future work will further study the relationship between mixing control, spectral-budget selection, and knowledge preservation in broader adaptation settings, including larger autoregressive models and sequential fine-tuning.
+
+
+\newpage % References usually start on a new page in NeurIPS
+{
+\small
+\bibliographystyle{abbrvnat}
+\bibliography{reference}
+}
+
+
+
+\appendix
+\section{Training Details}
+\label{app:training_details}
+
+\subsection{Backbone and Fine-Tuning Protocol}
+
+All GLUE experiments use RoBERTa-base and RoBERTa-large as the pretrained backbone. RoBERTa-base is a 12-layer Transformer encoder with hidden size 768, 12 self-attention heads, and approximately 125M parameters. In all experiments, the pretrained backbone weights are frozen. Only the adapter parameters and the task-specific prediction head are updated during training.
+
+For classification tasks, we train a linear classification head on top of the final-layer representation of the special classification token. For STS-B, we use a single-output regression head. The task head is trained jointly with the adapter parameters, but with a separate learning rate.
+
+\subsection{GLUE Tasks and Metrics}
+
+We evaluate on six tasks from the GLUE benchmark: CoLA, SST-2, MRPC, STS-B, QNLI, and RTE. CoLA and SST-2 are single-sentence tasks, while MRPC, STS-B, QNLI, and RTE are sentence-pair tasks. For sentence-pair tasks, the two input sentences are packed into a single RoBERTa sequence using the standard pair-input format. STS-B is treated as a regression task with one output value, while the remaining tasks are treated as binary classification problems.
+
+\begin{table}[h]
+\centering
+\caption{GLUE tasks and evaluation metrics used in our RoBERTa-base experiments.}
+\label{tab:glue_tasks_metrics}
+\begin{tabular}{lll}
+\toprule
+Task & Task type & Metric \\
+\midrule
+CoLA  & Linguistic acceptability & Matthews correlation \\
+SST-2 & Sentiment classification & Accuracy \\
+MRPC  & Paraphrase detection & F1 \\
+STS-B & Semantic textual similarity & Pearson correlation \\
+QNLI  & Natural language inference & Accuracy \\
+RTE   & Textual entailment & Accuracy \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Adapter Placement}
+
+Adapters are inserted into the self-attention module of every Transformer layer. Specifically, we adapt the query, key, value, and attention-output projection matrices in each layer. The feed-forward layers are left frozen and are not modified by adapters. This keeps the adaptation concentrated in the attention mechanism while preserving a small trainable parameter budget.
+
+For each adapted matrix, we compute a one-time singular value decomposition of the corresponding pretrained weight matrix during initialization. The resulting spectral components are stored as frozen buffers and are not recomputed during training. The trainable adapter parameters consist of the selected spectral coefficients, the feature-wise input and output scaling vectors, and, when enabled, the trainable orthogonal transformations over the selected singular-vector subspace.
+
+\subsection{Spectral Adapter Configuration}
+
+The spectral capacity of the adapter is controlled by two main hyperparameters:
+the number of singular values adapted and the number of singular-vector
+directions adapted. We denote these by
+\texttt{num\_svalues\_to\_adapt} and
+\texttt{num\_svectors\_to\_adapt}, respectively. In the paper notation, these
+correspond to \(k_{\mathrm{val}}\) and \(k_{\mathrm{vec}}\). The former controls
+how many singular-value coefficients are trainable, while the latter controls
+the dimensionality of the singular-vector subspace in which orthogonal rotations
+are learned.
+
+Across experiments, we vary these two hyperparameters to evaluate the effect of
+spectral capacity on task performance and parameter efficiency. As a practical
+rule of thumb, we set \(k_{\mathrm{val}}\) to roughly one quarter of the matrix
+dimension, and set \(k_{\mathrm{vec}}\) to roughly one quarter of
+\(k_{\mathrm{val}}\). For the GLUE experiments, UILinLoRA uses
+\(k_{\mathrm{val}}=256\). UIOrthoLoRA uses \(k_{\mathrm{val}}=256\) and
+\(k_{\mathrm{vec}}=64\).
+
+We use an adapter scaling coefficient
+\(\alpha = 1.0\) and adapter dropout \(0.0\). The input and output diagonal
+scalers are initialized with a task-specific value, and the trainable spectral
+coefficients are initialized with a task-specific value as described in
+Table~\ref{tab:task_hyperparams}.
+
+\paragraph{Implementation detail}
+In practice, the fixed leading block in the adapter branch uses an identity diagonal rather than a zero diagonal. The tail block remains the trainable adapted component.
+
+\begin{table}[h]
+\centering
+\caption{Spectral adapter hyperparameters varied in the experiments.}
+\label{tab:spectral_hyperparams}
+\begin{tabular}{ll}
+\toprule
+Hyperparameter & Description \\
+\midrule
+\texttt{num\_svalues\_to\_adapt} & Number of trainable singular-value coefficients \\
+\texttt{num\_svectors\_to\_adapt} & Number of singular-vector directions used for trainable rotations \\
+\texttt{uiortholora\_alpha} & Adapter scaling coefficient \\
+\texttt{uiortholora\_dropout} & Dropout applied to the adapter branch \\
+\texttt{initial\_scaler} & Initialization value for the input and output scalers \\
+\texttt{initial\_sigma} & Initialization value for the trainable spectral coefficients \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Optimization}
+
+We train using AdamW with two parameter groups. The first group contains the adapter parameters, including the trainable spectral coefficients, input scalers, output scalers, and, where applicable, the orthogonal rotation parameters. The second group contains the task-specific prediction head. We use separate learning rates for these two groups, denoted by \texttt{adapter\_lr} and \texttt{head\_lr}.
+
+The learning rate follows a linear decay schedule with linear warm-up over the first $6\%$ of total training steps. All tasks use batch size 64 and maximum sequence length 256 tokens.
+
+\begin{table}[h]
+\centering
+\caption{Task-specific training hyperparameters for RoBERTa-base GLUE experiments.}
+\label{tab:task_hyperparams}
+\begin{tabular}{lccccc}
+\toprule
+Task & Epochs & Head LR & Adapter LR & Initial scaler & Initial sigma \\
+\midrule
+CoLA  & 80 & $5 \times 10^{-3}$ & $3 \times 10^{-2}$ & $1 \times 10^{-2}$ & $1 \times 10^{-1}$ \\
+SST-2 & 40 & $1 \times 10^{-2}$ & $4 \times 10^{-2}$ & $1 \times 10^{-1}$ & $1 \times 10^{-1}$ \\
+MRPC  & 30 & $1 \times 10^{-3}$ & $5 \times 10^{-2}$ & $1 \times 10^{-1}$ & $1 \times 10^{-1}$ \\
+STS-B & 60 & $5 \times 10^{-3}$ & $1 \times 10^{-2}$ & $1 \times 10^{-1}$ & $1 \times 10^{-1}$ \\
+QNLI  & 25 & $1 \times 10^{-3}$ & $2 \times 10^{-2}$ & $1 \times 10^{-1}$ & $1 \times 10^{-1}$ \\
+RTE   & 90 & $5 \times 10^{-4}$ & $1 \times 10^{-2}$ & $1 \times 10^{-2}$ & $1 \times 10^{-2}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Random Seeds and Reproducibility}
+
+Each experiment is repeated over six independent random seeds:
+\[
+\{42, 123, 2021, 17, 31415, 1054\}.
+\]
+
+Unless otherwise stated, reported scores are averaged across these six seeds. When standard deviations are reported, they are computed across the same six independent runs.
+
+For each task and random seed, we evaluate the model on the official GLUE validation split using the task-specific validation metric listed in Table~\ref{tab:glue_tasks_metrics}.
+
+\subsection{Existing Assets and Licenses}
+\label{app:assets_licenses}
+
+We use publicly available datasets, pretrained models, and open-source software
+libraries. We cite the benchmarks and the original sources for the corresponding component datasets. These datasets are used only for standard training and validation evaluation, and we do not redistribute modified versions
+of the datasets.
+
+The pretrained RoBERTa-base and RoBERTa-large checkpoints are publicly available
+model checkpoints released by Meta/Facebook AI and distributed on the HuggingFace\footnote{\url{https://huggingface.co/}} under the MIT license. Our implementation uses PyTorch, which is
+distributed under a BSD-style license, and Hugging Face Transformers and
+Datasets, which are distributed under the Apache License 2.0.
+
+The supplementary code provided with this submission contains our implementation
+of the proposed adapters and experiment scripts. It does not include a new
+dataset, a new pretrained model, or redistributed copies of datasets or
+RoBERTa checkpoints.
+
+\subsection{Orthogonal Optimization Strategy}
+\label{app:orthogonal_optimization}
+
+To maintain the strict orthogonality of the compact rotation matrices $R_U, R_V \in \mathbb{O}(k_{vec})$ during training without the computational overhead of post-hoc Riemannian projections, we utilize PyTorch's native orthogonal parameterization (\texttt{torch.nn.utils.parametrizations.orthogonal}). 
+
+This parameterization maintains orthogonality via a sequence of Householder reflections. Instead of directly optimizing the entries of $R_U$ and $R_V$, the optimizer updates an unconstrained parameter tensor $X \in \mathbb{R}^{k_{vec} \times k_{vec}}$, which is then deterministically mapped to a strictly orthogonal matrix during the forward pass. This allows UIOrthoLoRA to seamlessly integrate with standard Euclidean optimizers like AdamW while strictly enforcing the mathematical constraints outlined in Section \ref{sec:uiortholora}.
+
+
+\section{Additional Experimental Results}
+\label{app:additional_experimental_results}
+
+\subsection{Soft-Mixing Regularization Ablation}
+\label{app:soft_mixing_ablation}
+
+This section evaluates whether the scaler-induced mixing quantities derived in
+Section~\ref{sec:uiortholora} can be used as practical regularizers. The goal is
+not to introduce a new primary training recipe, but to provide a diagnostic test
+of the preservation mechanism suggested by the theory.
+
+For the UI update
+\[
+\Delta W^{ui}
+=
+E \bar{U}_r \Sigma'_r \bar{V}_r^\top D,
+\]
+our analysis identifies the left and right leading-tail mixing terms
+\[
+M_E = U_R^\top E \bar{U}_r,
+\qquad
+M_D = V_R^\top D \bar{V}_r.
+\]
+We add the soft-mixing penalty
+\[
+\mathcal{R}_{\mathrm{mix}}
+=
+\lambda_E^{\mathrm{mix}}\|M_E\|_F^2
++
+\lambda_D^{\mathrm{mix}}\|M_D\|_F^2,
+\]
+and train with
+\[
+\mathcal{L}_{\mathrm{total}}
+=
+\mathcal{L}_{\mathrm{task}}
++
+\mathcal{R}_{\mathrm{mix}}.
+\]
+
+\paragraph{Setup.}
+We run this ablation on five GLUE tasks, RTE, MRPC, CoLA, STS-B, and
+SST-2, using RoBERTa-base. The training recipe, adapter placement,
+optimizer, scheduler, and task hyperparameters are kept identical to the
+corresponding GLUE runs. Adapters are inserted into the query, key, value, and
+attention-output projections in all 12 transformer layers. For each adapted
+matrix, we adapt 256 singular values and set \(k_{vec}=0\), so no orthogonal
+tail rotations are used in this diagnostic experiment. All reported values are averaged over two seeds. Spectral metrics are averaged over the 48 adapted attention
+modules for each seed and then averaged across seeds.
+
+We compare three variants:
+\[
+\text{A: } \lambda_E^{\mathrm{mix}}=0,\quad \lambda_D^{\mathrm{mix}}=0,
+\]
+\[
+\text{B: } \lambda_E^{\mathrm{mix}}=10^{-3},\quad
+\lambda_D^{\mathrm{mix}}=0,
+\]
+\[
+\text{C: } \lambda_E^{\mathrm{mix}}=10^{-3},\quad
+\lambda_D^{\mathrm{mix}}=10^{-3}.
+\]
+Variant A is the unregularized adapter, variant B penalizes only left-side
+mixing, and variant C penalizes both left- and right-side mixing.
+
+\paragraph{Metrics.}
+For each adapted layer, we compute the mixing magnitudes
+\[
+\mu_E = \|M_E\|_2,
+\qquad
+\nu_D = \|M_D\|_2,
+\]
+the relative update magnitude
+\[
+\mathrm{RelPert}_F =
+\frac{\|\Delta W^{ui}\|_F}{\|W^{pre}\|_F},
+\]
+and the update in pretrained singular coordinates
+\[
+C = U^\top \Delta W^{ui} V
+=
+\begin{bmatrix}
+C_{11} & C_{12}\\
+C_{21} & C_{22}
+\end{bmatrix}.
+\]
+We report the leading-block leakage
+\[
+\mathrm{Leak}_{11}
+=
+\frac{\|C_{11}\|_2}{\|\Delta W^{ui}\|_2},
+\]
+and the off-tail ratio
+\[
+\mathrm{OffTailRatio}_F
+=
+\frac{\|C_{\mathrm{off}}\|_F}{\|C\|_F},
+\qquad
+C_{\mathrm{off}}
+=
+\begin{bmatrix}
+C_{11} & C_{12}\\
+C_{21} & 0
+\end{bmatrix}.
+\]
+We also report leading left and right subspace drift using the operator-norm
+\(\sin\Theta\) distance between the leading singular subspaces of
+\(W^{pre}\) and \(W^{pre}+\Delta W\).
+
+\begin{table}[h]
+\centering
+\caption{Soft-mixing regularization ablation on five GLUE tasks. Values are
+averaged over two seeds. Spectral metrics are averaged across the 48 adapted
+attention modules for each seed and then averaged across seeds. Variants: A is
+no regularization, B is the \(\mu_E\)-only penalty, and C is the
+\(\mu_E+\nu_D\) penalty. RTE and SST-2 report accuracy, MRPC reports F1, CoLA
+reports Matthews correlation, and STS-B reports Pearson correlation.}
+\label{tab:soft_mixing_ablation}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llccccccccc}
+\toprule
+\textbf{Task} &
+\textbf{Variant} &
+\(\lambda_E^{\mathrm{mix}}\) &
+\(\lambda_D^{\mathrm{mix}}\) &
+\textbf{Score} &
+\(\mu_E\) &
+\(\nu_D\) &
+\(\mathrm{RelPert}_F\) &
+\(\mathrm{Leak}_{11}\) &
+\(\mathrm{OffTailRatio}_F\) &
+\(\mathrm{Drift}_U / \mathrm{Drift}_V\) \\
+\midrule
+RTE   & A & 0 & 0 & 0.7708 & 1.384 & 1.442 & 0.379 & 0.722 & 0.948 & 1.000 / 1.000 \\
+RTE   & B & \(10^{-3}\) & 0 & 0.7906 & 0.278 & 2.112 & 0.285 & 0.633 & 0.934 & 0.999 / 0.999 \\
+RTE   & C & \(10^{-3}\) & \(10^{-3}\) & 0.7672 & 0.221 & 0.204 & 0.063 & 0.590 & 0.838 & 0.523 / 0.512 \\
+\midrule
+MRPC  & A & 0 & 0 & 0.9215 & 1.282 & 1.345 & 0.318 & 0.722 & 0.948 & 0.999 / 1.000 \\
+MRPC  & B & \(10^{-3}\) & 0 & 0.9240 & 0.259 & 1.538 & 0.196 & 0.697 & 0.948 & 0.983 / 0.983 \\
+MRPC  & C & \(10^{-3}\) & \(10^{-3}\) & 0.9132 & 0.230 & 0.188 & 0.043 & 0.626 & 0.857 & 0.667 / 0.662 \\
+\midrule
+CoLA  & A & 0 & 0 & 0.6409 & 1.249 & 1.336 & 0.308 & 0.721 & 0.946 & 0.999 / 0.999 \\
+CoLA  & B & \(10^{-3}\) & 0 & 0.6429 & 0.287 & 1.618 & 0.206 & 0.637 & 0.938 & 0.989 / 0.989 \\
+CoLA  & C & \(10^{-3}\) & \(10^{-3}\) & 0.6315 & 0.160 & 0.144 & 0.034 & 0.580 & 0.880 & 0.559 / 0.552 \\
+\midrule
+STS-B & A & 0 & 0 & 0.9080 & 1.375 & 1.447 & 0.382 & 0.724 & 0.947 & 1.000 / 1.000 \\
+STS-B & B & \(10^{-3}\) & 0 & 0.9048 & 0.275 & 1.722 & 0.251 & 0.667 & 0.940 & 1.000 / 1.000 \\
+STS-B & C & \(10^{-3}\) & \(10^{-3}\) & 0.9058 & 0.202 & 0.248 & 0.068 & 0.508 & 0.806 & 0.749 / 0.746 \\
+\midrule
+SST-2 & A & 0 & 0 & 0.9472 & 1.219 & 1.255 & 0.282 & 0.731 & 0.948 & 1.000 / 1.000 \\
+SST-2 & B & \(10^{-3}\) & 0 & 0.9438 & 0.185 & 1.604 & 0.268 & 0.707 & 0.943 & 1.000 / 1.000 \\
+SST-2 & C & \(10^{-3}\) & \(10^{-3}\) & 0.9369 & 0.134 & 0.170 & 0.056 & 0.565 & 0.850 & 0.685 / 0.672 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\paragraph{Results.}
+Across all five tasks, penalizing both mixing terms reduces the measured
+interaction between the adapted tail components and the preserved leading
+singular structure. Variant C substantially reduces both \(\mu_E\) and
+\(\nu_D\), while variant B reduces \(\mu_E\) but leaves \(\nu_D\) large. This
+one-sided behavior is consistent across the seed-averaged results: when only
+\(\lambda_E^{\mathrm{mix}}\) is active, \(\nu_D\) increases from variant A to
+variant B on every task. Thus, penalizing only one side allows the model to
+route mixing through the unpenalized right-side scaler. The full regularizer
+avoids this compensation, reducing \(\nu_D\) to values between \(0.144\) and
+\(0.248\).
+
+The leakage metrics show the same trend. Moving from the unregularized adapter
+to the full regularizer reduces the mean off-tail ratio on every task. The
+decrease is \(0.948 \rightarrow 0.838\) on RTE,
+\(0.948 \rightarrow 0.857\) on MRPC,
+\(0.946 \rightarrow 0.880\) on CoLA,
+\(0.947 \rightarrow 0.806\) on STS-B, and
+\(0.948 \rightarrow 0.850\) on SST-2. The leading-block leakage
+\(\mathrm{Leak}_{11}\) also decreases under the full regularizer on every task.
+
+The leading-subspace drift metrics provide the clearest separation between the
+one-sided and two-sided penalties. Variants A and B remain close to maximal
+mean drift on most tasks, while variant C consistently reduces the drift of the
+leading singular subspaces. The mean left/right drift decreases from
+approximately \(1.0/1.0\) under the unregularized adapter to \(0.523/0.512\)
+on RTE, \(0.667/0.662\) on MRPC, \(0.559/0.552\) on CoLA, \(0.749/0.746\) on
+STS-B, and \(0.685/0.672\) on SST-2. Since this drift is measured with an
+operator-norm \(\sin\Theta\) distance, values near one indicate that at least
+one leading direction undergoes a large angular change, rather than implying
+that the entire leading subspace is orthogonal. Nevertheless, the consistent
+reduction under variant C indicates improved preservation of the leading
+spectral geometry.
+
+\paragraph{Task performance and update magnitude.}
+The full regularizer keeps downstream performance close to the unregularized
+adapter while substantially reducing spectral leakage. The task-level score
+decreases from variant A to variant C are \(0.36\) points on RTE, \(0.84\)
+points on MRPC, \(0.95\) points on CoLA, \(0.22\) points on STS-B, and
+\(1.03\) points on SST-2. Thus, the full regularizer produces a clear
+structural preservation effect while keeping task performance close to the
+unregularized adapter, with deviations of roughly one point across the
+evaluated settings.
+
+The relative update magnitude decreases under the full regularizer, but it
+does not vanish. Mean \(\mathrm{RelPert}_F\) under variant C remains nonzero
+across all tasks, with values in the approximate range of \(0.03\) to \(0.07\).
+At the seed-resolved level, the reduction from variant A to variant C ranges
+from roughly \(5\times\) to \(17\times\), while the off-tail and drift metrics
+continue to improve. This indicates that the regularizer is not merely
+shrinking the update norm; it also changes where the update lies in the
+pretrained singular coordinate system.
+
+Variant B obtains the strongest downstream score on RTE, MRPC, and CoLA, but
+it does so while leaving substantial right-side mixing. This supports the
+interpretation that partial mixing control can act as an adaptation bias, but
+not as a sufficient preservation mechanism. Variant C is therefore the more
+diagnostic setting for testing the preservation claim: it is the only variant
+that consistently suppresses both sides of scaler-induced mixing and produces
+the strongest reduction in off-tail leakage and leading subspace drift.
+
+\paragraph{Takeaway.}
+This diagnostic ablation supports the interpretation of \(\mu_E\) and
+\(\nu_D\) as meaningful quantities for controlling scaler-induced leakage.
+Penalizing only \(U_R^\top E\bar{U}_r\) reduces left-side mixing but leaves a
+consistent escape route through \(V_R^\top D\bar{V}_r\). Penalizing both
+\(U_R^\top E\bar{U}_r\) and \(V_R^\top D\bar{V}_r\) gives the cleanest
+preservation behavior: it reduces both mixing magnitudes, lowers off-tail
+leakage, reduces leading-block contamination, and substantially decreases
+leading-subspace drift across tasks and seeds, while keeping downstream
+performance close to the unregularized adapter.
+
+\paragraph{Future directions.}
+The present ablation suggests that the mixing magnitudes \(\mu_E\) and
+\(\nu_D\) are not only useful analytical quantities, but may also serve as
+practical control signals during training. Since reducing these quantities also
+reduces off-tail leakage and leading-subspace drift, an interesting direction
+is to study whether such spectral control can improve knowledge preservation
+under broader retention-oriented adaptation settings.
+
+In particular, future work may investigate whether controlling scaler-induced
+mixing helps limit functional forgetting when adapters are trained to acquire
+new task-specific knowledge. This would connect the spectral preservation
+metrics studied here with the retention-adaptation perspective described in
+Appendix~\ref{app:retention_adaptation_protocol}. Overall, this suggests a
+possible path toward PEFT methods that regulate not only how much they adapt,
+but also how much pretrained structure is allowed to drift during fine-tuning.
+
+\subsection{Generation Results on GPT-2 Medium}
+\label{app:gpt2_generation_results}
+
+To evaluate whether the proposed spectral parameterization remains expressive outside classification and regression tasks, we additionally evaluate UILinLoRA and UIOrthoLoRA on GPT-2 Medium on the E2E benchmark \citep{novikova2017e2e}, using standard generation metrics. The results are reported in
+Table~\ref{tab:gpt2_generation_appendix}.
+
+FourierFT obtains the strongest scores on several metrics in this setting.
+Nevertheless, UIOrthoLoRA and UILinLoRA remain competitive with full
+fine-tuning and standard LoRA across BLEU, NIST, METEOR, and ROUGE-L, while
+maintaining the explicit spectral structure analyzed in this work. We therefore
+view these results as supporting evidence that the proposed spectral constraints
+do not prevent effective downstream generation adaptation.
+
+\begin{table}[ht]
+\centering
+\caption{GPT-2 Medium generation results. Best results per column are in \textbf{bold}.}
+\label{tab:gpt2_generation_appendix}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}l r c c c c c@{}}
+\toprule
+\textbf{Method} & \textbf{\# Params} & \textbf{BLEU} & \textbf{NIST} & \textbf{METEOR} & \textbf{ROUGE-L} & \textbf{CIDEr} \\
+\midrule
+FT*              & 354.92M & 68.2           & 8.62           & 46.2           & 71.0           & 2.47 \\
+Adpt$^L_*$       & 0.37M   & 66.3           & 8.41           & 45.0           & 69.8           & 2.40 \\
+Adpt$^l_*$       & 11.09M  & 68.9           & 8.71           & 46.1           & 71.3           & 2.47 \\
+Adpt$^H_*$       & 11.09M  & 67.3$_{\pm3.6}$ & 8.5$_{\pm.07}$ & 46.0$_{\pm.2}$ & 70.7$_{\pm.2}$ & 2.44$_{\pm.01}$ \\
+LoRA             & 0.35M   & 68.9$_{\pm.3}$  & 8.76$_{\pm.06}$ & 46.6$_{\pm.1}$ & 71.5$_{\pm.1}$ & \textbf{2.53}$_{\pm.03}$ \\
+\textbf{FourierFT}     & 0.048M  & \textbf{69.1}$_{\pm.1}$ & \textbf{8.82}$_{\pm.05}$ & \textbf{47.0}$_{\pm.3}$ & \textbf{71.8}$_{\pm.4}$ & 2.51$_{\pm.02}$ \\
+\textbf{UIOrthoLoRA}   & 0.35M   & 68.8$_{\pm.1}$ & 8.729$_{\pm.06}$ & 46.71$_{\pm.3}$ & 71.6$_{\pm.02}$ & 2.47$_{\pm.01}$ \\
+\textbf{UILinLoRA}     & 0.078M  & 68.7$_{\pm.1}$ & 8.732$_{\pm.1}$ & 46.52$_{\pm.3}$ & 71.45$_{\pm.01}$ & 2.46$_{\pm.02}$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+
+
+\section{Retention-Adaptation Experimental Protocol}
+\label{app:retention_adaptation_protocol}
+
+This section records the retention-oriented experimental protocol used in our
+broader investigation of spectrum-aware adaptation. These experiments are not
+the main empirical focus of the present paper, but they motivate the
+preservation-adaptation perspective behind UIOrthoLoRA and provide a framework
+for future evaluation of catastrophic forgetting in PEFT.
+
+\subsection{Adaptation and Retention Axes}
+\label{app:adaptation_retention_axes}
+
+The retention-oriented evaluation measures two complementary axes: task
+adaptation and knowledge retention. Task adaptation is measured on examples
+that the frozen base model initially fails to answer, while retention is
+measured by tracking degradation on examples the base model originally answered
+correctly and by evaluating broad reasoning benchmarks.
+
+\paragraph{Task adaptation.}
+The adaptation set is constructed from the training splits of TriviaQA and
+HotpotQA. Before training, the frozen base model is evaluated with multiple
+sampled generations. We then construct an error set
+\(\mathcal{D}_{err}\), consisting of examples for which the frozen model obtains
+an accuracy score of zero. Adapters are trained only on this error set.
+Post-training accuracy on \(\mathcal{D}_{err}\) is used as the task adaptation
+metric.
+
+\paragraph{Intrinsic retention.}
+To measure forgetting of knowledge that the base model originally possessed,
+we construct a known set \(\mathcal{D}_{known}\), defined as the subset of
+examples that the frozen base model answered correctly before adapter training.
+Let \(S_{pre}(x)\) and \(S_{post}(x)\) denote the normalized pre-adaptation and
+post-adaptation scores for an example \(x\), respectively. A negative shift
+event is defined as
+\[
+\mathbb{I}_{neg}(x)
+=
+\mathbb{I}
+\left[
+(S_{post}(x)-S_{pre}(x)) < -\tau
+\right].
+\]
+We set \(\tau = 0.8\), corresponding to a severe degradation of at least eight
+correct answers out of ten sampled generations.
+
+\paragraph{Extrinsic retention.}
+To measure broad retention beyond the training domain, models are evaluated on
+MMLU and BIG-bench Hard. MMLU measures broad world-knowledge retention, while
+BIG-bench Hard measures reasoning-intensive capabilities. Together with the
+intrinsic negative-shift metric, these evaluations characterize the
+retention-adaptation trade-off.
+
+
+\section{Retention-Study Experimental Settings}
+\label{app:retention_study_settings}
+
+\subsection{Inference Details}
+\label{app:retention_inference_details}
+
+All intrinsic and extrinsic evaluations are conducted using Language Model
+Evaluation Harness (\texttt{lm\_eval}) with bfloat16 precision.
+
+\paragraph{Targeted QA evaluation.}
+For TriviaQA and HotpotQA, we use a 5-shot setting. For each prompt, \(N=10\)
+independent answers are generated. The generated responses are parsed and
+matched against the dataset ground-truth aliases to compute the final score.
+The prompt instructs the model to answer with only the entity name.
+
+The generation configuration is:
+\[
+\texttt{temperature}=0.5,
+\qquad
+\texttt{top\_p}=0.9,
+\qquad
+\texttt{max\_new\_tokens}=20.
+\]
+
+\paragraph{MMLU and BIG-bench Hard.}
+MMLU is evaluated in a 0-shot setting. BIG-bench Hard is evaluated on nine
+logic-intensive multiple-choice tasks:
+\textit{Analytic Entailment, Cause and Effect, Conceptual Combinations,
+Causal Judgment, Analogical Similarity, Common Morpheme, Logical Deduction,
+Logical Sequence,} and \textit{Odd One Out}.
+
+\subsection{Training Details}
+\label{app:retention_training_details}
+
+All parameter-efficient fine-tuning in the retention study is executed using
+the Hugging Face \texttt{trl} \texttt{SFTTrainer}.
+
+\paragraph{Optimization setup.}
+Models are trained for 10 epochs using the Fused AdamW optimizer. The learning
+rate follows a cosine scheduler with warmup ratio \(0.05\). The maximum
+gradient norm is clipped at \(1.0\). Training uses per-device batch size \(64\),
+maximum sequence length \(1024\), and bfloat16 precision.
+
+\paragraph{Adapter configurations and sweeps.}
+Baseline adapters are applied across all linear layers in both the attention
+and feed-forward blocks:
+\[
+\texttt{q\_proj},
+\texttt{k\_proj},
+\texttt{v\_proj},
+\texttt{o\_proj},
+\texttt{gate\_proj},
+\texttt{up\_proj},
+\texttt{down\_proj}.
+\]
+The adapter scaling factor is fixed to \(\alpha = 32\), and dropout is
+disabled. Learning rates are swept from \(10^{-6}\) to \(10^{-2}\). Randomized
+initializations, including standard LoRA matrices and orthogonal rotations,
+use a global seed of \(42\).
+
+\paragraph{Model families and capacity tiers.}
+The retention study evaluates instruction-tuned LLMs, including
+Llama-3.2-3B-it \citep{llama3_2024} and Gemma-3-12B-it \citep{gemma3_2025}. Adapter capacity is grouped by trainable
+parameter count into three tiers:
+\[
+\text{small} \leq 10\text{M},
+\qquad
+10\text{M} < \text{medium} \leq 100\text{M},
+\qquad
+\text{large} > 100\text{M}.
+\]
+
+\section{Retention-Adaptation Results}
+\label{app:retention_adaptation_results}
+
+We report additional retention-oriented experiments evaluating the trade-off
+between targeted adaptation and preservation of pretrained capabilities. These
+experiments follow the protocol described in
+Appendix~\ref{app:retention_adaptation_protocol} and the settings in
+Appendix~\ref{app:retention_study_settings}. The results are included as
+additional empirical evidence for the preservation motivation behind
+UIOrthoLoRA.
+
+Table~\ref{tab:combined_model_performance} compares adapter configurations across
+target-task adaptation, intrinsic forgetting, and broad reasoning retention.
+The retention metrics include Negative Shift, which measures severe degradation
+on examples the base model originally answered correctly, and general benchmark
+performance on MMLU \citep{hendrycks2020measuring} and BIG-bench Hard \citep{srivastava2023beyond}.
+
+\input{forgetting-results-table}
+
+
+\section{Proofs}
+\label{app:proofs}
+
+\subsection{Proof of Theorem 1}
+\label{app:proof-linlora-retention}
+
+\begin{proof}
+Recall that
+\[
+W^{\ell \ell}
+=
+U^{pre}M^{\ell \ell},
+\qquad
+M^{\ell \ell}
+=
+\begin{bmatrix}
+M'^{pre} \\
+\Delta M^{\ell \ell}
+\end{bmatrix}.
+\]
+Therefore,
+\[
+W^{\ell \ell}h_{i-1}
+=
+U^{pre}M^{\ell \ell}h_{i-1}
+=
+U^{pre}
+\begin{bmatrix}
+M'^{pre} \\
+\Delta M^{\ell \ell}
+\end{bmatrix}
+h_{i-1}.
+\]
+Let
+\[
+M^{\ell \ell}h_{i-1}
+=
+\begin{bmatrix}
+z^{pre}_1 \\
+\vdots \\
+z^{pre}_R \\
+z^{ft}_{R+1} \\
+\vdots \\
+z^{ft}_{R+r}
+\end{bmatrix}.
+\]
+By the block structure and linearity of the matrix-vector product,
+\[
+W^{\ell \ell}h_{i-1}
+=
+U^{pre}
+\left(
+\begin{bmatrix}
+z^{pre}_1 \\
+\vdots \\
+z^{pre}_R \\
+0 \\
+\vdots \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+\vdots \\
+0 \\
+z^{ft}_{R+1} \\
+\vdots \\
+z^{ft}_{R+r}
+\end{bmatrix}
+\right).
+\]
+Since the columns of $U^{pre}$ are orthonormal, the two sums span disjoint
+orthogonal subspaces. Hence,
+\[
+W^{\ell \ell}h_{i-1}
+=
+\sum\limits_{j=1}^{R} z^{pre}_j U^{pre}_j
++
+\sum\limits_{j=R+1}^{R+r} z^{ft}_j U^{pre}_j .
+\]
+This establishes that the pretrained and fine-tuned components are represented
+in orthogonal blocks of the fixed pretrained left-singular basis.
+\end{proof}
+
+
+\subsection{Proof of Proposition 2}
+\label{app:proof-proposition-2-scaler-induces-mixing-bounds}
+\begin{proof}
+The first block is
+\[
+C_{11}
+=
+(U_R^\top E \bar{U}_r)\Sigma'_r(\bar{V}_r^\top D V_R).
+\]
+Using submultiplicativity of the operator norm,
+\[
+\|C_{11}\|_2
+\leq
+\|U_R^\top E \bar{U}_r\|_2
+\|\Sigma'_r\|_2
+\|\bar{V}_r^\top D V_R\|_2 .
+\]
+Since $D$ is diagonal and therefore symmetric,
+\[
+\|\bar{V}_r^\top D V_R\|_2
+=
+\|V_R^\top D \bar{V}_r\|_2
+=
+\nu_D .
+\]
+Thus,
+\[
+\|C_{11}\|_2
+\leq
+\mu_E \|\Sigma'_r\|_2 \nu_D .
+\]
+The other bounds follow identically from submultiplicativity, using
+\[
+\|\bar{V}_r^\top D V_r\|_2 \leq \|D\|_2,
+\qquad
+\|U_r^\top E \bar{U}_r\|_2 \leq \|E\|_2 .
+\]
+\end{proof}
+
+
+\subsection{Proof of Theorem 2}
+\label{app:proof-thm-2-approximate-tail-preservation}
+\begin{proof}
+By the block decomposition,
+\[
+C-C_{\mathrm{tail}}
+=
+\begin{bmatrix}
+C_{11} & C_{12} \\
+C_{21} & 0
+\end{bmatrix}.
+\]
+Therefore,
+\[
+\|C-C_{\mathrm{tail}}\|_2
+\leq
+\sqrt{
+\|C_{11}\|_2^2
++
+\|C_{12}\|_2^2
++
+\|C_{21}\|_2^2
+}.
+\]
+Using Proposition 2,
+\[
+\|C-C_{\mathrm{tail}}\|_2
+\leq
+\|\Sigma'_r\|_2
+\sqrt{
+(\mu_E\nu_D)^2
++
+(\mu_E\|D\|_2)^2
++
+(\|E\|_2\nu_D)^2
+}.
+\]
+If $\mu_E\to 0$ and $\nu_D\to 0$, while $\|E\|_2$, $\|D\|_2$, and
+$\|\Sigma'_r\|_2$ remain bounded, the right-hand side converges to zero.
+\end{proof}
+
+\newpage
+\input{draft/checklist_answers}
+
+\end{document}

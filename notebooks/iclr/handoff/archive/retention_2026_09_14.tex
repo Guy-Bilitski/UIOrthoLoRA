@@ -1,0 +1,81 @@
+% INACTIVE archive: removed from the active paper after review-panel assessment.
+% Exact prior section and numeric table preserved; not included by the manuscript.
+\section{Exploratory adaptation and retention}
+\label{app:retention}
+
+The additional retention study measures task adaptation and behavior retention for instruction-tuned Gemma-3-12B and Llama-3.2-3B models~\citep{gemma3_2025,meta2024llama32}. It remains exploratory support rather than evidence for the spectral-mixing mechanism: the reported checkpoints are not accompanied here by matched block-allocation measurements or mixing interventions.
+
+\paragraph{Targeted adaptation and intrinsic retention.}
+The protocol constructs an error set from TriviaQA/HotpotQA~\citep{joshi2017triviaqa,yang2018hotpotqa} training examples that the frozen model fails under sampled generation, and trains on those examples. Post-training accuracy on this set measures learning of the targeted training examples; it is not held-out adaptation accuracy. Retention is evaluated on non-trained examples. The analysis includes examples with nonzero pre-adaptation answer scores and held-out validation examples; only examples with high initial scores can contribute to the severe negative-shift count below. With normalized pre/post scores $S_{\pre}(x),S_{\mathrm{post}}(x)$, that count uses
+\begin{equation}
+\mathbb I_{\mathrm{neg}}(x)=\mathbb I[S_{\mathrm{post}}(x)-S_{\pre}(x)<-0.8].
+\end{equation}
+The result-processing script uses the strict inequality. For scores that are exact fractions of ten samples, this corresponds to a loss of more than eight successful answers. It measures severe forgetting rather than every decline in answer probability.
+
+\paragraph{Evaluation and training settings.}
+The QA evaluation protocol is 5-shot with ten sampled answers per prompt, temperature 0.5, top-$p$ 0.9, and a 20-token generation limit, using answer-alias matching. The broad evaluation includes 0-shot MMLU~\citep{hendrycks2020measuring} and a nine-task BIG-bench multiple-choice subset~\citep{srivastava2023beyond}. The latter comprises analogical similarity, analytic entailment, causal judgment, cause and effect, common morpheme, conceptual combinations, logical deduction, logical sequence, and odd one out. It is labeled \emph{Reasoning} in Table~\ref{tab:combined_model_performance}; it is not the full BIG-Bench Hard benchmark. The recorded training protocol uses SFTTrainer, ten epochs, fused AdamW, cosine scheduling with warmup ratio 0.05, gradient clipping at 1.0, per-device batch size 64, maximum sequence length 1024, and bfloat16 precision. Baseline adapters cover attention and feed-forward linear projections; reported sweeps use learning rates from $10^{-6}$ to $10^{-2}$, nominal scaling 32, no dropout, and global seed 42.
+
+\paragraph{Interpretation.}
+Table~\ref{tab:combined_model_performance} reports adaptation scores and forgetting counts across coarse capacity tiers: small ($\le10$M trainable parameters), medium ($10$M--$100$M), and large ($>100$M). These are not exact capacity matches, and scores are descriptive outcomes of configuration sweeps rather than matched spectral interventions. The comparisons show no uniform ordering across models, datasets, and capacity tiers. They also omit UILinLoRA, preventing attribution of an outcome to rotations rather than scalers. Their role is to distinguish functional evaluation from structural guarantees, not to infer retained knowledge from a weight-space constraint.
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l | c ccc | c ccc}
+\toprule
+& \multicolumn{4}{c|}{\textbf{TriviaQA}} & \multicolumn{4}{c}{\textbf{HotpotQA}} \\
+& \multicolumn{4}{c|}{\textit{(Train $N=32{,}799$ | Known $N=43{,}724$)}} & \multicolumn{4}{c}{\textit{(Train $N=10{,}938$ | Known $N=4{,}723$)}} \\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9}
+\multirow{2}{*}{\textbf{Method}} & \textbf{Adaptation} & \multicolumn{3}{c|}{\textbf{Retention}} & \textbf{Adaptation} & \multicolumn{3}{c}{\textbf{Retention}} \\
+\cmidrule(lr){2-2} \cmidrule(lr){3-5} \cmidrule(lr){6-6} \cmidrule(lr){7-9}
+& \textbf{Acc} $\uparrow$ & \textbf{Forget} $\downarrow$ & \textbf{MMLU} $\uparrow$ & \textbf{Reasoning} $\uparrow$ & \textbf{Acc} $\uparrow$ & \textbf{Forget} $\downarrow$ & \textbf{MMLU} $\uparrow$ & \textbf{Reasoning} $\uparrow$ \\
+\midrule
+\multicolumn{1}{c}{} & \multicolumn{8}{c}{\textbf{Gemma-3-12B-it}} \\
+\midrule
+\addlinespace[0.3ex]
+\rowcolor{gray!10} \textit{Base Model} & \textit{--} & \textit{0} & \textit{0.715} & \textit{0.638} & \textit{--} & \textit{0} & \textit{0.715} & \textit{0.638} \\
+\midrule
+\multicolumn{9}{l}{\textit{Small}} \\
+VeRA         & 0.976 & 8,463 & 0.576 & 0.425 & 0.993 & 1,632 & 0.661 & 0.607 \\
+UIOrthoLoRA & 0.982 & 8,522 & 0.696 & 0.582 & 0.985 & 1,547 & 0.678 & 0.629 \\
+LoRA         & 0.996 & 8,920 & 0.549 & 0.453 & 0.990 & 1,589 & 0.690 & 0.618 \\
+DoRA         & 0.997 & 8,825 & 0.571 & 0.458 & 0.989 & 1,570 & 0.604 & 0.487 \\
+\addlinespace
+\multicolumn{9}{l}{\textit{Medium}} \\
+UIOrthoLoRA & 0.982 & 8,430 & 0.704 & 0.602 & 0.988 & 1,492 & 0.691 & 0.597 \\
+LoRA         & 0.997 & 7,825 & 0.601 & 0.466 & 0.994 & 1,488 & 0.699 & 0.615 \\
+DoRA         & 0.997 & 8,114 & 0.601 & 0.468 & 0.992 & 1,510 & 0.608 & 0.475 \\
+\addlinespace
+\multicolumn{9}{l}{\textit{Large}} \\
+UIOrthoLoRA & 0.975 & 8,194 & 0.702 & 0.604 & 0.988 & 1,523 & 0.690 & 0.617 \\
+LoRA         & 0.997 & 7,638 & 0.602 & 0.486 & 0.995 & 1,496 & 0.705 & 0.633 \\
+DoRA         & 0.978 & 7,604 & 0.604 & 0.460 & 0.993 & 1,515 & 0.617 & 0.488 \\
+\midrule
+\multicolumn{1}{c}{} & \multicolumn{8}{c}{\textbf{Llama-3.2-3B-it}} \\
+\midrule
+\addlinespace[0.3ex]
+\rowcolor{gray!10} \textit{Base Model} & \textit{--} & \textit{0} & \textit{0.622} & \textit{0.458} & \textit{--} & \textit{0} & \textit{0.622} & \textit{0.458} \\
+\midrule
+\multicolumn{9}{l}{\textit{Small}} \\
+VeRA         & 0.925 & 13,805 & 0.420 & 0.415 & 0.904 & 1,350 & 0.250 & 0.353 \\
+UIOrthoLoRA & 0.935 & 10,088 & 0.549 & 0.428 & 0.958 & 931 & 0.530 & 0.419 \\
+LoRA         & 0.938    & 13,597    & 0.342    & 0.397    & 0.942 & 1,066 & 0.496 & 0.404 \\
+DoRA         & 0.952 & 13,910 & 0.322 & 0.388 & 0.954 & 1,064 & 0.429 & 0.417 \\
+\addlinespace
+\multicolumn{9}{l}{\textit{Medium}} \\
+UIOrthoLoRA & 0.945 & 10,234 & 0.544 & 0.440 & 0.960 & 906 & 0.522 & 0.455 \\
+LoRA         & 0.961 & 8,967 & 0.601 & 0.466 & 0.993 & 971 & 0.548 & 0.459 \\
+DoRA         & 0.963 & 8,908 & 0.601 & 0.468 & 0.994 & 982 & 0.527 & 0.461 \\
+\addlinespace
+\multicolumn{9}{l}{\textit{Large}} \\
+UIOrthoLoRA & 0.943 & 10,108 & 0.559 & 0.416 & 0.960 & 870 & 0.549 & 0.449 \\
+LoRA         & 0.966 & 8,703 & 0.601 & 0.456 & 0.994 & 892 & 0.581 & 0.462 \\
+DoRA         & 0.968 & 8,556 & 0.603 & 0.467 & 0.996 & 925 & 0.570 & 0.455 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Exploratory adaptation and retention across model and capacity settings. Adaptation is measured on targeted training examples; Forget counts severe negative shifts on non-trained examples. Reasoning denotes the nine-task BIG-bench subset specified in Appendix~\ref{app:retention}, not full BIG-Bench Hard. Values and partition sizes are retained from the reported study; the coarse capacity groups are not exact parameter matches. No mixing-regularized or UILinLoRA counterpart is included.}
+\label{tab:combined_model_performance}
+\end{table*}

@@ -1,0 +1,5 @@
+# Track this project's handoff despite the research-wide Markdown ignore.
+!.gitignore
+!README.md
+!handoff/**/*.md
+!handoff/.gitignore
