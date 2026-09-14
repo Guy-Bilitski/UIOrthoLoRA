@@ -4,8 +4,9 @@ Scope: `iclr_6aa54397`, on the existing `ortho_new` branch. The authoritative
 design is `../handoff/EXPERIMENTS_REQUIRED.md`. This package now includes a
 CPU-validated optimizer-step engine, pinned input preparation, budget accounting,
 and a persistent P0 smoke controller/worker. The full production campaign is
-**not yet implemented**: whole-run validation and calibration/confirmation
-admission still need completion. No pretrained task outcomes are supplied by CPU tests.
+**not yet implemented**: magnitude-calibration and confirmation orchestration
+still need completion. Whole-run validation and gated throughput pilots are now
+implemented. No pretrained task outcomes are supplied by CPU tests.
 
 Implemented and checked on CPU:
 
@@ -82,8 +83,8 @@ Important implementation choices and remaining work:
    were accepted via "Go ahead"; this interpretation was explicitly reported.
    See the immutable `RESOURCE_AUTHORIZATION_20260914.json` in handoff/data/campaign_v1.
 4. Pinned inputs, disjoint selection/locked splits, fixed corpus masks, conservative
-   global reservations and an owned-child supervisor are implemented. Whole-run
-   validation, calibration selection, a frozen matrix and confirmation driver still
+   global reservations, an owned-child supervisor and whole-run validation are
+   implemented. Magnitude-calibration selection, a frozen matrix and confirmation driver still
    need implementation. P3/P7/P8 must be verified on actual pretrained RoBERTa
    checkpoints, including real dtype/device placement and controlled P7 costs.
 5. `spectral.regularization()` remains the deliberately unoptimized correctness
@@ -106,8 +107,9 @@ continuation instructions. Legacy data and training-source files are unchanged.
 diagnostic, probe and regularizer callbacks; it returns `awaiting_validation` or
 `interrupted`, never `completed`. Production calls must provide explicit resource
 authorization, the physical GPU ID/UUID, a bounded reservation and a persistent
-output root. `smoke.py` is a P0-only production CLI, intended for a dedicated
-tmux session; it rejects calibration/confirmation jobs. The only bypass is explicitly named
+output root. `smoke.py` admits P0 smoke and explicitly gated throughput-calibration
+jobs, intended for dedicated tmux sessions. It rejects magnitude-calibration and
+confirmation jobs until their admission is implemented. The only bypass is explicitly named
 `synthetic_cpu_test`, used by tests with all GPUs hidden.
 
 Validation selection uses accuracy, excludes step 0 and breaks ties by earliest

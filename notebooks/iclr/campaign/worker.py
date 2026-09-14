@@ -1,7 +1,7 @@
 """One explicitly assigned, offline RoBERTa worker; immutable artifacts only.
 
-The CLI currently admits P0 smoke jobs only. Calibration/confirmation admission
-will require their own validated phase gates, not a renamed smoke configuration.
+The CLI admits P0 smoke and gated separate-seed throughput pilots. Magnitude
+calibration and confirmation require additional implemented phase admission.
 """
 
 import argparse
@@ -40,6 +40,7 @@ from .modeling import (
     set_head_only,
 )
 from .preparation import load_original_roberta, load_prepared, paired_classifier, verify_source
+from .phase_gates import validate_phase_admission
 from .protocol import EARLY_P5, NAMESPACE, P1_CONDITIONS, owned_path
 from .regularizers import CachedRegularizer
 from .spectral import SpectralConfig, SpectralLinear, haar_basis
@@ -108,8 +109,7 @@ def validate_job(job, *, synthetic_cpu_test=False):
         raise ValueError("Unsupported job schema or campaign namespace")
     if job.get("synthetic_cpu_test", False) is not synthetic_cpu_test:
         raise ValueError("Synthetic and pretrained run provenance cannot be mixed")
-    if job["stage"] != "smoke":
-        raise ValueError("Calibration/confirmation require implemented phase admission; smoke is not confirmation")
+    validate_phase_admission(job)
     if job["condition"] not in P1_CONDITIONS + EARLY_P5 or job["task"] not in {"rte", "mrpc"}:
         raise ValueError("Unsupported common-protocol condition/task")
     if (

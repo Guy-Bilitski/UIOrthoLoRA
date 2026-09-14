@@ -113,6 +113,9 @@ def append_event(ledger, event):
             checkpoint = Path(report["checkpoint_path"])
             if sha256(checkpoint) != report["checkpoint_sha256"]:
                 raise ValueError("Checkpoint changed after reload validation")
+            for artifact, digest in report.get("artifacts_sha256", {}).items():
+                if sha256(artifact) != digest:
+                    raise ValueError("Run artifact changed after whole-run validation: " + artifact)
             event["validation_sha256"] = sha256(path)
         f.seek(0, os.SEEK_END)
         f.write(json.dumps(event, sort_keys=True, allow_nan=False) + "\n")

@@ -1,9 +1,55 @@
 # ICLR campaign startup and continuation — 2026-09-14
 
-Status: first GPU P0 attempt **interrupted at a saved step-0 boundary** after
-measuring a diagnostics bottleneck; optimized retry is being prepared.
+Status: **P0 smoke retry completed and independently validated**; two-task
+seed-31415 throughput calibration is next. The first interrupted attempt remains preserved.
 The resource gate is resolved. The full P0–P8 objective is active and incomplete. This document
 does not amend the authoritative experiment design or freeze a confirmation grid.
+
+## P0 completed — 13:31:57 UTC
+
+Retry ID `20260914T132305Z_8729a4c83ee8`, GPU 2, ran from 13:23:05 UTC until
+worker exit at 13:29:49 UTC in dedicated tmux session `smoke_gpu2_retry1` on the
+`iclr_6aa54397_20260914` server. Source commit `08ffa9c2` was normally pushed to
+`ortho_new` after rebase and preflight. All **eight optimizer steps** completed
+with finite losses/gradients. Six saved checkpoints (steps 0,1,2,4,6,8) independently
+reproduced task metrics, full P3 geometry and fixed-original-MLM-head P8 observations.
+Locked fixed/selected endpoints were separately evaluated from reloaded checkpoints.
+The whole-run audit reloaded every state again, verified original pretrained head
+tensors and original bases, bound the numerical-reproduction reports to checkpoint/
+reference/observation hashes, and checked trajectory, task split, P3/P7/P8 and
+manifest/source-archive contracts. The ledger now records this P0 run completed.
+
+Validation path relative to the output root:
+`runs/iclr_6aa54397/P1_MIX/rte/seed_31415/20260914T132305Z_8729a4c83ee8/validations/9ec903673c0743ca819187d7b927f524/report.json`.
+Validation SHA256: `9629cd520ce382e48ac81b0cde7fe4004ad6547f8269da6369c60198a11cdec6`.
+Preflight: `data/campaign_v1/preflight/20260914T132139Z_8851cd4f/report.json`.
+
+Observed smoke costs, not full calibration or a campaign ETA:
+
+- Worker elapsed 394.63 seconds; supervised elapsed 403.91 seconds (6.73 minutes).
+- Warmup-excluded optimizer steps: 0.624–0.671 seconds; median approximately 0.657 seconds.
+- Warmup-excluded throughput approximately 6,168 nonpadding tokens/second.
+- Peak allocated training CUDA memory 2,253,511,680 bytes (2.10 GiB);
+  peak reserved 2,797,600,768 bytes (2.61 GiB).
+- CPU SVD setup 4.37 seconds. Full trajectory diagnostics and independent reload
+  measurements dominate the short smoke; they do not occur after every step in
+  a long run. Initial learned-since-insertion energy is now exactly zero under
+  the explicitly pinned CPU effective-delta arithmetic.
+
+Counts: P0 completed 1, interrupted 1; throughput calibration 0/2; magnitude
+calibration 0; confirmation 0/66; extensions 0. Submission readiness and full
+campaign completion remain distinct; no scope reduction was authorized.
+
+The new immutable timing protocol is
+`campaign_outputs_v1/protocols/timing_20260914_v1.json`: RTE and MRPC, P1_MIX,
+seed 31415, 128 optimizer steps each, effective batch 32, float32/eager attention,
+four CPU diagnostic workers per GPU worker, full checkpoint/P3/P7/P8 retention.
+Its explicit purpose is throughput only: no task or geometry-based hyperparameter
+selection, magnitude matching or confirmation claim. The workers require the
+successful P0 gate and exact protocol hashes before admission. Planned placement:
+RTE GPU 2 and MRPC GPU 3. New controller code independently validates whole runs
+before marking them complete. Larger magnitude-calibration and confirmation
+orchestration are still pending.
 
 ## GPU P0 update — first attempt ended 13:18:07 UTC
 

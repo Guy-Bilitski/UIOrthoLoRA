@@ -8,10 +8,11 @@ penalties, LoRA/full-FT geometry and independent checkpoint reproduction under
 `../campaign/`, now with 104 CPU algebra, input-preparation, supervision and tiny-model integration checks.
 All four supplied checks and six original source fingerprints also pass in the
 recorded preflights. The production training driver is still incomplete;
-the first pretrained GPU P0 attempt ran on GPU 2 and stopped cleanly at its saved
-step-0 boundary at 13:18 UTC to repair diagnostic placement/roundoff. No optimizer
-steps or calibration/confirmation runs have completed. Its artifacts are preserved;
-an optimized retry requires a new ID. The user authorizes GPUs 2/3 through campaign completion; the
+the first GPU P0 attempt was preserved as interrupted. Its CPU-diagnostic retry
+`20260914T132305Z_8729a4c83ee8` completed eight optimizer steps and six checkpoint
+reload/P3/P8 checks; whole-run validation passed at 13:31:57 UTC. P0 is complete.
+Two seed-31415 throughput pilots are next; magnitude-calibration/confirmation
+have not run. The user authorizes GPUs 2/3 through campaign completion; the
 initial 50 GiB output allocation and public downloads are recorded in
 `data/campaign_v1/RESOURCE_AUTHORIZATION_20260914.json`. Pinned RoBERTa/RTE/MRPC
 and fixed held-out probe inputs are prepared. Read
