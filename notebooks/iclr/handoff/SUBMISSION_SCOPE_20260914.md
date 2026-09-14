@@ -113,6 +113,10 @@ remain mandatory. The wrapper stops after calibration; it cannot launch any
 confirmation or expanded campaign. Do not modify campaign Python sources while
 these jobs run: independent validation checks their exact source fingerprints.
 
+The old two-lane commands below are retained as historical receipts only; do
+not rerun them. Use `MINIMAL_RUNBOOK_20260914.md`, which records the corrected
+four-lane GPU 0/1/2/3 commands and the newest preflight selection.
+
 Start each task queue only once in its dedicated persistent session:
 
 ```bash

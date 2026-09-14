@@ -5,19 +5,25 @@ set -euo pipefail
 
 campaign_root=/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914
 cd "$campaign_root"
-task=${1:?Usage: bash queue_focused.sh rte|mrpc [--check]}
+lane=${1:?Usage: bash queue_focused.sh rte_low|mrpc_low|rte_mid|mrpc_mid --run|--check preflight.json}
 mode=${2:---run}
-case "$task" in
-  rte) gpu=2; steps=5670; target=20260914T154246Z_92f7745b1ee5; session=target_rte_gpu2_v1 ;;
-  mrpc) gpu=3; steps=2760; target=20260914T154246Z_5766195517d9; session=target_mrpc_gpu3_v1 ;;
+case "$lane" in
+  rte_low) task=rte; gpu=0; lane_suffixes=(P1_NORM/0.01 P1_NORM/100) ;;
+  mrpc_low) task=mrpc; gpu=1; lane_suffixes=(P1_NORM/0.01 P1_NORM/100) ;;
+  rte_mid) task=rte; gpu=2; lane_suffixes=(P1_NORM/1) ;;
+  mrpc_mid) task=mrpc; gpu=3; lane_suffixes=(P1_NORM/1) ;;
   *) exit 2 ;;
+esac
+case "$task" in
+  rte) target_gpu=2; steps=5670; target=20260914T154246Z_92f7745b1ee5; session=target_rte_gpu2_v1 ;;
+  mrpc) target_gpu=3; steps=2760; target=20260914T154246Z_5766195517d9; session=target_mrpc_gpu3_v1 ;;
 esac
 [[ "$mode" == --run || "$mode" == --check ]] || exit 2
 socket=iclr_6aa54397_20260914
 output=$campaign_root/campaign_outputs_v1
 ledger=$output/run_ledger.jsonl
 protocol=$output/protocols/focused_norm_20260914_v1.json
-preflight=notebooks/iclr/handoff/data/campaign_v1/preflight/20260914T153957Z_cafd264c/report.json
+preflight=${3:?Explicit successful preflight required}
 target_directory=$output/runs/iclr_6aa54397/P1_MIX/$task/seed_31415/$target
 protocol_hash=$(sha256sum "$protocol" | cut -d ' ' -f 1)
 
@@ -42,15 +48,17 @@ verify_complete() {
 }
 
 check_inputs() {
+  local suffix
   jq -e '.registered and .purpose == "focused_norm_calibration" and
     .confirmation_authorized == false and (.initial_entries | length) == 10' "$protocol" >/dev/null
-  jq -e --arg task "$task" --arg hash "$protocol_hash" --argjson gpu "$gpu" '
+  jq -e --arg task "$task" --arg hash "$protocol_hash" --argjson gpu "$target_gpu" '
     .task == $task and .seed == 31415 and .physical_gpu == $gpu and
     .calibration_entry_id == ($task + "/P1_MIX/0.001") and
     .phase_protocol_sha256 == $hash' "$target_directory/manifest.json" >/dev/null
   jq -r '.source_files | to_entries[] | .value + "  " + .key' "$preflight" |
     sha256sum --check --status
-  for suffix in P1_UNREG/0 P1_NORM/0.01 P1_NORM/1 P1_NORM/100; do
+  jq -e '.all_checks_passed == true' "$preflight" >/dev/null
+  for suffix in "${lane_suffixes[@]}"; do
     jq -e --arg entry "$task/$suffix" --arg task "$task" --argjson steps "$steps" '
       ([.initial_entries[] | select(.entry_id == $entry)] | length) == 1 and
       .task_jobs[$task].train_settings.max_steps == $steps' "$protocol" >/dev/null
@@ -64,9 +72,9 @@ if [[ "$mode" == --check ]]; then
 fi
 
 mkdir -p "$output/queues"
-exec 9>>"$output/queues/focused_${task}_v1.lock"
+exec 9>>"$output/queues/focused_${lane}_v2.lock"
 flock -n 9 || { printf 'Another task-local queue owns this lock\n' >&2; exit 1; }
-queue_directory=$(mktemp -d "$output/queues/focused_${task}_v1_XXXXXXXX")
+queue_directory=$(mktemp -d "$output/queues/focused_${lane}_v2_XXXXXXXX")
 cp --no-clobber "$0" "$queue_directory/queue_source.sh"
 cp --no-clobber "$protocol" "$queue_directory/protocol.json"
 exec > >(tee -a "$queue_directory/queue.log") 2>&1
@@ -76,7 +84,7 @@ event() {
     tee -a "$queue_directory/events.jsonl"
 }
 trap 'queue_exit=$?; event terminal "queue_exit=$queue_exit"' EXIT
-event waiting "$target; GPU $gpu; fixed order: UNREG/0 NORM/0.01 NORM/1 NORM/100"
+event waiting "$target; GPU $gpu; fixed order: ${lane_suffixes[*]}"
 
 while ! verify_complete "$target_directory"; do
   status=$(latest_event "$target" | jq -r '.status')
@@ -92,7 +100,7 @@ while ! verify_complete "$target_directory"; do
 done
 event target_validated "$target"
 
-for suffix in P1_UNREG/0 P1_NORM/0.01 P1_NORM/1 P1_NORM/100; do
+for suffix in "${lane_suffixes[@]}"; do
   entry=$task/$suffix
   check_inputs
   # Never duplicate an entry after queue interruption or silently retry a failure.
@@ -113,7 +121,7 @@ for suffix in P1_UNREG/0 P1_NORM/0.01 P1_NORM/1 P1_NORM/100; do
   controller_log=$queue_directory/${suffix//\//_}.controller.log
   CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=src \
     .venv/bin/python -u -m notebooks.iclr.campaign.smoke \
-    --resources notebooks/iclr/handoff/data/campaign_v1/RESOURCE_AUTHORIZATION_20260914.json \
+    --resources notebooks/iclr/handoff/data/campaign_v1/RESOURCE_AUTHORIZATION_20260914_FOUR_GPUS.json \
     --prepared campaign_outputs_v1/inputs/preparation_20260914T1254Z \
     --preflight "$preflight" --purpose matching --calibration-protocol "$protocol" \
     --maximum-seconds 21600 --reserved-gib 3 \

@@ -1,0 +1,10 @@
+{
+  "assigned_gpu_ids": [0, 1, 2, 3],
+  "output_root": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_v1",
+  "storage_allowance_gib": 50,
+  "gpu_hour_budget": null,
+  "wall_clock_hours": null,
+  "downloads_permitted": true,
+  "completion_authorized": true,
+  "authorization_record": "2026-09-14, received about 18:53 UTC: Author explicitly wrote 'All 4 GPUs are available - why you are not using!!!! go ahead finalize the experiments you have the whole night'. This expands physical GPU assignment from 2/3 to 0/1/2/3 for the deadline-focused ICLR work. Retain the existing dedicated persistent output root, shared 50 GiB cap and download policy. Earlier completion-duration authority remains; prioritize completing the thin submission experiments overnight, not resurrecting the deferred full P0-P8 matrix. Do not stop or inspect other agents' workloads. The original resource authorization and allocation remain immutable; a hash-bound GPU-only extension shares the same reservation ledger and storage accounting."
+}

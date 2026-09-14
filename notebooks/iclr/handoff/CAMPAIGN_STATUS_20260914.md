@@ -17,8 +17,28 @@ fail-closed task-local queues. The older startup/timing entries below describe
 past states, not current idle workers. Do not modify in-use campaign Python
 sources or launch the deferred broad matrix.
 
-Status: **P0 smoke retry completed and independently validated**; two-task
-seed-31415 throughput calibration is next. The first interrupted attempt remains preserved.
+Status: **P0 smoke retry, timing pilots, and four focused calibration entries
+completed and independently validated**. Six norm-control entries remain in the
+minimal runbook. The first interrupted attempt remains preserved.
+
+## Authoritative resumption pointer — 2026-09-14 21:56 UTC
+
+Read `MINIMAL_RUNBOOK_20260914.md` before any new launch. The author expanded
+the explicit GPU assignment to 0/1/2/3 while retaining the 50 GiB cap. The
+hash-bound extension is recorded at
+`campaign_outputs_v1/accounting_v1/gpu_authorization_extension.json`; the
+original allocation file is unchanged. Four entries are complete and validated:
+RTE/MRPC `P1_MIX/0.001` and `P1_UNREG/0` (run IDs and validation paths are in
+`run_ledger.jsonl`). Six NORM entries remain: `.01, 1, 100` for each task.
+
+The first queue wrapper had a post-controller path-check defect: it looked for
+the completed run under the MIX condition even after launching UNREG. Both
+UNREG controllers nevertheless completed and passed whole-run validation; the
+queues then stopped fail-closed. The wrapper is now corrected and split into
+four GPU lanes (`rte_low`, `mrpc_low`, `rte_mid`, `mrpc_mid`). No retry is needed
+for the completed UNREG runs. Start commands, exact preflight selection,
+monitoring rules and stop criteria are in the minimal runbook. Do not start the
+old two-lane commands below.
 The resource gate is resolved. The full P0–P8 objective is active and incomplete. This document
 does not amend the authoritative experiment design or freeze a confirmation grid.
 

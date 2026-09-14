@@ -50,6 +50,27 @@ def test_active_leases_do_not_expire_and_overruns_are_fully_charged(tmp_path, mo
         reserve(ledger, "a", gpu=3)
 
 
+def test_explicit_gpu_extension_preserves_allocation_history_and_storage(tmp_path, monkeypatch):
+    ledger, _ = book(tmp_path, monkeypatch)
+    original = (ledger.directory / "allocation.json").read_bytes()
+    expanded = replace(ledger.resources, assigned_gpu_ids=(0, 1, 2, 3), authorization_record="synthetic explicit expansion")
+    with pytest.raises(ValueError, match="cannot alter storage"):
+        ledger.extend_assigned_gpus(replace(expanded, storage_allowance_gib=2))
+    lease = reserve(ledger)
+    with pytest.raises(ValueError, match="workers settled"):
+        ledger.extend_assigned_gpus(expanded)
+    ledger.settle(lease["lease_id"], lease["ownership_token"], observed_exit_code=0, measured_worker_seconds=1)
+    updated = ledger.extend_assigned_gpus(expanded)
+    assert (ledger.directory / "allocation.json").read_bytes() == original
+    assert set(updated.resources.assigned_gpu_ids) == {0, 1, 2, 3}
+    assert updated.snapshot()["settled_gpu_seconds"] == 1
+    reserve(updated, "new_gpu0", gpu=0)
+    reserve(updated, "new_gpu1", gpu=1)
+    assert len(updated.snapshot()["active_leases"]) == 2
+    with pytest.raises(ValueError, match="quota"):
+        reserve(updated, "too_large", gpu=3, size=2 * 2**30)
+
+
 def test_concurrent_reservations_cannot_double_book_one_gpu(tmp_path, monkeypatch):
     ledger, _ = book(tmp_path, monkeypatch)
 

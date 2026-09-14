@@ -7,7 +7,17 @@ Read [`SUBMISSION_SCOPE_20260914.md`](SUBMISSION_SCOPE_20260914.md) first for th
 scope reduction, deadlines, completed pilots and active focused calibration.
 The expanded plan below remains a scientific reference, not an automatic queue.
 
-**Current execution, 15:51 UTC:** both focused MIX calibration targets launched
+**Current execution, 2026-09-14 21:56 UTC:** read
+[`MINIMAL_RUNBOOK_20260914.md`](MINIMAL_RUNBOOK_20260914.md) first when resuming.
+The four-GPU author extension is recorded in the hash-bound authorization and
+allocation extension below. Four focused calibration entries (MIX and UNREG on
+RTE/MRPC) are completed and validated; six NORM entries remain. The two old
+focused queue sessions stopped after a path-check bug despite their controllers
+marking the runs completed. No artifact was lost or overwritten. The corrected
+four-lane queue is documented in the runbook and must be started only once per
+lane.
+
+The prior 15:51 update said both focused MIX calibration targets launched
 at 15:42:46 UTC from `d321e517`, on GPU 2 (RTE, run
 `20260914T154246Z_92f7745b1ee5`) and GPU 3 (MRPC, run
 `20260914T154246Z_5766195517d9`). Actual optimizer progress was verified at

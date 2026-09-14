@@ -16,7 +16,7 @@ import shutil
 import time
 from uuid import uuid4
 
-from .artifacts import utc_now, write_json_new
+from .artifacts import sha256, utc_now, write_json_new
 from .protocol import Resources, owned_path
 
 
@@ -46,9 +46,49 @@ class AllocationLedger:
         if self.manifest.get("schema_version") != 1:
             raise ValueError("Unsupported allocation schema")
         self.resources = Resources(**self.manifest["resources"])
+        extension_path = self.directory / "gpu_authorization_extension.json"
+        if extension_path.exists():
+            extension = json.loads(extension_path.read_text())
+            if extension.get("allocation_sha256") != sha256(self.directory / "allocation.json"):
+                raise ValueError("GPU extension does not bind the original allocation")
+            expanded = Resources(**extension["resources"])
+            self._validate_gpu_extension(self.resources, expanded)
+            self.resources = expanded
         self.resources.validate_training()
         self.root = Path(self.resources.output_root).resolve()
         owned_path(self.root, self.directory)
+
+    @staticmethod
+    def _validate_gpu_extension(original, expanded):
+        expanded.validate_training()
+        old, new = asdict(original), asdict(expanded)
+        if not set(old.pop("assigned_gpu_ids")) < set(new.pop("assigned_gpu_ids")):
+            raise ValueError("GPU extension must strictly add assigned devices")
+        old.pop("authorization_record")
+        new.pop("authorization_record")
+        if old != new:
+            raise ValueError("GPU extension cannot alter storage, output root or budgets")
+
+    def extend_assigned_gpus(self, resources):
+        """Record explicit new user authority without rewriting allocation/history.
+
+        One extension is supported, only between workers. The same locked ledger
+        and storage cap continue to account for every old and new GPU lease.
+        """
+        self._validate_gpu_extension(self.resources, resources)
+        with self._locked() as (_, records):
+            if any(x["event"] == "reserved" for x in self._leases(records).values()):
+                raise ValueError("GPU extension requires all existing workers settled")
+            write_json_new(
+                self.directory / "gpu_authorization_extension.json",
+                dict(
+                    schema_version=1,
+                    created_utc=utc_now(),
+                    allocation_sha256=sha256(self.directory / "allocation.json"),
+                    resources=asdict(resources),
+                ),
+            )
+        return type(self)(self.directory)
 
     @classmethod
     def create(cls, directory, resources, *, disk_safety_margin_gib):
