@@ -120,6 +120,56 @@ tmux -L iclr_6aa54397_20260914 new-session -d -s focused_queue_rte_v1 -c /media/
 tmux -L iclr_6aa54397_20260914 new-session -d -s focused_queue_mrpc_v1 -c /media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914 'bash notebooks/iclr/campaign/queue_focused.sh mrpc'
 ```
 
+Both commands were executed successfully at **15:53:24 UTC**, from normally
+pushed revision `04f79730`. The queues are active and waiting for their exact
+targets; do not start duplicates. Durable queue directories are
+`campaign_outputs_v1/queues/focused_rte_v1_3LapWE6Y` and
+`campaign_outputs_v1/queues/focused_mrpc_v1_oT24qVPr`. Each contains its own
+archived wrapper, protocol, event stream and log. The new CPU preflight
+`data/campaign_v1/preflight/20260914T155131Z_453ae73a/report.json` passed all
+129 tests, four supplied audits and original fingerprints. Additional queue
+checks verified shell syntax, both real task/source/protocol configurations,
+acceptance of a hash-validated completed timing run, and rejection of an active
+or unknown run. None of these checks is a new experimental result.
+
+### Provisional measured forecast
+
+At roughly 15:54 UTC, warmup-excluded optimizer-step medians were about 1.5 s
+(earlier direct samples: RTE 1.522 s, range 0.615–1.847; MRPC 1.460 s,
+range 0.644–1.768). Completed 128-step pilots took approximately 34 minutes
+per task plus whole-run audit; checkpoint diagnostics and independent reloads,
+not optimization alone, account for much of that cost. The current full-length
+targets have not yet completed. Initial full-run estimates are therefore
+3–5 hours for RTE and 2–4 for MRPC, including checkpoint checks. Five sequential
+entries per task on two assigned GPUs imply **25–45 allocated GPU-hours** and
+**15–25 hours elapsed** for this calibration subset, excluding earlier setup
+and timing pilots. GPU-hours here include allocated time spent in required CPU
+diagnostics, not a claim of 100% device utilization.
+
+Measured startup monitor utilization ranged 0–41% on GPU 2 and 0–43% on GPU 3;
+medians were 13% and 0%, including setup/CPU checkpoint intervals. Maximum
+observed memory was 3,947 and 3,055 MiB; maximum temperatures 65 and 48 degrees C.
+The first few minutes are not a stable whole-run utilization estimate. No
+monitor stop reasons were present at this inspection.
+
+Using the 15:42:46 UTC launch as the forecast origin gives these provisional
+calibration-completion timestamps on **September 15**:
+
+| Scenario | UTC | Asia/Jerusalem |
+|---|---|---|
+| Optimistic (15 hours) | 06:45 | 09:45 |
+| Expected (20 hours) | 11:45 | 14:45 |
+| Conservative (25 hours) | 16:45 | 19:45 |
+
+Confidence is medium-low until the first full runs finish. The main uncertainties
+are the number of validation-improvement checkpoints, shared CPU throughput,
+coefficient-dependent step cost, retries and storage growth. Recompute after
+each completed task/phase and any resource change. These are calibration ETAs,
+not a promised paper-completion or acceptance date. A subsequent paired-seed
+confirmation matrix and its storage forecast must be frozen after norm-only
+calibration selection, before inspecting confirmation outcomes; this queue does
+not authorize or automatically launch it.
+
 Check only these exact sessions and the campaign ledger, queue logs and run
 monitors. Each active worker's existing supervisor samples health every ten
 seconds and guards loss/gradient finiteness, progress, assigned placement,
