@@ -126,10 +126,27 @@ def collect_focused_norms(ledger_path, protocol_path, *, synthetic_cpu_test=Fals
     return output
 
 
-def select_matched(rows, protocol_path):
-    """Apply the registered rule: smallest |relative error|, lower dose on ties."""
+def select_matched(rows, protocol_path, refinements=()):
+    """Apply the registered rule: smallest |relative error|, lower dose on ties.
+
+    `refinements` is a sequence of (rows, protocol_path) pairs from registered
+    refinement rounds; their NORM doses join the frontier. Targets always come
+    from the parent grid's P1_MIX entries.
+    """
     design, digest = _json(protocol_path), sha256(protocol_path)
-    known = {entry["entry_id"]: entry for entry in design["initial_entries"]}
+    known = {entry["entry_id"]: (entry, "initial") for entry in design["initial_entries"]}
+    refinement_records = []
+    for extra_rows, extra_path in refinements:
+        extra_design, extra_digest = _json(extra_path), sha256(extra_path)
+        bound = extra_design.get("refinement_of", {}).get("protocol", {})
+        if extra_design.get("doses") is None or bound.get("sha256") != digest:
+            raise ValueError("Refinement protocol does not bind the parent grid")
+        for entry in extra_design["initial_entries"]:
+            if entry["entry_id"] in known:
+                raise ValueError("Refinement duplicates a registered entry")
+            known[entry["entry_id"]] = (entry, "refinement")
+        refinement_records.append(dict(path=str(Path(extra_path).resolve()), sha256=extra_digest))
+        rows = list(rows) + list(extra_rows)
     by_entry = {}
     for row in rows:
         if row["entry_id"] not in known:
@@ -138,6 +155,7 @@ def select_matched(rows, protocol_path):
             if row["entry_id"] in by_entry:
                 raise ValueError("Multiple completed attempts for one entry would permit outcome selection")
             by_entry[row["entry_id"]] = row
+    known = {entry_id: entry for entry_id, (entry, _) in known.items()}
     missing = sorted(set(known) - set(by_entry))
     if missing:
         raise ValueError("Registered entries lack validated completions: " + ", ".join(missing))
@@ -182,6 +200,7 @@ def select_matched(rows, protocol_path):
         created_utc=utc_now(),
         calibration_protocol_path=str(Path(protocol_path).resolve()),
         calibration_protocol_sha256=digest,
+        refinement_protocols=refinement_records,
         rule=design["matching"],
         rows=rows,
         selection=selection,
@@ -197,10 +216,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ledger", type=Path, required=True)
     parser.add_argument("--protocol", type=Path, required=True)
+    parser.add_argument("--refinement-protocol", type=Path, action="append", default=[])
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     rows = collect_focused_norms(args.ledger, args.protocol)
-    record = select_matched(rows, args.protocol)
+    refinements = [
+        (collect_focused_norms(args.ledger, path), path) for path in args.refinement_protocol
+    ]
+    record = select_matched(rows, args.protocol, refinements)
     write_json_new(args.output, record)
     summary = {
         task: dict(

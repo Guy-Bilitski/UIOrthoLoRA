@@ -109,8 +109,15 @@ def register(calibration_protocol_path, selection_record_path, calibration_ledge
         or record.get("calibration_protocol_sha256") != digest
     ):
         raise ValueError("Selection record does not belong to this calibration protocol")
+    for bound in record.get("refinement_protocols", []):
+        if sha256(bound["path"]) != bound["sha256"]:
+            raise ValueError("Refinement protocol changed after selection")
     rows = collect_focused_norms(calibration_ledger, calibration_protocol_path)
-    rederived = select_matched(rows, calibration_protocol_path)
+    refinements = [
+        (collect_focused_norms(calibration_ledger, bound["path"]), bound["path"])
+        for bound in record.get("refinement_protocols", [])
+    ]
+    rederived = select_matched(rows, calibration_protocol_path, refinements)
     if rederived["selection"] != record["selection"]:
         raise ValueError("Selection record disagrees with the current validated calibration ledger")
     calibration = _json(calibration_protocol_path)

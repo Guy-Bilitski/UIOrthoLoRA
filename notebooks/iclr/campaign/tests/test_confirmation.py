@@ -68,11 +68,16 @@ NORMS = {
 
 def _selection(tmp_path):
     calibration = dict(
+        schema_version=1,
         purpose="focused_norm_calibration",
         registered=True,
         initial_entries=focused_entries(),
         matching=matching_rule(),
         task_jobs=dict(rte=_task_job("rte", 5670), mrpc=_task_job("mrpc", 2760)),
+        timing_evidence=dict(rte={}, mrpc={}),
+        historical_data_policy="synthetic fixture",
+        comparison_scope="synthetic fixture",
+        omitted_controls="synthetic fixture",
     )
     calibration_path = tmp_path / "calibration_protocol.json"
     write_json_new(calibration_path, calibration)
@@ -105,6 +110,35 @@ def test_selection_requires_every_registered_completion(tmp_path):
     rows = [_synthetic_row(entry, NORMS[entry["entry_id"]]) for entry in focused_entries()][:-1]
     with pytest.raises(ValueError, match="lack validated completions"):
         select_matched(rows, path)
+
+
+def test_refinement_round_joins_frontier_and_flips_failed_match(tmp_path):
+    from notebooks.iclr.campaign.focused_plan import entries as build_entries
+    from notebooks.iclr.campaign.focused_plan import register_refinement
+
+    _, calibration_path, record, record_path = _selection(tmp_path)
+    doses = {"mrpc": {"P1_NORM": [0.001, 0.003]}}
+    refinement = register_refinement(calibration_path, record_path, doses)
+    assert refinement["doses"] == doses and len(refinement["initial_entries"]) == 2
+    assert all(row["condition"] == "P1_NORM" and row["task"] == "mrpc" for row in refinement["initial_entries"])
+    refinement_path = tmp_path / "refinement.json"
+    write_json_new(refinement_path, refinement)
+    ref_norms = {"mrpc/P1_NORM/0.001": 0.26, "mrpc/P1_NORM/0.003": 0.198}
+    ref_rows = [_synthetic_row(entry, ref_norms[entry["entry_id"]]) for entry in build_entries(doses)]
+    v1_rows = [_synthetic_row(entry, NORMS[entry["entry_id"]]) for entry in focused_entries()]
+    merged = select_matched(v1_rows, calibration_path, [(ref_rows, refinement_path)])
+    mrpc = merged["selection"]["mrpc"]
+    assert mrpc["selected_coefficient"] == 0.003 and mrpc["match_status"] == "matched"
+    assert len(mrpc["frontier"]) == 5
+    assert merged["selection"]["rte"] == record["selection"]["rte"]
+    assert merged["refinement_protocols"][0]["sha256"] == sha256(refinement_path)
+    # Refinement is rejected for a task that already matched or a reused dose.
+    with pytest.raises(ValueError, match="already has a matched dose"):
+        register_refinement(calibration_path, record_path, {"rte": {"P1_NORM": [0.5]}})
+    with pytest.raises(ValueError, match="new, nonempty and rule-derived"):
+        register_refinement(calibration_path, record_path, {"mrpc": {"P1_NORM": [1.0]}})
+    with pytest.raises(ValueError, match="only add P1_NORM"):
+        register_refinement(calibration_path, record_path, {"mrpc": {"P1_MIX": [0.01]}})
 
 
 def _confirmation_protocol(tmp_path):
