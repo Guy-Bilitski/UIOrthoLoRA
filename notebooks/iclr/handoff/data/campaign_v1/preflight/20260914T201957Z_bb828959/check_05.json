@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "notebooks/iclr/campaign/tests",
+    "-o",
+    "addopts=",
+    "--junitxml=/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff/data/campaign_v1/preflight/20260914T201957Z_bb828959/tests.xml"
+  ],
+  "cwd": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914",
+  "exit_code": 0,
+  "seconds": 65.87807077355683,
+  "stderr": "",
+  "stdout": "........................................................................ [ 52%]\n................................................................         [100%]\n- generated xml file: /media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff/data/campaign_v1/preflight/20260914T201957Z_bb828959/tests.xml -\n136 passed in 63.61s (0:01:03)\n"
+}
