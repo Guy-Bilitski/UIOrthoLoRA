@@ -1,5 +1,12 @@
 # GPU session: start here
 
+**Current author instruction, 2026-09-14:** the broad campaign has been superseded
+for this submission by a minimal existing-table seed/control extension. Keep the
+50 GiB allowance; do not launch the old 66/75-run package or extra backbones.
+Read [`SUBMISSION_SCOPE_20260914.md`](SUBMISSION_SCOPE_20260914.md) first for the
+scope reduction, deadlines, completed pilots and pending table clarification.
+The expanded plan below remains a scientific reference, not an automatic queue.
+
 Updated 2026-09-14. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The expanded P0–P8 campaign is not complete. Persistent smoke/throughput workers and whole-run validation are implemented; the GPU P0 gate passed. The registered initial magnitude grid is implemented but not run. Confirmation and extension orchestration remain pending. Historical handoff scripts reanalyze archived results and test algebra only.
 
 Campaign continuation update, 2026-09-14: a separate server clone now contains a

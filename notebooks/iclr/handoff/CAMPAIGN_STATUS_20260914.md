@@ -1,11 +1,52 @@
 # ICLR campaign startup and continuation — 2026-09-14
 
+**Superseding author direction:** keep a minimal existing-Table-2 seed/control
+extension and the 50 GiB storage cap. Do not execute the broad matrix described
+in earlier entries. See `SUBMISSION_SCOPE_20260914.md`. Both timing pilots below
+completed whole-run validation at 14:50 UTC; their old running snapshots are
+historical. No confirmation or magnitude-calibration run has been launched.
+
 Status: **P0 smoke retry completed and independently validated**; two-task
 seed-31415 throughput calibration is next. The first interrupted attempt remains preserved.
 The resource gate is resolved. The full P0–P8 objective is active and incomplete. This document
 does not amend the authoritative experiment design or freeze a confirmation grid.
 
-## P0 completed — 13:31:57 UTC
+## Live timing pilots — launched 14:15 UTC
+
+Both persistent controllers launched successfully from normally pushed commit
+`d72e2424`, after the 129-test/four-audit/source-fingerprint preflight at
+`data/campaign_v1/preflight/20260914T140409Z_6d14892e/report.json`.
+
+| Task | Assigned physical GPU | Run ID | Dedicated tmux session |
+|---|---|---|---|
+| RTE | 2 | `20260914T141540Z_e577e9ebab4f` | `timing_rte_gpu2_v1` |
+| MRPC | 3 | `20260914T141542Z_d3805e5e67f1` | `timing_mrpc_gpu3_v1` |
+
+The private tmux socket is `iclr_6aa54397_20260914`. Each run directory is
+`campaign_outputs_v1/runs/iclr_6aa54397/P1_MIX/<task>/seed_31415/<run_id>/`.
+Its immutable `job.json` and `supervisor_launch.json` record the exact resolved
+worker configuration, source and launch command. The controller invocation is
+`python -u -m notebooks.iclr.campaign.smoke --purpose timing --steps 128`, with
+the prepared-input directory and timing/P0 gate paths documented above/below,
+`--maximum-seconds 5400 --reserved-gib 8`, and its tabled task/GPU.
+The supervised children are owned by these controllers; do not use historical
+PIDs as authority to stop or adopt a process. Inspect only these run directories
+and exact private tmux session handles. Do not start duplicate retries while a
+lease or live worker remains unresolved.
+
+At 14:17 UTC both were advancing through initial CPU spectral diagnostics after
+successful loading/placement. Their owned monitors had no alerts, each used
+about 1.9 GiB GPU memory, and total campaign output occupied approximately
+6.84 GiB. The initial diagnostic phase intentionally has low GPU utilization;
+optimizer steps and independent checkpoint reloads use the assigned GPU.
+The monitors sample every 10 seconds and preserve logs, health, temperatures,
+disk accounting and checkpoint creation; controller whole-run validation must
+pass before either ledger status can become completed. Counts at this point:
+P0 completed 1/interrupted 1; timing running 2/completed 0 of 2; magnitude
+calibration 0; confirmation 0 of 66; extensions 0. No complete-campaign ETA is
+yet supported by the unfinished timing measurements.
+
+## P0 completed — 13:31:57 UTC; earlier availability
 
 Availability update at 14:02 UTC: the author coordinated with the account using
 the assigned GPUs. Host telemetry verified GPUs 2/3 free, each at 15 MiB and 0%

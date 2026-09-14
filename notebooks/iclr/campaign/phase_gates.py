@@ -12,6 +12,7 @@ def validate_phase_admission(job):
     if job["stage"] != "calibration" or job.get("calibration_purpose") not in {
         "throughput_only",
         "magnitude_calibration",
+        "focused_norm_calibration",
     }:
         raise ValueError(
             "Calibration/confirmation require implemented phase admission; only registered calibration is admitted"
@@ -43,6 +44,11 @@ def validate_phase_admission(job):
     if sha256(gate["checkpoint_path"]) != gate["checkpoint_sha256"]:
         raise ValueError("Validated P0 checkpoint changed")
     protocol = json.loads(Path(job["phase_protocol_path"]).read_text())
+    if job["calibration_purpose"] == "focused_norm_calibration":
+        from .focused_plan import validate_focused_admission
+
+        validate_focused_admission(job, protocol)
+        return
     if job["calibration_purpose"] == "magnitude_calibration":
         validate_magnitude_admission(job, protocol)
         return

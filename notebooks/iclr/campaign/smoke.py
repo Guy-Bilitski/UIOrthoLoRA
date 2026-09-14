@@ -136,11 +136,13 @@ def main():
             note="Separate-seed throughput pilot; do not use its geometry/task outcome to select confirmation hyperparameters",
         )
     elif args.purpose == "matching":
-        from .calibration import materialize_entry
-
         if args.calibration_protocol is None or args.calibration_entry is None:
             raise ValueError("Matching requires a registered protocol and exact grid-entry ID")
         protocol = json.loads(args.calibration_protocol.read_text())
+        if protocol.get("purpose") == "focused_norm_calibration":
+            from .focused_plan import materialize_entry
+        else:
+            from .calibration import materialize_entry
         entries = [row for row in protocol["initial_entries"] if row["entry_id"] == args.calibration_entry]
         if len(entries) != 1 or entries[0]["task"] != args.task:
             raise ValueError("Select an exact registered initial-grid entry for this task")
