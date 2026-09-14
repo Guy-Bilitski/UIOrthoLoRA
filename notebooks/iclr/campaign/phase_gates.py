@@ -6,19 +6,7 @@ from pathlib import Path
 from .artifacts import sha256
 
 
-def validate_phase_admission(job):
-    if job["stage"] == "smoke":
-        return
-    if job["stage"] != "calibration" or job.get("calibration_purpose") not in {
-        "throughput_only",
-        "magnitude_calibration",
-        "focused_norm_calibration",
-    }:
-        raise ValueError(
-            "Calibration/confirmation require implemented phase admission; only registered calibration is admitted"
-        )
-    if job["seed"] != 31415:
-        raise ValueError("Calibration must use separate seed 31415")
+def _check_p0_gate_and_evidence(job):
     for prefix in ("p0_gate", "phase_protocol"):
         if not job.get(prefix + "_path") or not job.get(prefix + "_sha256"):
             raise ValueError("Missing immutable phase admission evidence")
@@ -40,10 +28,34 @@ def validate_phase_admission(job):
     ):
         raise ValueError("P0 whole-run gate has not passed")
     if gate.get("synthetic_cpu_test", False) is not job.get("synthetic_cpu_test", False):
-        raise ValueError("A synthetic P0 fixture cannot authorize pretrained calibration")
+        raise ValueError("A synthetic P0 fixture cannot authorize pretrained training")
     if sha256(gate["checkpoint_path"]) != gate["checkpoint_sha256"]:
         raise ValueError("Validated P0 checkpoint changed")
-    protocol = json.loads(Path(job["phase_protocol_path"]).read_text())
+    return json.loads(Path(job["phase_protocol_path"]).read_text())
+
+
+def validate_phase_admission(job):
+    if job["stage"] == "smoke":
+        return
+    if job["stage"] == "confirmation":
+        if job.get("confirmation_purpose") != "focused_norm_confirmation":
+            raise ValueError("Only the registered focused confirmation purpose is admitted")
+        protocol = _check_p0_gate_and_evidence(job)
+        from .confirmation_plan import validate_confirmation_admission
+
+        validate_confirmation_admission(job, protocol)
+        return
+    if job["stage"] != "calibration" or job.get("calibration_purpose") not in {
+        "throughput_only",
+        "magnitude_calibration",
+        "focused_norm_calibration",
+    }:
+        raise ValueError(
+            "Calibration/confirmation require implemented phase admission; only registered calibration is admitted"
+        )
+    if job["seed"] != 31415:
+        raise ValueError("Calibration must use separate seed 31415")
+    protocol = _check_p0_gate_and_evidence(job)
     if job["calibration_purpose"] == "focused_norm_calibration":
         from .focused_plan import validate_focused_admission
 

@@ -147,7 +147,12 @@ def test_cpu_worker_integrates_preparation_engine_probe_costs_and_reload(tmp_pat
 def test_worker_rejects_confirmation_without_phase_gate(tmp_path):
     job = fixture_job(tmp_path, "P1_MIX")
     job["stage"] = "confirmation"
-    with pytest.raises(ValueError, match="phase admission"):
+    # Confirmation is implemented but stays fail-closed: it needs the registered
+    # purpose, hash-bound protocol/selection evidence and a confirmation seed.
+    with pytest.raises(ValueError, match="registered focused confirmation purpose"):
+        validate_job(job, synthetic_cpu_test=True)
+    job["confirmation_purpose"] = "focused_norm_confirmation"
+    with pytest.raises(ValueError, match="phase admission evidence"):
         validate_job(job, synthetic_cpu_test=True)
 
 

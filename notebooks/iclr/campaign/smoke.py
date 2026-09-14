@@ -33,7 +33,7 @@ def main():
     parser.add_argument("--reserved-gib", type=float, default=8)
     parser.add_argument("--retry-of")
     parser.add_argument("--task", choices=("rte", "mrpc"), default="rte")
-    parser.add_argument("--purpose", choices=("smoke", "timing", "matching"), default="smoke")
+    parser.add_argument("--purpose", choices=("smoke", "timing", "matching", "confirmation"), default="smoke")
     parser.add_argument("--p0-gate", type=Path)
     parser.add_argument("--timing-protocol", type=Path)
     parser.add_argument("--calibration-protocol", type=Path)
@@ -77,7 +77,7 @@ def main():
     manifest = dict(
         schema_version=1,
         experiment_id=NAMESPACE,
-        stage="smoke" if args.purpose == "smoke" else "calibration",
+        stage={"smoke": "smoke", "confirmation": "confirmation"}.get(args.purpose, "calibration"),
         condition="P1_MIX",
         task=args.task,
         seed=31415,
@@ -170,6 +170,41 @@ def main():
         )
         if manifest["train_settings"]["max_steps"] != args.steps:
             raise ValueError("Explicit --steps must equal the registered fixed endpoint")
+    elif args.purpose == "confirmation":
+        if args.calibration_protocol is None or args.calibration_entry is None:
+            raise ValueError("Confirmation requires a registered confirmation protocol and exact entry ID")
+        from .confirmation_plan import materialize_entry as materialize_confirmation
+
+        protocol = json.loads(args.calibration_protocol.read_text())
+        entries = [row for row in protocol.get("entries", []) if row["entry_id"] == args.calibration_entry]
+        if len(entries) != 1 or entries[0]["task"] != args.task:
+            raise ValueError("Select an exact registered confirmation entry for this task")
+        resolved = materialize_confirmation(protocol, entries[0])
+        protected = {
+            "physical_gpu",
+            "gpu_uuid",
+            "source_revision",
+            "source_files_sha256",
+            "resource_authorization_sha256",
+            "cpu_preflight_sha256",
+            "dependencies",
+            "synthetic_cpu_test",
+            "run_id",
+            "run_directory",
+        }
+        if protected & resolved.keys():
+            raise ValueError("Confirmation scientific fields cannot override runtime/resource/source provenance")
+        manifest.update(resolved)
+        manifest.update(
+            phase_protocol_path=str(args.calibration_protocol.resolve()),
+            phase_protocol_sha256=sha256(args.calibration_protocol),
+            note=(
+                "Registered core confirmation entry; the NORM dose and its match status come only from "
+                "the immutable focused selection record bound in the protocol."
+            ),
+        )
+        if manifest["train_settings"]["max_steps"] != args.steps:
+            raise ValueError("Explicit --steps must equal the registered fixed endpoint")
     manifest["input_manifest_hashes"] = {
         key: sha256(Path(manifest[key]) / filename)
         for key, filename in (
@@ -198,7 +233,7 @@ def main():
             stage=job["stage"],
             condition=job["condition"],
             task=args.task,
-            seed=31415,
+            seed=job["seed"],
         ),
     )
     print(f"{args.purpose} run ID: {job['run_id']}\nPersistent directory: {directory}", flush=True)

@@ -1,0 +1,10 @@
+{
+  "assigned_gpu_ids": [0, 1, 2, 3],
+  "output_root": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_confirmation_v1",
+  "storage_allowance_gib": 150,
+  "gpu_hour_budget": null,
+  "wall_clock_hours": null,
+  "downloads_permitted": true,
+  "completion_authorized": true,
+  "authorization_record": "2026-09-14, received about 19:45 UTC: asked (1) raise storage cap 50->150 GiB (632 GiB free) and (2) go/no-go for the 18 overnight confirmation runs (UNREG/MIX/matched-NORM x RTE/MRPC x seeds 42,17,123), the author replied 'yes and yes. regarding storage - you need to write it in a separate folder that we can clean completely once we can. We need in ~2 days to start see results and analyze it to be able to understand what we have in our hands. make sure you leverage every piece of compute you have available.' Accordingly: confirmation artifacts go to this dedicated separate root (deletable wholesale after the paper without touching calibration evidence), 150 GiB applies to this root, the original calibration allocation and its 50 GiB cap remain immutable, and the core confirmation tranche is authorized to launch tonight once the ten focused-calibration entries are validated and the matched NORM dose is registered. Broader arms (CENTER/DECAY_INIT/RANDPROJ/head-only, LoRA, full FT, extra seeds, new backbones) still need their own registered decisions."
+}

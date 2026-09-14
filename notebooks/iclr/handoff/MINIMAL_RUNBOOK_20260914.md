@@ -4,6 +4,35 @@ This is the current resumption document for the deadline-focused campaign. It
 supersedes stale historical status paragraphs in this handoff, but does not
 replace `EXPERIMENTS_REQUIRED.md` as the scientific definitions document.
 
+## Update ~19:45 UTC: author-approved core confirmation stage
+
+The author approved, in this session: (1) the 18-run core confirmation tranche
+(P1_UNREG / P1_MIX / matched P1_NORM × RTE/MRPC × seeds 42,17,123) launching
+overnight once all ten calibration entries validate; (2) a separate 150 GiB
+confirmation output root `campaign_outputs_confirmation_v1/` that can later be
+cleaned wholesale without touching calibration evidence. The exact quote is in
+`data/campaign_v1/RESOURCE_AUTHORIZATION_20260914_CONFIRMATION.json`.
+
+Confirmation pipeline (all fail-closed, new code under `notebooks/iclr/campaign/`):
+
+1. `focused_analysis.py` — reads only ledger-validated fixed-endpoint pooled
+   norms for the registered ten-entry subset and applies the registered ±5%
+   selection rule; writes an immutable selection record (all rows retained,
+   failed matches reported as failed).
+2. `confirmation_plan.py` — registers the confirmation protocol from the
+   selection record (re-deriving the selection from the ledger and refusing on
+   any disagreement); defines/validates the 18 entries and their admission.
+3. `smoke.py --purpose confirmation` — same controller, whole-run validation
+   unchanged; `phase_gates.py` admits stage `confirmation` only with the
+   registered, author-authorized, hash-bound protocol and a declared
+   confirmation seed.
+4. `queue_confirmation.sh conf_gpu0..conf_gpu3` — four GPU-local lanes balanced
+   by measured cost (3R+1M / 2R+2M / 2R+3M / 2R+3M). Launch only after the six
+   calibration lanes exit; stopping one lane's tmux session frees exactly that
+   GPU.
+
+The six calibration NORM entries below remain the immediate prerequisite.
+
 ## Objective and stop rule
 
 Produce a thin, reproducible extension around the existing Table 2 evidence:
