@@ -80,6 +80,12 @@ The bundle includes its manifest, source-content hashes, installed package
 versions, every command/stdout/stderr/exit code and a JUnit test report. These are
 CPU algebra/integration observations, **not trained-model measurements**.
 
+Post-rebase validation at 11:57 UTC also passed all checks; its separate immutable
+bundle is `data/campaign_v1/preflight/20260914T115701Z_7cc2815a/report.json`.
+It records source revision `9ad303ed`, which includes the complete dependency
+lock and whitespace cleanup. Both validation bundles remain preserved. The source
+commits contain only ICLR campaign code, documentation and CPU validation data.
+
 Preparation failures were diagnosed and resolved without touching shared code:
 GitHub/PyPI DNS were inaccessible inside the sandbox; scoped commands succeeded
 after execution approvals. Shared Python 3.13 RoBERTa import failed at the
