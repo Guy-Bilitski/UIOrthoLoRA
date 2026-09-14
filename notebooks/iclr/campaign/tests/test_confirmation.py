@@ -98,18 +98,24 @@ def test_selection_applies_registered_rule_and_reports_failed_match(tmp_path):
     assert len(rte["frontier"]) == 3 and len(mrpc["frontier"]) == 3
 
 
-def test_selection_requires_every_registered_completion(tmp_path):
-    calibration = dict(
-        purpose="focused_norm_calibration",
-        registered=True,
-        initial_entries=focused_entries(),
-        matching=matching_rule(),
-    )
-    path = tmp_path / "protocol.json"
-    write_json_new(path, calibration)
-    rows = [_synthetic_row(entry, NORMS[entry["entry_id"]]) for entry in focused_entries()][:-1]
-    with pytest.raises(ValueError, match="lack validated completions"):
-        select_matched(rows, path)
+def test_incomplete_task_grid_is_pending_and_cannot_refine_or_confirm(tmp_path):
+    from notebooks.iclr.campaign.focused_plan import register_refinement
+
+    _, calibration_path, _, _ = _selection(tmp_path)
+    # Drop the last MRPC entry: MRPC becomes pending, RTE still selects.
+    rows = [
+        _synthetic_row(entry, NORMS[entry["entry_id"]])
+        for entry in focused_entries()
+        if entry["entry_id"] != "mrpc/P1_NORM/100"
+    ]
+    record = select_matched(rows, calibration_path)
+    assert record["selection"]["mrpc"]["match_status"] == "pending_incomplete_grid"
+    assert record["selection"]["mrpc"]["missing_entries"] == ["mrpc/P1_NORM/100"]
+    assert record["selection"]["rte"]["match_status"] == "matched"
+    partial_path = tmp_path / "partial_record.json"
+    write_json_new(partial_path, record)
+    with pytest.raises(ValueError, match="completed grid with a failed match"):
+        register_refinement(calibration_path, partial_path, {"mrpc": {"P1_NORM": [0.001]}})
 
 
 def test_refinement_round_joins_frontier_and_flips_failed_match(tmp_path):
@@ -133,7 +139,7 @@ def test_refinement_round_joins_frontier_and_flips_failed_match(tmp_path):
     assert merged["selection"]["rte"] == record["selection"]["rte"]
     assert merged["refinement_protocols"][0]["sha256"] == sha256(refinement_path)
     # Refinement is rejected for a task that already matched or a reused dose.
-    with pytest.raises(ValueError, match="already has a matched dose"):
+    with pytest.raises(ValueError, match="completed grid with a failed match"):
         register_refinement(calibration_path, record_path, {"rte": {"P1_NORM": [0.5]}})
     with pytest.raises(ValueError, match="new, nonempty and rule-derived"):
         register_refinement(calibration_path, record_path, {"mrpc": {"P1_NORM": [1.0]}})

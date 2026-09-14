@@ -156,11 +156,15 @@ def select_matched(rows, protocol_path, refinements=()):
                 raise ValueError("Multiple completed attempts for one entry would permit outcome selection")
             by_entry[row["entry_id"]] = row
     known = {entry_id: entry for entry_id, (entry, _) in known.items()}
-    missing = sorted(set(known) - set(by_entry))
-    if missing:
-        raise ValueError("Registered entries lack validated completions: " + ", ".join(missing))
     selection = {}
     for task in TASKS:
+        task_entry_ids = {entry_id for entry_id, entry in known.items() if entry["task"] == task}
+        missing = sorted(task_entry_ids - set(by_entry))
+        if missing:
+            # A task with incomplete registered entries gets no selection; it can
+            # be neither refined nor confirmed until its grid fully validates.
+            selection[task] = dict(match_status="pending_incomplete_grid", missing_entries=missing)
+            continue
         target_row = by_entry[f"{task}/P1_MIX/0.001"]
         unreg_row = by_entry[f"{task}/P1_UNREG/0"]
         target = target_row["pooled_relative_frobenius"]

@@ -120,6 +120,9 @@ def register(calibration_protocol_path, selection_record_path, calibration_ledge
     rederived = select_matched(rows, calibration_protocol_path, refinements)
     if rederived["selection"] != record["selection"]:
         raise ValueError("Selection record disagrees with the current validated calibration ledger")
+    for task, sel in record["selection"].items():
+        if sel["match_status"] not in {"matched", "failed_match"}:
+            raise ValueError("Confirmation requires a completed selection for every task: " + task)
     calibration = _json(calibration_protocol_path)
     protocol = dict(
         schema_version=1,

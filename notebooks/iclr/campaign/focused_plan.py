@@ -115,8 +115,8 @@ def validate_focused_admission(job, protocol):
         for task, task_doses in protocol["doses"].items():
             if set(task_doses) != {"P1_NORM"}:
                 raise ValueError("Refinement rounds may only add P1_NORM doses")
-            if record["selection"][task]["match_status"] == "matched":
-                raise ValueError("Refinement is only admitted for tasks without a matched dose")
+            if record["selection"][task]["match_status"] != "failed_match":
+                raise ValueError("Refinement is only admitted for a completed grid with a failed match")
     for task, evidence in protocol["timing_evidence"].items():
         prior, _ = read_timing_evidence(
             evidence["path"], evidence["sha256"], synthetic_cpu_test=job.get("synthetic_cpu_test", False)
@@ -218,16 +218,14 @@ def register_refinement(parent_protocol_path, selection_record_path, doses):
         or record.get("calibration_protocol_sha256") != sha256(parent_protocol_path)
     ):
         raise ValueError("Selection record does not bind the parent protocol")
-    tried = {
-        task: {cell["coefficient"] for cell in record["selection"][task]["frontier"]}
-        for task in record["selection"]
-    }
     for task, task_doses in doses.items():
-        if record["selection"][task]["match_status"] == "matched":
-            raise ValueError("Task already has a matched dose: " + task)
+        sel = record["selection"][task]
+        if sel["match_status"] != "failed_match":
+            raise ValueError("Refinement requires a completed grid with a failed match: " + task)
         if set(task_doses) != {"P1_NORM"}:
             raise ValueError("Refinement rounds may only add P1_NORM doses")
-        overlap = set(task_doses["P1_NORM"]) & tried[task]
+        tried = {cell["coefficient"] for cell in sel["frontier"]}
+        overlap = set(task_doses["P1_NORM"]) & tried
         if overlap or not task_doses["P1_NORM"]:
             raise ValueError("Refinement doses must be new, nonempty and rule-derived")
     return {
