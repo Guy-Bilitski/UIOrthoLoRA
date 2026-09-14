@@ -2,8 +2,9 @@
 
 This directory is distinct from all legacy archives. It contains immutable CPU
 preflights and resource/provenance records. A separate persistent output root
-now holds prepared public inputs and one interrupted GPU P0 attempt with a
-step-0 checkpoint; there are no new completed task-training results. The initial
+now holds prepared public inputs, one interrupted GPU P0 attempt with a
+step-0 checkpoint, and one completed, independently validated eight-step P0
+retry. No magnitude-calibration or confirmation results exist yet. The initial
 CSV ledger here is a historical empty startup snapshot, not the current run ledger.
 Each preflight invocation uses a fresh
 timestamp/UUID directory and records its source hashes, environment, commands,

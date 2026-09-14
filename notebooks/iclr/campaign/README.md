@@ -4,9 +4,10 @@ Scope: `iclr_6aa54397`, on the existing `ortho_new` branch. The authoritative
 design is `../handoff/EXPERIMENTS_REQUIRED.md`. This package now includes a
 CPU-validated optimizer-step engine, pinned input preparation, budget accounting,
 and a persistent P0 smoke controller/worker. The full production campaign is
-**not yet implemented**: magnitude-calibration and confirmation orchestration
-still need completion. Whole-run validation and gated throughput pilots are now
-implemented. No pretrained task outcomes are supplied by CPU tests.
+**not yet implemented**: calibration expansion and confirmation orchestration
+still need completion. Whole-run validation, gated throughput pilots, initial
+magnitude-grid registration/admission and norm-only decisions are implemented.
+No pretrained task outcomes are supplied by CPU tests.
 
 Implemented and checked on CPU:
 
@@ -84,8 +85,9 @@ Important implementation choices and remaining work:
    See the immutable `RESOURCE_AUTHORIZATION_20260914.json` in handoff/data/campaign_v1.
 4. Pinned inputs, disjoint selection/locked splits, fixed corpus masks, conservative
    global reservations, an owned-child supervisor and whole-run validation are
-   implemented. Magnitude-calibration selection, a frozen matrix and confirmation driver still
-   need implementation. P3/P7/P8 must be verified on actual pretrained RoBERTa
+   implemented. Initial magnitude-grid selection is implemented; expansion admission,
+   a frozen matrix and confirmation driver still need implementation.
+   P3/P7/P8 must be verified on actual pretrained RoBERTa
    checkpoints, including real dtype/device placement and controlled P7 costs.
 5. `spectral.regularization()` remains the deliberately unoptimized correctness
    reference. `regularizers.CachedRegularizer` caches fixed projectors, builds
@@ -108,8 +110,9 @@ diagnostic, probe and regularizer callbacks; it returns `awaiting_validation` or
 `interrupted`, never `completed`. Production calls must provide explicit resource
 authorization, the physical GPU ID/UUID, a bounded reservation and a persistent
 output root. `smoke.py` admits P0 smoke and explicitly gated throughput-calibration
-jobs, intended for dedicated tmux sessions. It rejects magnitude-calibration and
-confirmation jobs until their admission is implemented. The only bypass is explicitly named
+jobs, intended for dedicated tmux sessions. Registered initial magnitude-grid
+entries are also admitted after both validated timing pilots. Expansion and
+confirmation jobs remain rejected until their admission is implemented. The only bypass is explicitly named
 `synthetic_cpu_test`, used by tests with all GPUs hidden.
 
 Validation selection uses accuracy, excludes step 0 and breaks ties by earliest
@@ -120,6 +123,19 @@ existing attempt directory. `validation.validate_checkpoint()` compares all
 scientific outputs; only `diagnostic_seconds` is excluded from numerical equality.
 Its report has `validation_scope="checkpoint"` and is intentionally insufficient
 to satisfy the run-completion ledger gate.
+
+`register_calibration.py` requires both completed throughput reports, explicit
+per-task step budgets and explicit three-to-five-point nuisance grids. It seals
+a new immutable protocol and does not launch training. `calibration.py` fixes
+MIX/LEFT doses and a central MIX-1e-3 norm target; all three RANDPROJ orientations
+must fit the +/-5% tolerance for a matched label. Selection minimizes the worst
+orientation norm error, with lower coefficient breaking ties. Failed matches
+retain the closest tested coefficient and complete frontier. Both outer doses
+may be proposed for at most two fixed-rule expansion rounds; an expansion
+proposal does not itself authorize execution. `calibration_io.py` only extracts
+hash-bound, validated fixed-step total norms and per-module distributions from
+the scientific ledger; task scores, block fractions and P8 outcomes are not
+selection inputs. No experimental magnitude grid has been registered yet.
 
 The current CPU suite includes exact uninterrupted-versus-resumed optimization,
 dropout and sampler equivalence; failed checkpoint writes/corruption; selection

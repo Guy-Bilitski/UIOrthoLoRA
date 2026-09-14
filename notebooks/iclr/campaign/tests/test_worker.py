@@ -71,7 +71,9 @@ def fixture_job(tmp_path, condition):
         eval_batch_size=2,
         probe_batch_size=1,
         spectral_config=asdict(SpectralConfig(tail_size=4)),
-        regularization_coefficient=1e-3 if condition in {"P1_MIX", "P1_RANDPROJ"} else 0.0,
+        regularization_coefficient=1e-3
+        if condition in {"P1_LEFT", "P1_MIX", "P1_NORM", "P1_CENTER", "P1_DECAY_INIT", "P1_RANDPROJ"}
+        else 0.0,
         random_projector_seeds={name: [100 + 2 * i, 101 + 2 * i] for i, name in enumerate(attention_modules(model))}
         if condition == "P1_RANDPROJ"
         else {},
@@ -108,7 +110,20 @@ def fixture_job(tmp_path, condition):
 
 
 @pytest.mark.parametrize(
-    "condition", ["P1_MIX", "P1_RANDPROJ", "P1_HEAD_BASE", "P1_HEAD_INIT", "P5_LORA8", "P5_FULL_FT"]
+    "condition",
+    [
+        "P1_UNREG",
+        "P1_LEFT",
+        "P1_MIX",
+        "P1_NORM",
+        "P1_CENTER",
+        "P1_DECAY_INIT",
+        "P1_RANDPROJ",
+        "P1_HEAD_BASE",
+        "P1_HEAD_INIT",
+        "P5_LORA8",
+        "P5_FULL_FT",
+    ],
 )
 def test_cpu_worker_integrates_preparation_engine_probe_costs_and_reload(tmp_path, monkeypatch, condition):
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "")

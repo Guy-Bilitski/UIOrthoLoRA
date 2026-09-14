@@ -9,12 +9,15 @@ from .artifacts import sha256
 def validate_phase_admission(job):
     if job["stage"] == "smoke":
         return
-    if job["stage"] != "calibration" or job.get("calibration_purpose") != "throughput_only":
+    if job["stage"] != "calibration" or job.get("calibration_purpose") not in {
+        "throughput_only",
+        "magnitude_calibration",
+    }:
         raise ValueError(
-            "Calibration/confirmation require implemented phase admission; this gate only admits throughput pilots"
+            "Calibration/confirmation require implemented phase admission; only registered calibration is admitted"
         )
     if job["seed"] != 31415:
-        raise ValueError("Throughput calibration must use separate seed 31415")
+        raise ValueError("Calibration must use separate seed 31415")
     for prefix in ("p0_gate", "phase_protocol"):
         if not job.get(prefix + "_path") or not job.get(prefix + "_sha256"):
             raise ValueError("Missing immutable phase admission evidence")
@@ -40,6 +43,9 @@ def validate_phase_admission(job):
     if sha256(gate["checkpoint_path"]) != gate["checkpoint_sha256"]:
         raise ValueError("Validated P0 checkpoint changed")
     protocol = json.loads(Path(job["phase_protocol_path"]).read_text())
+    if job["calibration_purpose"] == "magnitude_calibration":
+        validate_magnitude_admission(job, protocol)
+        return
     if protocol.get("purpose") != "throughput_only" or protocol.get("selection_allowed") is not False:
         raise ValueError("Timing pilots cannot silently select confirmation hyperparameters")
     if job["task"] not in protocol["tasks"]:
@@ -47,3 +53,35 @@ def validate_phase_admission(job):
     for key, expected in protocol["tasks"][job["task"]].items():
         if job.get(key) != expected:
             raise ValueError("Timing job differs from its predeclared protocol: " + key)
+
+
+def validate_magnitude_admission(job, protocol):
+    from .calibration import build_design, materialize_entry
+    from .register_calibration import read_timing_evidence
+
+    if protocol.get("purpose") != "magnitude_calibration" or protocol.get("registered") is not True:
+        raise ValueError("Magnitude calibration requires a durably registered initial grid")
+    canonical = build_design(
+        protocol["task_jobs"],
+        protocol["nuisance_grids"],
+        max_expansion_rounds=protocol["expansion"]["max_rounds"],
+        expansion_factor=protocol["expansion"]["factor"],
+    )
+    if any(protocol.get(key) != value for key, value in canonical.items()):
+        raise ValueError("Registered calibration definitions differ from the authoritative implemented rules")
+    if set(protocol.get("timing_evidence", {})) != {"rte", "mrpc"}:
+        raise ValueError("Both task throughput pilots must pass before magnitude calibration")
+    for task, evidence in protocol["timing_evidence"].items():
+        timing_job, _ = read_timing_evidence(
+            evidence["path"], evidence["sha256"], synthetic_cpu_test=job.get("synthetic_cpu_test", False)
+        )
+        if timing_job["task"] != task:
+            raise ValueError("Timing evidence belongs to another task")
+    entries = [entry for entry in protocol["initial_entries"] if entry["entry_id"] == job.get("calibration_entry_id")]
+    if len(entries) != 1:
+        raise ValueError(
+            "Only registered initial-grid entries are admitted; expansion needs a separate decision record"
+        )
+    expected = materialize_entry(protocol, entries[0])
+    if any(job.get(key) != value for key, value in expected.items()):
+        raise ValueError("Calibration job differs from its registered paired scientific configuration")

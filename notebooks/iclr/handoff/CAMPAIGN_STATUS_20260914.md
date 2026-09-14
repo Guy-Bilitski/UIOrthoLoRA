@@ -7,6 +7,24 @@ does not amend the authoritative experiment design or freeze a confirmation grid
 
 ## P0 completed — 13:31:57 UTC
 
+Availability update at 14:02 UTC: the author coordinated with the account using
+the assigned GPUs. Host telemetry verified GPUs 2/3 free, each at 15 MiB and 0%
+utilization; temperatures 32/28 C. No foreign process was modified or stopped.
+Earlier, at the author's explicit request, only GPU PID/account metadata was
+queried to identify account `goody`; no commands, directories or outputs were
+inspected. All campaign GPU leases were terminal during that occupancy.
+
+New CPU work includes magnitude-only coefficient selection, exact initial log
+grids, bounded both-outer-dose expansion proposals, three fixed RANDPROJ
+orientations per dose, failure retention and hash-bound fixed-endpoint evidence
+reading. Initial-grid registration/admission requires two validated timing
+pilots. Confirmation and expansion-launch admission remain closed. No actual
+magnitude grid or endpoint has been registered without those measurements.
+The controller now admits the registered initial grid with `--purpose matching`,
+`--calibration-protocol`, `--calibration-entry` and matching explicit `--steps`.
+All nine P1 controls plus LoRA/full-FT are exercised by synthetic CPU workers;
+these are implementation checks, not empirical runs or training-seed replicates.
+
 Retry ID `20260914T132305Z_8729a4c83ee8`, GPU 2, ran from 13:23:05 UTC until
 worker exit at 13:29:49 UTC in dedicated tmux session `smoke_gpu2_retry1` on the
 `iclr_6aa54397_20260914` server. Source commit `08ffa9c2` was normally pushed to

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/.venv/bin/python",
+    "scripts/check_spectral_algebra.py"
+  ],
+  "cwd": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff",
+  "exit_code": 0,
+  "seconds": 0.7336566122248769,
+  "stderr": "",
+  "stdout": "PASS: 100 projection/core tests, 300 unified block-bound and commutator cases, 72 rectangular decompositions, factor symmetries, and boundary counterexamples.\n"
+}

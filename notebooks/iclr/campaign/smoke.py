@@ -1,4 +1,4 @@
-"""Persistent controller for one P0 smoke or gated throughput-calibration attempt.
+"""Persistent controller for one P0 smoke or registered calibration attempt.
 
 Invoke in a dedicated tmux session. Every attempt creates new paths and durable
 ledger events. A successful child receives a separate whole-run validation pass.
@@ -15,6 +15,7 @@ import tarfile
 from .allocation import AllocationLedger
 from .artifacts import append_event, new_run, sha256, write_json_new
 from .engine import TrainSettings
+from .phase_gates import validate_phase_admission
 from .protocol import NAMESPACE, RECIPE_REFERENCE, Resources
 from .spectral import SpectralConfig
 from .supervision import MonitorSettings, gpu_telemetry, supervise_owned_worker
@@ -32,9 +33,11 @@ def main():
     parser.add_argument("--reserved-gib", type=float, default=8)
     parser.add_argument("--retry-of")
     parser.add_argument("--task", choices=("rte", "mrpc"), default="rte")
-    parser.add_argument("--purpose", choices=("smoke", "timing"), default="smoke")
+    parser.add_argument("--purpose", choices=("smoke", "timing", "matching"), default="smoke")
     parser.add_argument("--p0-gate", type=Path)
     parser.add_argument("--timing-protocol", type=Path)
+    parser.add_argument("--calibration-protocol", type=Path)
+    parser.add_argument("--calibration-entry")
     args = parser.parse_args()
     resources = Resources(**json.loads(args.resources.read_text()))
     resources.validate_training()
@@ -132,6 +135,39 @@ def main():
             matching_status="not_applicable_throughput_pilot_not_magnitude_calibration",
             note="Separate-seed throughput pilot; do not use its geometry/task outcome to select confirmation hyperparameters",
         )
+    elif args.purpose == "matching":
+        from .calibration import materialize_entry
+
+        if args.calibration_protocol is None or args.calibration_entry is None:
+            raise ValueError("Matching requires a registered protocol and exact grid-entry ID")
+        protocol = json.loads(args.calibration_protocol.read_text())
+        entries = [row for row in protocol["initial_entries"] if row["entry_id"] == args.calibration_entry]
+        if len(entries) != 1 or entries[0]["task"] != args.task:
+            raise ValueError("Select an exact registered initial-grid entry for this task")
+        resolved = materialize_entry(protocol, entries[0])
+        protected = {
+            "physical_gpu",
+            "gpu_uuid",
+            "source_revision",
+            "source_files_sha256",
+            "resource_authorization_sha256",
+            "cpu_preflight_sha256",
+            "dependencies",
+            "synthetic_cpu_test",
+            "run_id",
+            "run_directory",
+        }
+        if protected & resolved.keys():
+            raise ValueError("Calibration scientific fields cannot override runtime/resource/source provenance")
+        manifest.update(resolved)
+        manifest.update(
+            phase_protocol_path=str(args.calibration_protocol.resolve()),
+            phase_protocol_sha256=sha256(args.calibration_protocol),
+            matching_status="calibration_frontier_not_yet_selected",
+            note="Registered initial magnitude grid; coefficient decisions use fixed-step pooled total norms only. Confirmation remains gated.",
+        )
+        if manifest["train_settings"]["max_steps"] != args.steps:
+            raise ValueError("Explicit --steps must equal the registered fixed endpoint")
     manifest["input_manifest_hashes"] = {
         key: sha256(Path(manifest[key]) / filename)
         for key, filename in (
@@ -140,6 +176,7 @@ def main():
             ("probe_directory", "prepared.json"),
         )
     }
+    validate_phase_admission(manifest)
     directory, manifest = new_run(root, manifest)
     job = {**manifest, "run_directory": str(directory.resolve())}
     write_json_new(directory / "job.json", job)

@@ -1,11 +1,11 @@
 # GPU session: start here
 
-Updated 2026-09-14. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The expanded P0–P8 campaign is not complete. A P0-only persistent smoke worker is now implemented and CPU-tested; calibration/confirmation admission and whole-run validation remain pending. Historical handoff scripts reanalyze archived results and test algebra only.
+Updated 2026-09-14. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The expanded P0–P8 campaign is not complete. Persistent smoke/throughput workers and whole-run validation are implemented; the GPU P0 gate passed. The registered initial magnitude grid is implemented but not run. Confirmation and extension orchestration remain pending. Historical handoff scripts reanalyze archived results and test algebra only.
 
 Campaign continuation update, 2026-09-14: a separate server clone now contains a
 prospective optimizer-step engine, compact persistent restart states, cached P1
 penalties, LoRA/full-FT geometry and independent checkpoint reproduction under
-`../campaign/`, now with 104 CPU algebra, input-preparation, supervision and tiny-model integration checks.
+`../campaign/`, with CPU algebra, input-preparation, supervision and tiny-model integration checks.
 All four supplied checks and six original source fingerprints also pass in the
 recorded preflights. The production training driver is still incomplete;
 the first GPU P0 attempt was preserved as interrupted. Its CPU-diagnostic retry
@@ -17,9 +17,15 @@ initial 50 GiB output allocation and public downloads are recorded in
 `data/campaign_v1/RESOURCE_AUTHORIZATION_20260914.json`. Pinned RoBERTa/RTE/MRPC
 and fixed held-out probe inputs are prepared. Read
 [`CAMPAIGN_STATUS_20260914.md`](CAMPAIGN_STATUS_20260914.md) for exact checkout,
-environment, measured resource inventory, validation artifact, empty run ledger,
+environment, measured resource inventory, validation artifact, durable run ledger,
 remaining implementation and continuation commands. This does not change the
 authoritative P0–P8 plan or promote CPU checks to trained-model evidence.
+
+At 14:02 UTC, after the author coordinated with the other GPU account, GPUs 2
+and 3 were verified free (15 MiB each, zero utilization). No other workload was
+stopped or modified by this campaign. The next actions are the immutable
+two-task timing protocol, one independent worker per assigned GPU, followed by
+measured runtime/storage forecasting and magnitude-calibration registration.
 
 GitHub delivery correction: all files are now ordinary tracked files under `notebooks/iclr/handoff/` in UIOrthoLoRA's existing `ortho_new` branch. Start the server session in this directory after pulling the research repository. This is not a nested Git repository or submodule; do not clone Overleaf to obtain the docs. See `SNAPSHOT_PROVENANCE.md` for the exact source snapshot and portable numerical-audit fixtures.
 

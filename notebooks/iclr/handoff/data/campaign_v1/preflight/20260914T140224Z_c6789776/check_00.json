@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/.venv/bin/python",
+    "scripts/build_mixing_tables.py",
+    "--check"
+  ],
+  "cwd": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff",
+  "exit_code": 0,
+  "seconds": 0.22605797369033098,
+  "stderr": "",
+  "stdout": "PASS: six inline regions reproduce from 27 summaries, 1,296 module records, and 10 GLUE rows.\n"
+}

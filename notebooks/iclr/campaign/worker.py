@@ -1,7 +1,7 @@
 """One explicitly assigned, offline RoBERTa worker; immutable artifacts only.
 
-The CLI admits P0 smoke and gated separate-seed throughput pilots. Magnitude
-calibration and confirmation require additional implemented phase admission.
+The CLI admits P0 smoke, gated throughput pilots and the registered initial
+magnitude-calibration grid. Expansion and confirmation admission remain gated.
 """
 
 import argparse
