@@ -1,0 +1,12 @@
+{
+  "command": [
+    "sha256sum",
+    "--check",
+    "notebooks/iclr/handoff/GPU_SOURCE_FINGERPRINTS.sha256"
+  ],
+  "cwd": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914",
+  "exit_code": 0,
+  "seconds": 0.004327557049691677,
+  "stderr": "",
+  "stdout": "src/peft/tuners/uiortholora/layer.py: OK\nsrc/peft/tuners/uiortholora/config.py: OK\nnotebooks/glue/training_new/training.py: OK\nnotebooks/glue/training_new/newer_train/train_ablation.py: OK\nnotebooks/glue/training_new/newer_train/mixing_reg.py: OK\nnotebooks/glue/training_new/newer_train/experiments.py: OK\n"
+}
