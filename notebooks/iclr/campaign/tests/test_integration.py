@@ -140,4 +140,3 @@ def test_delivered_legacy_unrotated_correspondence(scalers,leading):
     x=torch.randn(4,8)
     torch.testing.assert_close(legacy.get_delta_weight("default"),new.delta_total(),rtol=2e-5,atol=1e-7)
     torch.testing.assert_close(legacy(x),new(x),rtol=2e-5,atol=1e-7)
-

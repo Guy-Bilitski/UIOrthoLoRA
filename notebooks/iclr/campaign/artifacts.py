@@ -97,4 +97,3 @@ def append_event(ledger, event):
         f.write(json.dumps(event, sort_keys=True, allow_nan=False) + "\n")
         f.flush()
         os.fsync(f.fileno())
-

@@ -229,4 +229,3 @@ def test_protocol_gate_metrics_and_manifest_immutability(tmp_path):
         append_event(ledger,dict(run_id=a["run_id"],status="running"))
     append_event(ledger,dict(run_id=b["run_id"],status="retry",retry_of=a["run_id"]))
     assert len(ledger.read_text().splitlines()) == 4
-
