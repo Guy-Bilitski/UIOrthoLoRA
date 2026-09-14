@@ -4,7 +4,18 @@
 extension and the 50 GiB storage cap. Do not execute the broad matrix described
 in earlier entries. See `SUBMISSION_SCOPE_20260914.md`. Both timing pilots below
 completed whole-run validation at 14:50 UTC; their old running snapshots are
-historical. No confirmation or magnitude-calibration run has been launched.
+historical. Focused magnitude calibration is now active; no confirmation run
+has been launched.
+
+**15:51 UTC active update:** MIX targets `20260914T154246Z_92f7745b1ee5`
+(RTE/GPU 2) and `20260914T154246Z_5766195517d9` (MRPC/GPU 3) launched
+persistently at 15:42:46 UTC from `d321e517`. Steps 103 and 114, respectively,
+were directly verified with finite gradients/losses. Retained output is about
+10 GiB of the unchanged 50 GiB cap. `SUBMISSION_SCOPE_20260914.md` contains exact
+continuation commands for the fixed ten-entry calibration subset and its
+fail-closed task-local queues. The older startup/timing entries below describe
+past states, not current idle workers. Do not modify in-use campaign Python
+sources or launch the deferred broad matrix.
 
 Status: **P0 smoke retry completed and independently validated**; two-task
 seed-31415 throughput calibration is next. The first interrupted attempt remains preserved.

@@ -4,8 +4,17 @@
 for this submission by a minimal existing-table seed/control extension. Keep the
 50 GiB allowance; do not launch the old 66/75-run package or extra backbones.
 Read [`SUBMISSION_SCOPE_20260914.md`](SUBMISSION_SCOPE_20260914.md) first for the
-scope reduction, deadlines, completed pilots and pending table clarification.
+scope reduction, deadlines, completed pilots and active focused calibration.
 The expanded plan below remains a scientific reference, not an automatic queue.
+
+**Current execution, 15:51 UTC:** both focused MIX calibration targets launched
+at 15:42:46 UTC from `d321e517`, on GPU 2 (RTE, run
+`20260914T154246Z_92f7745b1ee5`) and GPU 3 (MRPC, run
+`20260914T154246Z_5766195517d9`). Actual optimizer progress was verified at
+steps 103 and 114 with finite losses/gradients. See the scope document for exact
+private tmux sessions, immutable protocol, source/preflight and the task-local
+automatic calibration continuation commands. The older status paragraphs below
+are historical; the live ledger is authoritative. No confirmation results exist.
 
 Updated 2026-09-14. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The expanded P0–P8 campaign is not complete. Persistent smoke/throughput workers and whole-run validation are implemented; the GPU P0 gate passed. The registered initial magnitude grid is implemented but not run. Confirmation and extension orchestration remain pending. Historical handoff scripts reanalyze archived results and test algebra only.
 
