@@ -2,6 +2,18 @@
 
 Updated 2026-09-14. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The plan is a specification; the expanded training runner is **not implemented or validated yet**. Existing scripts in this paper repo reanalyze archived results and test algebra only.
 
+Campaign startup update, 2026-09-14: a separate server clone now contains a
+prospective runner foundation under `../campaign/`, with 43 passing CPU algebra
+and tiny-model integration checks. All four supplied checks and six original
+source fingerprints also pass. The expanded training driver is still incomplete;
+no pretrained smoke, calibration or model training has been launched. The user
+assigned GPUs 2 and 3, while compute budget, persistent checkpoint allocation and
+model/dataset download policy remain pending. Read
+[`CAMPAIGN_STATUS_20260914.md`](CAMPAIGN_STATUS_20260914.md) for exact checkout,
+environment, measured resource inventory, validation artifact, empty run ledger,
+remaining implementation and continuation commands. This does not change the
+authoritative P0–P8 plan or promote CPU checks to trained-model evidence.
+
 GitHub delivery correction: all files are now ordinary tracked files under `notebooks/iclr/handoff/` in UIOrthoLoRA's existing `ortho_new` branch. Start the server session in this directory after pulling the research repository. This is not a nested Git repository or submodule; do not clone Overleaf to obtain the docs. See `SNAPSHOT_PROVENANCE.md` for the exact source snapshot and portable numerical-audit fixtures.
 
 ## 1. Authority and isolation
