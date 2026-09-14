@@ -129,7 +129,9 @@ def validate_focused_admission(job, protocol):
         if expected != protocol["task_jobs"][task]:
             raise ValueError("Focused controls changed the validated common scientific recipe")
         TrainSettings(**expected["train_settings"]).validate()
-    selected = [entry for entry in entries() if entry["entry_id"] == job.get("calibration_entry_id")]
+    selected = [
+        entry for entry in entries(protocol.get("doses")) if entry["entry_id"] == job.get("calibration_entry_id")
+    ]
     if len(selected) != 1:
         raise ValueError("Unknown focused calibration entry")
     expected = materialize_entry(protocol, selected[0])
