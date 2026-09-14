@@ -33,6 +33,13 @@ RECIPE_REFERENCE = {
 }
 
 
+def owned_path(root, path):
+    root, path = Path(root).resolve(), Path(path).resolve()
+    if path == root or not path.is_relative_to(root):
+        raise ValueError("Path must be a child of the explicitly allocated output root")
+    return path
+
+
 def first_tranche():
     return [
         dict(condition=c, task=t, seed=s, stage="confirmation")
@@ -67,8 +74,12 @@ class Resources:
     wall_clock_hours: float | None = None
     downloads_permitted: bool | None = None
     authorization_record: str | None = None
+    completion_authorized: bool = False
 
     def validate_training(self):
+        def positive(value):
+            return type(value) in (int, float) and isfinite(value) and value > 0
+
         missing = []
         if (
             not self.assigned_gpu_ids
@@ -78,17 +89,18 @@ class Resources:
             missing.append("distinct explicitly assigned GPU IDs")
         if not self.output_root or not Path(self.output_root).is_absolute():
             missing.append("assigned absolute persistent output directory")
-        if (
-            not self.storage_allowance_gib
-            or not isfinite(self.storage_allowance_gib)
-            or self.storage_allowance_gib <= 0
-        ):
+        if not positive(self.storage_allowance_gib):
             missing.append("positive assigned storage allowance")
-        if not any(x is not None and isfinite(x) and x > 0 for x in (self.gpu_hour_budget, self.wall_clock_hours)):
+        budgets = (self.gpu_hour_budget, self.wall_clock_hours)
+        if type(self.completion_authorized) is not bool:
+            missing.append("explicit boolean completion-duration authorization")
+        if (not self.completion_authorized and not any(positive(x) for x in budgets)) or any(
+            x is not None and not positive(x) for x in budgets
+        ):
             missing.append("positive GPU-hour or wall-clock budget")
-        if self.downloads_permitted is None:
+        if type(self.downloads_permitted) is not bool:
             missing.append("model/dataset download policy")
-        if not self.authorization_record:
+        if not isinstance(self.authorization_record, str) or not self.authorization_record.strip():
             missing.append("resource authorization provenance")
         if missing:
             raise ValueError("Training resource gate: " + "; ".join(missing))

@@ -1,0 +1,10 @@
+{
+  "assigned_gpu_ids": [2, 3],
+  "output_root": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_v1",
+  "storage_allowance_gib": 50,
+  "gpu_hour_budget": null,
+  "wall_clock_hours": null,
+  "downloads_permitted": true,
+  "completion_authorized": true,
+  "authorization_record": "2026-09-14: Author explicitly wrote 'you can use GPUs 2 and 3 how much you need until al experiments are finalized. Go ahead'. This authorizes outcome-limited campaign duration without a numerical time cap. It followed the assistant's proposal of an initial 4 GPU-hour cap, 50 GiB in dedicated-clone campaign_outputs_v1/, and public model/dataset downloads. The author replaced the time cap with completion authorization. 'Go ahead' is interpreted as approval of the proposed initial storage location/50 GiB allowance and public downloads; this interpretation was explicitly reported to the author. Per-worker finite reservations and retained-artifact accounting remain mandatory. Request expansion before exceeding 50 GiB; no authorization for other GPUs or other agents' jobs."
+}

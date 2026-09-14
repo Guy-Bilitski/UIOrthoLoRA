@@ -2,10 +2,10 @@
 
 Scope: `iclr_6aa54397`, on the existing `ortho_new` branch. The authoritative
 design is `../handoff/EXPERIMENTS_REQUIRED.md`. This package now includes a
-CPU-validated optimizer-step engine and checkpoint system, but is **not yet an
-executable production campaign**: pinned data/model preparation, persistent
-workers, monitoring, global budget accounting and calibration orchestration are
-still pending. No new pretrained task-training outcomes are supplied by CPU tests.
+CPU-validated optimizer-step engine, pinned input preparation, budget accounting,
+and a persistent P0 smoke controller/worker. The full production campaign is
+**not yet implemented**: whole-run validation and calibration/confirmation
+admission still need completion. No pretrained task outcomes are supplied by CPU tests.
 
 Implemented and checked on CPU:
 
@@ -74,13 +74,16 @@ Important implementation choices and remaining work:
    Unrotated update/forward correspondence is tested directly against the legacy
    implementation. Rotated campaign initialization is a deliberate new protocol,
    not a claim of reproducing legacy rotated results.
-3. `Resources.validate_training()` requires explicit devices, positive budget,
+3. `Resources.validate_training()` requires explicit devices, a positive budget
+   or explicitly recorded completion-duration authorization,
    persistent directory/storage allowance, download policy and authorization
-   provenance. The author assigned physical GPUs 2 and 3. Remaining resource
-   fields have not been assigned; no training has been launched.
-4. The pinned model/data loaders, fixed inner/locked evaluation split and corpus
-   masks, persistent worker/monitor, global resource reservations, whole-run
-   validator, calibration selection, frozen matrix and confirmation driver still
+   provenance. The author authorized physical GPUs 2/3 through campaign
+   completion. The proposed initial 50 GiB output allocation and public downloads
+   were accepted via "Go ahead"; this interpretation was explicitly reported.
+   See the immutable `RESOURCE_AUTHORIZATION_20260914.json` in handoff/data/campaign_v1.
+4. Pinned inputs, disjoint selection/locked splits, fixed corpus masks, conservative
+   global reservations and an owned-child supervisor are implemented. Whole-run
+   validation, calibration selection, a frozen matrix and confirmation driver still
    need implementation. P3/P7/P8 must be verified on actual pretrained RoBERTa
    checkpoints, including real dtype/device placement and controlled P7 costs.
 5. `spectral.regularization()` remains the deliberately unoptimized correctness
@@ -103,7 +106,8 @@ continuation instructions. Legacy data and training-source files are unchanged.
 diagnostic, probe and regularizer callbacks; it returns `awaiting_validation` or
 `interrupted`, never `completed`. Production calls must provide explicit resource
 authorization, the physical GPU ID/UUID, a bounded reservation and a persistent
-output root. There is no production CLI yet. The only bypass is explicitly named
+output root. `smoke.py` is a P0-only production CLI, intended for a dedicated
+tmux session; it rejects calibration/confirmation jobs. The only bypass is explicitly named
 `synthetic_cpu_test`, used by tests with all GPUs hidden.
 
 Validation selection uses accuracy, excludes step 0 and breaks ties by earliest
@@ -120,3 +124,28 @@ dropout and sampler equivalence; failed checkpoint writes/corruption; selection
 and fixed-endpoint separation; and full tiny-RoBERTa optimization/P3/P8/reload.
 The fixtures use randomly initialized tiny models and synthetic examples. They
 are not the required pretrained RTE smoke or calibration experiments.
+
+## Preparation and persistent worker
+
+`prepare_inputs.py` downloads exact files at immutable public Hub revisions into
+the assigned campaign cache and creates separate immutable source copies. RTE
+and MRPC each have a stratified inner selection split and a locked official
+validation split. WikiText-2-raw-v1 test supplies 256 fixed masked examples; this
+is held out from task adaptation, not claimed unseen during RoBERTa pretraining.
+Every prepared tensor, ID list, mask and source file has a retained fingerprint.
+The original MLM loader rejects missing, unmatched or newly initialized tensors.
+
+`allocation.py` retains all leases and settlement events. Stale leases never
+auto-expire. Only a controller observing its exact child exit can settle a lease;
+overruns are charged in full. Failed artifacts and cache/source copies count
+toward the 50 GiB allowance. Completion-duration authorization removes a global
+numerical time cap, not per-worker deadlines, storage checks or GPU isolation.
+
+`supervision.py` inspects only assigned-device aggregate telemetry and its own
+Popen child/logs. It requests a checkpoint boundary before terminating its own
+unresponsive child, with cleanup grace included in the reservation. A monitoring
+failure is not proof of process exit and leaves the lease active. The controller
+must itself be run persistently. `worker.py` stores the original bases and MLM
+head, P0 forward/merge/disable checks, task/P3/P8 observations, step/cost records
+and independent checkpoint reproduction. Successful workers still return
+`awaiting_validation`, never scientific run completion.

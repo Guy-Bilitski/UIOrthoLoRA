@@ -1,0 +1,203 @@
+"""Persistent-controller entry point for one P0 RTE smoke attempt, never confirmation.
+
+Invoke in a dedicated tmux session. Every attempt creates new paths and durable
+ledger events. A successful child still awaits whole-run validation.
+"""
+
+import argparse
+from dataclasses import asdict
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tarfile
+
+from .allocation import AllocationLedger
+from .artifacts import append_event, new_run, sha256, write_json_new
+from .engine import TrainSettings
+from .protocol import NAMESPACE, Resources
+from .spectral import SpectralConfig
+from .supervision import MonitorSettings, gpu_telemetry, supervise_owned_worker
+from .worker import ROOT, source_hashes
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--resources", type=Path, required=True)
+    parser.add_argument("--prepared", type=Path, required=True)
+    parser.add_argument("--preflight", type=Path, required=True)
+    parser.add_argument("--gpu", type=int, required=True)
+    parser.add_argument("--steps", type=int, default=8)
+    parser.add_argument("--maximum-seconds", type=float, default=5400)
+    parser.add_argument("--reserved-gib", type=float, default=8)
+    parser.add_argument("--retry-of")
+    args = parser.parse_args()
+    resources = Resources(**json.loads(args.resources.read_text()))
+    resources.validate_training()
+    if args.gpu not in resources.assigned_gpu_ids:
+        raise ValueError("GPU is not explicitly assigned")
+    preflight = json.loads(args.preflight.read_text())
+    if preflight.get("all_checks_passed") is not True or preflight["source_files"] != source_hashes():
+        raise ValueError("A successful preflight covering exactly this source version is required")
+    dirty = subprocess.check_output(
+        ["git", "status", "--porcelain", "--", "notebooks/iclr/campaign"], cwd=ROOT, text=True
+    )
+    if dirty.strip():
+        raise ValueError("Commit the validated campaign implementation before launching")
+    prepared = json.loads((args.prepared / "prepared_paths.json").read_text())["paths"]
+    root = Path(resources.output_root)
+    accounting = root / "accounting_v1"
+    if not accounting.exists():
+        AllocationLedger.create(accounting, resources, disk_safety_margin_gib=10)
+    elif asdict(AllocationLedger(accounting).resources) != asdict(resources):
+        raise ValueError("Resource allocation differs from existing immutable accounting record")
+    revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    settings = TrainSettings(
+        seed=31415,
+        max_steps=args.steps,
+        non_head_lr=0.01,
+        head_lr=0.0005,
+        weight_decay=0.0,
+        warmup_steps=0,
+        accumulation_steps=4,
+        eval_every_steps=4,
+        max_gradient_norm=1.0,
+        precision="float32",
+        task="rte",
+    )
+    settings.validate()
+    manifest = dict(
+        schema_version=1,
+        experiment_id=NAMESPACE,
+        stage="smoke",
+        condition="P1_MIX",
+        task="rte",
+        seed=31415,
+        head_seed=31415,
+        batch_seed=31415,
+        source_revision=revision,
+        source_files_sha256=source_hashes(),
+        train_settings=asdict(settings),
+        batch_size=8,
+        eval_batch_size=16,
+        probe_batch_size=8,
+        spectral_config=asdict(SpectralConfig(tail_size=256)),
+        regularization_coefficient=1e-3,
+        random_projector_seeds={},
+        diagnostic_cutoffs=[16, 64, 128, 256, 512],
+        orientation_seeds=[[17, 42], [123, 2021], [1054, 31415]],
+        attention_implementation="eager",
+        lora_alpha=8.0,
+        model_directory=prepared["model"],
+        task_directory=prepared["rte"],
+        probe_directory=prepared["probe"],
+        reproduction_atol=1e-6,
+        reproduction_rtol=1e-5,
+        p0_atol=1e-4,
+        p0_rtol=1e-4,
+        inference_warmup=3,
+        inference_repeats=10,
+        cost_exclude_initial_steps=2,
+        resource_authorization_sha256=sha256(args.resources),
+        cpu_preflight_sha256=sha256(args.preflight),
+        dependencies=preflight["packages"],
+        physical_gpu=args.gpu,
+        gpu_uuid=gpu_telemetry(args.gpu)["uuid"],
+        synthetic_cpu_test=False,
+        primary_endpoint="fixed_optimizer_step",
+        secondary_endpoint="best_inner_accuracy_earliest_tie_excluding_step0",
+        matching_status="not_applicable_smoke_not_calibration_or_confirmation",
+        retry_of=args.retry_of,
+        checkpoint_fractions=[0, 0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 1.0],
+        note="Short P0 smoke only; these settings do not freeze confirmation hyperparameters or endpoint",
+    )
+    manifest["input_manifest_hashes"] = {
+        key: sha256(Path(manifest[key]) / filename)
+        for key, filename in (
+            ("model_directory", "source.json"),
+            ("task_directory", "prepared.json"),
+            ("probe_directory", "prepared.json"),
+        )
+    }
+    directory, manifest = new_run(root, manifest)
+    job = {**manifest, "run_directory": str(directory.resolve())}
+    write_json_new(directory / "job.json", job)
+    with tarfile.open(directory / "source_snapshot.tar.gz", "x:gz") as archive:
+        for path in job["source_files_sha256"]:
+            archive.add(ROOT / path, arcname=path)
+        archive.add(ROOT / "notebooks/iclr/campaign/requirements.lock.txt", arcname="requirements.lock.txt")
+    ledger = root / "run_ledger.jsonl"
+    append_event(
+        ledger,
+        dict(
+            run_id=job["run_id"],
+            status="retry" if args.retry_of else "planned",
+            retry_of=args.retry_of,
+            run_directory=str(directory),
+            manifest_sha256=sha256(directory / "manifest.json"),
+            stage="smoke",
+            condition=job["condition"],
+            task="rte",
+            seed=31415,
+        ),
+    )
+    print(f"P0 run ID: {job['run_id']}\nPersistent directory: {directory}", flush=True)
+    append_event(ledger, dict(run_id=job["run_id"], status="running", physical_gpu=args.gpu, phase="worker_launch"))
+    try:
+        receipt = supervise_owned_worker(
+            accounting,
+            directory / "job.json",
+            ROOT,
+            ROOT / ".venv/bin/python",
+            gpu_id=args.gpu,
+            gpu_uuid=job["gpu_uuid"],
+            maximum_seconds=args.maximum_seconds,
+            reserved_bytes=int(args.reserved_gib * 2**30),
+            monitor_settings=MonitorSettings(10, 180, 300, 30, 85, 128),
+        )
+        if receipt["returncode"] != 0:
+            append_event(
+                ledger,
+                dict(
+                    run_id=job["run_id"],
+                    status="failed",
+                    cause="worker_nonzero_exit",
+                    returncode=receipt["returncode"],
+                ),
+            )
+            return 1
+        result = json.loads((directory / "worker_result.json").read_text())
+        append_event(
+            ledger,
+            dict(
+                run_id=job["run_id"],
+                status=result["status"],
+                worker_result_sha256=sha256(directory / "worker_result.json"),
+            ),
+        )
+        print(
+            f"Worker terminal status: {result['status']}; independent whole-run validation remains required",
+            flush=True,
+        )
+        return 0
+    except BaseException as exc:
+        receipt_path = directory / "execution_receipt.json"
+        # A supervisor exception can leave a live child and active lease. Keep
+        # scientific status running in that case; never infer death from timeout.
+        active = [x for x in AllocationLedger(accounting).snapshot()["active_leases"] if x["run_id"] == job["run_id"]]
+        if not active:
+            append_event(
+                ledger,
+                dict(
+                    run_id=job["run_id"],
+                    status="failed",
+                    cause=type(exc).__name__,
+                    error=str(exc),
+                    execution_receipt_exists=receipt_path.exists(),
+                ),
+            )
+        raise
+
+
+if __name__ == "__main__":
+    sys.exit(main())

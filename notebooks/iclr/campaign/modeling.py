@@ -183,6 +183,8 @@ def roberta_from_saved_reference(reference):
     from transformers import RobertaConfig, RobertaForSequenceClassification
 
     config = RobertaConfig.from_dict(reference["extras"]["roberta_config"])
+    if "attention_implementation" in reference["extras"]:
+        config._attn_implementation = reference["extras"]["attention_implementation"]
     model = RobertaForSequenceClassification(config)
     state = reference["model"]
     for name, base in attention_modules(model).items():

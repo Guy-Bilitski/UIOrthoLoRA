@@ -135,6 +135,7 @@ def run_steps(
     gpu_uuid=None,
     wall_seconds=None,
     synthetic_cpu_test=False,
+    stop_requested=None,
 ):
     """Return awaiting_validation/interrupted; never label checkpoint existence completion.
 
@@ -151,6 +152,8 @@ def run_steps(
         raise ValueError("Engine master parameters must be float32; bfloat16 uses autocast")
     if not all(callable(f) for f in (evaluate, diagnose, probe, regularizer)):
         raise ValueError("Evaluation, diagnostics, probe and regularizer callbacks are mandatory")
+    if stop_requested is not None and not callable(stop_requested):
+        raise ValueError("stop_requested must be a boundary-safe callback")
     if reference.reference["provenance"].get("train_settings") != asdict(settings):
         raise ValueError("Training settings do not match the immutable reference")
     root = Path(run_directory)
@@ -239,6 +242,8 @@ def run_steps(
             snapshot(force=True)
         with (root / "steps.jsonl").open("x", encoding="utf-8") as log:
             while progress["step"] < settings.max_steps:
+                if stop_requested is not None and stop_requested():
+                    break
                 if wall_seconds is not None and time.perf_counter() - started >= wall_seconds:
                     break
                 if stop_after_step is not None and progress["step"] >= stop_after_step:

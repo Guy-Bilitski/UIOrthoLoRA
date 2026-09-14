@@ -1,8 +1,58 @@
 # ICLR campaign startup and continuation — 2026-09-14
 
 Status: CPU preparation advanced; **no pretrained smoke, calibration or training
-run launched**. The full P0–P8 objective is active and incomplete. This document
+run launched as of 13:05 UTC**. The resource gate is now resolved. The full P0–P8 objective is active and incomplete. This document
 does not amend the authoritative experiment design or freeze a confirmation grid.
+
+## Continuation update — 13:05 UTC (supersedes resource-pending entries below)
+
+The author explicitly authorized GPUs 2 and 3 for as much time as needed until
+all experiments are finalized, followed by "Go ahead". The preceding proposal
+specified an initial 50 GiB in this dedicated clone's `campaign_outputs_v1/`
+and public model/dataset downloads. The assistant explicitly reported interpreting
+"Go ahead" as approval of those storage/download terms while replacing the
+proposed 4 GPU-hour cap with completion-duration authorization. The exact record
+is `data/campaign_v1/RESOURCE_AUTHORIZATION_20260914.json`. Do not impose or invent
+a numerical global cap; retain finite per-worker reservations. Do not exceed
+50 GiB without requesting expanded storage. Other agents and GPUs remain out of scope.
+
+The complete current CPU suite passes **104 tests**. New code covers immutable
+pinned source copies, fingerprinted RTE/MRPC splits, fixed per-ID probe masks,
+original-head loading without missing/new tensors, campaign-wide locked resource
+reservations, concurrent reservation conflicts, retained failure costs, owned-child
+supervision, safe stop boundaries and integrated tiny-model workers for six arms.
+These are still synthetic/local correctness observations, not trained task results.
+The P0-only `smoke.py` entry point requires an exact-source successful preflight,
+committed campaign code, a resource allocation and an immutable complete job.
+It records source archives and scientific run-ledger transitions; successful
+children stop at `awaiting_validation` pending whole-run validation.
+
+Input preparation completed at **12:55:43 UTC**, taking **22.21 seconds** (download
+and CPU preparation only). Durable bundle:
+`campaign_outputs_v1/inputs/preparation_20260914T1254Z/` in the dedicated clone.
+Public model: `FacebookAI/roberta-base` commit
+`e2da8e2f811d1448a5b465c236feacd80ffbac7b`; GLUE: `nyu-mll/glue` commit
+`bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c`; probe corpus: `Salesforce/wikitext`
+commit `b08601e04326c79dfdd32d625aee71d232d685c3`.
+
+- RTE: 1,992 training, 498 inner-selection, 277 locked official-validation examples.
+- MRPC: 2,934 training, 734 inner-selection, 408 locked official-validation examples.
+- Fixed sequence length 128, stratified selection fraction 0.2, split seed 271828.
+- Probe: 256 WikiText-2-raw-v1 test examples, fixed 15% masks (all selected tokens
+  replaced by MASK), mask seed 161803. The corpus is held out from adaptation,
+  not guaranteed unseen in RoBERTa pretraining. No autoregressive-perplexity claim.
+- Every source file, prepared tensor bundle, split/sample ID and mask is retained
+  and hashed in its immutable manifest. Input choices precede all training outcomes;
+  they do not freeze confirmation hyperparameters or the expanded run matrix.
+- Actual pinned RoBERTa MLM loads on CPU with all expected tensors and no unmatched
+  tensors: 12 layers, width 768, 124,697,433 parameters.
+
+At 12:53 UTC, assigned GPUs each used 15 MiB / 0% utilization; GPU 2 was 28°C,
+24.71 W and GPU 3 was 26°C, 27.39 W. Shared data storage had 659 GiB free before
+downloads. The campaign output directory occupies approximately 976 MiB after
+preparation, including isolated cache and sealed copies. No unrelated jobs were
+inspected. Next: final preflight, commit/rebase/push, then a persistent GPU-2 RTE
+smoke and independent P0/whole-run validation. Training ETA is still unmeasured.
 
 ## Continuation update — 12:20 UTC
 

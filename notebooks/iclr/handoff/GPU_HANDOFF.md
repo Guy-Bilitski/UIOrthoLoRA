@@ -1,16 +1,18 @@
 # GPU session: start here
 
-Updated 2026-09-14. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The plan is a specification; the expanded training runner is **not implemented or validated yet**. Existing scripts in this paper repo reanalyze archived results and test algebra only.
+Updated 2026-09-14. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The expanded P0–P8 campaign is not complete. A P0-only persistent smoke worker is now implemented and CPU-tested; calibration/confirmation admission and whole-run validation remain pending. Historical handoff scripts reanalyze archived results and test algebra only.
 
 Campaign continuation update, 2026-09-14: a separate server clone now contains a
 prospective optimizer-step engine, compact persistent restart states, cached P1
 penalties, LoRA/full-FT geometry and independent checkpoint reproduction under
-`../campaign/`, with 69 CPU algebra and tiny-model integration checks.
+`../campaign/`, now with 104 CPU algebra, input-preparation, supervision and tiny-model integration checks.
 All four supplied checks and six original source fingerprints also pass in the
 recorded preflights. The production training driver is still incomplete;
-no pretrained smoke, calibration or model training has been launched. The user
-assigned GPUs 2 and 3, while compute budget, persistent checkpoint allocation and
-model/dataset download policy remain pending. Read
+no pretrained smoke, calibration or model training had been launched as of
+13:05 UTC. The user now authorizes GPUs 2/3 through campaign completion; the
+initial 50 GiB output allocation and public downloads are recorded in
+`data/campaign_v1/RESOURCE_AUTHORIZATION_20260914.json`. Pinned RoBERTa/RTE/MRPC
+and fixed held-out probe inputs are prepared. Read
 [`CAMPAIGN_STATUS_20260914.md`](CAMPAIGN_STATUS_20260914.md) for exact checkout,
 environment, measured resource inventory, validation artifact, empty run ledger,
 remaining implementation and continuation commands. This does not change the
