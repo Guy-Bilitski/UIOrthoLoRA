@@ -4,6 +4,7 @@ This is the prospective runner's implementation, not a modification of the legac
 adapter. All reference tensors persist in state_dict; reload must restore them.
 Only dense, unquantized nn.Linear weights are supported in this implementation.
 """
+
 from dataclasses import asdict, dataclass
 
 import torch
@@ -17,13 +18,13 @@ class SpectralConfig:
     rotation_size: int = 0
     use_scalers: bool = True
     leading_identity: bool = True
-    initial_scaler: float = .01
-    initial_coefficient: float = .01
+    initial_scaler: float = 0.01
+    initial_coefficient: float = 0.01
     dense_tail: bool = False
 
 
 class SpectralLinear(nn.Module):
-    def __init__(self, base: nn.Linear, config: SpectralConfig):
+    def __init__(self, base: nn.Linear, config: SpectralConfig, reference=None):
         super().__init__()
         if not isinstance(base, nn.Linear) or base.weight.dtype not in (torch.float32, torch.float64):
             raise TypeError("P0 supports unquantized float32/float64 nn.Linear; use autocast for mixed precision")
@@ -38,12 +39,26 @@ class SpectralLinear(nn.Module):
         self.k = rank - config.tail_size
         # Full matrices preserve rectangular unmatched complements for diagnostics.
         with torch.no_grad():
-            u, s, vh = torch.linalg.svd(base.weight, full_matrices=True)
-        for name, tensor in (("u_ref", u), ("v_ref", vh.T), ("s_ref", s),
-                             ("w_pre", base.weight.detach().clone())):
+            if reference is None:
+                u, s, vh = torch.linalg.svd(base.weight, full_matrices=True)
+            else:
+                if (
+                    reference["u_ref"].shape != (m, m)
+                    or reference["v_ref"].shape != (n, n)
+                    or reference["s_ref"].shape != (rank,)
+                ):
+                    raise ValueError("Saved reference must contain complete bases and the original spectrum")
+                if not torch.equal(reference["w_pre"].to(base.weight), base.weight):
+                    raise ValueError("Saved reference does not match the original base weight")
+                u, s, vh = (
+                    reference["u_ref"].to(base.weight),
+                    reference["s_ref"].to(base.weight),
+                    reference["v_ref"].T.to(base.weight),
+                )
+        for name, tensor in (("u_ref", u), ("v_ref", vh.T), ("s_ref", s), ("w_pre", base.weight.detach().clone())):
             self.register_buffer(name, tensor.detach().clone())
         factory = dict(dtype=base.weight.dtype, device=base.weight.device)
-        scales = config.initial_scaler if config.use_scalers else 1.
+        scales = config.initial_scaler if config.use_scalers else 1.0
         self.e = nn.Parameter(torch.full((m,), scales, **factory), requires_grad=config.use_scalers)
         self.d = nn.Parameter(torch.full((n,), scales, **factory), requires_grad=config.use_scalers)
         self.register_buffer("e_init", self.e.detach().clone())
@@ -52,11 +67,13 @@ class SpectralLinear(nn.Module):
         self.h = nn.Parameter(torch.diag(h) if config.dense_tail else h)
         self.left_rotation = self.right_rotation = None
         if config.rotation_size:
+
             def rotation():
                 module = nn.Linear(config.rotation_size, config.rotation_size, bias=False, **factory)
                 with torch.no_grad():
                     module.weight.copy_(torch.eye(config.rotation_size, **factory))
                 return nn.utils.parametrizations.orthogonal(module, orthogonal_map="matrix_exp")
+
             self.left_rotation, self.right_rotation = rotation(), rotation()
         self.register_buffer("delta_init", self.delta_total().detach().clone())
         self.adapter_enabled = True
@@ -76,8 +93,8 @@ class SpectralLinear(nn.Module):
 
     def factors(self):
         r = len(self.s_ref)
-        u = self.u_ref[:, self.k:r]
-        v = self.v_ref[:, self.k:r]
+        u = self.u_ref[:, self.k : r]
+        v = self.v_ref[:, self.k : r]
         q = self.config.rotation_size
         if q:
             u = torch.cat((u[:, :-q], u[:, -q:] @ self.left_rotation.weight), dim=1)
@@ -93,7 +110,7 @@ class SpectralLinear(nn.Module):
         return h
 
     def exact_leading_term(self):
-        raw = self.u_ref[:, :self.k] @ self.v_ref[:, :self.k].T
+        raw = self.u_ref[:, : self.k] @ self.v_ref[:, : self.k].T
         return self.e[:, None] * raw * self.d[None, :] if self.config.leading_identity else torch.zeros_like(raw)
 
     def delta_total(self):
@@ -117,7 +134,7 @@ class SpectralLinear(nn.Module):
         z = z @ self.h.T if self.config.dense_tail else z * self.h
         update = z @ u.T
         if self.config.leading_identity:
-            update = update + ((x * self.d) @ self.v_ref[:, :self.k]) @ self.u_ref[:, :self.k].T
+            update = update + ((x * self.d) @ self.v_ref[:, : self.k]) @ self.u_ref[:, : self.k].T
         return result + update * self.e
 
     @torch.no_grad()
@@ -156,11 +173,11 @@ def haar_basis(d, k, seed, *, dtype=torch.float64, device="cpu"):
     """Fixed independent draw, with local RNG and QR diagonal sign correction."""
     generator = torch.Generator(device="cpu").manual_seed(seed)
     q, r = torch.linalg.qr(torch.randn(d, k, generator=generator, dtype=dtype), mode="reduced")
-    signs = torch.where(r.diag() < 0, -1., 1.)
+    signs = torch.where(r.diag() < 0, -1.0, 1.0)
     return (q * signs).to(device)
 
 
-def regularization(layers, condition, coefficient=0., random_bases=None):
+def regularization(layers, condition, coefficient=0.0, random_bases=None):
     """Exact P1 losses: MIX/LEFT/CENTER/DECAY/RAND sums; NORM module mean.
 
     Unweighted mixing diagnostics are computed even with zero coefficients.
@@ -168,6 +185,7 @@ def regularization(layers, condition, coefficient=0., random_bases=None):
     every nuisance quantity; timed calibration must measure the actual overhead.
     """
     from .protocol import P1_CONDITIONS
+
     if condition not in P1_CONDITIONS or coefficient < 0:
         raise ValueError("Invalid P1 condition or negative coefficient")
     if not layers:
@@ -190,9 +208,14 @@ def regularization(layers, condition, coefficient=0., random_bases=None):
                 raise ValueError("Random projector rank/dimension mismatch")
             terms["randproj"] = terms["randproj"] + mixing_squared(layer.e, q) + mixing_squared(layer.d, r)
     terms["norm"] = terms["norm"] / len(layers)
-    selected = {"P1_LEFT": terms["left"], "P1_MIX": terms["left"] + terms["right"],
-                "P1_NORM": terms["norm"], "P1_CENTER": terms["center"],
-                "P1_DECAY_INIT": terms["decay_init"], "P1_RANDPROJ": terms["randproj"]}
+    selected = {
+        "P1_LEFT": terms["left"],
+        "P1_MIX": terms["left"] + terms["right"],
+        "P1_NORM": terms["norm"],
+        "P1_CENTER": terms["center"],
+        "P1_DECAY_INIT": terms["decay_init"],
+        "P1_RANDPROJ": terms["randproj"],
+    }
     loss = coefficient * selected.get(condition, first.e.new_zeros(()))
     return loss, terms
 
@@ -214,10 +237,14 @@ def block_summary(delta, u, v, k):
     ll_energy = energies["LL"]
     identity_coefficient = blocks["LL"].trace() / k
     residual = blocks["LL"] - identity_coefficient * torch.eye(k, dtype=c.dtype, device=c.device)
-    return dict(energy=energy, block_energy=energies, fractions=fractions,
-                p_cross=None if not energy else fractions["LT"] + fractions["TL"],
-                p_off=None if not energy else fractions["LL"] + fractions["LT"] + fractions["TL"],
-                identity_alignment=blocks["LL"].trace().square().item() / (k * ll_energy) if ll_energy else None,
-                identity_residual_energy=residual.square().sum().item(),
-                reconstruction_error=torch.linalg.vector_norm(u @ c @ v.T - delta).item(),
-                energy_accounting_error=abs(sum(energies.values()) - energy))
+    return dict(
+        energy=energy,
+        block_energy=energies,
+        fractions=fractions,
+        p_cross=None if not energy else fractions["LT"] + fractions["TL"],
+        p_off=None if not energy else fractions["LL"] + fractions["LT"] + fractions["TL"],
+        identity_alignment=blocks["LL"].trace().square().item() / (k * ll_energy) if ll_energy else None,
+        identity_residual_energy=residual.square().sum().item(),
+        reconstruction_error=torch.linalg.vector_norm(u @ c @ v.T - delta).item(),
+        energy_accounting_error=abs(sum(energies.values()) - energy),
+    )

@@ -4,6 +4,70 @@ Status: CPU preparation advanced; **no pretrained smoke, calibration or training
 run launched**. The full P0–P8 objective is active and incomplete. This document
 does not amend the authoritative experiment design or freeze a confirmation grid.
 
+## Continuation update — 12:20 UTC
+
+The preceding goal turn made progress: isolated CPU foundations and actual
+validation artifacts were pushed at `792b7a1a`. This continuation again makes
+implementation progress; it is not a wait on a live training job. No pretrained
+task-training run is running, and no process restart was inferred from a timeout.
+
+The campaign now has 69 CPU tests and these additional components:
+
+- `checkpoints.py`: one hash-verified frozen reference plus compact per-step
+  trainable states, AdamW/scheduler state, exact Python/NumPy/Torch RNG, data-order
+  state and inherited trajectory history. Frozen tensors are checked on save;
+  existing checkpoints are never replaced. A failed write leaves the last durable
+  checkpoint pointer unchanged.
+- `batching.py` and `engine.py`: fingerprinted examples, exact shuffled-order
+  resumption, a fixed-step optimizer with example-weighted gradient accumulation,
+  explicit paired dropout seed, accuracy-based validation selection, retained
+  trajectory/best checkpoints, finite-gradient checks and bounded per-run GPU
+  execution gates. Fixed and selected endpoints remain separate. Engine exits
+  await independent run validation; they never automatically mark completion.
+- `regularizers.py`: cached fixed projectors with objective/gradient agreement
+  against the reference for all seven adapter-training P1 arms. Actual mixing
+  values remain populated in the unregularized arm. No GPU speed claim is made.
+- LoRA forward/merge/reload, full-FT displacement accounting for other backbone
+  weights, generic common-frame diagnostics, and RoBERTa reconstruction without
+  recomputing the original SVD.
+- `validation.py`: independent checkpoint reload and scientific-output comparison.
+  A tiny RoBERTa fixture performs optimizer steps with real spectral diagnostics
+  and original-head MLM probing, then reproduces every saved checkpoint's outputs
+  exactly. Those synthetic CPU fixtures are not pretrained task-training runs.
+
+The current suite has 69 tests; static undefined/unused-name checks pass. New
+checks cover exact interrupted-versus-uninterrupted optimizer/RNG/data state,
+checkpoint corruption, injected disk-full failure, unchanged frozen references,
+distinct selected/fixed endpoints, and independent task/P3/P8 reproduction.
+One checkpoint validation is explicitly insufficient to mark a run complete:
+the ledger requires whole-run scope, P3/P7/P8 and the complete artifact contract.
+
+Immutable continuation preflights:
+`data/campaign_v1/preflight/20260914T122320Z_56809356/report.json` and
+`data/campaign_v1/preflight/20260914T122516Z_1d6b70e0/report.json`.
+The latter passes all 69 tests, all four supplied checks and all six historical
+source fingerprints. It also tests that integer counts must reproduce exactly,
+even when floating-point metrics have a declared tolerance. Earlier bundles
+remain unchanged; content hashes identify each tested source version.
+
+Resource assignments remain unchanged and incomplete. At 12:20 UTC, physical
+GPUs 2 and 3 both showed 0% utilization / 15 MiB used (30°C / 24.33 W and
+28°C / 26.55 W respectively). The shared data filesystem reported **659 GiB
+free**; `/tmp` still reported approximately 8 GiB. These are available-space
+observations, not a confirmed campaign quota. Budget, persistent checkpoint
+allocation and model/dataset download policy remain missing. No caches or jobs
+belonging to another agent were inspected to explain changing free space.
+
+Next independent CPU work: pinned offline-capable model/data/probe preparation,
+persistent worker and monitoring integration, campaign-wide compute/storage
+reservations, whole-run validation, and calibration/freeze orchestration. The
+required pretrained smoke, calibration, 54 P1 and 12 early P5 runs remain at zero.
+All later required/conditional phases retain their original scope. Training ETA
+and GPU-hours remain unmeasured; do not infer them from CPU fixture timings.
+
+The sections below preserve the initial inventory and reports as historical
+startup observations; this continuation supersedes their implementation status.
+
 ## Isolation and provenance
 
 - Dedicated checkout:
@@ -148,13 +212,12 @@ diagnostic cost, matching-grid expansion, and P6 model access/fit.
      .venv/bin/python -m notebooks.iclr.campaign.preflight
    ```
 
-4. Finish the expanded runner. The current package is **a foundation, not yet a
-   training executable**. Remaining: pinned model/data loaders and fixed splits/
-   probe masks; method adapters including LoRA-8; step loop; persistent worker and
-   monitor; optimizer/scheduler/RNG and reference-state storage; independent
-   checkpoint reload validation; controlled P7 measurements; calibration grids,
-   selection and a frozen manifest/forecast. Preserve every failed attempt with a
-   new retry ID. The ledger helpers enforce terminal failed/interrupted attempts.
+4. Finish the production runner. The step engine, compact restart persistence,
+   LoRA-8 support and independent checkpoint validator now exist, with CPU tests.
+   Remaining: pinned model/data preparation and fixed splits/probe masks;
+   persistent worker/monitor; global compute/storage reservation; whole-run
+   validation; controlled P7 measurements; calibration grids, selection and a
+   frozen manifest/forecast. Preserve every failed attempt with a new retry ID.
 5. Validate an actual RoBERTa RTE smoke artifact on one assigned GPU. Do not mark
    P0 complete from the 43 CPU checks. Optimize fixed-projector loss evaluation
    with objective/gradient checks before long runs, then time seed 31415.

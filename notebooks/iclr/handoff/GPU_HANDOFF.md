@@ -2,10 +2,12 @@
 
 Updated 2026-09-14. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The plan is a specification; the expanded training runner is **not implemented or validated yet**. Existing scripts in this paper repo reanalyze archived results and test algebra only.
 
-Campaign startup update, 2026-09-14: a separate server clone now contains a
-prospective runner foundation under `../campaign/`, with 43 passing CPU algebra
-and tiny-model integration checks. All four supplied checks and six original
-source fingerprints also pass. The expanded training driver is still incomplete;
+Campaign continuation update, 2026-09-14: a separate server clone now contains a
+prospective optimizer-step engine, compact persistent restart states, cached P1
+penalties, LoRA/full-FT geometry and independent checkpoint reproduction under
+`../campaign/`, with 69 CPU algebra and tiny-model integration checks.
+All four supplied checks and six original source fingerprints also pass in the
+recorded preflights. The production training driver is still incomplete;
 no pretrained smoke, calibration or model training has been launched. The user
 assigned GPUs 2 and 3, while compute budget, persistent checkpoint allocation and
 model/dataset download policy remain pending. Read

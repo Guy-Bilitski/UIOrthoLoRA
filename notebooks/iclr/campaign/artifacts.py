@@ -1,4 +1,5 @@
 """Immutable run records and an append-only, locked state-transition ledger."""
+
 import fcntl
 import hashlib
 import json
@@ -40,13 +41,24 @@ def new_run(root, manifest):
         raise ValueError(f"Missing manifest fields: {sorted(required - manifest.keys())}")
     for key in ("experiment_id", "condition", "task"):
         value = manifest[key]
-        if not isinstance(value, str) or not value or any(ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for ch in value):
+        if (
+            not isinstance(value, str)
+            or not value
+            or any(ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for ch in value)
+        ):
             raise ValueError(f"Unsafe path component: {key}")
     if not isinstance(manifest["seed"], int) or manifest["seed"] < 0:
         raise ValueError("seed must be a nonnegative integer")
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "_" + uuid4().hex[:12]
-    path = (Path(root) / "runs" / manifest["experiment_id"] / manifest["condition"] /
-            manifest["task"] / f"seed_{manifest['seed']}" / run_id)
+    path = (
+        Path(root)
+        / "runs"
+        / manifest["experiment_id"]
+        / manifest["condition"]
+        / manifest["task"]
+        / f"seed_{manifest['seed']}"
+        / run_id
+    )
     path.mkdir(parents=True, exist_ok=False)
     resolved = {**manifest, "run_id": run_id, "created_utc": utc_now()}
     write_json_new(path / "manifest.json", resolved)
@@ -59,7 +71,10 @@ TRANSITIONS = {
     "retry": {"running", "excluded"},
     "running": {"awaiting_validation", "failed", "interrupted"},
     "awaiting_validation": {"completed", "failed", "interrupted"},
-    "failed": set(), "interrupted": set(), "completed": set(), "excluded": set(),
+    "failed": set(),
+    "interrupted": set(),
+    "completed": set(),
+    "excluded": set(),
 }
 
 
@@ -83,12 +98,18 @@ def append_event(ledger, event):
         if event["status"] == "completed":
             path = Path(event["validation_path"])
             report = json.loads(path.read_text())
-            if (report.get("run_id") != event["run_id"] or
-                    report.get("checkpoint_reload_passed") is not True or
-                    report.get("metrics_reproduced") is not True or
-                    report.get("diagnostics_reproduced") is not True or
-                    report.get("required_artifacts_passed") is not True):
-                raise ValueError("Completion requires matching reload, metrics, diagnostics and artifact validation")
+            if (
+                report.get("validation_scope") != "run"
+                or report.get("run_id") != event["run_id"]
+                or report.get("checkpoint_reload_passed") is not True
+                or report.get("metrics_reproduced") is not True
+                or report.get("diagnostics_reproduced") is not True
+                or report.get("p3_passed") is not True
+                or report.get("p7_passed") is not True
+                or report.get("p8_passed") is not True
+                or report.get("required_artifacts_passed") is not True
+            ):
+                raise ValueError("Completion requires run-level reload, metrics, P3/P7/P8 and artifact validation")
             checkpoint = Path(report["checkpoint_path"])
             if sha256(checkpoint) != report["checkpoint_sha256"]:
                 raise ValueError("Checkpoint changed after reload validation")
