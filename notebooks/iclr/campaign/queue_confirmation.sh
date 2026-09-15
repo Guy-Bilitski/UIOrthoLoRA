@@ -92,7 +92,9 @@ for entry in "${lane_entries[@]}"; do
   task=${entry%%/*}
   steps=$(steps_for_task "$task")
   check_inputs
-  # Never duplicate an entry after queue interruption or silently retry a failure.
+  # Prior-attempt handling: skip an entry whose latest attempt completed and
+  # verified; block on any nonterminal attempt; retry (with an explicit
+  # retry-of chain) only when every prior attempt failed terminally.
   existing=()
   while IFS= read -r directory; do
     [[ "$directory" == "$output"/runs/iclr_6aa54397/* ]] || continue
@@ -100,12 +102,33 @@ for entry in "${lane_entries[@]}"; do
       .confirmation_entry_id == $entry and .phase_protocol_sha256 == $hash' \
       "$directory/manifest.json" >/dev/null; then existing+=("$directory"); fi
   done < <(jq -r 'select(.status == "planned" or .status == "retry") | .run_directory' "$ledger" 2>/dev/null)
+  retry_of=""
   if (( ${#existing[@]} )); then
-    if (( ${#existing[@]} == 1 )) && verify_complete "${existing[0]}"; then
-      event already_validated "$entry ${existing[0]}"; continue
+    validated=""
+    nonterminal=""
+    failed=()
+    for directory in "${existing[@]}"; do
+      if verify_complete "$directory"; then validated=$directory; continue; fi
+      status=$(latest_event "${directory##*/}" | jq -r '.status')
+      case "$status" in
+        failed) failed+=("${directory##*/}") ;;
+        *) nonterminal=$directory ;;
+      esac
+    done
+    if [[ -n "$validated" ]]; then
+      event already_validated "$entry $validated"; continue
     fi
-    event blocked "$entry has an unresolved or multiple prior attempt; inspect before retry"; exit 1
+    if [[ -n "$nonterminal" ]] || (( ${#failed[@]} == 0 )); then
+      event blocked "$entry has an unresolved prior attempt; inspect before retry"; exit 1
+    fi
+    if (( ${#failed[@]} >= 3 )); then
+      event blocked "$entry failed ${#failed[@]} times; stop and diagnose instead of retrying again"; exit 1
+    fi
+    retry_of=${failed[-1]}
+    event retrying "$entry after terminal failure(s): ${failed[*]}"
   fi
+  retry_args=()
+  [[ -n "$retry_of" ]] && retry_args=(--retry-of "$retry_of")
   event launching "$entry GPU $gpu"
   controller_log=$queue_directory/${entry//\//_}.controller.log
   CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=src \
@@ -113,7 +136,7 @@ for entry in "${lane_entries[@]}"; do
     --resources "$resources" \
     --prepared campaign_outputs_v1/inputs/preparation_20260914T1254Z \
     --preflight "$preflight" --purpose confirmation --calibration-protocol "$protocol" \
-    --maximum-seconds 21600 --reserved-gib 3 \
+    --maximum-seconds 21600 --reserved-gib 3 "${retry_args[@]}" \
     --calibration-entry "$entry" --task "$task" --gpu "$gpu" --steps "$steps" |
     tee "$controller_log"
   mapfile -t ids < <(sed -n 's/^confirmation run ID: //p' "$controller_log")

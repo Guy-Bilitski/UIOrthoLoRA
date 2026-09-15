@@ -404,8 +404,11 @@ def execute_job(job, *, resources=None, gpu_id=None, gpu_uuid=None, wall_seconds
     directory = Path(job["run_directory"]).resolve()
     if not synthetic_cpu_test:
         owned_path(resources.output_root, directory)
+        # Prepared inputs are immutable, hash-verified, read-only bundles shared
+        # across output roots (e.g. calibration and confirmation roots); they must
+        # live inside this campaign checkout, not inside the write-isolated root.
         for key in ("model_directory", "task_directory", "probe_directory"):
-            owned_path(resources.output_root, job[key])
+            owned_path(ROOT, job[key])
     started = time.perf_counter()
     stop_signal = [False]
 
