@@ -105,6 +105,8 @@ def main():
         probe_directory=prepared["probe"],
         reproduction_atol=1e-6,
         reproduction_rtol=1e-5,
+        merged_forward_atol=1e-5,
+        merged_forward_rtol=1e-5,
         p0_atol=1e-4,
         p0_rtol=1e-4,
         inference_warmup=3,

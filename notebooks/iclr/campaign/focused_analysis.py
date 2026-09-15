@@ -156,14 +156,30 @@ def select_matched(rows, protocol_path, refinements=()):
                 raise ValueError("Multiple completed attempts for one entry would permit outcome selection")
             by_entry[row["entry_id"]] = row
     known = {entry_id: entry for entry_id, (entry, _) in known.items()}
+    attempts = {}
+    for row in rows:
+        attempts.setdefault(row["entry_id"], []).append(row["status"])
+    # An entry whose every attempt failed terminally, at least twice (a diagnosed
+    # launch plus one retry), is excluded with its cause retained rather than
+    # blocking selection forever. Its norm was never read, so exclusion cannot be
+    # outcome-driven. Any other incomplete entry keeps the task pending.
+    excluded = {
+        entry_id
+        for entry_id, statuses in attempts.items()
+        if entry_id not in by_entry and len(statuses) >= 2 and all(s == "failed" for s in statuses)
+    }
     selection = {}
     for task in TASKS:
         task_entry_ids = {entry_id for entry_id, entry in known.items() if entry["task"] == task}
-        missing = sorted(task_entry_ids - set(by_entry))
+        missing = sorted(task_entry_ids - set(by_entry) - excluded)
         if missing:
             # A task with incomplete registered entries gets no selection; it can
             # be neither refined nor confirmed until its grid fully validates.
             selection[task] = dict(match_status="pending_incomplete_grid", missing_entries=missing)
+            continue
+        task_excluded = sorted(task_entry_ids & excluded)
+        if f"{task}/P1_MIX/0.001" in excluded or f"{task}/P1_UNREG/0" in excluded:
+            selection[task] = dict(match_status="target_unavailable", excluded_entries=task_excluded)
             continue
         target_row = by_entry[f"{task}/P1_MIX/0.001"]
         unreg_row = by_entry[f"{task}/P1_UNREG/0"]
@@ -171,7 +187,7 @@ def select_matched(rows, protocol_path, refinements=()):
         expected_modules = set(target_row["per_module_relative_frobenius"])
         frontier = []
         for entry_id, entry in sorted(known.items()):
-            if entry["task"] != task or entry["condition"] != "P1_NORM":
+            if entry["task"] != task or entry["condition"] != "P1_NORM" or entry_id in excluded:
                 continue
             row = by_entry[entry_id]
             if set(row["per_module_relative_frobenius"]) != expected_modules:
@@ -194,6 +210,7 @@ def select_matched(rows, protocol_path, refinements=()):
             unregularized_run_id=unreg_row["run_id"],
             unregularized_pooled_relative_frobenius=unreg_row["pooled_relative_frobenius"],
             frontier=sorted(frontier, key=lambda cell: cell["coefficient"]),
+            excluded_entries=task_excluded,
             selected_coefficient=best["coefficient"],
             selected_relative_error=best["relative_error"],
             match_status="matched" if best["matched"] else "failed_match",

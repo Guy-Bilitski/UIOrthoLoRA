@@ -98,6 +98,25 @@ def test_selection_applies_registered_rule_and_reports_failed_match(tmp_path):
     assert len(rte["frontier"]) == 3 and len(mrpc["frontier"]) == 3
 
 
+def test_doubly_failed_entry_is_excluded_and_selection_proceeds(tmp_path):
+    _, calibration_path, _, _ = _selection(tmp_path)
+    rows = [
+        _synthetic_row(entry, NORMS[entry["entry_id"]])
+        for entry in focused_entries()
+        if entry["entry_id"] != "mrpc/P1_NORM/100"
+    ]
+    failure = dict(entry_id="mrpc/P1_NORM/100", status="failed")
+    rows += [dict(failure, run_id="fail_1"), dict(failure, run_id="fail_2", retry_of="fail_1")]
+    record = select_matched(rows, calibration_path)
+    mrpc = record["selection"]["mrpc"]
+    assert mrpc["excluded_entries"] == ["mrpc/P1_NORM/100"]
+    assert mrpc["match_status"] == "failed_match" and len(mrpc["frontier"]) == 2
+    # One failure alone (no retry) keeps the task pending instead of excluding.
+    single = [row for row in rows if row.get("run_id") != "fail_2"]
+    pending = select_matched(single, calibration_path)
+    assert pending["selection"]["mrpc"]["match_status"] == "pending_incomplete_grid"
+
+
 def test_incomplete_task_grid_is_pending_and_cannot_refine_or_confirm(tmp_path):
     from notebooks.iclr.campaign.focused_plan import register_refinement
 

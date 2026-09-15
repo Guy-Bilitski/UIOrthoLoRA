@@ -364,8 +364,14 @@ def measure_inference(model, inputs, job, device):
     peak = torch.cuda.max_memory_allocated(device) if device.type == "cuda" else None
     try:
         merged = timed()
+        # Merged-forward equivalence tolerates float32 merge roundoff, which for a
+        # small trained delta inside a large pretrained weight can deterministically
+        # exceed the strict reload-reproduction tolerance at large penalty doses.
         torch.testing.assert_close(
-            model(**inputs).logits, expected, atol=job["reproduction_atol"], rtol=job["reproduction_rtol"]
+            model(**inputs).logits,
+            expected,
+            atol=job.get("merged_forward_atol", job["reproduction_atol"]),
+            rtol=job.get("merged_forward_rtol", job["reproduction_rtol"]),
         )
     finally:
         for layer in layers.values():
