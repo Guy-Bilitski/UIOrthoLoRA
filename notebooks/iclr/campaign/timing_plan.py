@@ -7,13 +7,13 @@ from pathlib import Path
 
 from .artifacts import utc_now, write_json_new
 from .engine import TrainSettings
-from .protocol import RECIPE_REFERENCE, Resources, owned_path
+from .protocol import COMMON_RECIPE, Resources, owned_path
 from .spectral import SpectralConfig
 
 
 def timing_protocol(steps=128):
     tasks = {}
-    for task, recipe in RECIPE_REFERENCE.items():
+    for task, recipe in COMMON_RECIPE.items():
         settings = TrainSettings(
             seed=31415,
             max_steps=steps,

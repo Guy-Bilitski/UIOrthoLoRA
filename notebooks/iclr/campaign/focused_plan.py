@@ -15,7 +15,7 @@ from pathlib import Path
 from .artifacts import sha256, utc_now, write_json_new
 from .engine import TrainSettings
 from .preparation import load_prepared
-from .protocol import RECIPE_REFERENCE, Resources, owned_path
+from .protocol import COMMON_RECIPE, Resources, owned_path
 from .register_calibration import read_timing_evidence
 
 
@@ -162,7 +162,7 @@ def register(timing_reports, ledger):
     for path in timing_reports:
         prior, _ = read_timing_evidence(path)
         task = prior["task"]
-        if task not in RECIPE_REFERENCE or task in task_jobs:
+        if task not in COMMON_RECIPE or task in task_jobs:
             raise ValueError("Require distinct RTE and MRPC timing evidence")
         terminal = latest.get(prior["run_id"], {})
         if terminal.get("status") != "completed" or terminal.get("validation_sha256") != sha256(path):
@@ -170,7 +170,7 @@ def register(timing_reports, ledger):
         data, _ = load_prepared(prior["task_directory"])
         effective_batch = prior["batch_size"] * prior["train_settings"]["accumulation_steps"]
         epoch_steps = math.ceil(data["train"].size / effective_batch)
-        maximum = RECIPE_REFERENCE[task]["epochs"] * epoch_steps
+        maximum = COMMON_RECIPE[task]["epochs"] * epoch_steps
         common = {key: copy.deepcopy(prior[key]) for key in SCIENTIFIC_FIELDS}
         common["train_settings"].update(max_steps=maximum, eval_every_steps=128)
         task_jobs[task] = common
@@ -178,7 +178,7 @@ def register(timing_reports, ledger):
         schedules[task] = dict(
             train_examples=data["train"].size,
             effective_batch=effective_batch,
-            reference_epochs=RECIPE_REFERENCE[task]["epochs"],
+            reference_epochs=COMMON_RECIPE[task]["epochs"],
             step_budget_rule="reference epochs times ceil(inner-training examples / effective batch)",
             max_steps=maximum,
         )

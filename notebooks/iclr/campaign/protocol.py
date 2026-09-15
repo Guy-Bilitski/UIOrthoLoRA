@@ -31,6 +31,17 @@ RECIPE_REFERENCE = {
     "rte": dict(epochs=90, head_lr=5e-4, adapter_lr=1e-2, scaler=0.01, sigma=0.01),
     "mrpc": dict(epochs=30, head_lr=1e-3, adapter_lr=5e-2, scaler=0.1, sigma=0.1),
 }
+# Common-protocol recipe for the 128-token/effective-batch-32 campaign. The
+# legacy MRPC adapter LR (5e-2, tuned at 256 tokens/batch 64) parks full-data
+# training in the majority-class basin under this protocol: the 2026-09-15
+# learning gate on repaired inputs measured 0.674 (majority) at 5e-2 versus
+# 0.847 inner accuracy at 1e-2 after 600 steps, with the 32-example overfit
+# check passing at both. Chosen before any arm comparison; applied identically
+# to every arm.
+COMMON_RECIPE = {
+    "rte": dict(RECIPE_REFERENCE["rte"]),
+    "mrpc": {**RECIPE_REFERENCE["mrpc"], "adapter_lr": 1e-2},
+}
 
 
 def owned_path(root, path):

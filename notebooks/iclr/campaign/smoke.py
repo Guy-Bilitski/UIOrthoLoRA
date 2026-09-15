@@ -16,7 +16,7 @@ from .allocation import AllocationLedger
 from .artifacts import append_event, new_run, sha256, write_json_new
 from .engine import TrainSettings
 from .phase_gates import validate_phase_admission
-from .protocol import NAMESPACE, RECIPE_REFERENCE, Resources
+from .protocol import COMMON_RECIPE, NAMESPACE, Resources
 from .spectral import SpectralConfig
 from .supervision import MonitorSettings, gpu_telemetry, supervise_owned_worker
 from .worker import ROOT, source_hashes
@@ -59,7 +59,7 @@ def main():
     elif asdict(AllocationLedger(accounting).resources) != asdict(resources):
         raise ValueError("Resource allocation differs from existing immutable accounting record")
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-    recipe = RECIPE_REFERENCE[args.task]
+    recipe = COMMON_RECIPE[args.task]
     settings = TrainSettings(
         seed=31415,
         max_steps=args.steps,
