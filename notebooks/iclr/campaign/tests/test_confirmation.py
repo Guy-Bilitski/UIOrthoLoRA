@@ -276,3 +276,33 @@ def test_confirmation_admission_requires_authorization_and_bound_record(tmp_path
         admit(retargeted, "retargeted.json")
     with pytest.raises(ValueError):
         validate_confirmation_admission(base, dict(purpose="focused_norm_confirmation"))
+
+
+def test_single_task_confirmation_subset(tmp_path):
+    protocol, _ = _confirmation_protocol(tmp_path)
+    from notebooks.iclr.campaign.confirmation_plan import entries as build
+
+    subset = dict(
+        protocol,
+        tasks_included=["rte"],
+        task_jobs={"rte": protocol["task_jobs"]["rte"]},
+        entries=build(protocol["selection"], ("rte",)),
+    )
+    assert len(subset["entries"]) == 9 and all(r["task"] == "rte" for r in subset["entries"])
+    gate_path = _gate(tmp_path)
+    entry = subset["entries"][0]
+    path = tmp_path / "subset.json"
+    write_json_new(path, subset)
+    job = dict(
+        **materialize_entry(subset, entry),
+        synthetic_cpu_test=True,
+        p0_gate_path=str(gate_path),
+        p0_gate_sha256=sha256(gate_path),
+        phase_protocol_path=str(path),
+        phase_protocol_sha256=sha256(path),
+    )
+    validate_phase_admission(job)
+    # An mrpc entry cannot be admitted under an rte-only protocol.
+    foreign = dict(job, confirmation_entry_id="mrpc/P1_MIX/seed_42")
+    with pytest.raises(ValueError):
+        validate_phase_admission(foreign)

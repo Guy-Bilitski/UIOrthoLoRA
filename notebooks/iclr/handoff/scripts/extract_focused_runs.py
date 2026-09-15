@@ -14,6 +14,18 @@ HANDOFF = Path(__file__).resolve().parents[1]
 CAMPAIGN = HANDOFF.parents[2]
 FIXED_STEPS = {"rte": 5670, "mrpc": 2760}
 ROOTS = ("campaign_outputs_v1", "campaign_outputs_confirmation_v1")
+# Inner-selection majority rates of the 2026-09-15 bundle (learning_gate_evidence.json).
+MAJORITY = {"rte": 0.5020, "mrpc": 0.6744}
+
+
+def learning_health(task, steps, fixed_accuracy, best_step):
+    """Flag collapsed or degenerate task learning for downstream scrutiny."""
+    flags = []
+    if fixed_accuracy != "" and float(fixed_accuracy) <= MAJORITY[task] + 0.01:
+        flags.append("fixed_endpoint_at_majority")
+    if best_step and int(best_step) < 0.02 * steps:
+        flags.append("best_checkpoint_before_2pct")
+    return ";".join(flags) or "ok"
 
 
 def sha256(path):
@@ -89,6 +101,10 @@ def rows_for_root(root):
             best_accuracy=best_metrics.get("accuracy", ""),
             best_f1=best_metrics.get("f1", ""),
             validation_sha256=event["validation_sha256"],
+            learning_health=learning_health(
+                manifest["task"], steps, sel.get("accuracy", ""), best_step
+            ),
+            per_module_relative_frobenius=json.dumps(total["per_module_relative_frobenius"], sort_keys=True),
         )
 
 

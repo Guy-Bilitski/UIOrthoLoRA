@@ -92,8 +92,8 @@ def confirmation_summary(rows, selection):
     lines, complete = [], True
     for task, label in TASKS:
         chosen = fmt_dose(selection[task]["selected_coefficient"])
-        block = []
-        for condition, name in CONDITIONS:
+        by_condition = {}
+        for condition, _ in CONDITIONS:
             sub = [
                 r
                 for r in rows
@@ -104,19 +104,43 @@ def confirmation_summary(rows, selection):
             ]
             if {int(r["seed"]) for r in sub} != CONFIRMATION_SEEDS:
                 complete = False
-                continue
+            by_condition[condition] = {int(r["seed"]): r for r in sub}
+        if not complete:
+            continue
+        # Matching status is derived per task/seed pair from the achieved norms
+        # of THIS study's runs (e_s = |rho_NORM,s / rho_MIX,s - 1|), never
+        # inherited from the calibration-seed label.
+        errors = {
+            seed: abs(
+                float(by_condition["P1_NORM"][seed]["rho_pooled"])
+                / float(by_condition["P1_MIX"][seed]["rho_pooled"])
+                - 1.0
+            )
+            for seed in sorted(CONFIRMATION_SEEDS)
+        }
+        all_matched = all(e <= 0.05 + 1e-12 for e in errors.values())
+        error_text = ", ".join(f"{100 * errors[s]:.1f}" for s in sorted(CONFIRMATION_SEEDS))
+        block = []
+        for condition, name in CONDITIONS:
+            sub = list(by_condition[condition].values())
+
             def ms(key, scale=1.0, digits=4):
                 values = [scale * float(r[key]) for r in sub]
                 return f"${mean(values):.{digits}f} \\pm {stdev(values):.{digits}f}$"
+
             cross = [100 * (float(r["pooled_LT"]) + float(r["pooled_TL"])) for r in sub]
-            shown = name if condition != "P1_NORM" else f"Norm-matched ($\\beta={chosen}$)"
+            if condition == "P1_NORM":
+                status = "matched all seeds" if all_matched else "match errors " + error_text + "\\%"
+                shown = f"Norm control ($\\beta={chosen}$; {status})"
+            else:
+                shown = name
             block.append(
                 f"{label} & {shown} & {ms('rho_pooled')} & ${mean(cross):.1f} \\pm {stdev(cross):.1f}$ & "
                 f"{ms('pooled_LL', 100, 1)} & {ms('pooled_TT', 100, 1)} & "
                 f"{ms('probe_masked_ce', 1, 2)} & {ms('fixed_accuracy', 100, 1)} \\\\"
             )
         lines.extend(block)
-        if task != TASKS[-1][0] and block:
+        if task != TASKS[-1][0]:
             lines.append("\\midrule")
     if not complete:
         return ["% confirmation seeds incomplete; rerun --write once all 18 runs validate"]
@@ -128,7 +152,10 @@ def confirmation_summary(rows, selection):
             "(mean$\\pm$sample SD, $n=3$), fixed-step endpoints, common protocol of",
             "Section~\\ref{sec:matchedcontrol}. Cross, LL, and TT are pooled energy percentages;",
             "the probe is masked-token cross-entropy under the frozen original MLM head;",
-            "accuracy is the inner-selection split at the fixed step, scaled by 100.}",
+            "accuracy is the inner-selection split at the fixed step, scaled by 100. The norm-control",
+            "row states the per-seed achieved matching errors",
+            "$e_s=|\\rho_{\\mathrm{NORM},s}/\\rho_{\\mathrm{MIX},s}-1|$ against the declared",
+            "$\\pm5\\%$ rule; matching status is measured on these runs, not inherited from calibration.}",
             "\\label{tab:matchedconfirmation}",
             "\\begin{adjustbox}{max width=\\linewidth}",
             "\\begin{tabular}{llcccccc}",

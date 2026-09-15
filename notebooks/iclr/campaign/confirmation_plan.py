@@ -25,9 +25,9 @@ def _json(path):
     return json.loads(Path(path).read_text())
 
 
-def entries(selection):
+def entries(selection, tasks=None):
     rows = []
-    for task in TASKS:
+    for task in tasks if tasks is not None else TASKS:
         doses = {
             "P1_UNREG": 0.0,
             "P1_MIX": 1e-3,
@@ -68,11 +68,14 @@ def materialize_entry(protocol, entry):
 
 
 def validate_confirmation_admission(job, protocol):
+    included = tuple(protocol.get("tasks_included", TASKS))
     if (
         protocol.get("purpose") != CONFIRMATION_PURPOSE
         or protocol.get("registered") is not True
         or protocol.get("confirmation_authorized") is not True
-        or set(protocol.get("task_jobs", {})) != set(TASKS)
+        or not included
+        or not set(included) <= set(TASKS)
+        or set(protocol.get("task_jobs", {})) != set(included)
     ):
         raise ValueError("Require the registered, author-authorized confirmation protocol")
     for reference in ("calibration_protocol", "selection_record"):
@@ -86,7 +89,7 @@ def validate_confirmation_admission(job, protocol):
         or record.get("selection") != protocol["selection"]
     ):
         raise ValueError("Selection record does not bind this confirmation protocol")
-    if protocol.get("entries") != entries(protocol["selection"]):
+    if protocol.get("entries") != entries(protocol["selection"], included):
         raise ValueError("Registered confirmation entries differ from the authoritative construction")
     if job.get("seed") not in CONFIRMATION_SEEDS:
         raise ValueError("Confirmation runs must use a declared confirmation seed")
@@ -99,7 +102,7 @@ def validate_confirmation_admission(job, protocol):
     TrainSettings(**expected["train_settings"]).validate()
 
 
-def register(calibration_protocol_path, selection_record_path, calibration_ledger, authorization):
+def register(calibration_protocol_path, selection_record_path, calibration_ledger, authorization, tasks=TASKS):
     from .focused_analysis import collect_focused_norms, select_matched
 
     record = _json(selection_record_path)
@@ -120,9 +123,9 @@ def register(calibration_protocol_path, selection_record_path, calibration_ledge
     rederived = select_matched(rows, calibration_protocol_path, refinements)
     if rederived["selection"] != record["selection"]:
         raise ValueError("Selection record disagrees with the current validated calibration ledger")
-    for task, sel in record["selection"].items():
-        if sel["match_status"] not in {"matched", "failed_match"}:
-            raise ValueError("Confirmation requires a completed selection for every task: " + task)
+    for task in tasks:
+        if record["selection"][task]["match_status"] not in {"matched", "failed_match"}:
+            raise ValueError("Confirmation requires a completed selection for every included task: " + task)
     calibration = _json(calibration_protocol_path)
     protocol = dict(
         schema_version=1,
@@ -135,9 +138,10 @@ def register(calibration_protocol_path, selection_record_path, calibration_ledge
         selection_record=dict(
             path=str(Path(selection_record_path).resolve()), sha256=sha256(selection_record_path)
         ),
-        task_jobs=copy.deepcopy(calibration["task_jobs"]),
+        tasks_included=list(tasks),
+        task_jobs={task: copy.deepcopy(calibration["task_jobs"][task]) for task in tasks},
         selection=record["selection"],
-        entries=entries(record["selection"]),
+        entries=entries(record["selection"], tasks),
         scope=(
             "Core three-arm confirmation only: UNREG/MIX/matched-NORM x RTE/MRPC x seeds (42,17,123). "
             "CENTER/DECAY_INIT/RANDPROJ/head-only, LoRA, full FT, extra seeds and new backbones need "
@@ -159,13 +163,18 @@ def main():
     parser.add_argument("--selection-record", type=Path, required=True)
     parser.add_argument("--calibration-ledger", type=Path, required=True)
     parser.add_argument("--authorization", required=True)
+    parser.add_argument("--tasks", default="rte,mrpc")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     resources = Resources(**json.loads(args.resources.read_text()))
     resources.validate_training()
     output = owned_path(resources.output_root, args.output)
     protocol = register(
-        args.calibration_protocol, args.selection_record, args.calibration_ledger, args.authorization
+        args.calibration_protocol,
+        args.selection_record,
+        args.calibration_ledger,
+        args.authorization,
+        tasks=tuple(args.tasks.split(",")),
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     write_json_new(output, protocol)
@@ -175,8 +184,9 @@ def main():
                 protocol=str(output),
                 sha256=sha256(output),
                 entries=len(protocol["entries"]),
-                selection={task: protocol["selection"][task]["selected_coefficient"] for task in TASKS},
-                match_status={task: protocol["selection"][task]["match_status"] for task in TASKS},
+                tasks=protocol["tasks_included"],
+                selection={t: protocol["selection"][t]["selected_coefficient"] for t in protocol["tasks_included"]},
+                match_status={t: protocol["selection"][t]["match_status"] for t in protocol["tasks_included"]},
             ),
             indent=2,
         )

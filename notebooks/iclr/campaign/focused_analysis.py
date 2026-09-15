@@ -49,6 +49,13 @@ def collect_focused_norms(ledger_path, protocol_path, *, synthetic_cpu_test=Fals
             continue
         directory = Path(first[run_id]["run_directory"])
         manifest_path = directory / "manifest.json"
+        if not manifest_path.exists():
+            # A run that failed before its manifest was durably written (or whose
+            # artifacts were quarantined) cannot be evidence; completed runs must
+            # still have their manifests.
+            if event.get("status") == "completed":
+                raise ValueError(f"Completed run lost its manifest: {run_id}")
+            continue
         manifest = _json(manifest_path)
         if manifest.get("phase_protocol_sha256") != digest:
             continue
