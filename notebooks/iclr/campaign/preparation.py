@@ -167,6 +167,95 @@ def stratified_split(labels, selection_fraction, split_seed):
     return sorted(train), sorted(selection)
 
 
+class VerifiedTokenizer:
+    """Raw `tokenizers` adapter with the call surface `_tokenize` expects.
+
+    The installed patched transformers assembles a character-level backend from
+    this pinned snapshot (its tokenizer.json predates the serialized model
+    `type` field), silently destroying the text. Tokenization therefore goes
+    through `tokenizers.Tokenizer` directly, after an explicit format repair
+    and a hard canary against canonical RoBERTa IDs.
+    """
+
+    def __init__(self, tokenizer, mask_token_id, pad_token_id):
+        self._tokenizer = tokenizer
+        self.mask_token_id = mask_token_id
+        self.pad_token_id = pad_token_id
+
+    def __call__(
+        self, first, text_pair=None, *, truncation, padding, max_length, return_tensors, return_special_tokens_mask
+    ):
+        if (truncation, padding, return_tensors, return_special_tokens_mask) != (True, "max_length", "pt", True):
+            raise ValueError("VerifiedTokenizer supports exactly the declared fixed-shape invocation")
+        self._tokenizer.enable_truncation(max_length=max_length)
+        self._tokenizer.enable_padding(length=max_length, pad_id=self.pad_token_id, pad_token="<pad>")
+        firsts = [first] if isinstance(first, str) else list(first)
+        if text_pair is None:
+            encodings = self._tokenizer.encode_batch(firsts)
+        else:
+            seconds = [text_pair] if isinstance(text_pair, str) else list(text_pair)
+            if len(seconds) != len(firsts):
+                raise ValueError("Paired batches must align")
+            encodings = self._tokenizer.encode_batch(list(zip(firsts, seconds)))
+        return dict(
+            input_ids=torch.tensor([e.ids for e in encodings], dtype=torch.long),
+            attention_mask=torch.tensor([e.attention_mask for e in encodings], dtype=torch.long),
+            special_tokens_mask=torch.tensor([e.special_tokens_mask for e in encodings], dtype=torch.long),
+        )
+
+
+CANARY_TEXT = "Hello world"
+CANARY_IDS = [0, 31414, 232, 2]
+
+
+def load_verified_tokenizer(model_directory, repaired_output):
+    """Build the adapter from tokenizer.json, repairing a missing model type.
+
+    Returns (tokenizer, provenance). The sealed snapshot is never modified; a
+    repaired copy is written to `repaired_output` with both hashes recorded.
+    """
+    from tokenizers import Tokenizer
+
+    from .artifacts import sha256, write_json_new
+
+    source = Path(model_directory) / "tokenizer.json"
+    data = json.loads(source.read_text())
+    provenance = dict(source_path=str(source.resolve()), source_sha256=sha256(source), repair=None)
+    load_path = source
+    if "type" not in data.get("model", {}):
+        data["model"]["type"] = "BPE"
+        repaired = Path(repaired_output)
+        repaired.parent.mkdir(parents=True, exist_ok=True)
+        write_json_new(repaired, data)
+        provenance["repair"] = dict(
+            reason="upstream tokenizer.json lacks the serialized model 'type' field; BPE type inserted",
+            repaired_path=str(repaired.resolve()),
+            repaired_sha256=sha256(repaired),
+        )
+        load_path = repaired
+    tokenizer = Tokenizer.from_file(str(load_path))
+    vocab = data["model"]["vocab"]
+    adapter = VerifiedTokenizer(tokenizer, mask_token_id=vocab["<mask>"], pad_token_id=vocab["<pad>"])
+    canary = adapter(
+        CANARY_TEXT, truncation=True, padding="max_length", max_length=16,
+        return_tensors="pt", return_special_tokens_mask=True,
+    )
+    ids = canary["input_ids"][0].tolist()
+    nonpad = int(canary["attention_mask"][0].sum())
+    if ids[:nonpad] != CANARY_IDS:
+        raise ValueError(f"Tokenizer canary failed: {ids[:nonpad]} != {CANARY_IDS}; refusing corrupted inputs")
+    if "Hello world" not in tokenizer.decode(CANARY_IDS):
+        raise ValueError("Tokenizer canary decode failed; refusing corrupted inputs")
+    pair = adapter(
+        "a b", text_pair="c d", truncation=True, padding="max_length", max_length=16,
+        return_tensors="pt", return_special_tokens_mask=True,
+    )
+    pair_ids = pair["input_ids"][0].tolist()
+    if pair_ids.count(2) != 3 or pair_ids[0] != 0:
+        raise ValueError("Tokenizer pair template canary failed; refusing corrupted inputs")
+    return adapter, provenance
+
+
 def _tokenize(tokenizer, first, second, max_length):
     if type(max_length) is not int or max_length < 3:
         raise ValueError("Explicit positive sequence length is required")

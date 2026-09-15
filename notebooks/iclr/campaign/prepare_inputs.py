@@ -74,9 +74,13 @@ def main():
     write_json_new(output / "preparation_manifest.json", config)
     cache = Path(resources.output_root) / "cache/huggingface"
     model_dir = materialize_source(model, resources, cache, output / "model")
-    from transformers import RobertaTokenizerFast
+    # The installed patched transformers silently assembles a character-level
+    # tokenizer from this pinned snapshot; use the verified raw-tokenizers path
+    # with an exact canonical-ID canary instead (see preparation.py).
+    from .preparation import load_verified_tokenizer
 
-    tokenizer = RobertaTokenizerFast.from_pretrained(model_dir, local_files_only=True)
+    tokenizer, tokenizer_provenance = load_verified_tokenizer(model_dir, output / "tokenizer_repaired.json")
+    write_json_new(output / "tokenizer_provenance.json", tokenizer_provenance)
     paths = {"model": str(model_dir)}
     for task in ("rte", "mrpc"):
         split_files = {split: [f"{task}/{split}-00000-of-00001.parquet"] for split in ("train", "validation")}

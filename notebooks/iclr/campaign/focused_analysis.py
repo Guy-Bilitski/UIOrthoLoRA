@@ -36,6 +36,8 @@ def collect_focused_norms(ledger_path, protocol_path, *, synthetic_cpu_test=Fals
     if design.get("purpose") != "focused_norm_calibration" or design.get("registered") is not True:
         raise ValueError("Require the registered focused calibration protocol")
     known = {entry["entry_id"]: entry for entry in design["initial_entries"]}
+    invalidation = Path(ledger_path).parent / "INVALIDATED_RUNS.json"
+    invalidated = set(json.loads(invalidation.read_text())["invalidated_run_ids"]) if invalidation.exists() else set()
     latest, first = {}, {}
     for line in Path(ledger_path).read_text().splitlines():
         event = json.loads(line)
@@ -43,6 +45,8 @@ def collect_focused_norms(ledger_path, protocol_path, *, synthetic_cpu_test=Fals
         latest[event["run_id"]] = event
     output = []
     for run_id, event in latest.items():
+        if run_id in invalidated:
+            continue
         directory = Path(first[run_id]["run_directory"])
         manifest_path = directory / "manifest.json"
         manifest = _json(manifest_path)

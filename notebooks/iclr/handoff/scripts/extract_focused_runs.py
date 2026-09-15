@@ -28,12 +28,16 @@ def rows_for_root(root):
     ledger = root / "run_ledger.jsonl"
     if not ledger.exists():
         return
+    invalidation = root / "INVALIDATED_RUNS.json"
+    invalidated = set(json.loads(invalidation.read_text())["invalidated_run_ids"]) if invalidation.exists() else set()
     latest, first = {}, {}
     for line in ledger.read_text().splitlines():
         event = json.loads(line)
         first.setdefault(event["run_id"], event)
         latest[event["run_id"]] = event
     for run_id, event in latest.items():
+        if run_id in invalidated:
+            continue
         if event.get("status") != "completed":
             continue
         directory = Path(first[run_id]["run_directory"])
