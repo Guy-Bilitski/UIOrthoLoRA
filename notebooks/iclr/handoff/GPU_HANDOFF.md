@@ -1,5 +1,22 @@
 # GPU session: start here
 
+Updated 2026-09-15. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The **Current execution plan — 2026-09-15** at the top of that file supersedes the old launch order and 66-run expanded tranche below.
+
+## Current campaign and deadline override
+
+- Plan for **two assigned RTX 3090 24 GB GPUs**, with four as an acceleration option; the author gives 4 days to the abstract and 11 to the full paper. Confirm exact deadline timestamps and remaining device IDs on the server.
+- Protect the clean registered UNREG/MIX/NORM study: RTE/MRPC × three arms × three seeds = 18 confirmations, plus its own calibration. Add reporting without changing its active source/configuration. Next priority is a separately validated equal-band × diagonal/partial-rotation study: 21 RTE runs including head-only references, then 21 MRPC runs if time fits. Six LoRA-8 comparators follow if feasible. Full FT and the older expanded control suite are deferred.
+- The server agent reports that 39 new-campaign runs were invalidated after a tokenizer fault; inputs were rebuilt (`preparation_20260915T0707Z`), independent parity and learning gates passed, and calibration restarted. This is a relayed status, **not a local validation or final result**. Inspect the current server ledger and sealed evidence before resuming. Never reuse invalid dose estimates, geometry claims or excluded artifacts.
+- Implementation now exists in the server's isolated campaign checkout. Locate and pin that checkout and its repaired environment; do not rebuild an obsolete runner solely from the September 14 snapshot here. New band instrumentation still requires its own tests and timing. Do not overwrite server fixes with this paper-repo snapshot.
+- Keep the actual run ledger current, give ETAs for both two and four GPUs, and reserve the last 48 hours before the full-paper deadline for analysis and writing. Read the exact update families, run counts and cutoff rules in the designated plan.
+
+The remaining sections preserve the September 14 handoff and implementation hazards. Their historical claims of "not yet implemented/not run" are not a live statement about the server. Their old expanded launch instructions must not override the current plan. Legacy experimental records remain separate from the repaired new campaign.
+
+
+## Preserved server handoff and historical runbook links
+
+The September 15 priority and evidence-reset instructions above take precedence over the older scope/status notes below. Preserve their server paths, authorization records and commands as context, but verify the live ledger before use; the old tokenizer-corrupted run IDs are not restored to validity by appearing here.
+
 **Current author instruction, 2026-09-14:** the broad campaign has been superseded
 for this submission by a minimal existing-table seed/control extension. Keep the
 50 GiB allowance; do not launch the old 66/75-run package or extra backbones.

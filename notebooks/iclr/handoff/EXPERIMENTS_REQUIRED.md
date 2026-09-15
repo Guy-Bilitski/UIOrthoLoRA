@@ -1,12 +1,113 @@
 # Additional experiments for the ICLR spectral-adaptation paper
 
 Project: `6aa54397e58b10444b0fa2aa` only. Created 2026-09-13; expanded after the review panel on 2026-09-14.
-Status: specification, not executed. GPU environment will be supplied by the author.
+Updated 2026-09-15: the deadline-scoped plan below takes priority. The server agent reports that the repaired-input campaign is underway; this local document is not a live run ledger.
 This is the designated experiment plan, kept with the Overleaf source for author access. It is an internal planning document, not a completed-results section or a submission artifact.
 
 Start a fresh GPU session with `GPU_HANDOFF.md`. Review disposition and reasons for non-adoption are in `REVIEW_PANEL_RESPONSE.md`. The review packet is a supplied simulated panel, not an actual ICLR decision. No proposed outcome below is assumed true, and no training launch is implied by this document.
 
-## Objective and priority
+## Current execution plan — 2026-09-15, two-GPU budget
+
+The author has **4 days to the abstract and 11 days to the full paper**, measured from this planning request. Budget against **two assigned RTX 3090 24 GB GPUs** throughout; four available GPUs accelerate the same queue. These are author-supplied planning windows, not independently verified conference deadlines. Record their exact local timestamps in the server ledger.
+
+This section supersedes the older execution order, nine-arm first tranche, 66-run launch target, and five-seed target below. Those sections remain a methodological reference/backlog, not jobs to launch automatically. Preserve the clean focused study's already registered protocol; additions get a separate, versioned registration and source snapshot. Do not amend active jobs to implement the new band experiment.
+
+### Scientific target
+
+1. **Location:** how does useful adaptation differ when it is restricted to equally sized leading, middle, or tail singular bands?
+2. **Flexibility:** within each band, what changes when diagonal coefficient tuning gains partial rotations?
+3. **Interaction:** does suppressing leading–tail mixing change update geometry beyond the tested magnitude-only control?
+
+The ongoing UNREG/MIX/NORM campaign addresses question 3 in the practical, unrotated, scaled adapter. It does not by itself answer questions 1–2. The new strict-band study answers those questions in a separately identified family. Together they connect confinement, flexibility and interaction; they are not a single fully crossed causal experiment. In particular, this budget does not test all pairwise leading/middle/tail regularizers or prove that the bands have fixed semantic roles.
+
+### Evidence reset: mandatory carry-forward
+
+The author relayed the server agent's tokenizer incident report: 39 new-campaign runs were invalidated, derived results withdrawn, inputs rebuilt, independent tokenization parity checked on 181 examples, and short learning gates passed. The reported repaired bundle is `preparation_20260915T0707Z`. These are **server-reported checks, not independently rerun here**. Verify their durable manifests and gate artifacts before resuming; the ledger, not this timestamp, determines current execution state.
+
+No corrupted run, fitted dose (including beta=27.5), MRPC frontier, or claimed 10x separation has evidentiary standing. Keep their invalidation records and exclusion checks. Restart calibration from the clean study's registered initial grid, not corrupted dose estimates. The legacy NeurIPS records are a separate archive; the reported incident was new-campaign-only. Do not overwrite either archive or silently revalidate excluded IDs. The manuscript's withdrawal of the invalid focused results must remain in place until clean evidence is validated.
+
+### One queue, in priority order
+
+| Priority | Work | Confirmation runs | Gate / purpose |
+|---|---|---:|---|
+| A — protect | Finish clean RTE + MRPC UNREG/MIX/NORM calibration and confirmation | 18 total in the existing campaign | 2 tasks × 3 arms × 3 seeds; question 3 |
+| A — alongside | Implement reporting and analyze saved checkpoints | No new training | Per-seed matching, task learning, spectral allocation; separately time diagnostics |
+| B — next | RTE: 3 bands × 2 flexibility settings × 3 seeds, plus original-backbone head-only references | 18 + 3 = 21 new | Questions 1–2; start only after correctness and timing gates |
+| C — replicate | The identical band/flexibility/reference matrix on MRPC | 21 new | Second-task replication; follows A and B |
+| D — comparator | LoRA rank 8 on RTE + MRPC, 3 seeds | 6 new | Common-frame external comparator, not proof of a shared mechanism |
+
+The minimum planned confirmation package is **39 runs** (18 existing-campaign + 21 new), excluding calibration, smoke, timing and invalid runs. With MRPC replication it is 60; with LoRA it is 66. This last number is coincidental: it is **not** the older nine-arm/full-FT 66-run suite. Subtract genuinely validated, manifest-compatible runs when estimating remaining work. Do not restart a completed clean run merely to satisfy a new folder convention.
+
+### A: finish the clean study without moving its goalposts
+
+- Retain the repaired tokenizer/input gates, registered objectives, module set, fixed-step endpoints, calibration seed, confirmation seeds and matching rule. The reported focused grid has 10 entries (MIX and UNREG on each task plus three NORM doses per task), with bounded, norms-only refinement; verify the actual clean registration rather than reconstructing settings from this prose.
+- Advance each task to confirmation when its own calibration is resolved. A failed match is a reportable outcome, not a reason to search indefinitely. Do not delay the other task behind a global calibration barrier.
+- Freeze the chosen task-specific dose before confirmation. For each paired confirmation seed, report the actual matching error `e_s = abs(n_NORM,s - n_MIX,s) / n_MIX,s`, using the **registered** norm definition and tolerance; a zero denominator is undefined. Show every pair, not just a mean norm or calibration match. Do not retune using confirmation geometry.
+- Report task scores and loss reduction with the geometry. Preserve accuracy and F1 with explicit labels on MRPC. A geometrically restricted model that fails to learn is not evidence of useful controlled adaptation.
+- Keep full dose frontiers, failures and nulls. Three-seed summaries include individual values, sample SD and paired differences; neither modules nor checkpoints are independent seed replicates. Task equivalence and generic spectral specificity are not established by this three-arm study.
+
+### B/C: a small, controlled band-by-flexibility study
+
+Use RoBERTa-base and the same 48 square attention projections, clean task bundle, splits and fixed per-task training budget as the focused study. Register seeds `{42,17,123}`; reserve calibration seed 31415. Freeze a finite, symmetric pilot/tuning budget before confirmation. Use a common declared recipe across band locations within each flexibility setting; if flexibility settings need distinct learning rates, give them the same search budget and report it. Never tune a location more because its result is disappointing.
+
+For each 768-dimensional projection, use the saved pretrained SVD with descending singular values. Define equal-sized bands using zero-based, half-open indices:
+
+- Leading: `[0:256)`; middle: `[256:512)`; tail: `[512:768)`.
+- Strict update: `Delta = U_B H V_B^T`, added to the unchanged pretrained matrix. **No ambient diagonal scalers and no additive fixed leading/complement core.** All backbone parameters outside this update remain frozen; train the same task head in every condition.
+- Diagonal setting: `H = diag(h)`, with 256 signed trainable coefficients.
+- Partial-rotation setting: retain the same 256 coefficients, and rotate the last 64 directions **within the chosen band** on both sides. Thus `H = blockdiag(diag(h_first_192), R_U diag(h_last_64) R_V^T)`. The ambient rotated indices are `[192:256)`, `[448:512)`, or `[704:768)` respectively. Use the same tested orthogonal-map implementation in all three bands. This is partial flexibility, not a free dense 256-by-256 core or a new rotation method claim.
+- Initialize `h=0` and rotations to identity so every condition starts at the exact same pretrained effective backbone. Validate nonzero coefficient gradients and usable rotation gradients after coefficients move: zero rotation gradients at the all-zero core are expected initially, but persistent inactivity is a failed gate. Do not silently change initialization to make a run work.
+- Include three paired **original-backbone head-only** runs per task. They share initial head state, batch order and task budget with all six conditions. Reuse only an already validated run with identical relevant manifests. These references do not substitute for a frozen-insertion head control in the practical study, whose initial effective model differs.
+
+Tests before launch: band indexing, complete delta reconstruction, no off-band energy except numerical tolerance, equal initial logits, forward/merge agreement, active gradients, correct trainable inventory, save/reload and a learning smoke test. Implement and test in an isolated source snapshot; do not hot-patch the active campaign. If the existing adapter cannot represent this exact family, report the implementation gap and ETA instead of relabeling a different parameterization.
+
+The primary comparison is task adaptation across the six conditions and versus the frozen-backbone references. Report update norm and within-band off-diagonal energy as well. Zero off-band energy is an enforcement check, not an empirical discovery. Location comparisons have equal trainable capacity within a setting; rotations intentionally add capacity, so their effect is not a capacity-matched claim. Neither equal band dimension nor identical step budgets imply matched update magnitude. Do not infer universal superiority of a band from one task.
+
+### Measurements integrated into existing artifacts
+
+Do not restart ongoing runs just to add logging. Use their saved initial/intermediate/final states; record absent snapshots as missing. Preserve the original fixed-step and validation-selected endpoint distinction.
+
+1. **First:** finish the registered final-checkpoint metrics and per-seed match table for A; these must not wait on an expensive new SVD sweep.
+2. **Next:** measure all nine leading/middle/tail block energies in the fixed equal-thirds frame, both absolute and normalized. Retain total-from-pretraining and learned-since-insertion deltas, pooled energies and per-module summaries. The old binary cutoff is leading+middle versus tail: summing the appropriate nine blocks must reproduce its four blocks. Do not silently redefine legacy `major/medium/minor` implementation labels.
+3. **Then, where saved states and time permit:** plot training progress at 0/10/25/50/75/100%, task score/loss, norm, block allocation and subspace drift. Existing additional snapshots may be retained. At zero delta, energy fractions are undefined. Time expensive drift/SVD diagnostics separately; endpoints take priority over dense trajectories.
+4. Reuse existing training-loss, gradient-norm, clipping and failure logs when available. Spectral/subspace stability is not optimizer stability. Without replicated optimization measurements, describe geometry and task learning, not a demonstrated training-stability mechanism or knowledge retention.
+
+Deliver three compact analysis outputs: band × flexibility task results; clean MIX/NORM/UNREG geometry-versus-achieved-norm with per-seed match status; and, if checkpoints support it, spectral trajectories. Calibration dose curves are exploratory; distinguish them visually from confirmation points.
+
+### Deadline and capacity gates
+
+Treat day 0 as this request. These are scheduling targets, not promised runtimes:
+
+| Window | Required focus | Cutoff |
+|---|---|---|
+| Days 0–1 | A continues; prepare reporting and B's CPU tests/smoke/timing | Do not displace A for unvalidated new code |
+| Days 1–3 | Complete and audit A; run B if its measured finish fits | By day 3, freeze the evidence used in the abstract |
+| Day 4 | Submit an abstract supported by validated observations | B may continue for the full paper; no pending result becomes an abstract finding |
+| Days 4–8 | Finish B, then C; D only if the schedule still fits | If C cannot fit, consider the smaller D instead; record the scope choice using runtime, not favorable outcomes |
+| Days 9–11 | Freeze new launches; extract, validate, write and audit the full paper | Reserve at least the last 48 hours for analysis/writing, not a new sweep |
+
+On **two GPUs**, A owns both by default until its queue is clear. A spare assigned slot may run B only when no ready A job is delayed; CPU implementation/reporting proceeds alongside. On **four GPUs**, protect two slots for A and use the other two for ready A work or validated B, whichever advances the declared deadlines. Do not reserve idle devices while useful priority work is ready. Preserve per-task calibration dependencies.
+
+If allocation drops, checkpoint and resume only this project's jobs on the explicitly remaining assigned devices. Recompute the queue immediately; do not touch another project's processes. Resource changes never justify bypassing an input, learning or artifact gate.
+
+Preserve the server's stage-specific storage authorizations as well as its GPU limits. This plan grants no extra disk quota and does not make calibration and confirmation allowances interchangeable. Forecast retained checkpoints, shared SVD references and diagnostic artifacts before admitting B/C/D; use compact reproducible states, and request a resource decision if a complete block cannot fit. Do not delete invalidation evidence or another campaign's artifacts to create capacity.
+
+Ask the server agent to return, after the next timing gate:
+
+- Valid completed/remaining counts, actual clean registration and input/source fingerprints, and exact deadline timestamps.
+- Measured per-run setup/training/evaluation/diagnostic times and peak VRAM, including a diagonal and rotated band pilot; retained-storage forecast against each authorized output root. No memory-fit assumptions from parameter counts alone.
+- Remaining GPU-hours and finish ranges under **two and four GPUs**, including serial calibration/refinement, reload/extraction and a stated contingency allowance. `remaining GPU-hours / GPU count` is only a lower bound, not an ETA.
+- Which complete blocks A/B/C/D fit before day 3 and day 9; update this forecast on failures, stalls, calibration decisions and GPU reassignment.
+
+Never remove a difficult seed or a losing condition to hit a deadline. If a block cannot finish, retain its partial data as exploratory and defer the complete claim. Reduce breadth before weakening correctness or hiding variability. Four GPUs should first buy earlier completion and replication, not extra hypotheses.
+
+**Deferred beyond this deadline-scoped queue:** CENTER/DECAY_INIT/RANDPROJ, extra penalty arms, five-seed expansion, full FT, additional PEFT baselines, random adapter frames, pure-tail mixing replication, new generative/retention campaigns and dense diagnostic sweeps. They remain scientifically useful but are not prerequisites for reporting the narrower three-question study honestly. Their absence limits claims of pretrained-frame specificity, cross-model generality and retention; reframing does not erase those limitations.
+
+## Expanded methodological reference and backlog (2026-09-14)
+
+The sections below retain the earlier design details and reviewer context. The current execution plan above governs scope, order and run counts; do not launch the expanded suite from the older instructions below.
+
+### Objective and priority
 
 The principal question is whether suppressing leading–tail interaction changes the geometry of adaptation beyond the effects of making the effective weight update smaller. A second question separates the available spectral subspace from flexibility inside it. Training trajectories are measurements added to these runs, not a separate benchmark campaign.
 
