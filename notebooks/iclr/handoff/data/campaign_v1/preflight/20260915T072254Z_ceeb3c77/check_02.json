@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/.venv/bin/python",
+    "scripts/check_review_additions.py"
+  ],
+  "cwd": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff",
+  "exit_code": 0,
+  "seconds": 5.2351215640082955,
+  "stderr": "",
+  "stdout": "Haar projector expectation d=4, k=1: error=0.0002021, MC SE=0.0003568\nHaar projector expectation d=7, k=3: error=0.003053, MC SE=0.003245\nHaar projector expectation d=9, k=7: error=0.001645, MC SE=0.003257\nArchived training-call total: 14.9755 hours (not total project GPU-hours).\nPASS: projector expectation/mean conservation, chordal and identity diagnostics, initialization norms, seed SDs, all 27 cost rows.\n"
+}
