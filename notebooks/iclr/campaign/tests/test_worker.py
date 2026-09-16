@@ -149,7 +149,7 @@ def test_worker_rejects_confirmation_without_phase_gate(tmp_path):
     job["stage"] = "confirmation"
     # Confirmation is implemented but stays fail-closed: it needs the registered
     # purpose, hash-bound protocol/selection evidence and a confirmation seed.
-    with pytest.raises(ValueError, match="registered focused confirmation purpose"):
+    with pytest.raises(ValueError, match="registered confirmation purposes"):
         validate_job(job, synthetic_cpu_test=True)
     job["confirmation_purpose"] = "focused_norm_confirmation"
     with pytest.raises(ValueError, match="phase admission evidence"):

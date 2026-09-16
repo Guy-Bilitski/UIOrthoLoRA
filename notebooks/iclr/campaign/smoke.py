@@ -33,7 +33,7 @@ def main():
     parser.add_argument("--reserved-gib", type=float, default=8)
     parser.add_argument("--retry-of")
     parser.add_argument("--task", choices=("rte", "mrpc"), default="rte")
-    parser.add_argument("--purpose", choices=("smoke", "timing", "matching", "confirmation"), default="smoke")
+    parser.add_argument("--purpose", choices=("smoke", "timing", "matching", "confirmation", "band"), default="smoke")
     parser.add_argument("--p0-gate", type=Path)
     parser.add_argument("--timing-protocol", type=Path)
     parser.add_argument("--calibration-protocol", type=Path)
@@ -77,7 +77,7 @@ def main():
     manifest = dict(
         schema_version=1,
         experiment_id=NAMESPACE,
-        stage={"smoke": "smoke", "confirmation": "confirmation"}.get(args.purpose, "calibration"),
+        stage={"smoke": "smoke", "confirmation": "confirmation", "band": "confirmation"}.get(args.purpose, "calibration"),
         condition="P1_MIX",
         task=args.task,
         seed=31415,
@@ -207,6 +207,38 @@ def main():
                 "Registered core confirmation entry; the NORM dose and its match status come only from "
                 "the immutable focused selection record bound in the protocol."
             ),
+        )
+        if manifest["train_settings"]["max_steps"] != args.steps:
+            raise ValueError("Explicit --steps must equal the registered fixed endpoint")
+    elif args.purpose == "band":
+        if args.calibration_protocol is None or args.calibration_entry is None:
+            raise ValueError("Band runs require the registered band protocol and exact entry ID")
+        from .band_plan import materialize_entry as materialize_band
+
+        protocol = json.loads(args.calibration_protocol.read_text())
+        entries = [row for row in protocol.get("entries", []) if row["entry_id"] == args.calibration_entry]
+        if len(entries) != 1 or entries[0]["task"] != args.task:
+            raise ValueError("Select an exact registered band entry for this task")
+        resolved = materialize_band(protocol, entries[0])
+        protected = {
+            "physical_gpu",
+            "gpu_uuid",
+            "source_revision",
+            "source_files_sha256",
+            "resource_authorization_sha256",
+            "cpu_preflight_sha256",
+            "dependencies",
+            "synthetic_cpu_test",
+            "run_id",
+            "run_directory",
+        }
+        if protected & resolved.keys():
+            raise ValueError("Band scientific fields cannot override runtime/resource/source provenance")
+        manifest.update(resolved)
+        manifest.update(
+            phase_protocol_path=str(args.calibration_protocol.resolve()),
+            phase_protocol_sha256=sha256(args.calibration_protocol),
+            note="Registered band-by-flexibility entry; strict band family, unregularized, zero-delta start.",
         )
         if manifest["train_settings"]["max_steps"] != args.steps:
             raise ValueError("Explicit --steps must equal the registered fixed endpoint")

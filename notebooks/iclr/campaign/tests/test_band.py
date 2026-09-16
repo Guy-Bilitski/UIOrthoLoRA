@@ -86,3 +86,63 @@ def test_band_config_rejects_invalid():
     with pytest.raises(ValueError):
         BandConfig(band_start=0, band_size=256, rotation_size=32).validate(768)
     BandConfig(band_start=512, band_size=256, rotation_size=64).validate(768)
+
+
+def test_band_registration_and_admission(tmp_path):
+    import json
+
+    from notebooks.iclr.campaign.artifacts import sha256, write_json_new
+    from notebooks.iclr.campaign.band_plan import entries as band_entries
+    from notebooks.iclr.campaign.band_plan import materialize_entry, register
+    from notebooks.iclr.campaign.phase_gates import validate_phase_admission
+    from notebooks.iclr.campaign.tests.test_confirmation import _gate, _task_job
+
+    focused = dict(
+        purpose="focused_norm_calibration",
+        registered=True,
+        task_jobs=dict(rte=_task_job("rte", 5670), mrpc=_task_job("mrpc", 2760)),
+    )
+    focused_path = tmp_path / "focused.json"
+    write_json_new(focused_path, focused)
+    protocol = register(focused_path, "synthetic authorization", task="rte")
+    rows = protocol["entries"]
+    assert len(rows) == 23  # 18 band + 3 head-only + 2 pilots
+    assert sum(r["condition"] == "P1_HEAD_BASE" for r in rows) == 3
+    assert sum(r["purpose"] == "timing_pilot" for r in rows) == 2
+    protocol_path = tmp_path / "band.json"
+    write_json_new(protocol_path, protocol)
+    gate_path = _gate(tmp_path)
+    entry = [r for r in rows if r["entry_id"] == "rte/BAND_MID_ROT64/seed_17"][0]
+    job = dict(
+        **materialize_entry(protocol, entry),
+        synthetic_cpu_test=True,
+        p0_gate_path=str(gate_path),
+        p0_gate_sha256=sha256(gate_path),
+        phase_protocol_path=str(protocol_path),
+        phase_protocol_sha256=sha256(protocol_path),
+    )
+    assert job["band_config"] == dict(band_start=256, band_size=256, rotation_size=64)
+    assert job["regularization_coefficient"] == 0.0 and job["seed"] == 17
+    validate_phase_admission(job)
+    import copy
+
+    for mutation in (
+        dict(band_config=dict(band_start=0, band_size=256, rotation_size=64)),
+        dict(regularization_coefficient=0.001),
+        dict(seed=2021),
+        dict(confirmation_purpose="focused_norm_confirmation"),
+    ):
+        changed = {**copy.deepcopy(job), **mutation}
+        with pytest.raises(ValueError):
+            validate_phase_admission(changed)
+    pilot = [r for r in rows if r["purpose"] == "timing_pilot"][0]
+    pilot_job = dict(
+        **materialize_entry(protocol, pilot),
+        synthetic_cpu_test=True,
+        p0_gate_path=str(gate_path),
+        p0_gate_sha256=sha256(gate_path),
+        phase_protocol_path=str(protocol_path),
+        phase_protocol_sha256=sha256(protocol_path),
+    )
+    assert pilot_job["seed"] == 31415
+    validate_phase_admission(pilot_job)

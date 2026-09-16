@@ -38,13 +38,20 @@ def validate_phase_admission(job):
     if job["stage"] == "smoke":
         return
     if job["stage"] == "confirmation":
-        if job.get("confirmation_purpose") != "focused_norm_confirmation":
-            raise ValueError("Only the registered focused confirmation purpose is admitted")
-        protocol = _check_p0_gate_and_evidence(job)
-        from .confirmation_plan import validate_confirmation_admission
+        purpose = job.get("confirmation_purpose")
+        if purpose == "focused_norm_confirmation":
+            protocol = _check_p0_gate_and_evidence(job)
+            from .confirmation_plan import validate_confirmation_admission
 
-        validate_confirmation_admission(job, protocol)
-        return
+            validate_confirmation_admission(job, protocol)
+            return
+        if purpose == "band_flexibility_v1":
+            protocol = _check_p0_gate_and_evidence(job)
+            from .band_plan import validate_band_admission
+
+            validate_band_admission(job, protocol)
+            return
+        raise ValueError("Only registered confirmation purposes are admitted")
     if job["stage"] != "calibration" or job.get("calibration_purpose") not in {
         "throughput_only",
         "magnitude_calibration",

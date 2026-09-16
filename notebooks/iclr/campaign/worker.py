@@ -41,7 +41,7 @@ from .modeling import (
 )
 from .preparation import load_original_roberta, load_prepared, paired_classifier, verify_source
 from .phase_gates import validate_phase_admission
-from .protocol import EARLY_P5, NAMESPACE, P1_CONDITIONS, owned_path
+from .protocol import EARLY_P5, NAMESPACE, P1_CONDITIONS, owned_path, BAND_CONDITIONS
 from .regularizers import CachedRegularizer
 from .spectral import SpectralConfig, SpectralLinear, haar_basis
 from .validation import validate_checkpoint
@@ -110,7 +110,7 @@ def validate_job(job, *, synthetic_cpu_test=False):
     if job.get("synthetic_cpu_test", False) is not synthetic_cpu_test:
         raise ValueError("Synthetic and pretrained run provenance cannot be mixed")
     validate_phase_admission(job)
-    if job["condition"] not in P1_CONDITIONS + EARLY_P5 or job["task"] not in {"rte", "mrpc"}:
+    if job["condition"] not in P1_CONDITIONS + EARLY_P5 + BAND_CONDITIONS or job["task"] not in {"rte", "mrpc"}:
         raise ValueError("Unsupported common-protocol condition/task")
     if (
         job["diagnostic_device"] not in {"cpu", "cuda:0"}
@@ -466,6 +466,10 @@ def execute_job(job, *, resources=None, gpu_id=None, gpu_uuid=None, wall_seconds
                 set_full_finetuning(model)
             elif job["condition"] == "P5_LORA8":
                 layers = insert_lora(model, 8, job["lora_alpha"])
+            elif job["condition"] in BAND_CONDITIONS:
+                from .band import BandConfig, insert_band
+
+                layers = insert_band(model, BandConfig(**job["band_config"]), references=refs)
             else:
                 layers = insert_spectral(
                     model, cfg, freeze_adapter=job["condition"] == "P1_HEAD_INIT", references=refs
@@ -523,7 +527,7 @@ def execute_job(job, *, resources=None, gpu_id=None, gpu_uuid=None, wall_seconds
         )
         write_json_new(directory / "p0_equivalence.json", equivalence)
         del probe, original_logits, original_probe_logits
-        if layers and job["condition"] != "P5_LORA8":
+        if layers and job["condition"] != "P5_LORA8" and job["condition"] not in BAND_CONDITIONS:
             penalty = CachedRegularizer(
                 layers,
                 job["condition"],
