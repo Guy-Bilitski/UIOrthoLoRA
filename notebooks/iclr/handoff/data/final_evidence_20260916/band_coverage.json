@@ -1,5 +1,5 @@
 {
- "generated_utc": "2026-09-16T08:30:19.414632+00:00",
+ "generated_utc": "2026-09-16T19:19:45.153058+00:00",
  "protocol_sha256": "721935221ca1b4db38736016fbb256fa1d355d4dcf8a90a693856eaf7614fdeb",
  "off_band_tolerance": "Delta is constructed strictly in-band (Delta = U_B H V_B^T); off-band energy is structurally zero. The float32 layer test bound is 1e-8 of total energy (tests/test_band.py). LoRA comparator (block D): not launched.",
  "entries": {
@@ -35,24 +35,29 @@
    ]
   },
   "rte/BAND_LEAD_ROT64/seed_42": {
-   "status": "running",
+   "status": "completed",
    "attempts": [
     {
      "run_id": "20260916T082801Z_baa7de7788ab",
-     "status": "running"
+     "status": "completed"
     }
    ]
   },
   "rte/BAND_LEAD_ROT64/seed_17": {
-   "status": "unlaunched",
-   "attempts": []
+   "status": "completed",
+   "attempts": [
+    {
+     "run_id": "20260916T123448Z_4d53529a1c7d",
+     "status": "completed"
+    }
+   ]
   },
   "rte/BAND_LEAD_ROT64/seed_123": {
-   "status": "running",
+   "status": "completed",
    "attempts": [
     {
      "run_id": "20260916T083001Z_bfc693e2e5fb",
-     "status": "running"
+     "status": "completed"
     }
    ]
   },
@@ -84,16 +89,31 @@
    ]
   },
   "rte/BAND_MID_ROT64/seed_42": {
-   "status": "unlaunched",
-   "attempts": []
+   "status": "completed",
+   "attempts": [
+    {
+     "run_id": "20260916T123817Z_36710343942e",
+     "status": "completed"
+    }
+   ]
   },
   "rte/BAND_MID_ROT64/seed_17": {
-   "status": "unlaunched",
-   "attempts": []
+   "status": "completed",
+   "attempts": [
+    {
+     "run_id": "20260916T083401Z_afed887066ba",
+     "status": "completed"
+    }
+   ]
   },
   "rte/BAND_MID_ROT64/seed_123": {
-   "status": "unlaunched",
-   "attempts": []
+   "status": "completed",
+   "attempts": [
+    {
+     "run_id": "20260916T124048Z_eab05a8545de",
+     "status": "completed"
+    }
+   ]
   },
   "rte/BAND_TAIL_DIAG/seed_42": {
    "status": "completed",
@@ -123,21 +143,31 @@
    ]
   },
   "rte/BAND_TAIL_ROT64/seed_42": {
-   "status": "running",
+   "status": "completed",
    "attempts": [
     {
      "run_id": "20260916T064705Z_7b77bcef1185",
-     "status": "running"
+     "status": "completed"
     }
    ]
   },
   "rte/BAND_TAIL_ROT64/seed_17": {
-   "status": "unlaunched",
-   "attempts": []
+   "status": "completed",
+   "attempts": [
+    {
+     "run_id": "20260916T110502Z_4c248f74d7d2",
+     "status": "completed"
+    }
+   ]
   },
   "rte/BAND_TAIL_ROT64/seed_123": {
-   "status": "unlaunched",
-   "attempts": []
+   "status": "completed",
+   "attempts": [
+    {
+     "run_id": "20260916T151448Z_49d05f5b9837",
+     "status": "completed"
+    }
+   ]
   },
   "rte/P1_HEAD_BASE/seed_42": {
    "status": "completed",
@@ -158,11 +188,11 @@
    ]
   },
   "rte/P1_HEAD_BASE/seed_123": {
-   "status": "running",
+   "status": "completed",
    "attempts": [
     {
      "run_id": "20260916T081037Z_3a95777a9a43",
-     "status": "running"
+     "status": "completed"
     }
    ]
   },
