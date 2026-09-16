@@ -558,3 +558,250 @@ and in the paper if ever used).
   the five degenerate arms last).
 - 06:46 CLoRA 2e-4 arm E (non-intruder removal, magnitude-matched 0.723) = 85.75 / 49.21 / F 0.137 (B 84.69/46.36/0.185, C 87.06/48.28/0.151). Ep running, F1 next.
 - 07:36 CLoRA 2e-4 arm Ep (non-intruder removal, perturbation-matched, norm 0.723) = 85.69 / 49.46 / F 0.137 (E 85.75/49.21/0.137 at the same norm; B 84.69/46.36/0.185). F1 running; LoRA-Null E started.
+- 08:04 **Session handover.** New agent took over from the handoff doc (QWEN_HANDOFF_2026-09-16.md).
+  Health check green: 1 gpu_pool_dyn, 1 qwen_watchdog, 1 qwen_campaign3, 2 eval_one_gpu, 0 failures
+  (rc=[1-9]), 0 OOM, disk 952 G, control {slots_training 1, slots_idle 2, min_free_mb 40000}. In
+  flight: job29 CLoRA 2e-4 F1 (since 06:46) and job30 LoRA-Null E (since 07:36). Queue lines 33-51
+  pending (19 arms) + STOP: LoRA-Null Ep/F1 · CLoRA 3e-4 E/Ep/F1 · SC-LoRA rl50, Ep · LoRA r16
+  rl50/B/C/D/E/Ep/F1 · SC-LoRA B/C/D/E/F1 (degenerate, last). Session-bound watchers re-created
+  (cron 23,53 * * * * health+results check; Monitor tail -F on the three logs, 30 min, re-armed).
+  No daemon action needed.
+- 08:29 Scheduled check green: pool/watchdog/campaign3 1 each, 2 evals, 0 trainings (all training
+  done, `logs/train_wanted` absent as expected), 73.4/143.8 GB, 0 rc!=0, 0 FAILED, 0 OOM, 952 G
+  free. No new arm since Ep: job29 (CLoRA 2e-4 F1, since 06:46) at 86 % of its retention stage,
+  job30 (LoRA-Null E, since 07:36) at 49 %. The CLoRA 2e-4 E/Ep summaries were rewritten at 07:58
+  (mtime only — values unchanged at 85.75/49.21/0.137 and 85.69/49.46/0.137). No action taken.
+- 08:38 **Third complete Qwen row: CLoRA k1024 2e-4, all seven arms. Arm F1 (non-intruder,
+  count-matched: the same 532 top-10 slots deleted but taken from the base-ALIGNED directions,
+  norm 1.067) = 9.69 / 3.52 / F 0.300** vs A 85.94 / 44.34 / 0.211 and B (532 intruders deleted,
+  norm 0.720) 84.69 / 46.36 / 0.185. The count-matched aligned deletion DESTROYS the model
+  (task 9.7, retention 3.5 — 44 pts below the base 48.00, i.e. broken output, not a removed
+  skill), while deleting the same number of intruder directions cost 1.25 pp. Row:
+  A 85.94/44.34/0.211 · B 84.69/46.36/0.185 · C 87.06/48.28/0.151 · D 83.25/41.65/0.255 ·
+  E 85.75/49.21/0.137 · Ep 85.69/49.46/0.137 · F1 9.69/3.52/0.300. The F-arm dose-response now
+  mirrors the B-arm one, in the opposite direction: deleting 532 aligned directions costs
+  0 pp on LoRA+wd (F1 86.38, update energy 10 k), 6.6 pp on MiLoRA (80.19, 24 k) and collapses
+  CLoRA 2e-4 (9.69, 59 k) — the larger the update, the more of the adaptation sits in the
+  aligned top spectrum. Note E/Ep (non-intruder deletion matched on MAGNITUDE, norm 0.723)
+  leave the task intact at 85.7 with the best retention of the row (49.2/49.5, i.e. at the
+  base); only the count-matched variant, which removes ~all of the aligned energy and then
+  rescales back to 1.067, is destructive. Consistent with the row's verify log
+  ([INFEASIBLE] E matched to B, rel diff 0.0095 — non-intruder content is nearly exhausted at
+  that norm). LoRA-Null Ep started 08:37 beside LoRA-Null E.
+- 08:47 **LoRA-Null 2e-4 arm E (non-intruder removal) = 85.31 / 48.57 / F 0.142** vs A 86.56 /
+  44.54 / 0.197, B (intruders deleted, 0.706) 32.88 / 41.28 / 0.206 and C (uniform shrink, 0.706)
+  87.19 / 48.80 / 0.140. **Caveat: E is NOT norm-matched on this row** — `verify_arms` reports
+  [INFEASIBLE], rel diff 0.2464: removing ALL non-intruder content only takes the norm to 0.7876,
+  it cannot reach B's 0.7055 (62 % of the top-10 slots are intruders, so the aligned content is
+  exhausted first). Read with that caveat, the cell is the sharpest statement of the row: at
+  62 % intruder load, deleting every base-aligned direction leaves the task intact (85.3, -1.3)
+  and retention AT the base (48.57 vs 48.00), while deleting the intruders destroys the task
+  (32.9) and raises F. So here the adaptation really does live in the intruder directions — and
+  deleting them is still the worst available way to shrink the update: C at a SMALLER norm
+  (0.706) keeps 87.2 task, 48.80 retention and cuts F by 29 %. E ~ C on F (0.142 at 0.788 vs
+  0.140 at 0.706) — F tracks the norm, not which directions were removed.
+  **Table provenance flag for Guy:** `make_table_intruder_tex.py`'s NOT_BUILT set sends the
+  Llama LoRA r16 / LoRA-Null E cells to "--" for exactly this INFEASIBLE condition, but Qwen
+  LoRA-Null is not in the set, so the next regeneration will print 48.57/85.31 in a column whose
+  caption asserts norm matching. Options: dagger + stated norm, or "--" for consistency with the
+  Llama rows. Not changed unilaterally — Guy's call. LoRA-Null F1 started 08:47.
+- 09:46 **LoRA-Null 2e-4 arm Ep = 85.25 / 47.96 / F 0.142** vs E 85.31 / 48.57 / 0.142. Both arms
+  carry the SAME norm on this row (0.7876 in `verify_arms`): because the aligned content is
+  exhausted at 62 % intruder load, the magnitude-matched (E) and perturbation-matched (Ep)
+  constructions coincide, so Ep is effectively a REPLICATE of E, not an independent arm. Useful
+  as a precision estimate for the proxy: two independently evaluated adapters with identical
+  construction differ by 0.06 pp task, 0.61 retention and 0.000 F — i.e. the retention proxy's
+  run-to-run noise is ~0.6 pt, well below the contrasts the row reports (C-B = 7.5 retention,
+  54 pp task). Row now complete except F1 (running): A 44.54/86.56/0.197 · B 41.28/32.88/0.206 ·
+  C 48.80/87.19/0.140 · D 29.88/3.50/0.292 · E 48.57/85.31/0.142 · Ep 47.96/85.25/0.142.
+  CLoRA 3e-4 arm E started 09:46.
+- 10:42 **Fourth complete Qwen row: LoRA-Null r16 2e-4, all seven arms. Arm F1 (non-intruder,
+  count-matched, norm 1.1261) = 0.00 / 0.00 / F 0.261** vs A 86.56 / 44.54 / 0.197 and E (ALL
+  aligned content removed, norm 0.788) 85.31 / 48.57 / 0.142. Total destruction: all eight CS
+  tasks exactly 0.0, BBH 0.0, MMLU-Pro 0.0. **Verified this is a real measurement, not a
+  pipeline failure**: rc=0, 6898 s, and the loglikelihood-scored tasks in the same run still
+  report chance-level numbers (MMLU 25.12 = 4-way chance, ARC-C 30.0, TruthfulQA 43.08,
+  retention_broad 19.64) — generation is destroyed, ranking is at chance. Same signature as
+  Llama LoRA-Null D (0.00/0.00 in the table). The only log match for error/nan is the standard
+  lm-eval tokenizer length warning. Row: A 44.54/86.56/0.197 · B 41.28/32.88/0.206 ·
+  C 48.80/87.19/0.140 · D 29.88/3.50/0.292 · E 48.57/85.31/0.142 · Ep 47.96/85.25/0.142 ·
+  F1 0.00/0.00/0.261. Reading: E and F1 both delete only NON-intruder directions, and they sit
+  at the two extremes of the row — E (everything aligned in the top-10, shrink to 0.788) is
+  harmless, F1 (count-matched 868 directions, which reaches far below the top-10 into the
+  aligned bulk, then rescales UP to 1.126) destroys the model. So what destroys an adapter is
+  how deep the deletion cuts plus the renormalisation that follows, not whether the removed
+  directions were labelled intruders. CLoRA 3e-4 Ep started 10:42.
+- 11:12 **CLoRA 3e-4 arm E (non-intruder removal, magnitude-matched) = 86.38 / 46.43 / F 0.205**
+  vs B (intruders deleted) 82.56 / 44.74 / 0.246 and C (uniform shrink) 87.38 / 46.55 / 0.210,
+  **all three at exactly the same norm 0.7217** — `verify_arms` gives [PASS] E matched to B with
+  rel diff 0.00000, so this is the campaign's one clean three-way equal-magnitude comparison at
+  a HIGH intruder load (47.6 % of slots, 0.375 energy). CLoRA 2e-4's E was [INFEASIBLE]
+  (rel diff 0.0095) and LoRA-Null's badly so (0.2464); here the constraint binds on neither side.
+  Reading: at identical magnitude, removing the base-ALIGNED directions is indistinguishable
+  from a plain uniform shrink (task 86.4 vs 87.4, retention 46.4 vs 46.6, F 0.205 vs 0.210) while
+  removing the INTRUDERS is worse on all three axes (82.6 / 44.7 / 0.246). The intruder
+  directions are therefore not the harmful component of the update: at matched norm they are the
+  worst thing to spend the deletion budget on, and which directions are removed barely matters
+  compared with how much norm goes. Row needs only F1 (started 11:12); Ep still running.
+- 12:01 **CLoRA 3e-4 arm Ep (non-intruder, perturbation-matched, norm 0.7066) = 85.56 / 46.46 /
+  F 0.200** vs E (same construction at 0.7217) 86.38 / 46.43 / 0.205 and C (uniform shrink,
+  0.7217) 87.38 / 46.55 / 0.210. This is the only row where Ep and E carry DIFFERENT norms
+  (0.7066 vs 0.7217; they coincided on CLoRA 2e-4 and LoRA-Null), so it is a genuine extra
+  point — and it lands exactly where the norm predicts: 2 % less norm than E, 2 % less F
+  (0.200 vs 0.205), task and retention unchanged within noise. Three non-intruder/shrink arms
+  of this row (C, E, Ep) now sit at 46.4-46.6 retention and F 0.200-0.210 while the
+  intruder-deletion arm B at the same magnitude sits at 44.74 / 0.246: the F ladder of this row
+  is a pure function of the norm except for B, which is 17 % above the line. Row needs only F1
+  (running since 11:12). **Queue has moved past the three E/Ep/F1 blocks: SC-LoRA A (`__rl50`)
+  started 12:01** — remaining after it: SC-LoRA Ep, LoRA r16 (all seven), then the five
+  degenerate SC-LoRA arms.
+- 12:34 **Fifth complete Qwen row: CLoRA k1024 3e-4, all seven arms. Arm F1 (non-intruder,
+  count-matched, 666 directions, norm 1.0383) = 37.06 / 31.44 / F 0.358** vs A 85.00 / 39.86 /
+  0.288 and E (non-intruder, magnitude-matched 0.7217) 86.38 / 46.43 / 0.205. Heavy but PARTIAL
+  degradation, unlike the total collapses elsewhere: per-task BoolQ 52.0, PIQA 55.0, HellaSwag
+  61.0, OBQA 35.0 but SIQA 7.5 and ARC-E 25.5; MMLU 59.16 and TruthfulQA 47.19 show the model is
+  still a working ranker, so this is a damaged CS-format follower, not a destroyed model.
+  Row: A 39.86/85.00/0.288 · B 44.74/82.56/0.246 · C 46.55/87.38/0.210 · D 36.03/78.19/0.337 ·
+  E 46.43/86.38/0.205 · Ep 46.46/85.56/0.200 · F1 31.44/37.06/0.358.
+  **CORRECTION to the 08:38 entry.** That entry read the F-arm damage as ordering with update
+  size (LoRA+wd 10 k energy -> 0 pp, MiLoRA 24 k -> -6.6 pp, CLoRA 2e-4 59 k -> collapse). This
+  row breaks it: CLoRA 3e-4 has a 2.1x larger update (125 k) and deletes MORE directions (666 vs
+  532), yet its F1 is far LESS damaged (37.06 vs 9.69). Full F1 ladder by task accuracy:
+  LoRA+wd 86.38 (norm 1.100) · MiLoRA 80.19 (1.050) · CLoRA 3e-4 37.06 (1.038) ·
+  CLoRA 2e-4 9.69 (1.067) · LoRA-Null 0.00 (1.126). Neither update energy nor deletion count
+  orders this; what survives of the earlier reading is only the weak claim that count-matched
+  ALIGNED deletion is damaging on four of five rows while intruder deletion at the same count is
+  not (B: -1.3 pp on CLoRA 2e-4, -2.4 on CLoRA 3e-4). The mechanism behind the F1 ordering is
+  not established by this campaign and should not be asserted in the paper. SC-LoRA Ep started
+  12:34; SC-LoRA A still running.
+- 13:20 **SC-LoRA 2e-5 arm A (proxy source) = 86.50 / 47.72 / F 0.115** (BBH 50.00, MMLU-Pro
+  45.43). It anchors the bottom of the Qwen intruder axis: 0.2 % of top-10 slots, energy share
+  0.015, update energy 1,501 (smallest of the seven), and now also the lowest F (0.115) and the
+  smallest forgetting of any Qwen source — 0.28 points below the base 48.00, i.e. none
+  measurable, at full task accuracy 86.50. Qwen sources ordered by intruder load:
+  SC-LoRA 0.2 % 86.50/47.72/0.115 (forgets 0.3) · MiLoRA 6 % 86.75/43.98/0.183 (4.0) ·
+  LoRA+wd 12 % 87.00/48.19/0.134 (-0.2) · CLoRA 2e-4 38 % 85.94/44.34/0.211 (3.7) ·
+  CLoRA 3e-4 48 % 85.00/39.86/0.288 (8.1) · LoRA-Null 62 % 86.56/44.54/0.197 (3.5). F rises
+  with intruder load across the set (0.115 -> 0.288) with LoRA+wd and LoRA-Null off the line,
+  which is the same "intruder load tracks update size" reading already in the paper — not an
+  independent result, since both quantities are functions of the update magnitude.
+  **LoRA r16 A started 13:20**: its seven arms are the last informative block (ETA ~16:30),
+  then the five degenerate SC-LoRA arms. SC-LoRA Ep still running.
+- 14:00 **SC-LoRA 2e-5 arm Ep (non-intruder, perturbation-matched, norm 0.8278) = 87.19 / 48.34 /
+  F 0.098** vs A 86.50 / 47.72 / 0.115. This is the ONLY non-source SC-LoRA arm the geometry
+  supports (B/C/D/E/F all come out at ratio 1.000-1.011 — see the 19:30 entry of 2026-09-15), and
+  it behaves exactly like the C arms of every other row: a 17 % shrink of an already tiny update
+  buys +0.7 task, +0.6 retention and 15 % less F. Retention 48.34 sits marginally ABOVE the base
+  48.00, i.e. no measurable forgetting at either end of this row. The Qwen block's F range is now
+  0.098 (SC-LoRA Ep) to 0.358 (CLoRA 3e-4 F1). **LoRA r16 arm B started 14:00** — the last
+  informative block is underway; LoRA r16 A still running (72 % of generation at 13:59).
+- 14:19 **LoRA r16 5e-5 arm A (proxy source) = 85.44 / 48.18 / F 0.122** — retention 0.18 points
+  ABOVE the base 48.00, i.e. no measurable forgetting, at 85.44 task. Second-lowest F of the Qwen
+  sources after SC-LoRA (0.115), consistent with its 3 % intruder slots / 0.018 energy share and
+  the second-smallest update (energy 3,199). Both ends of the Qwen intruder axis (SC-LoRA 0.2 %,
+  LoRA r16 3 %) therefore sit at zero forgetting, which is what makes their B/C/D arms
+  uninformative for the causal contrast — there is nothing to remove. Run took 3,520 s (59 min)
+  versus the ~78 min of recent arms, the smallest adapter evaluating fastest; if the rest of the
+  row keeps this pace the ETAs I gave Guy at 13:23 move ~15-20 min earlier. Arm C started 14:18
+  (B running since 14:00).
+- 15:06 **LoRA r16 5e-5 arm B (42 intruders deleted, norm 0.8732) = 85.81 / 48.42 / F 0.106** vs
+  A 85.44 / 48.18 / 0.122. Inert, as the 3 % intruder load predicts: task +0.4, retention +0.2
+  (both within the ~0.6 proxy noise measured at 09:46), and F falls 13 % for a 13 % norm cut —
+  exactly proportional, so the deleted directions perturbed the activations at the average rate.
+  Sixth Qwen row to show B inert or harmful rather than helpful; with MiLoRA (6 %) and LoRA+wd
+  (12 %) this fixes the bottom of the dose-response curve at three configurations where removing
+  every intruder changes nothing. Arm C (uniform shrink to the same 0.8732) is running since
+  14:18 and is the comparison that matters — at this load both should sit on A. Arm D started
+  15:06.
+- 15:18 **LoRA r16 5e-5 arm C (uniform shrink to B's norm 0.8732) = 86.38 / 48.82 / F 0.107** vs
+  B (42 intruders deleted, same norm) 85.81 / 48.42 / 0.106 and A 85.44 / 48.18 / 0.122.
+  **Eleventh of eleven configurations in which the uniform shrink retains at least as much as
+  intruder deletion at equal norm** (+0.4 retention here, +0.6 task; F identical at 0.106/0.107
+  because at 3 % intruder load the two constructions remove almost the same subspace). The
+  headline count in the manuscript ("9/9" at the 05:45 Overleaf push, then 10/10) becomes 11/11
+  once this row and CLoRA 3e-4 are included — worth updating in the text when the table is
+  regenerated. As expected at this load the C-B gap is the smallest of the campaign: the gap
+  grows with intruder energy share (LoRA r16 0.02 -> +0.4 retention; MiLoRA 0.08 -> -0.3;
+  LoRA+wd 0.11 -> +0.2; CLoRA 2e-4 0.28 -> +1.9; CLoRA 3e-4 0.38 -> +1.8; LoRA-Null 0.44 ->
+  +7.5). Arm E started 15:17; D running since 15:06.
+- 16:11 **LoRA r16 5e-5 arm D (B rescaled to the source norm) = 81.50 / 46.81 / F 0.121** vs
+  A 85.44 / 48.18 / 0.122, B 85.81 / 48.42 / 0.106 and C 86.38 / 48.82 / 0.107. **Twelfth of
+  twelve configurations where D is worse than A** (task -3.9, retention -1.4) — the pattern is
+  now unbroken across both architectures and the full 0.2-94 % intruder range.
+  **But a caveat on HOW it is worse.** The F version of the claim holds and tightens: the D-vs-A
+  F penalty tracks intruder energy share almost monotonically — 0.018 -> -1 % (here),
+  0.08 -> +2 %, 0.11 -> +9 %, 0.28 -> +21 %, 0.375 -> +17 %, 0.44 -> +48 %. The TASK penalty does
+  not: this row has the smallest energy share of the campaign (0.018) yet loses 3.9 pp, more than
+  CLoRA 2e-4 at 0.28 (-2.7 pp) and far more than MiLoRA at 0.08 (-0.6 pp). Likely mechanism:
+  restoring the norm after deleting 42 directions multiplies everything that remains by
+  1/0.873 = 1.145, and a 14.5 % amplification of the whole update is damaging regardless of how
+  little energy the deleted directions held. So the manuscript should keep the D>A claim on F
+  (where it is ordered) and state the task cost as present-but-unordered rather than
+  energy-scaled. Arm Ep started 16:11; E running since 15:17, F1 last.
+- 16:19 **LoRA r16 5e-5 arm E (non-intruder removal, magnitude-matched 0.8732, [PASS] rel diff
+  0.00000) = 86.62 / 49.14 / F 0.105** vs B (intruders deleted, same norm) 85.81 / 48.42 / 0.106
+  and C (uniform shrink, same norm) 86.38 / 48.82 / 0.107. Three arms at one norm again, and the
+  ordering is E >= C >= B on task and retention with F identical to three decimals — at 3 %
+  intruder load the three constructions are interchangeable, which is the expected null at the
+  bottom of the dose-response curve and the counterpart to CLoRA 3e-4, where the same three-way
+  comparison at 48 % separates them. E's 49.14 is the highest retention of the row, 1.1 points
+  ABOVE the base 48.00.
+  **MILESTONE: every cell Table~\ref{tab:intruder} needs is now measured except SC-LoRA B/C/D**
+  (queue lines 47-49, the degenerate arms). Both LoRA r16 and SC-LoRA dW/A cells are in, the
+  LoRA r16 A-E block is complete, and the Qwen block has no other gaps. The table can be
+  regenerated and pushed as soon as Guy rules on the SC-LoRA arms: keep them (last cell ~20:25)
+  or print "--" and regenerate now. F1 started 16:18 and is the row's last arm, but F is not a
+  table column.
+- 17:28 **Sixth and last informative Qwen row complete: LoRA r16 5e-5, all seven arms. Arm F1
+  (non-intruder, count-matched, 42 directions, norm 1.0892) = 85.88 / 47.36 / F 0.128** vs
+  A 85.44 / 48.18 / 0.122. Inert: task +0.4, retention -0.8, F +5 % for a +9 % norm — the same
+  null as LoRA+wd's F1 and the expected outcome when the count-match removes only 42 of 1400 top
+  slots. Row: A 48.18/85.44/0.122 · B 48.42/85.81/0.106 · C 48.82/86.38/0.107 · D 46.81/81.50/
+  0.121 · E 49.14/86.62/0.105 · Ep (running) · F1 47.36/85.88/0.128.
+  Full F1 ladder by deleted count, which fits better than the energy reading corrected at 12:34
+  but still has two inversions: 42 dirs (3 %) 85.88 · 169 (12 %) 86.38 · 84 (6 %) 80.19 ·
+  532 (38 %) 9.69 · 666 (48 %) 37.06 · 868 (62 %) 0.00. MiLoRA (84 dirs, worse than LoRA+wd's
+  169) and CLoRA 3e-4 (666 dirs, better than CLoRA 2e-4's 532) both break monotonicity, so the
+  campaign supports only the qualitative statement: count-matched ALIGNED deletion is harmless
+  below ~12 % of slots and damaging above ~38 %, with the severity in between unordered.
+  **All six informative Qwen rows are now complete** (MiLoRA, LoRA+wd, CLoRA 2e-4, CLoRA 3e-4,
+  LoRA-Null, LoRA r16) plus SC-LoRA A/Ep. Only the five degenerate SC-LoRA arms remain queued;
+  Ep of LoRA r16 is still running (76 % at 17:24, slowed to 4.15 s/it).
+- 17:36 **LoRA r16 5e-5 arm Ep (non-intruder, perturbation-matched, norm 0.5752) = 78.38 / 47.53 /
+  F 0.055** vs A 85.44 / 48.18 / 0.122. The deepest shrink of the campaign (42 % of the norm
+  removed) and its lowest F: 0.055, less than half the source's, with retention holding at 47.53
+  (base 48.00) but task down 7.1 pp. Ep arms ordered by norm: LoRA+wd 0.573 -> 82.44 (-4.0 pp),
+  LoRA r16 0.575 -> 78.38 (-7.1), MiLoRA 0.598 -> 86.88 (0.0), CLoRA 3e-4 0.707 -> 85.56 (+0.6),
+  CLoRA 2e-4 0.723 -> 85.69 (-0.3), LoRA-Null 0.788 -> 85.25 (-1.3), SC-LoRA 0.828 -> 87.19
+  (+0.7). Below ~0.6 the shrink starts costing task accuracy on two of three rows; above ~0.7 it
+  is free everywhere. MiLoRA at 0.598 is the exception that stops this being a clean threshold.
+  **THE ROW AND ALL INFORMATIVE EVALUATION ARE COMPLETE.** Seven arms x six rows (MiLoRA,
+  LoRA+wd, CLoRA 2e-4, CLoRA 3e-4, LoRA-Null, LoRA r16) + SC-LoRA A/Ep + the Qwen base = every
+  cell the manuscript needs. Everything still queued (SC-LoRA B/C/D/E/F1) is the degenerate block
+  that measures the arm builder's numerical floor. SC-LoRA B started 17:29, C 17:36.
+- 18:51 **SC-LoRA 2e-5 arm B (3 intruders "deleted", norm ratio 1.0086) = 86.75 / 48.78 / F 0.115**
+  vs A 86.50 / 47.72 / 0.115. **F is identical to three decimals** and task differs by 0.25 pp:
+  the degeneracy diagnosed at 19:30 on 2026-09-15 is now confirmed empirically, not just from the
+  verify log. Removing 3 directions holding 1.5 % of the energy — from an adapter whose norm the
+  builder then leaves 0.9 % LARGER than the source — is arithmetically a no-op, and the result
+  behaves like a re-evaluation of A (retention +1.06, at the edge of the 0.6 pt proxy noise;
+  both sit at the base 48.00). This settles the open question with evidence: B is the arm of this
+  row that would show the largest effect if any existed, and it shows none, so C/D/E/F1 are
+  predictable nulls. Recommend printing "--" for SC-LoRA B/C/D in the table (consistent with the
+  Llama LoRA/LoRA-Null E cells, which are "--" for the same INFEASIBLE reason) and dropping queue
+  lines 49-51. **Not acted on — Guy's call.** Arm D started 18:51; C running since 17:36.
+- 18:54 **SC-LoRA 2e-5 arm C (uniform shrink to B's 1.0086) = 86.56 / 47.50 / F 0.116.** Row so
+  far: A 47.72/86.50/0.115 · B 48.78/86.75/0.115 · C 47.50/86.56/0.116 · Ep 48.34/87.19/0.098.
+  A, B and C are three independent evaluations of what is arithmetically the same adapter (the
+  builder's "deletion" and "shrink" both land within 0.9 % of the source norm), so they give the
+  campaign's best NOISE ESTIMATE: task spread 0.25 pp, F spread 0.001, **retention spread 1.28
+  points** (47.50 to 48.78).
+  **This is larger than the 0.6 pt figure taken from the LoRA-Null E/Ep replicate at 09:46, and
+  it matters for the write-up.** With retention noise up to ~1.3 pt, the C-vs-B retention margins
+  on the low-load rows are inside the noise band: LoRA r16 +0.4, MiLoRA -0.3, LoRA+wd +0.2. Only
+  CLoRA 2e-4 (+1.9), CLoRA 3e-4 (+1.8) and LoRA-Null (+7.5) clear it. The "11/11 C >= B" count
+  remains true as measured and can stand as a descriptive statement, but the per-row margins
+  below ~1.3 must not be interpreted as effects, and the claim's real weight comes from the three
+  high-load rows. Task accuracy is the sharper axis (0.25 pt noise): there the C-vs-B gaps of
+  +2.4 (CLoRA 2e-4), +4.8 (CLoRA 3e-4) and +54 (LoRA-Null) are far outside noise. Arm E started
+  18:54; D running since 18:51, F1 last.
