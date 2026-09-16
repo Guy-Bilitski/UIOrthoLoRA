@@ -41,7 +41,12 @@ def rows_for_root(root):
     if not ledger.exists():
         return
     invalidation = root / "INVALIDATED_RUNS.json"
-    invalidated = set(json.loads(invalidation.read_text())["invalidated_run_ids"]) if invalidation.exists() else set()
+    if not invalidation.exists():
+        # Both campaign roots carry an invalidation record for the 2026-09-15
+        # tokenizer incident; extracting without it risks including poisoned
+        # runs silently (this happened once via a lost working-tree file).
+        raise FileNotFoundError(f"Missing required invalidation record: {invalidation}")
+    invalidated = set(json.loads(invalidation.read_text())["invalidated_run_ids"])
     latest, first = {}, {}
     for line in ledger.read_text().splitlines():
         event = json.loads(line)
