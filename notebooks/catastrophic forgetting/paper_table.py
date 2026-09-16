@@ -11,7 +11,8 @@ Usage:
   python paper_table.py --latex         # LaTeX booktabs body
   python paper_table.py --csv out.csv
 """
-import os, json, csv, argparse
+import os
+import json, json, csv, argparse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, "results")
@@ -35,13 +36,20 @@ CONFIGS = [
     # designs below already carry the result. dora_to_lora.py remains in the repo, selftest
     # green, if it is ever wanted -- it converts a DoRA adapter to a W0-relative LoRA
     # carrying the same dW, after which the unmodified arm pipeline applies.
-    ("Qwen2.5-7B", "LoRA+wd", "1e-4", "tia1_qwsw_lorawd_wd0p3_lr1e4_s43"),
-    ("Qwen2.5-7B", "MiLoRA",  "1e-4", "tia1_qwsw_milora_lr1e4_s43"),
-    ("Qwen2.5-7B", "SC-LoRA", "2e-5", "tia1_qwsw_sclora_lr2e5_s43"),
-    ("Qwen2.5-7B", "CLoRA",   "2e-4", "tia1_qwsw_clora_k1024_lr2e4_s44"),
+    # Qwen2.5-7B (2026-09-14 campaign, qwen_campaign.sh): seed 43 throughout, mirrors the
+    # Llama designs. r32 rows at the Pareto points locked 2026-08-28; r16 rows at Table 1's
+    # best-adapt LR (same rule as Llama). SC-LoRA is the extra sixth design.
+    ("Qwen2.5-7B", "LoRA+wd",   "1e-4", "tia1_qwsw_lorawd_wd0p3_lr1e4_s43"),
+    ("Qwen2.5-7B", "MiLoRA",    "1e-4", "tia1_qwsw_milora_lr1e4_s43"),
+    ("Qwen2.5-7B", "CLoRA",     "2e-4", "tia1_qwsw_clora_k1024_lr2e4_s43"),
+    ("Qwen2.5-7B", "LoRA",      "5e-5", "tia1_qwsw_lora_r16_lr5e5_s43"),
+    ("Qwen2.5-7B", "LoRA-Null", "2e-4", "tia1_qwsw_loranull_r16_lr2e4_s43"),
+    ("Qwen2.5-7B", "SC-LoRA",   "2e-5", "tia1_qwsw_sclora_lr2e5_s43"),
 ]
 # extra (off-Pareto) rows kept for the magnitude contrast
-EXTRA = [("Llama-2-7B", "MiLoRA (high-F)", "1e-3", "tia1_frc_milora_lr1e3_s43")]
+EXTRA = [("Llama-2-7B", "MiLoRA (high-F)", "1e-3", "tia1_frc_milora_lr1e3_s43"),
+         # Qwen at Llama's CLoRA learning rate: the magnitude-matched cell (Guy, 2026-09-15)
+         ("Qwen2.5-7B", "CLoRA (Llama-matched LR)", "3e-4", "tia1_qwsw_clora_k1024_lr3e4_s43")]
 
 ARMS = [("A", "source", "{r}__rl50", "{r}"),
         ("B", "intruders deleted", "{r}__k10allablB", None),
@@ -112,6 +120,20 @@ def main():
                   f"{fmt(h['fdelta'],3) if h else '--'} | {fmt(h['cs_avg']) if h else '--'} | "
                   f"{fmt(h['retention_mean']) if h else '--'} |")
             first = False
+    # base-model retention (zero point of the retention column)
+    notes = []
+    try:
+        b = json.load(open(os.path.join(RES, "base_qwen25-7b", "summary.json")))["headline"]
+        notes.append(f"Qwen2.5-7B base {b['retention_mean']:.2f} (proxy protocol, BBH {b['bbh']:.2f} / MMLU-Pro {b['mmlu_pro']:.2f})")
+    except Exception:
+        pass
+    try:
+        b = json.load(open(os.path.join(RES, "base_l2-7b", "retention_agg.json")))["scores"]
+        notes.append(f"Llama-2-7B base {(b['bbh']+b['mmlu_pro'])/2:.2f} (full battery, BBH {b['bbh']:.2f} / MMLU-Pro {b['mmlu_pro']:.2f})")
+    except Exception:
+        pass
+    if notes:
+        print("\nBase-model retention, no adapter: " + "; ".join(notes) + ".")
 
     print("\n### Table 2 — key contrasts (retention pp / task pp)\n")
     print("| config | B-C (matched magnitude) | D-A (matched magnitude) | B-E (matched magnitude) | B-Ep (matched energy) | B-F (matched count) |")
