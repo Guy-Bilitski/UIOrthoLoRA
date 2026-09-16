@@ -193,7 +193,8 @@ def main():
         begin, end = f"% BEGIN GENERATED {name}\n", f"% END GENERATED {name}"
         pattern = re.compile(re.escape(begin) + r".*?" + re.escape(end), re.S)
         if not pattern.search(changed):
-            raise SystemExit(f"Marker block missing in TeX: {name}")
+            print(f"note: marker block absent in TeX, skipped: {name}")
+            continue
         replacement = begin + render(name, rows, selection) + "\n" + end
         changed = pattern.sub(lambda _: replacement, changed)
     if args.write:
