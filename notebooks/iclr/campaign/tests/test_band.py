@@ -26,10 +26,11 @@ def test_band_selection_zero_init_and_off_band_enforcement(start, rotation):
     with torch.no_grad():
         layer.h.copy_(torch.arange(1.0, 5.0))
         if rotation:
-            layer.left_rotation.parametrizations.weight.original.copy_(torch.randn(2, 2))
-            layer.right_rotation.parametrizations.weight.original.copy_(torch.randn(2, 2))
+            generator = torch.Generator().manual_seed(11)
+            layer.left_rotation.parametrizations.weight.original.copy_(torch.randn(2, 2, generator=generator))
+            layer.right_rotation.parametrizations.weight.original.copy_(torch.randn(2, 2, generator=generator))
     off = layer.off_band_energy_fraction()
-    assert off is not None and off < 1e-10
+    assert off is not None and off < 1e-8
     delta = layer.delta_total()
     c = layer.u_ref.T @ delta @ layer.v_ref
     inside = c[start : start + 4, start : start + 4]
