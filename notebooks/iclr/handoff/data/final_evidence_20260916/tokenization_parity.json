@@ -1,0 +1,15 @@
+{
+ "created_utc": "2026-09-15T07:09:39.102795+00:00",
+ "method": "from-scratch pure-Python GPT-2 byte-level BPE (regex pattern, vocab.json+merges.txt), RoBERTa pair template, longest-first truncation, max-length padding; compared exactly against prepared input_ids and attention_mask",
+ "sample": "181 examples across rte/mrpc x train/selection/locked_evaluation, biased to include the longest (truncated) and most punctuation-heavy rows plus random rows",
+ "result": {
+  "checked": 181,
+  "truncated_at_cap_in_sample": 51,
+  "mismatches": 0
+ },
+ "scripts_sha256": {
+  "export": "28b1c83ed76b55cfe607cd737962b387702fa40e736cc27ed3b8153eb2893fee",
+  "verify": "bf1cfab24bd3ba039514f34aa461688d78dd3bbb125aadc4d85e508681b0bb8a"
+ },
+ "sample_sha256": "4aee5922d91a74087e4d0752bfa0fd5801c4bec3e02bef1f0265262559e186b8"
+}

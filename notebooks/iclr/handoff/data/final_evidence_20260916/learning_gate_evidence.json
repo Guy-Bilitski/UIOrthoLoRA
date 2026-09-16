@@ -1,0 +1,34 @@
+{
+ "created_utc": "2026-09-15T07:22:53.817265+00:00",
+ "input_bundle": "campaign_outputs_v1/inputs/preparation_20260915T0707Z",
+ "bundle_manifest_sha256": "92733ef856771d3b9f2015d0cc9a4350f580e41f6f0b00420272e9e64c011e0b",
+ "gate_script_sha256": "277cfa78f5a88bfc9349ed6bf6ddb5d747b7bf6d15cb5baf2a923ee45ca1b6cc",
+ "design": "32-example overfit (200 steps, must reach >=0.95 train accuracy) plus 600-effective-step unregularized run (inner accuracy must exceed majority by >=3 points); study model assembly (spectral adapter + paired head), AdamW, clip 1.0, batch 8 x accumulation 4",
+ "results": {
+  "rte": {
+   "adapter_lr": 0.01,
+   "head_lr": 0.0005,
+   "overfit_accuracy": 1.0,
+   "inner_accuracy": 0.7008,
+   "majority": 0.502,
+   "status": "PASS"
+  },
+  "mrpc_legacy_lr": {
+   "adapter_lr": 0.05,
+   "head_lr": 0.001,
+   "overfit_accuracy": 1.0,
+   "inner_accuracy": 0.6744,
+   "majority": 0.6744,
+   "status": "FAIL: full-data training parks in the majority basin at the legacy LR under the 128-token/batch-32 protocol"
+  },
+  "mrpc_common_lr": {
+   "adapter_lr": 0.01,
+   "head_lr": 0.001,
+   "overfit_accuracy": 1.0,
+   "inner_accuracy": 0.8474,
+   "majority": 0.6744,
+   "status": "PASS"
+  }
+ },
+ "decision": "COMMON_RECIPE adopts adapter_lr=1e-2 for MRPC (pre-outcome, identical across arms); legacy RECIPE_REFERENCE unchanged as documentation. Loss progressions retained in gate task outputs."
+}

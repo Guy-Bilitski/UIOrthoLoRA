@@ -1,0 +1,20 @@
+{
+ "schema_version": 1,
+ "created_utc": "2026-09-15T07:05:05.371198+00:00",
+ "reason": "Inputs prepared 2026-09-14T12:55Z were tokenized character-level: the pinned tokenizer.json (upstream serialization without model 'type') degraded silently under the installed patched transformers. Models never saw real task text. Artifacts preserved for audit; excluded from all scientific extraction.",
+ "corrupted_preparation": "campaign_outputs_v1/inputs/preparation_20260914T1254Z",
+ "invalidated_run_ids": [
+  "20260915T044915Z_7883ac2b4537",
+  "20260915T044934Z_99e8608d5c7c",
+  "20260915T044955Z_c7c9c7d9474c",
+  "20260915T045015Z_13b3520d4c3c",
+  "20260915T045353Z_de565fd7baf8",
+  "20260915T045408Z_251f5d05a9b5",
+  "20260915T045423Z_fa2e09e4ccfa",
+  "20260915T045438Z_1f6aefb322bf",
+  "20260915T060103Z_389815661dde",
+  "20260915T060719Z_4d230f437911",
+  "20260915T061047Z_3dcab7827e42",
+  "20260915T061145Z_274888bd5241"
+ ]
+}

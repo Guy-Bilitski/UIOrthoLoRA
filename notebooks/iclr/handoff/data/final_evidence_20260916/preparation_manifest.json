@@ -1,0 +1,37 @@
+{
+  "corpus": {
+    "files": [
+      "wikitext-2-raw-v1/test-00000-of-00001.parquet",
+      "README.md"
+    ],
+    "repo_id": "Salesforce/wikitext",
+    "repo_type": "dataset",
+    "revision": "b08601e04326c79dfdd32d625aee71d232d685c3"
+  },
+  "corpus_scope": "WikiText-2-raw-v1 test is held out from task adaptation, not guaranteed unseen during RoBERTa pretraining; no generalization-to-unseen-pretraining-text claim",
+  "created_utc": "2026-09-15T07:07:23.158874+00:00",
+  "glue_revision": "bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c",
+  "model": {
+    "files": [
+      "config.json",
+      "model.safetensors",
+      "merges.txt",
+      "vocab.json",
+      "tokenizer.json",
+      "tokenizer_config.json",
+      "README.md"
+    ],
+    "repo_id": "FacebookAI/roberta-base",
+    "repo_type": "model",
+    "revision": "e2da8e2f811d1448a5b465c236feacd80ffbac7b"
+  },
+  "preparation_only": true,
+  "probe_examples": 256,
+  "probe_mask_fraction": 0.15,
+  "probe_mask_seed": 161803,
+  "probe_sample_seed": 271828,
+  "protocol_status": "pre-smoke input protocol; confirmation hyperparameters and run matrix not frozen",
+  "selection_fraction": 0.2,
+  "split_seed": 271828,
+  "tokenization_max_length": 128
+}

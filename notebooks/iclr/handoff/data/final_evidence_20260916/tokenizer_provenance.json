@@ -1,0 +1,9 @@
+{
+  "repair": {
+    "reason": "upstream tokenizer.json lacks the serialized model 'type' field; BPE type inserted",
+    "repaired_path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_v1/inputs/preparation_20260915T0707Z/tokenizer_repaired.json",
+    "repaired_sha256": "c270ccf9dcf25ca394cd196b9b235ab561a241126ac04418b746f2db69a32917"
+  },
+  "source_path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_v1/inputs/preparation_20260915T0707Z/model/tokenizer.json",
+  "source_sha256": "847bbeab6174d66a88898f729d52fa8d355fafe1bea101cf960dd404581df70e"
+}
