@@ -805,3 +805,36 @@ and in the paper if ever used).
   high-load rows. Task accuracy is the sharper axis (0.25 pt noise): there the C-vs-B gaps of
   +2.4 (CLoRA 2e-4), +4.8 (CLoRA 3e-4) and +54 (LoRA-Null) are far outside noise. Arm E started
   18:54; D running since 18:51, F1 last.
+- 20:13 **SC-LoRA 2e-5 arm E = 86.50 / 47.60 / F 0.115** — task and F identical to A
+  (86.50 / 0.115), as the [INFEASIBLE] verdict predicted (alpha 0, so E is literally a copy of
+  the source). The row now provides FOUR evaluations of what is arithmetically one adapter
+  (A, B, C, E): task range 86.50-86.75 (0.25 pp), F 0.115-0.116 (0.001), retention 47.50-48.78
+  (**1.28 points**). The noise estimate reported at 18:54 is unchanged with the extra point and
+  now rests on four replicates — worth quoting in the appendix as the protocol's measurement
+  floor, since it is the only such estimate the campaign produced and it cost nothing.
+  E stays "--" in the table (it is already in the generator's NOT_BUILT set). **SC-LoRA F1
+  started 20:12 — the last job in the queue; STOP follows.**
+- 20:16 **SC-LoRA 2e-5 arm D = 86.81 / 47.55 / F 0.115.** Fifth replicate of the same adapter;
+  the noise figures hold (task 86.50-86.81 = 0.31 pp, retention 47.50-48.78 = 1.28, F
+  0.115-0.116 = 0.001 across A/B/C/D/E). **This row is a useful NEGATIVE CONTROL for the
+  campaign's two headline patterns, and should be read as one.** Where the deletion is real, D
+  is worse than A in 12 of 12 configurations (task -0.6 to -83); here, where the "deletion"
+  removes 3 directions holding 1.5 % of the energy and the builder's renorm leaves the update
+  0.9 % LARGER than the source, D sits ON A (+0.31 task, -0.17 retention, F identical). Same for
+  C-vs-B: a real deletion separates them, this one does not. So the D<A and C>B effects are
+  properties of actually removing top-spectrum directions, not artifacts of the arm-building or
+  rescaling pipeline — the degenerate row is the control that shows the pipeline returns a null
+  when given nothing to remove.
+  **Caveat for the table:** printed as a number, SC-LoRA D (86.81 vs A 86.50) reads as a
+  counterexample to "D is never better than A". It is not one — it is a no-op — but a reader
+  cannot tell from the cell. This is the second reason to send SC-LoRA B/C/D to "--" as Guy's
+  own caption already states ("only A is reportable"). Only F1 remains in the queue.
+- 20:56 **CAMPAIGN COMPLETE. SC-LoRA 2e-5 arm F1 = 86.81 / 48.14 / F 0.116** (sixth replicate of
+  the same adapter; the five-arm noise figures are unchanged). `STOP seen and queue drained ->
+  exit` at 20:55:44; gpu_pool_dyn and qwen_campaign3 exited cleanly, watchdog wrote
+  `results/FINAL_TABLE_qwen.{md,csv}` at 20:56. **Final tally: 50 pool jobs, rc=0 on every one,
+  0 failures, 0 OOM, 0 retries across the whole evaluation phase; 7 trainings earlier, all with
+  the identical 129-step skip set.** Contents: six informative Qwen rows at seven arms each
+  (MiLoRA 1e-4, LoRA+wd 1e-4, CLoRA 2e-4, CLoRA 3e-4, LoRA-Null 2e-4, LoRA r16 5e-5), SC-LoRA
+  2e-5 (A and Ep real; B/C/D/E/F1 a six-fold null that doubles as the pipeline's negative
+  control), and the Qwen2.5-7B base zero point at retention 48.00.
