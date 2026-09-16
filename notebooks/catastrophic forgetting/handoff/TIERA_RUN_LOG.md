@@ -556,3 +556,5 @@ and in the paper if ever used).
   rows, now show C <= B on retention and D worse than A.** The causal core of the Qwen half is
   complete; remaining queue = E/Ep/F controls of three rows + LoRA r16 + SC-LoRA (A, Ep, and
   the five degenerate arms last).
+- 06:46 CLoRA 2e-4 arm E (non-intruder removal, magnitude-matched 0.723) = 85.75 / 49.21 / F 0.137 (B 84.69/46.36/0.185, C 87.06/48.28/0.151). Ep running, F1 next.
+- 07:36 CLoRA 2e-4 arm Ep (non-intruder removal, perturbation-matched, norm 0.723) = 85.69 / 49.46 / F 0.137 (E 85.75/49.21/0.137 at the same norm; B 84.69/46.36/0.185). F1 running; LoRA-Null E started.
