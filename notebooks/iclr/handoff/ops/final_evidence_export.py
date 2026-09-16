@@ -88,7 +88,17 @@ def band_core_energies(state_model, rotation_size):
         per_module[name] = dict(core_total_sq=total, core_diagonal_sq=diag, core_offdiagonal_sq=total - diag)
     pooled_total = sum(v["core_total_sq"] for v in per_module.values())
     pooled_off = sum(v["core_offdiagonal_sq"] for v in per_module.values())
-    return per_module, (pooled_off / pooled_total if pooled_total > 0 else None)
+    if pooled_total <= 0:
+        return per_module, None, None
+    raw_fraction = pooled_off / pooled_total
+    # On diagonal arms the within-band off-diagonal energy is exactly zero by
+    # construction, but summing the full core and its diagonal in different
+    # orders leaves a float32 roundoff residue, so this can come out a tiny
+    # negative (order -1e-8 of total energy). Report the clamped value at its
+    # mathematical floor of 0 and keep the unclamped one alongside, so the
+    # numerical tolerance stays assessable: per BAND_PRESENTATION_SPEC, a
+    # printed 0.00% alone does not establish exact zero.
+    return per_module, max(0.0, raw_fraction), raw_fraction
 
 
 def main():
@@ -129,12 +139,21 @@ def main():
         total = obs["diagnostics"]["pooled"]["total"]
         sel = obs.get("selection_metrics", {})
         band_cfg = man.get("band_config")
-        offdiag_fraction = None
+        offdiag_fraction = offdiag_fraction_raw = None
         if band_cfg:
             state = torch.load(
                 Path(eng["fixed_step_checkpoint"]) / "state.pt", map_location="cpu", weights_only=False
             )["model"]
-            _, offdiag_fraction = band_core_energies(state, band_cfg["rotation_size"])
+            _, offdiag_fraction, offdiag_fraction_raw = band_core_energies(state, band_cfg["rotation_size"])
+            if not band_cfg["rotation_size"]:
+                # A diagonal arm's core is torch.diag(h), which has no off-diagonal
+                # entries whatsoever, so the within-band off-diagonal energy is zero
+                # by construction exactly as off-band energy is. What survives in
+                # total - diag is float32 roundoff of either sign (observed |.| up to
+                # ~2e-8 pooled over 48 modules). Report the structural zero rather
+                # than a sign-dependent residue; the unclamped column keeps the
+                # signed value at full precision so the tolerance stays assessable.
+                offdiag_fraction = 0.0
             adapter_params = 48 * (256 + (2 * band_cfg["rotation_size"] ** 2 if band_cfg["rotation_size"] else 0))
         else:
             adapter_params = 0
@@ -156,6 +175,9 @@ def main():
             best_f1=(best.get("metrics") or {}).get("f1", ""),
             pooled_relative_frobenius=rho if rho > 0 else "",
             within_band_offdiagonal_fraction=offdiag_fraction if offdiag_fraction is not None else "",
+            within_band_offdiagonal_fraction_unclamped=(
+                f"{offdiag_fraction_raw:.3e}" if offdiag_fraction_raw is not None else ""
+            ),
             off_band_energy="structural_zero_by_construction",
             trainable_adapter_params=adapter_params,
             trainable_head_params=592130,
