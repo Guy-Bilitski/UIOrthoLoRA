@@ -193,9 +193,14 @@ def roberta_from_saved_reference(reference):
             continue
         base.load_state_dict({key: state[name + ".base." + key] for key in base.state_dict()})
         if name + ".u_ref" in state:
-            cfg = SpectralConfig(**state[config_key])
+            saved = state[config_key]
             refs = {key: state[name + "." + key] for key in ("u_ref", "v_ref", "s_ref", "w_pre")}
-            module = SpectralLinear(base, cfg, reference=refs)
+            if isinstance(saved, dict) and "band" in saved:
+                from .band import BandConfig, BandLinear
+
+                module = BandLinear(base, BandConfig(**saved["band"]), reference=refs)
+            else:
+                module = SpectralLinear(base, SpectralConfig(**saved), reference=refs)
         elif name + ".a" in state:
             module = LoRALinear(base, **state[config_key])
         else:

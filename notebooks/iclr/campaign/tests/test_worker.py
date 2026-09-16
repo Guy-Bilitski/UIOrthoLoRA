@@ -2,6 +2,7 @@
 
 from dataclasses import asdict
 import json
+from pathlib import Path
 
 import pytest
 
@@ -83,6 +84,9 @@ def fixture_job(tmp_path, condition):
         orientation_seeds=[[17, 42]],
         attention_implementation="eager",
         lora_alpha=8.0,
+        band_config=dict(band_start=4, band_size=4, rotation_size=2 if "ROT" in condition else 0)
+        if condition.startswith("BAND_")
+        else None,
         model_directory=str(tmp_path / "model"),
         task_directory=str(tmp_path / "task"),
         probe_directory=str(tmp_path / "probe"),
@@ -123,6 +127,8 @@ def fixture_job(tmp_path, condition):
         "P1_HEAD_INIT",
         "P5_LORA8",
         "P5_FULL_FT",
+        "BAND_MID_DIAG",
+        "BAND_TAIL_ROT64",
     ],
 )
 def test_cpu_worker_integrates_preparation_engine_probe_costs_and_reload(tmp_path, monkeypatch, condition):
@@ -141,6 +147,9 @@ def test_cpu_worker_integrates_preparation_engine_probe_costs_and_reload(tmp_pat
     cost = json.loads((tmp_path / "run/p7_costs.json").read_text())
     assert len(cost["step_seconds"]) == 1
     assert cost["merge_applicable"] == (condition not in {"P1_HEAD_BASE", "P5_FULL_FT"})
+    if condition.startswith("BAND_"):
+        # The reload path must reconstruct BandLinear layers from checkpoints.
+        assert all(json.loads(Path(p).read_text())["checkpoint_reload_passed"] for p in result["checkpoint_reports"])
     assert not (tmp_path / "run/worker_failure.json").exists()
 
 
