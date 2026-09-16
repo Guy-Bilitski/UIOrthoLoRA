@@ -1,5 +1,42 @@
 # Session handoff — 2026-09-16 ~11:00 local
 
+> **UPDATE 2026-09-16 ~11:20 local (next session).** Sections 1–4 below are
+> superseded by §0. Read §0 first, then §5–§7 (still current).
+>
+> ## 0. Live state as of ~11:20 local (08:20Z)
+>
+> **§2 was wrong: the lane drivers did NOT die with the old session.** They were
+> launched detached and survived; three were still chaining entries on GPUs 0/2/3
+> and had already queued all three `P1_HEAD_BASE` heads. Before launching
+> anything, map surviving drivers to GPUs or you will double-book:
+>
+>     ps -eo pid,cmd | grep -E "band_lane|gate_lead|chain_lane" | grep -v grep
+>
+> - Locked held-aside evaluation (§4): **COMPLETE**, all 18/18, every loading
+>   check reproduced. Bundle committed (ortho_new `d391c4c3`) and mirrored to
+>   Overleaf (`a63b1f2`). Numbers reported to the user for Astra. Do not rerun.
+> - `ops/block_b_freeze.py`: **8/21** frozen (the 9 diagonal arms minus TAIL/123,
+>   which landed just after the pass). Append-only — rerun as runs land.
+> - Block B: all 9 diagonal arms completed+validated; the 3 `P1_HEAD_BASE` heads
+>   were running; the 8 ROT64 entries are queued on chained lanes:
+>
+>       gpu0  LEAD_ROT64/42,  LEAD_ROT64/17     gpu2  LEAD_ROT64/123, MID_ROT64/42
+>       gpu3  MID_ROT64/17,   MID_ROT64/123     gpu1  TAIL_ROT64/17,  TAIL_ROT64/123
+>
+>   (`BAND_TAIL_ROT64/seed_42` was already running on GPU 1.) Expected complete
+>   ~23:30 local — GPU 1 is the long pole because it starts its pair ~14:25.
+> - New: `ops/chain_lane.sh <gpu> <pred_pid|-> <pred_session|-> <entries…>`
+>   queues a lane behind a predecessor that already owns the GPU. It waits on the
+>   predecessor's **lane-driver PID**, not on tmux-session absence: `band_lane.sh`
+>   sleeps between entries, so "no session on this GPU" is briefly true mid-lane
+>   and would double-book. It also refuses a GPU holding a colleague's process.
+>   Chain logs: `/tmp/band_chain_gpu<N>.log`.
+> - Astra's `BAND_PRESENTATION_SPEC_20260916.md` (Overleaf root) is a prospective
+>   table/figure specification for block B. Confirm with the user that it is the
+>   agreed structure before integrating band results (§5.4).
+> - Do NOT compute an inner-selection-vs-held-aside delta; Astra specified
+>   "alongside, never merged", and that difference is not a specified contrast.
+
 For the agent picking up the ICLR campaign after a context clear. Everything
 below is verifiable from the repo; when in doubt, trust ledgers and hashes over
 this prose. Working checkout: `notebooks/iclr-campaign-20260914` (branch
