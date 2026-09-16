@@ -3,6 +3,26 @@
 > **UPDATE 2026-09-16 ~11:20 local (next session).** Sections 1–4 below are
 > superseded by §0. Read §0 first, then §5–§7 (still current).
 >
+> ## 0b. BLOCK B IS COMPLETE — 2026-09-16 22:25 local (19:25Z)
+>
+> All 21 registered RTE band entries completed, reload-validated and frozen
+> (`block_b_freeze.jsonl`, 21/21 against protocol sha 721935…4fdeb). Coverage
+> 3/3 seeds on all six band x flexibility arms plus the three head-only
+> references; nothing dropped. Export refreshed (23 band rows incl. 2 pilots).
+> Committed ortho_new `dabd48f4`, mirrored to Overleaf `a88118e`.
+>
+> NEXT, in order:
+> 1. Block-B held-aside evaluation is now UNBLOCKED (it required 21/21). It has
+>    NOT been run. Same rules as the P1 evaluation: one pass, no direction-based
+>    decisions, reported alongside and never merged with inner-selection scores.
+> 2. Band results are NOT in the manuscript. `BAND_PRESENTATION_SPEC_20260916.md`
+>    (Overleaf root) is Astra's prospective table/figure spec; the user was asked
+>    to confirm it is the agreed structure and had not answered as of this note.
+> 3. Blocks C (MRPC replication) and D (LoRA-8) remain unstarted; all 4 GPUs are
+>    now free. Block C needs its protocol registered + a fresh preflight first.
+>
+> Section 0 below describes the mid-day state and is kept for history.
+>
 > ## 0. Live state as of ~11:20 local (08:20Z)
 >
 > **§2 was wrong: the lane drivers did NOT die with the old session.** They were
