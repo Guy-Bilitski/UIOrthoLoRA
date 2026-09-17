@@ -1,7 +1,7 @@
 """Regenerate tables/table_intruder.tex (Overleaf) with the Llama-2-7B and Qwen2.5-7B blocks.
 Final campaign: retention / task accuracy under the reduced protocol.
 Missing required summaries are errors; infeasible/degenerate evaluated arms are flagged.
-Blue/gray caption edits use the manuscript's existing review macros (ifdiff).
+All manuscript edits were accepted on 2026-09-17; output contains no review markup.
 """
 import json, os
 RES = "results"
@@ -38,8 +38,8 @@ def block(rows, arch):
         dw = f"{A['fdelta']:.2f}"
         cells = [cell(hl(run + a), (run, a) in NOT_EVALUATED) for a in ARMS]
         if run == "tia1_frc_loranull_r16_lr5e4_s43": cells[1] += "$^{\\dagger}$"
-        if run == "tia1_qwsw_sclora_lr2e5_s43": name += "\\new{$^{\\ddagger}$}"
-        if run in INFEASIBLE_E: cells[4] += "\\new{$^{\\S}$}"
+        if run == "tia1_qwsw_sclora_lr2e5_s43": name += "$^{\\ddagger}$"
+        if run in INFEASIBLE_E: cells[4] += "$^{\\S}$"
         out.append(f"{name} & {r} & {dw} & {frac:.0f}\\% & {en:.2f} & " + " & ".join(cells) + " \\\\")
     return out
 base_q = hl("base_qwen25-7b")["retention_mean"]
@@ -60,15 +60,13 @@ lines = [
     '\\end{tabular}',
     '\\caption{Intruder interventions on commonsense-trained adapters, one seed per configuration.',
     'Each cell gives retention / task accuracy (\\%) on identical examples within a configuration.',
-    '\\cut{B, C and E have matched update Frobenius norms; D matches A (Section~\\ref{sec:method:intruder}).}',
-    '\\new{Except for the flagged exclusions, B, C and E have matched update Frobenius norms; D matches A (Section~\\ref{sec:method:intruder}).}',
+    'Except for the flagged exclusions, B, C and E have matched update Frobenius norms; D matches A (Section~\\ref{sec:method:intruder}).',
     'Occupancy uses the top ten singular directions; energy share uses the top $64$ of the adapted weight.',
     'Qwen base retention uses the same reduced protocol; Llama base retention uses the full battery',
     'and is not directly comparable to these reduced-protocol scores.',
-    '\\cut{For SC-LoRA, only A is reportable; other placeholders are not valid comparisons (Appendix~\\ref{app:intruder}).}',
-    '\\new{$^{\\ddagger}$: SC-LoRA B--E are numerical-floor diagnostics, excluded from intervention comparisons.}',
-    '\\new{$^{\\S}$: E cannot reach B\'s norm and is excluded from matched-norm comparisons (Appendix~\\ref{app:intruder}).}',
-    '\\cut{--: unavailable; $\\dots$: pending.} \\new{--: not evaluated because the norm match is infeasible.}',
+    '$^{\\ddagger}$: SC-LoRA B--E are numerical-floor diagnostics, excluded from intervention comparisons.',
+    '$^{\\S}$: E cannot reach B\'s norm and is excluded from matched-norm comparisons (Appendix~\\ref{app:intruder}).',
+    '--: not evaluated because the norm match is infeasible.',
     '$^{\\dagger}$: deletion removes nearly the entire top-ten spectrum.}',
     '\\label{tab:intruder}',
     '\\end{table*}',

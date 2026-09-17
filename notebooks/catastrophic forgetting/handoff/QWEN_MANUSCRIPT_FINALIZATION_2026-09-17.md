@@ -2,7 +2,7 @@
 
 Evidence: UIOrthoLoRA `origin/ortho_new` at `ff99de58068e1ff791674798b379c2e0b9eee556`.
 Reviewed manuscript baseline: Overleaf project `6a46eb1b48498302a1ab34db`, `f442072`.
-All changes are proposed in the existing blue/gray convention; no prior review was cleared.
+The proposals were delivered in the existing blue/gray convention. On 2026-09-17, Guy approved all proposed changes. The manuscript and table now contain the accepted text with review markup removed, including the clarified Methods sentence explaining rescaling and output-factor randomization; counts and the learning rate remain in the appendix. Guy's intervening Overleaf acceptance edits at `4f69390` were preserved. The table generator now emits the accepted caption and footnotes without review markup.
 
 ## 1. Close the result set
 
