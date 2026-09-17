@@ -838,3 +838,161 @@ and in the paper if ever used).
   (MiLoRA 1e-4, LoRA+wd 1e-4, CLoRA 2e-4, CLoRA 3e-4, LoRA-Null 2e-4, LoRA r16 5e-5), SC-LoRA
   2e-5 (A and Ep real; B/C/D/E/F1 a six-fold null that doubles as the pipeline's negative
   control), and the Qwen2.5-7B base zero point at retention 48.00.
+- 20:57 **FINALISED AND PUSHED.** `paper_table.py` re-run (84/91 arms; the 7 gaps are the
+  verified-infeasible Llama E/Ep cells). `make_table_intruder_tex.py` re-run **from Guy's current
+  generator** — note the rebase at 19:18 pulled his 08:44 commits eecf4e37 (caption/labels
+  rewrite) and 7f47a3c3 (tabcolsep); the pre-rebase local copy would have reverted them. Diff
+  against the Overleaf copy is exactly the ten newly filled cells, caption and Llama block byte
+  identical. No `\dots` cells remain (the only match is the caption legend).
+  Overleaf (project 6a46eb1b48498302a1ab34db, branch main): commit **69c9a71**, committed as Guy.
+  GitHub ortho_new: **2e038c6a** (final SC-LoRA arms, FINAL_TABLE_qwen.{md,csv}, filled table,
+  run log, ray setup), on top of **92d58eaa** at 19:18 (the 16 mid-campaign arms).
+  **Left for Guy / the writing agent, NOT actioned:** SC-LoRA B/C/D/E now print numbers rather
+  than placeholders, so the caption's "other placeholders are not valid comparisons" no longer
+  matches the cells it describes — the substantive warning ("only A is reportable") still stands,
+  so the table is not misleading, but the wording wants either placeholders (add the three
+  (run, arm) tuples to the generator's NOT_BUILT) or a reworded clause. Pipeline scripts were
+  left untouched as instructed. Qwen LoRA-Null's E cell (48.57/85.31) is printed at norm 0.788
+  against arm B's 0.706 while the caption asserts B/C/E share a norm: needs a dagger or "--".
+- 20:58 **New experiment launched on the freed GPU: Qwen scaling ray** (`rescale_qwen_ray.py`,
+  new file modelled on `rescale_adapters.py`; pipeline untouched). Source CLoRA k1024 3e-4 s43
+  (F_delta 0.2881, the highest-forgetting Qwen cell). Scaling every lora_B by c maps F_delta ->
+  c x F_delta exactly, so these are pure magnitude moves along the trained direction:
+  targets 0.100 / 0.150 / 0.246 / 0.330 (scales 0.347 / 0.521 / 0.854 / 1.145), chosen to sit at
+  **arm B's measured F_delta (0.246)** and **arm D's (0.337)** so each can be priced against the
+  curve at its own magnitude — the Llama E1 test (R^2 0.99, arm B 2.16 points below the curve)
+  reproduced on Qwen. With arms C (0.210) and A (0.288), which are themselves ray points, the
+  curve has six points from 0.10 to 0.33. Plus three random-direction controls at 0.246
+  (Gaussian lora_B, per-matrix ||BA||_F matched) giving the no-trained-direction floor.
+  Pool `tQr` started 20:57:46, 2 slots, 7 jobs + STOP, ETA ~02:30 UTC.
+- 22:16 **Ray point 1/4: `__rayf100` (CLoRA 3e-4 scaled to F_delta 0.100) = 85.94 / 51.35 /
+  F 0.1022.** The construction validates: achieved F_delta is 2.2 % off target, confirming
+  F_delta is linear in the global scale as assumed (scale 0.347 -> 0.3547 of the source's 0.2881).
+  Reading: a 65 % shrink of the update keeps FULL task accuracy (85.94 vs the source's 85.00,
+  +0.94) and reads 51.35 retention — 11.5 points above the source and **3.35 above the base's
+  48.00**. Ray so far, with the row's arms interleaved by F_delta:
+  0.102 (ray) 51.35/85.94 · 0.200 (Ep) 46.46/85.56 · 0.205 (E) 46.43/86.38 · 0.210 (C)
+  46.55/87.38 · 0.246 (B) 44.74/82.56 · 0.288 (A) 39.86/85.00 · 0.337 (D) 36.03/78.19.
+  **Caveat, not a claim:** retention above the base is the documented reduced-protocol artifact
+  (the manuscript's "Score conventions" paragraph already notes arm~C reaching 28.96 against
+  Llama's full-battery 26.0), so 51.35 > 48.00 must not be reported as the adapter beating the
+  base model — only within-experiment contrasts are valid. Three ray points are not yet a curve;
+  the fit and the arm-B/arm-D residuals wait for f150, f246 and f330. `__rayf246` started 22:15.
+- 22:18 **Ray point 2/4: `__rayf150` = 87.44 / 49.81 / F 0.1526** (1.7 % off target; the two ray
+  points so far are both within 2.2 %, so the linear-in-scale assumption holds). Ray ordered by
+  magnitude: 0.1022 -> 51.35 · 0.1526 -> 49.81 · 0.210 (arm C) -> 46.55 · 0.288 (arm A) -> 39.86.
+  **The magnitude-retention relation on this row is clearly CONVEX, not linear:** successive
+  slopes are -30.6, -56.9 and -85.8 retention points per unit F_delta, i.e. retention falls ever
+  faster as the update grows. A straight-line fit will therefore NOT reproduce the Llama E1
+  R^2 of 0.99 on this row, and forcing one would misstate the residuals of arms B and D; the fit
+  at 4/4 points should be run linear AND in a curvature-respecting form (log F or quadratic),
+  with the arm residuals quoted from whichever fits the ray itself best. Task accuracy also peaks
+  at intermediate magnitude (85.94 at 0.102, 87.44 at 0.153, 87.38 at 0.210, 85.00 at 0.288),
+  so on this cell the best adapter by BOTH axes is a shrunk one. `__rayf330` started 22:18;
+  f246 running since 22:15.
+- 23:44 **Ray point `__rayf330` = 83.69 / 38.26 / F 0.3286** (0.4 % off target — the tightest of
+  the three so far). **This is the arm-D comparison and it lands the way the Llama E1 result
+  predicts.** Arm D (intruders deleted, then rescaled back to the source norm) sits at F 0.337
+  with 36.03 / 78.19, i.e. at a SLIGHTLY LARGER magnitude than this ray point yet **2.23
+  retention points and 5.5 task points BELOW** a plain uniform scaling of the source to the same
+  magnitude. Since retention falls with magnitude along the ray, comparing D at 0.337 against a
+  ray point at 0.3286 understates D's deficit; the fitted curve at 0.337 will give the honest
+  number. Llama's published figure for the analogous off-curve residual is 2.16 points (arm B),
+  so the Qwen D residual is of the same size. Ray so far: 0.1022 -> 51.35/85.94 · 0.1526 ->
+  49.81/87.44 · 0.3286 -> 38.26/83.69, plus arms C (0.210, a ray point by construction) ->
+  46.55/87.38 and A (0.288, the ray at scale 1) -> 39.86/85.00. Task along the ray peaks in the
+  middle (85.9 / 87.4 / 87.4 / 85.0 / 83.7) — on this cell the best adapter on both axes is a
+  shrunk one. `__rayf246`, the arm-B comparison, is still running (86 % at 23:29);
+  `__rayrand1f246` started 23:43.
+- 23:47 **Ray complete (4/4 built points + arms C and A, which are ray points by construction).
+  `__rayf246` = 86.44 / 43.68 / F 0.2470** (0.4 % off target). Ray, ordered by magnitude:
+  0.1022 51.35/85.94 · 0.1526 49.81/87.44 · 0.2101 (C) 46.55/87.38 · 0.2470 43.68/86.44 ·
+  0.2881 (A) 39.86/85.00 · 0.3286 38.26/83.69.
+  **Fit of retention vs F_delta over the six ray points:** linear R^2 0.9774, **quadratic R^2
+  0.9870** (best; the relation is convex, as flagged at 22:18), linear-in-log F 0.9140. Llama's
+  published ray gave R^2 0.99 on a linear fit; on Qwen the curvature is real and a linear fit
+  understates it, so residuals below are quoted from the quadratic.
+  **Residuals against the pure-magnitude curve (retention; measurement noise is 1.28 pt):**
+  arm B (intruders deleted) **+0.88** · arm D (delete + restore norm) **-0.92** · arm E -0.05 ·
+  arm Ep -0.31. **Every arm sits ON the magnitude curve within noise.** On retention, this row
+  says it plainly: what an edit does to forgetting is a function of how much it changes the
+  update's magnitude, and not at all of which directions it removed.
+  **Residuals on TASK accuracy (quadratic fit R^2 0.9695; noise 0.25 pt):** arm B **-4.07** ·
+  arm D **-4.80**. Both far outside noise. So the intruder-deletion arms are ordinary points on
+  the retention curve but fall well below the task curve: deleting intruders destroys adaptation
+  that a magnitude-matched uniform shrink keeps.
+  **CORRECTION to the 23:44 entry.** That entry read arm D as "2.23 retention points below the
+  curve" by comparing it with the single nearest ray point (0.3286) rather than with the fitted
+  curve evaluated at D's own F_delta of 0.337. Against the fit the retention residual is -0.92,
+  inside the 1.28 pt noise, so **D is NOT below the retention curve** and the Llama-style
+  "off-curve on retention" reading does not hold here. The task residual (-4.80) is the real
+  effect. The same correction applies to arm B: it is +0.88 on retention (on the curve, and if
+  anything above it), NOT below as Llama's arm B was at -2.16. This is a genuine
+  architecture-level difference and must not be written up as a reproduction of the Llama sign.
+  Three random-direction controls at F 0.246 still running; they give the no-trained-direction
+  floor against the same curve.
+- 00:56 **Random-direction control 2: `__rayrand2f246` = 29.75 task / 43.60 retention / F 0.2399**
+  (Gaussian lora_B, per-matrix ||BA||_F matched to the ray point at 0.246; achieved F 2.5 % under
+  target, the largest miss of the set but still small). **This is the campaign's cleanest single
+  result.** At one matched magnitude, three updates that share nothing but their size:
+  | update at F ~ 0.24        | task  | retention |
+  | ray (trained direction)    | 86.44 |   43.68   |
+  | arm B (intruders deleted)  | 82.56 |   44.74   |
+  | RANDOM direction           | 29.75 |   43.60   |
+  **Retention is identical across all three (43.60-44.74, a 1.1 pt spread against 1.28 pt
+  measurement noise) while task accuracy runs from 86 to 30.** A completely random update of the
+  same Frobenius size forgets exactly as much as the trained one; it simply cannot do the task.
+  So on this row forgetting is a function of the update's MAGNITUDE and of nothing else — not of
+  intruder structure, not of the trained direction, not of any geometry. That is the paper's
+  claim ("the retention associated with intruder structure is explained by update magnitude
+  rather than by the intruder directions themselves") in its strongest and most general form,
+  and it is a stronger control than the intruder arms themselves, because it removes ALL
+  trained structure rather than a chosen subspace. Two caveats for the write-up: it is one
+  control on one configuration on one architecture until rand1/rand3 land (both pending, and
+  rand1 has been running since 23:43), and the retention proxy cannot resolve differences below
+  ~1.3 points, so this shows retention is magnitude-determined TO WITHIN THAT RESOLUTION.
+  `__rayrand3f246` started 00:56.
+- 00:59 **Random-direction control 1: `__rayrand1f246` = 5.50 task / 42.39 retention / F 0.2393.**
+  **This tempers the 00:56 entry and the wording must be adjusted before it reaches the paper.**
+  With two controls in, at F ~ 0.24: ray (trained) 43.68 · arm B 44.74 · rand1 42.39 · rand2
+  43.60. The spread is 2.35 points, wider than the 1.28 pt measurement noise, and BOTH random
+  controls sit at or below the trained ray (-1.29 and -0.08). So the honest reading is not
+  "retention is identical regardless of direction" as I wrote at 00:56, but: **retention at
+  matched magnitude varies by at most ~2 points across updates whose task accuracy varies by
+  81 points (86.44 -> 5.50), and the random directions trend slightly BELOW the trained one.**
+  The qualitative conclusion is unchanged and still strong — magnitude sets forgetting to within
+  a couple of points while direction sets the task entirely — but a possible small
+  direction effect on retention cannot be excluded at this resolution, and with n=2 (soon 3) the
+  trend is not established. Task accuracy across the random seeds is itself wildly variable
+  (5.50 vs 29.75), which is expected: a random update of this size destroys the task, and how
+  completely is arbitrary. `__rayrand3f246` is the last job; it decides whether the randoms'
+  below-ray trend is real or seed noise.
+- 01:42 **SCALING RAY COMPLETE.** `__rayrand3f246` = 10.75 task / 43.00 retention / F 0.2398;
+  `STOP seen and queue drained -> exit`, pool tQr closed with 7/7 jobs, rc=0 on all, 0 failures,
+  0 OOM.
+  **Fit over the six pure-scaling points (F_delta 0.102-0.329):** retention linear R^2 0.9774,
+  **quadratic R^2 0.9870**; task quadratic R^2 0.9695. Residuals against the quadratic
+  (retention noise 1.28 pt, task noise 0.25 pt):
+  | arm                        | F     | ret resid | task resid |
+  | B  intruders deleted       | 0.246 |   +0.86   |   -4.08    |
+  | D  delete + restore norm   | 0.337 |   -0.96   |   -4.82    |
+  | E  non-intruder, magnitude | 0.206 |   -0.02   |   -0.88    |
+  | Ep non-intruder, energy    | 0.200 |   -0.30   |   -1.74    |
+  **Every arm lies on the pure-magnitude retention curve within noise; the two
+  intruder-deletion arms fall 4-5 task points below the task curve.** Arms E/Ep, which remove
+  non-intruder content, are on BOTH curves — so it is specifically deleting the intruders, not
+  deleting anything, that costs task accuracy off-curve.
+  **Random-direction controls** (Gaussian lora_B, per-matrix ||BA||_F matched, F ~ 0.240):
+  rand1 42.39/5.50 · rand2 43.60/29.75 · rand3 43.00/10.75; retention residuals -1.92, -0.67,
+  -1.28, **mean -1.29**. All three are negative, i.e. a random update forgets slightly MORE than
+  the trained one of the same size, but each sits within the 1.28 pt measurement noise and the
+  mean is only ~1.7 sigma (se ~ 0.74 on n=3). Report as suggestive, NOT established.
+  **THE HEADLINE NUMBER: at one matched magnitude (F ~ 0.24), task accuracy spans 80.94 points
+  (86.44 for the shrunk trained update down to 5.50 for a random one) while retention spans
+  2.35 points (44.74 to 42.39).** Forgetting is set by how big the update is; capability is set
+  by which direction it points. This is the paper's magnitude thesis in its most direct form and
+  it does not depend on intruder bookkeeping at all.
+  **Difference from Llama that must not be smoothed over in the write-up:** Llama's arm B sits
+  2.16 retention points BELOW its ray; Qwen's sits +0.86 ABOVE (i.e. on it). The cross-
+  architecture claim that survives is "retention is explained by magnitude", plus the task-axis
+  result; the Llama sign on the retention residual does not replicate here.
