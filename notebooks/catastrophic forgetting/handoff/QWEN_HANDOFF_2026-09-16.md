@@ -93,3 +93,6 @@ by the harness on spurious "low memory" claims — use Monitor + cron instead.
 * Drop the five degenerate SC-LoRA arms (saves ~3.5 h)? Default: they run last.
 * Off-node evacuation target (adapters are only under /home/kfir/tierA_evac on this disk).
 * Whether to keep the seven-row Qwen block or fold CLoRA 3e-4 into an appendix table.
+
+> **SUPERSEDED 2026-09-17.** The campaign described below is complete. See
+> `QWEN_CAMPAIGN_COMPLETE_2026-09-17.md` for the closing state, results and open items.
