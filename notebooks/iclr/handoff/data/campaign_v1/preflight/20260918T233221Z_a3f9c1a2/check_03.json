@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/.venv/bin/python",
+    "scripts/audit_manuscript.py"
+  ],
+  "cwd": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff",
+  "exit_code": 0,
+  "seconds": 0.2872221292927861,
+  "stderr": "",
+  "stdout": "PASS: sole manuscript source; 105 unique labels; 32 cited keys; balanced environments/braces; anonymous, without review markup.\nPASS: generation numeric table preserved; prior retention table preserved in inactive archive, absent from manuscript.\nGLUE base VeRA-1024: Avg6=82.67, MRPC=accuracy\nGLUE base LoRA-4: Avg6=82.47, MRPC=accuracy\nGLUE base RandLoRA-64: Avg6=82.65, MRPC=accuracy\nGLUE base UIOrthoLoRA: Avg6=85.50, MRPC=accuracy\nGLUE base UILinLoRA: Avg6=84.68, MRPC=accuracy\nGLUE large VeRA-256: Avg6=86.32, MRPC=accuracy\nGLUE large LoRA-4: Avg6=86.22, MRPC=accuracy\nGLUE large RandLoRA-100: Avg6=87.17, MRPC=accuracy\nGLUE large UIOrthoLoRA: Avg6=88.22, MRPC=accuracy\nGLUE large UILinLoRA: Avg6=88.52, MRPC=accuracy\nPASS: all 60 GLUE means and 60 standard deviations preserved; one MRPC accuracy column; six-task averages audited in source only.\nPASS: all stated paired/module counts; task-mean score changes -1.0321 to -0.2284 points.\nPASS: layer-to-summary reconciliation, maximum absolute error 1.39e-17.\nLIMIT: no training rerun; broad GLUE seed/config/count provenance and causal/modern-model controls remain open. See MANUSCRIPT_AUDIT.md.\n"
+}
