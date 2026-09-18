@@ -6,6 +6,8 @@ point is `EXPERIMENT_PREPARATION_HANDOFF_20260919.md`; see
 `SNAPSHOT_PROVENANCE.md` for the source revision and transport-only differences.
 Manuscript changes require reconciliation with the real Overleaf project.
 
+> **Coding-session report — 19 September 2026 (late):** frozen-checkpoint work is done (`EXPERIMENT_PREPARATION_STATUS_20260919.md`: temperature scaling of the 18 practical endpoints, held-aside evaluation of all 21 band/head endpoints, 39 run records and trajectories). CENTER (`CENTER_PROTOCOL_20260919.md`) and the decoder pilot (`DECODER_PILOT_DESIGN_20260919.md`) are implemented and CPU-tested but NOT launched; they wait for the author's two GPU IDs and scope approval.
+
 > **Current preparation status — 19 September 2026:** Start with
 > `EXPERIMENT_PREPARATION_HANDOFF_20260919.md` and
 > `review_feedback/20260919/assessment.md`. The author confirmed **two GPUs**.

@@ -22,3 +22,5 @@ remote, without force-pushing or including unrelated local work. The live paper
 is in the separate Overleaf repository. The `handoff/` directory is a portable
 snapshot, not a Git bridge to Overleaf. Keep the approved abstract/introduction
 intact and deliver evidence/code independently of proposed manuscript changes.
+
+> **Coding-session report — 19 September 2026 (late):** frozen-checkpoint work is done (`EXPERIMENT_PREPARATION_STATUS_20260919.md`: temperature scaling of the 18 practical endpoints, held-aside evaluation of all 21 band/head endpoints, 39 run records and trajectories). CENTER (`CENTER_PROTOCOL_20260919.md`) and the decoder pilot (`DECODER_PILOT_DESIGN_20260919.md`) are implemented and CPU-tested but NOT launched; they wait for the author's two GPU IDs and scope approval.
