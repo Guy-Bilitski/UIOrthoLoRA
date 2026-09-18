@@ -146,6 +146,8 @@ def main():
         protocol = json.loads(args.calibration_protocol.read_text())
         if protocol.get("purpose") == "focused_norm_calibration":
             from .focused_plan import materialize_entry
+        elif protocol.get("purpose") == "center_norm_calibration":
+            from .center_plan import materialize_entry
         else:
             from .calibration import materialize_entry
         entries = [row for row in protocol["initial_entries"] if row["entry_id"] == args.calibration_entry]
@@ -178,9 +180,12 @@ def main():
     elif args.purpose == "confirmation":
         if args.calibration_protocol is None or args.calibration_entry is None:
             raise ValueError("Confirmation requires a registered confirmation protocol and exact entry ID")
-        from .confirmation_plan import materialize_entry as materialize_confirmation
-
         protocol = json.loads(args.calibration_protocol.read_text())
+        if protocol.get("purpose") == "center_confirmation":
+            from .center_plan import materialize_confirmation_entry as materialize_confirmation
+        else:
+            from .confirmation_plan import materialize_entry as materialize_confirmation
+
         entries = [row for row in protocol.get("entries", []) if row["entry_id"] == args.calibration_entry]
         if len(entries) != 1 or entries[0]["task"] != args.task:
             raise ValueError("Select an exact registered confirmation entry for this task")
@@ -204,8 +209,8 @@ def main():
             phase_protocol_path=str(args.calibration_protocol.resolve()),
             phase_protocol_sha256=sha256(args.calibration_protocol),
             note=(
-                "Registered core confirmation entry; the NORM dose and its match status come only from "
-                "the immutable focused selection record bound in the protocol."
+                "Registered confirmation entry; the matched dose and its match status come only from "
+                "the immutable selection/decision record bound in the protocol."
             ),
         )
         if manifest["train_settings"]["max_steps"] != args.steps:

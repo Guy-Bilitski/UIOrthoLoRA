@@ -1,0 +1,11 @@
+{
+  "_comment": "TEMPLATE, not an authorization. Copy to RESOURCE_AUTHORIZATION_20260919_CENTER.json only after the author names the two assigned physical GPU IDs and confirms the CENTER scope/cost; fill assigned_gpu_ids and quote the author's words in authorization_record, then delete this _comment key (protocol.Resources rejects unknown fields).",
+  "assigned_gpu_ids": ["<two physical GPU indices assigned by the author, e.g. 0, 1>"],
+  "output_root": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_center_v1",
+  "storage_allowance_gib": 60,
+  "gpu_hour_budget": null,
+  "wall_clock_hours": null,
+  "downloads_permitted": false,
+  "completion_authorized": true,
+  "authorization_record": "<date/time UTC and the author's exact authorization text for the CENTER control: two GPUs, new dedicated output root campaign_outputs_center_v1 (separate ledger and accounting; calibration and confirmation evidence roots stay immutable), 60 GiB cap, no downloads (repaired inputs preparation_20260915T0707Z are reused), scope = 6 initial calibration endpoints + at most 8 refinement endpoints + 6 confirmations>"
+}

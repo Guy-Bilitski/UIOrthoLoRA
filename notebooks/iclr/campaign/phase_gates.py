@@ -51,11 +51,18 @@ def validate_phase_admission(job):
 
             validate_band_admission(job, protocol)
             return
+        if purpose == "center_confirmation":
+            protocol = _check_p0_gate_and_evidence(job)
+            from .center_plan import validate_center_confirmation_admission
+
+            validate_center_confirmation_admission(job, protocol)
+            return
         raise ValueError("Only registered confirmation purposes are admitted")
     if job["stage"] != "calibration" or job.get("calibration_purpose") not in {
         "throughput_only",
         "magnitude_calibration",
         "focused_norm_calibration",
+        "center_norm_calibration",
     }:
         raise ValueError(
             "Calibration/confirmation require implemented phase admission; only registered calibration is admitted"
@@ -67,6 +74,11 @@ def validate_phase_admission(job):
         from .focused_plan import validate_focused_admission
 
         validate_focused_admission(job, protocol)
+        return
+    if job["calibration_purpose"] == "center_norm_calibration":
+        from .center_plan import validate_center_admission
+
+        validate_center_admission(job, protocol)
         return
     if job["calibration_purpose"] == "magnitude_calibration":
         validate_magnitude_admission(job, protocol)
