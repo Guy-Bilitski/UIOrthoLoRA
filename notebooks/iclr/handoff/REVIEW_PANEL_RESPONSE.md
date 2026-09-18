@@ -1,6 +1,83 @@
+> **Current preparation status — 19 September 2026:** Start with
+> `EXPERIMENT_PREPARATION_HANDOFF_20260919.md` and
+> `review_feedback/20260919/assessment.md`. The author confirmed **two GPUs**.
+> All 18 practical and 21 RTE band/head confirmations are complete; their
+> protocols and immutable evidence remain unchanged. Prepare the remaining
+> checkpoint evaluations and proposed controls/decoder pilot. New training
+> proposals require the agreed scope and budget; older queue, title, completion
+> and four-GPU statements below are historical. The approved abstract and
+> introduction remain unchanged. This update does not change live server jobs.
+
 # Review-panel response and evidence ledger
 
 Updated 2026-09-14. Internal author/GPU handoff document for project `6aa54397e58b10444b0fa2aa` only. Not anonymous supplementary material.
+
+## Current review-v3 update — 2026-09-16
+
+Supersedes presentation details in the dated notes below. The current title is
+**Magnitude and Mixing in Spectral Fine-Tuning**. REVIEW_PANEL_V3_RESPONSE.md maps
+all roadmap items and corrects overstatements in the simulated review. The paper
+separates penalty-only predictions from finite task-trained endpoints and reports
+the one-seed magnitude frontier explicitly. New analysis reports all held-aside
+NLL contrasts, within-task frontier fits, and hypothetical paired-t power
+sensitivities with an independent numerical check. PSOFT coordinates, conditional
+parameter counts, notation and the metric specification are clarified. No new
+training or held-aside fitting is performed; requested inner-selection logits
+are documented in REVIEW_V3_EVIDENCE_HANDOFF_20260916.md. The refreshed analysis
+supplement must accompany the PDF in the next reviewer handoff.
+
+## Current review-v2 update — 2026-09-16
+
+This section supersedes dated experiment-availability statements below. See
+`REVIEW_PANEL_V2_RESPONSE.md` for every MUST/SHOULD disposition and corrections to
+the simulated panel's algebra/statistics; see `PAPER_FINALIZATION_STATUS_20260916.md`
+for the current handoff. New evidence at `a63b1f2` supplies all 18 frozen held-aside
+evaluations and an eight-checkpoint band freeze ledger. Held-aside predictions,
+labels, metrics, loading records, checkpoint identities and file hashes reproduce.
+The older band outcome CSV still contains three confirmations and two pilots;
+freeze coverage is not a substitute for missing outcome rows.
+
+The revised paper reports signed norm errors, total/learned equal-module cross,
+identity alignment and matched-subset small-norm sensitivity. MIX's learned leading
+identity fractions are 84.67% RTE / 89.50% MRPC. They qualify a directional mechanism,
+not demonstrate scaler homogenization. Held-aside MIX–NORM accuracy differences
+are +0.12 / -0.33 pp with wide nominal paired intervals; neither task benefit nor
+equivalence is established. The historical six-task table stays in main text with
+all task means/SDs; its unmatched Avg6 display is removed. Incomplete band numerical
+tables are withheld pending the complete registered block. Theory/prior-method
+coordinates, costs, citations and retrospective retention exclusion are clarified.
+
+Current compile: 32 total pages, nine main pages, full historical GLUE on page 8.
+All required source/data/algebra/PDF audits pass, including the new review analyzer.
+A sanitized standalone analysis supplement is prepared and tested separately from
+the private archive. Centered scaler exports and the full historical retention
+sweep inventory remain requested; complete block B and actual supplementary
+attachment/hosting remain outstanding. No training or shared implementation changes.
+The Overleaf compiler on the current project head remains canonical.
+
+## Historical status notes (superseded where noted above)
+
+## Evidence update — 2026-09-16, final export integration
+
+The repaired campaign supplies 18 calibration/refinement and 18 confirmation runs.
+The final export at `5510161` supplies learned/initial/total block energies for
+all confirmations and 864 module records. Their independent reaggregation and
+paper integration resolve the insertion-reporting gap for the focused study.
+The magnitude penalty does not reproduce cross suppression, but 5/6 confirmation
+pairs exceed the 5% pooled norm tolerance. Strong module concentration differences
+and normalization-dependent task placement remain explicit limits on a causal
+geometry claim. Frame specificity, scaler homogenization and head-only attribution
+are still unresolved. Probe losses exceed the original-backbone reference.
+
+The strict-band appendix currently reports three seed-42 diagonal confirmations
+and two separately labeled pilots; no rotated or head-only confirmation is complete
+in the 07:04 UTC export. All 18 predeclared contrasts remain visible, including
+pending cells. Held-aside task evaluation is separately requested on frozen
+checkpoints with no tuning. See `PAPER_FINALIZATION_STATUS_20260916.md`.
+
+The detailed ledger below preserves the September 14 review disposition; its
+statements about missing implementation or no additional training are historical,
+not descriptions of today's server campaign.
 
 ## Scope and current decision
 

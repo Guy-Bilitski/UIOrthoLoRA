@@ -1,0 +1,30 @@
+{
+  "scope": "Internal assessment and reproducer; not anonymous submission material",
+  "scientific_manuscript_commit": "932283e1",
+  "files": {
+    "assessment.md": {
+      "bytes": 17578,
+      "sha256": "3b9232a3c5468a08f798b84397dc672ddc6e0defd0f8119d9471837f041aaaed"
+    },
+    "calibration_diagnostic.json": {
+      "bytes": 53378,
+      "sha256": "19f973ec412c144c20d226a8f33ee4e0ab07b127366d75ea1cd37ec07a53c72d"
+    },
+    "calibration_diagnostic.py": {
+      "bytes": 6750,
+      "sha256": "9a738f948ea4ee01691b31816b34133e52695ffb5a16109373c8526963498dd9"
+    },
+    "calibration_diagnostic_original.py.txt": {
+      "bytes": 6317,
+      "sha256": "e01c6dfc02778baf8b32a4ba0fc7a8baf2b1bf758ad461fb8c8c020cf68a0a3a"
+    },
+    "locked_evaluation_source.txt": {
+      "bytes": 14941,
+      "sha256": "7387734b2791c516d105509401300c7586e5b1d03636e741c35912631758ec62"
+    },
+    "paper.pdf": {
+      "bytes": 370824,
+      "sha256": "70bcd73f239bfa33993edcf7257b85ef968dcd3ecd9564c1917797eef5e24bb9"
+    }
+  }
+}

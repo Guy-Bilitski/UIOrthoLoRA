@@ -1,0 +1,18 @@
+We introduced a framework for parameter-efficient fine-tuning that studies adapter updates directly in the singular coordinate system of pretrained weights. LinLoRA provides a transparent fixed-basis construction that separates preserved pretrained components from task-specific adaptation, but also exposes a fixed-basis bottleneck on the low-tail subspace. UILinLoRA is the unit-invariant version of this construction: it preserves the magnitude-only spectral structure of LinLoRA while adding trainable diagonal scalers.
+
+OrthoLoRA addresses the fixed-basis limitation by learning compact orthogonal rotations inside the selected low-spectrum subspace, improving directional flexibility while keeping the additional parameter cost tied to the spectral budget. UIOrthoLoRA is the unit-invariant version of OrthoLoRA: it combines these compact rotations with trainable diagonal scalers, which relax strict tail confinement. Our analysis quantifies the resulting mixing between leading and tail pretrained singular coordinates, giving an explicit view of the preservation-adaptation trade-off.
+
+Additional generation results, retention-oriented experiments, and a
+soft-mixing regularization ablation further support the view that pretrained
+singular coordinates provide a useful structure for efficient adaptation
+without eliminating downstream expressiveness. The soft-mixing ablation
+specifically shows that the scaler-induced mixing quantities derived in our
+analysis can be regularized to reduce off-tail leakage and leading-subspace
+drift while maintaining task performance within single-seed variation.
+
+Overall, the results suggest that spectrum-aware PEFT parameterizations offer
+a principled way to control how task-specific updates interact with pretrained
+model structure. The theoretical analysis identifies explicit quantities that
+measure leading-tail mixing induced by unit-invariant diagonal scalers, and the
+appendix provides preliminary evidence that these quantities can also serve as
+practical regularizers. Future work will further study the relationship between mixing control, spectral-budget selection, and knowledge preservation in broader adaptation settings, including larger autoregressive models and sequential fine-tuning.

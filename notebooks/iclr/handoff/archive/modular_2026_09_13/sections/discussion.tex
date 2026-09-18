@@ -1,0 +1,16 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\section{Discussion and limitations}
+\label{sec:discussion}
+
+\paragraph{What the tail reference does and does not imply.}
+Leading and tail directions are defined by singular-value order, not by their semantic importance. The projection identities hold for any target perturbation and either selected spectral region; they do not require an alignment assumption. However, the amount of task-relevant signal captured by a region is an empirical question. Without equal-dimensional leading, tail, and mixed/random controls, the chosen tail cannot be identified as uniquely suitable for adaptation. Likewise, increased within-tail expressivity need not improve a trained model: the useful directions, optimization, and statistical cost of added capacity all matter.
+
+\paragraph{Scope of the intervention.}
+The five-task intervention has limited seed replication, validation-selected endpoints, and no magnitude-matched training or head-only control. It establishes that the tested penalty changes geometry together with magnitude, but not that its spectral effect is necessary for adaptation or independent of shrinkage. Factor penalties also admit rescaling ambiguities, so the effective matrix and the factor norms in the bounds remain essential measurements. The approximation results concern representability, not optimization or generalization; the mixing bounds are conditional on attained factors, and ranked-subspace stability additionally requires spectral separation.
+
+\paragraph{External validity and comparison coverage.}
+The mechanistic measurements use RoBERTa-base, not contemporary large-model instruction tuning or reasoning. The broader benchmark comparisons are not a uniformly tuned evaluation against PiSSA, MiLoRA, AdaLoRA, DoRA, and SORSA. The generation and retention results show additional applications but do not supply that missing geometric comparison; the larger-model study also lacks a scaler-only UILinLoRA counterpart. These limitations preclude claims of universal tail preference, a consistent advantage from rotations, or functional preservation induced by mixing control. They motivate transferring the same controlled contrasts to a generative backbone, rather than treating an additional leaderboard score as evidence for the mechanism.
+
+\section{Conclusion}
+\label{sec:conclusion}
+We studied spectral fine-tuning through the location and structure of the effective update in pretrained singular coordinates. A diagonal tail core and a flexible tail core share an outside-tail bottleneck but differ in their within-tail expressivity. Ambient scaling introduces interaction whose control depends on the underlying core: vanishing mixing gives tail confinement for a tail-only update, but only cross-block decoupling when direct leading adaptation is present. The empirical intervention reduces cross energy while the leading block retains a substantial share, alongside update shrinkage and a modest task-score cost. Understanding spectral adaptation therefore requires distinguishing available directions, cross-subspace interaction, and effective magnitude. These distinctions make the parameterizations useful instruments for studying PEFT, independently of which adapter scores highest.

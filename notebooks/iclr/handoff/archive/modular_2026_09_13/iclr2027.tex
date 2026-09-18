@@ -1,0 +1,49 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\documentclass{article}
+\PassOptionsToPackage{table}{xcolor}
+\usepackage{iclr2027_conference,times}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm,booktabs,multirow,adjustbox}
+\usepackage{xcolor}
+\usepackage{enumitem,graphicx,microtype,url,hyperref}
+\hypersetup{hidelinks}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}[proposition]{Corollary}
+\newcommand{\pre}{\mathrm{pre}}
+\newcommand{\off}{\mathrm{off}}
+\newcommand{\cross}{\mathrm{cross}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\op}[1]{\left\|#1\right\|_2}
+\newcommand{\fro}[1]{\left\|#1\right\|_F}
+% Primitive input avoids LaTeX file hooks between a tabular row and booktabs rules.
+\makeatletter
+\newcommand{\tablerows}[1]{\@@input #1 }
+\makeatother
+\newcommand{\allocationbar}[4]{\makebox[1em][l]{#1}\begingroup\setlength{\unitlength}{\dimexpr\linewidth-1em\relax}\textcolor{black!80}{\rule{#2\unitlength}{1.4ex}}\textcolor{black!45}{\rule{#3\unitlength}{1.4ex}}\textcolor{black!15}{\rule{#4\unitlength}{1.4ex}}\endgroup}
+\title{Confinement, Flexibility, and Mixing\\in Spectral Fine-Tuning}
+\author{Anonymous authors}
+% Keep anonymous; do not enable \iclrfinalcopy for submission.
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Where does parameter-efficient fine-tuning modify a pretrained model? Rank and trainable parameter count do not specify an update's location relative to the pretrained weight structure. We study this location by decomposing updates into leading, tail, and cross-subspace blocks in pretrained singular coordinates. Fixed coefficients, within-tail rotations, and ambient diagonal scalers isolate different forms of adaptation flexibility. Exact approximation identities separate restrictions within the tail from restrictions imposed by its span. Mixing bounds distinguish strict tail confinement from cross-subspace decoupling, including a practical construction with a leading core. In a five-task RoBERTa-base intervention, two-sided mixing regularization reduces cross energy from approximately 43\% to 10--27\%, while the leading block retains 44--64\% of update energy. Leading-subspace drift falls in all nine paired task/seed comparisons, alongside substantial update shrinkage and task-mean score decreases of $0.2$--$1.0$ points. Broader language-understanding and generation evaluations establish the practical viability of these instruments. The study distinguishes three aspects of spectral adaptation: representational freedom, interaction with pretrained subspaces, and effective update magnitude.
+\end{abstract}
+\input{sections/introduction}
+\input{sections/coordinates}
+\input{sections/confinement}
+\input{sections/mixing}
+\input{sections/experiments}
+\input{sections/related}
+\input{sections/discussion}
+\input{sections/statements}
+\bibliography{reference}
+\bibliographystyle{iclr2027_conference}
+\clearpage
+\appendix
+\input{sections/proofs}
+\input{sections/details}
+\input{sections/complexity}
+\input{sections/supporting}
+\end{document}

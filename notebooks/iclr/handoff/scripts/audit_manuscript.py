@@ -2,9 +2,8 @@
 import argparse
 from collections import Counter
 import csv
-from decimal import Decimal
 import hashlib
-import json
+from decimal import Decimal
 from pathlib import Path
 import re
 from statistics import mean
@@ -24,13 +23,32 @@ def uncomment(text):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pdf', type=Path)
+    parser.add_argument('--review', action='store_true',
+                        help='Allow abstract, introduction and RTE study review markup and colored PDF.')
     args = parser.parse_args()
     path, expected = manuscript_output()
     raw = path.read_text()
     assert raw == expected, 'Generated regions differ from source data.'
     text = uncomment(raw)
     assert not re.search(r'\\(?:input|include|tablerows|includegraphics)\s*\{', text)
-    assert not re.search(r'\\(?:new|cut)\s*\{|\\begin\{newpart\}|\\(?:difftrue|iclrfinalcopy)\b', text)
+    markup = r'\\(?:new|cut)\s*\{|\\begin\{newpart\}|\\difftrue\b'
+    assert not re.search(r'\\iclrfinalcopy\b', text)
+    if args.review:
+        definitions = re.search(r'% BEGIN INTRODUCTION REVIEW DEFINITIONS\n.*?% END INTRODUCTION REVIEW DEFINITIONS\n', raw, re.S)
+        assert definitions, 'Missing inline review definitions.'
+        body = uncomment(raw[:definitions.start()] + raw[definitions.end():])
+        intro_start = body.index(r'\section{Introduction}')
+        intro_end = body.index(r'\section{', intro_start + 1)
+        outside_intro = body[:intro_start] + body[intro_end:]
+        outside_review = re.sub(r'\\begin\{abstract\}.*?\\end\{abstract\}', '',
+                                outside_intro, count=1, flags=re.S)
+        for label in ('sec:tailstudy', 'app:bandstudy'):
+            start = outside_review.index(r'\label{'+label+'}')
+            end = outside_review.index(r'\subsection{', start)
+            outside_review = outside_review[:start] + outside_review[end:]
+        assert not re.search(markup, outside_review), 'Review markup outside abstract, introduction and RTE study.'
+    else:
+        assert not re.search(markup, text), 'Pending review markup: use --review for an author-review audit.'
     assert r'\author{Anonymous authors}' in text
     assert not re.search(r'olp_[A-Za-z0-9]+|/home/|6aa54397e58b10444b0fa2aa', text)
     labels = re.findall(r'\\label\{([^}]+)\}', text)
@@ -54,19 +72,20 @@ def main():
         depth += (char == '{') - (char == '}')
         assert depth >= 0
     assert depth == 0
-    print(f'PASS: sole manuscript source; {len(labels)} unique labels; {len(citations)} cited keys; balanced environments/braces; anonymous, without review markup.')
+    mode = 'abstract, introduction and RTE study review markup allowed' if args.review else 'without review markup'
+    print(f'PASS: sole manuscript source; {len(labels)} unique labels; {len(citations)} cited keys; balanced environments/braces; anonymous, {mode}.')
 
     # Preserve supporting numeric table bodies through the consolidation.
     def old(name):
-        fixtures = ROOT / 'audit_baseline'
-        manifest_path = fixtures / 'manifest.json'
-        if manifest_path.exists():
-            manifest = json.loads(manifest_path.read_text())
-            assert manifest['overleaf_commit'] == BASELINE, 'Unexpected audit baseline.'
-            assert name in manifest['sha256'], f'Unrecorded audit fixture: {name}'
-            data = (fixtures / name).read_bytes()
-            assert hashlib.sha256(data).hexdigest() == manifest['sha256'][name], f'Changed audit fixture: {name}'
-            return data.decode('utf-8')
+        fixture = ROOT / 'audit_baseline' / name
+        if fixture.exists():
+            expected = {
+                'tables/generation.tex': 'b570e98f196b19c3788e071c81d6ee126209d85d5ac89cea5f0a8a6808922181',
+                'forgetting-results-table.tex': '2abd180dca6f0ab2a0c76b90a1827610498c3b42f54d0cbac600d7a27e9c8a72',
+                'tables/glue.tex': 'b072a625b00fefca35392545b4c5f045199c3971fde1571d1244aebca1f0d816',
+            }
+            assert hashlib.sha256(fixture.read_bytes()).hexdigest() == expected[name]
+            return fixture.read_text()
         return subprocess.check_output(['git', 'show', f'{BASELINE}:{name}'], cwd=ROOT, text=True)
     for label, filename in [('tab:gpt2_generation_appendix', 'tables/generation.tex'),
                             ('tab:combined_model_performance', 'forgetting-results-table.tex')]:
@@ -99,7 +118,7 @@ def main():
                       if r'\label{tab:glue_results_base_large}' in f)
     assert 'MRPC Acc. & CoLA' in glue_table and 'MRPC F1' not in glue_table
     assert 'Avg5' not in text
-    print('PASS: all 60 GLUE means and 60 standard deviations preserved; one MRPC accuracy column and six-task averages.')
+    print('PASS: all 60 GLUE means and 60 standard deviations preserved; one MRPC accuracy column; six-task averages audited in source only.')
 
     values, report = analyze()
     assert report['cross_reduced_runs'] == 9
@@ -133,18 +152,30 @@ def main():
         log = args.pdf.with_suffix('.log').read_text()
         assert not re.search(r'Overfull \\[hv]box|undefined|Missing character|LaTeX Error|^!', log, re.M|re.I)
         assert all('??' not in page for page in pages)
-        end_pages = [i+1 for i,p in enumerate(pdf) if p.search_for('which adapter scores highest')]
-        assert end_pages == [9], ('Main conclusion must finish on page 9',end_pages)
+        end_pages = [i+1 for i,p in enumerate(pdf) if p.search_for('Controlling interaction changes how the model adapts')]
+        # Review copies include superseded paragraphs; clean copies retain the page limit.
+        has_blue = any(span['color'] >> 16 != (span['color'] >> 8)&255
+                       for page in pdf for block in page.get_text('dict')['blocks']
+                       for line in block.get('lines', []) for span in line['spans'])
+        review_pdf = args.review and has_blue
+        if review_pdf:
+            assert len(end_pages) == 1, ('Missing/duplicate main conclusion', end_pages)
+        else:
+            assert end_pages == [9], ('Main conclusion must finish on page 9',end_pages)
         glue_pages = [i+1 for i,p in enumerate(pages) if 'RandLoRA-100' in p]
-        assert glue_pages and max(glue_pages) <= 9
+        assert glue_pages and max(glue_pages) <= end_pages[0]
         for page in pdf:
             for block in page.get_text('dict')['blocks']:
                 for line in block.get('lines', []):
                     for span in line['spans']:
                         color = span['color']
-                        assert color >> 16 == (color >> 8)&255 == color&255, color
+                        rgb = (color >> 16, (color >> 8)&255, color&255)
+                        gray = rgb[0] == rgb[1] == rgb[2]
+                        blue = all(abs(a-b) <= 1 for a,b in zip(rgb, (0,65,170)))
+                        assert gray or (review_pdf and blue), color
             assert not re.search(r'olp_[A-Za-z0-9]+|6aa54397e58b10444b0fa2aa|/home/', page.get_text())
-        print(f'PASS: PDF {len(pdf)} pages; main conclusion on page 9; full GLUE on page {glue_pages[0]}; no undefined/overflow/missing-glyph errors; grayscale text.')
+        colors = 'blue/gray author review' if review_pdf else 'grayscale text'
+        print(f'PASS: PDF {len(pdf)} pages; main conclusion on page {end_pages[0]}; full GLUE on page {glue_pages[0]}; no undefined/overflow/missing-glyph errors; {colors}.')
         print('NOTE: underfull spacing and Tectonic bibliography-rerun notices are not counted as missing-reference or overflow errors.')
     print('LIMIT: no training rerun; broad GLUE seed/config/count provenance and causal/modern-model controls remain open. See MANUSCRIPT_AUDIT.md.')
 

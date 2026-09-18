@@ -1,0 +1,143 @@
+\subsection{Backbone and Fine-Tuning Protocol}
+
+All GLUE experiments use RoBERTa-base and RoBERTa-large as the pretrained backbone. RoBERTa-base is a 12-layer Transformer encoder with hidden size 768, 12 self-attention heads, and approximately 125M parameters. In all experiments, the pretrained backbone weights are frozen. Only the adapter parameters and the task-specific prediction head are updated during training.
+
+For classification tasks, we train a linear classification head on top of the final-layer representation of the special classification token. For STS-B, we use a single-output regression head. The task head is trained jointly with the adapter parameters, but with a separate learning rate.
+
+\subsection{GLUE Tasks and Metrics}
+
+We evaluate on six tasks from the GLUE benchmark: CoLA, SST-2, MRPC, STS-B, QNLI, and RTE. CoLA and SST-2 are single-sentence tasks, while MRPC, STS-B, QNLI, and RTE are sentence-pair tasks. For sentence-pair tasks, the two input sentences are packed into a single RoBERTa sequence using the standard pair-input format. STS-B is treated as a regression task with one output value, while the remaining tasks are treated as binary classification problems.
+
+\begin{table}[h]
+\centering
+\caption{GLUE tasks and evaluation metrics used in our RoBERTa-base experiments.}
+\label{tab:glue_tasks_metrics}
+\begin{tabular}{lll}
+\toprule
+Task & Task type & Metric \\
+\midrule
+CoLA  & Linguistic acceptability & Matthews correlation \\
+SST-2 & Sentiment classification & Accuracy \\
+MRPC  & Paraphrase detection & F1 \\
+STS-B & Semantic textual similarity & Pearson correlation \\
+QNLI  & Natural language inference & Accuracy \\
+RTE   & Textual entailment & Accuracy \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Adapter Placement}
+
+Adapters are inserted into the self-attention module of every Transformer layer. Specifically, we adapt the query, key, value, and attention-output projection matrices in each layer. The feed-forward layers are left frozen and are not modified by adapters. This keeps the adaptation concentrated in the attention mechanism while preserving a small trainable parameter budget.
+
+For each adapted matrix, we compute a one-time singular value decomposition of the corresponding pretrained weight matrix during initialization. The resulting spectral components are stored as frozen buffers and are not recomputed during training. The trainable adapter parameters consist of the selected spectral coefficients, the feature-wise input and output scaling vectors, and, when enabled, the trainable orthogonal transformations over the selected singular-vector subspace.
+
+\subsection{Spectral Adapter Configuration}
+
+The spectral capacity of the adapter is controlled by two main hyperparameters:
+the number of singular values adapted and the number of singular-vector
+directions adapted. We denote these by
+\texttt{num\_svalues\_to\_adapt} and
+\texttt{num\_svectors\_to\_adapt}, respectively. In the paper notation, these
+correspond to \(k_{\mathrm{val}}\) and \(k_{\mathrm{vec}}\). The former controls
+how many singular-value coefficients are trainable, while the latter controls
+the dimensionality of the singular-vector subspace in which orthogonal rotations
+are learned.
+
+Across experiments, we vary these two hyperparameters to evaluate the effect of
+spectral capacity on task performance and parameter efficiency. As a practical
+rule of thumb, we set \(k_{\mathrm{val}}\) to roughly one quarter of the matrix
+dimension, and set \(k_{\mathrm{vec}}\) to roughly one quarter of
+\(k_{\mathrm{val}}\). For the GLUE experiments, UILinLoRA uses
+\(k_{\mathrm{val}}=256\). UIOrthoLoRA uses \(k_{\mathrm{val}}=256\) and
+\(k_{\mathrm{vec}}=64\).
+
+We use an adapter scaling coefficient
+\(\alpha = 1.0\) and adapter dropout \(0.0\). The input and output diagonal
+scalers are initialized with a task-specific value, and the trainable spectral
+coefficients are initialized with a task-specific value as described in
+Table~\ref{tab:task_hyperparams}.
+
+\paragraph{Implementation detail}
+In practice, the fixed leading block in the adapter branch uses an identity diagonal rather than a zero diagonal. The tail block remains the trainable adapted component.
+
+\begin{table}[h]
+\centering
+\caption{Spectral adapter hyperparameters varied in the experiments.}
+\label{tab:spectral_hyperparams}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{ll}
+\toprule
+Hyperparameter & Description \\
+\midrule
+\texttt{num\_svalues\_to\_adapt} & Number of trainable singular-value coefficients \\
+\texttt{num\_svectors\_to\_adapt} & Number of singular-vector directions used for trainable rotations \\
+\texttt{uiortholora\_alpha} & Adapter scaling coefficient \\
+\texttt{uiortholora\_dropout} & Dropout applied to the adapter branch \\
+\texttt{initial\_scaler} & Initialization value for the input and output scalers \\
+\texttt{initial\_sigma} & Initialization value for the trainable spectral coefficients \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Optimization}
+
+We train using AdamW with two parameter groups. The first group contains the adapter parameters, including the trainable spectral coefficients, input scalers, output scalers, and, where applicable, the orthogonal rotation parameters. The second group contains the task-specific prediction head. We use separate learning rates for these two groups, denoted by \texttt{adapter\_lr} and \texttt{head\_lr}.
+
+The learning rate follows a linear decay schedule with linear warm-up over the first $6\%$ of total training steps. All tasks use batch size 64 and maximum sequence length 256 tokens.
+
+\begin{table}[h]
+\centering
+\caption{Task-specific training hyperparameters for RoBERTa-base GLUE experiments.}
+\label{tab:task_hyperparams}
+\begin{tabular}{lccccc}
+\toprule
+Task & Epochs & Head LR & Adapter LR & Initial scaler & Initial sigma \\
+\midrule
+CoLA  & 80 & $5 \times 10^{-3}$ & $3 \times 10^{-2}$ & $1 \times 10^{-2}$ & $1 \times 10^{-1}$ \\
+SST-2 & 40 & $1 \times 10^{-2}$ & $4 \times 10^{-2}$ & $1 \times 10^{-1}$ & $1 \times 10^{-1}$ \\
+MRPC  & 30 & $1 \times 10^{-3}$ & $5 \times 10^{-2}$ & $1 \times 10^{-1}$ & $1 \times 10^{-1}$ \\
+STS-B & 60 & $5 \times 10^{-3}$ & $1 \times 10^{-2}$ & $1 \times 10^{-1}$ & $1 \times 10^{-1}$ \\
+QNLI  & 25 & $1 \times 10^{-3}$ & $2 \times 10^{-2}$ & $1 \times 10^{-1}$ & $1 \times 10^{-1}$ \\
+RTE   & 90 & $5 \times 10^{-4}$ & $1 \times 10^{-2}$ & $1 \times 10^{-2}$ & $1 \times 10^{-2}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Random Seeds and Reproducibility}
+
+Each experiment is repeated over six independent random seeds:
+\[
+\{42, 123, 2021, 17, 31415, 1054\}.
+\]
+
+Unless otherwise stated, reported scores are averaged across these six seeds. When standard deviations are reported, they are computed across the same six independent runs.
+
+For each task and random seed, we evaluate the model on the official GLUE validation split using the task-specific validation metric listed in Table~\ref{tab:glue_tasks_metrics}.
+
+\subsection{Existing Assets and Licenses}
+\label{app:assets_licenses}
+
+We use publicly available datasets, pretrained models, and open-source software
+libraries. We cite the benchmarks and the original sources for the corresponding component datasets. These datasets are used only for standard training and validation evaluation, and we do not redistribute modified versions
+of the datasets.
+
+The pretrained RoBERTa-base and RoBERTa-large checkpoints are publicly available
+model checkpoints released by Meta/Facebook AI and distributed on the HuggingFace\footnote{\url{https://huggingface.co/}} under the MIT license. Our implementation uses PyTorch, which is
+distributed under a BSD-style license, and Hugging Face Transformers and
+Datasets, which are distributed under the Apache License 2.0.
+
+The supplementary code provided with this submission contains our implementation
+of the proposed adapters and experiment scripts. It does not include a new
+dataset, a new pretrained model, or redistributed copies of datasets or
+RoBERTa checkpoints.
+
+\subsection{Orthogonal Optimization Strategy}
+\label{app:orthogonal_optimization}
+
+To maintain the strict orthogonality of the compact rotation matrices $R_U, R_V \in \mathbb{O}(k_{vec})$ during training without the computational overhead of post-hoc Riemannian projections, we utilize PyTorch's native orthogonal parameterization (\texttt{torch.nn.utils.parametrizations.orthogonal}). 
+
+This parameterization maintains orthogonality via a sequence of Householder reflections. Instead of directly optimizing the entries of $R_U$ and $R_V$, the optimizer updates an unconstrained parameter tensor $X \in \mathbb{R}^{k_{vec} \times k_{vec}}$, which is then deterministically mapped to a strictly orthogonal matrix during the forward pass. This allows UIOrthoLoRA to seamlessly integrate with standard Euclidean optimizers like AdamW while strictly enforcing the mathematical constraints outlined in Section \ref{sec:uiortholora}.
+

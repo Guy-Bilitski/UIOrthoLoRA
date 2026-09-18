@@ -1,0 +1,22 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\begin{table}[ht]
+\centering
+\caption{Supporting GPT-2 Medium E2E generation results. Non-UI comparison values are from \citet{gao2024parameter}, including their imported full-fine-tuning and adapter results; $L$ and $H$ denote Lin-style and Houlsby-style adapters. Uncertainties retain their source reporting conventions. These task scores are not measurements of spectral mixing.}
+\label{tab:gpt2_generation_appendix}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}l r c c c c c@{}}
+\toprule
+\textbf{Method} & \textbf{\# Params} & \textbf{BLEU} & \textbf{NIST} & \textbf{METEOR} & \textbf{ROUGE-L} & \textbf{CIDEr} \\
+\midrule
+Full FT          & 354.92M & 68.2           & 8.62           & 46.2           & 71.0           & 2.47 \\
+Adapter$^L$      & 0.37M   & 66.3           & 8.41           & 45.0           & 69.8           & 2.40 \\
+Adapter$^L$      & 11.09M  & 68.9           & 8.71           & 46.1           & 71.3           & 2.47 \\
+Adapter$^H$      & 11.09M  & 67.3$_{\pm.6}$ & 8.5$_{\pm.07}$ & 46.0$_{\pm.2}$ & 70.7$_{\pm.2}$ & 2.44$_{\pm.01}$ \\
+LoRA             & 0.35M   & 68.9$_{\pm.3}$  & 8.76$_{\pm.06}$ & 46.6$_{\pm.1}$ & 71.5$_{\pm.1}$ & 2.53$_{\pm.03}$ \\
+FourierFT     & 0.048M  & 69.1$_{\pm.1}$ & 8.82$_{\pm.05}$ & 47.0$_{\pm.3}$ & 71.8$_{\pm.1}$ & 2.51$_{\pm.02}$ \\
+UIOrthoLoRA   & 0.35M   & 68.8$_{\pm.1}$ & 8.729$_{\pm.06}$ & 46.71$_{\pm.3}$ & 71.6$_{\pm.02}$ & 2.47$_{\pm.01}$ \\
+UILinLoRA     & 0.078M  & 68.7$_{\pm.1}$ & 8.732$_{\pm.1}$ & 46.52$_{\pm.3}$ & 71.45$_{\pm.01}$ & 2.46$_{\pm.02}$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

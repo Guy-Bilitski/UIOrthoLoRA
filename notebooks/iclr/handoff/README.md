@@ -1,11 +1,9 @@
 # ICLR spectral-adaptation research
 
-GitHub delivery: this is an ordinary tracked directory in the UIOrthoLoRA research repository. No submodule initialization, Overleaf clone, or token is required. Its source revision and transport-only changes are recorded in [SNAPSHOT_PROVENANCE.md](SNAPSHOT_PROVENANCE.md).
-
 Internal paper and experiment-coordination repository. Work only on the assigned Overleaf project `6aa54397e58b10444b0fa2aa`; another agent works on a different project.
 
-For a fresh GPU session, **start with [GPU_HANDOFF.md](GPU_HANDOFF.md)**. Then read the [designated experiment plan](EXPERIMENTS_REQUIRED.md) and [review-panel response](REVIEW_PANEL_RESPONSE.md). The expanded training runner still requires implementation and validation in a separate, isolated research checkout; this repository contains the paper, archived data, analysis scripts and tests, not the complete training implementation.
+For the coding session following the ICLR system's LLM feedback, **start with [EXPERIMENT_PREPARATION_HANDOFF_20260919.md](EXPERIMENT_PREPARATION_HANDOFF_20260919.md)** and the [full assessment](review_feedback/20260919/assessment.md). The author confirmed two GPUs and requested preparation of experiments for discussion. The repaired research runner already exists; all 18 practical confirmations and 21 RTE band/head confirmations are complete. Temperature scaling and held-aside band evaluation are still absent from the synchronized exports. Check the current server ledger before doing inference or launching anything.
 
-The single active manuscript is [neurips_2026.tex](neurips_2026.tex), using the official ICLR 2027 style despite its legacy filename. Read the [review guide](REVIEW_GUIDE.md) and [audit](MANUSCRIPT_AUDIT.md) for evidence status. New experiments are pending, not manuscript findings. Source fingerprints and complete artifact/continuation instructions are in the handoff.
+The single active manuscript is [neurips_2026.tex](neurips_2026.tex), using the official ICLR 2027 style despite its legacy filename. The approved abstract and introduction are unchanged. The latest checked [PDF](review_feedback/20260919/paper.pdf) and [anonymous analysis supplement](supplement/analysis_artifact.zip) match the current scientific source. See the new handoff before reading dated status/queue notes in [GPU_HANDOFF.md](GPU_HANDOFF.md), [EXPERIMENTS_REQUIRED.md](EXPERIMENTS_REQUIRED.md) and the older review/audit documents. New proposed experiments are not manuscript findings.
 
 No credentials belong in this repository. Do not upload internal planning, review or archival files wholesale as anonymous submission material. Direct author edits on Overleaf always take priority; fetch and reconcile before pushing, and never force-push.

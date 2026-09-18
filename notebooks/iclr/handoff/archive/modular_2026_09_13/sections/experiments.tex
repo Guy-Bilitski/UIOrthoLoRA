@@ -1,0 +1,71 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\section{Controlling spectral interaction in practice}
+\label{sec:experiments}
+
+We organize the empirical analysis around three questions: how two-sided regularization changes effective update geometry, what differs under one-sided control, and whether the parameterizations support useful downstream adaptation. The mixing intervention is the primary experiment; the broader benchmarks provide supporting context.
+
+\subsection{Study design and measurements}
+The intervention uses RoBERTa-base on RTE, MRPC, CoLA, STS-B, and SST-2. Adapters modify the query, key, value, and attention-output projections in each of its 12 layers, giving 48 adapted matrices. The configuration adapts 256 coefficients with $k_{\mathrm{vec}}=0$, holding rotations out of the comparison. The analysis uses the practical leading-plus-tail form~\eqref{eq:unified}. The three conditions are A: no penalty, B: $\lambda_E=10^{-3},\lambda_D=0$, and C: $\lambda_E=\lambda_D=10^{-3}$. The backbone is frozen and the task head trains jointly with the adapter.
+
+The analysis comprises seeds 42 and 17 for RTE, MRPC, CoLA, and STS-B, and seed 42 for SST-2: nine paired task/seed comparisons. Spectral quantities are measured at each run's validation-selected checkpoint, averaged over its 48 matrices, then averaged over seeds within a task. Runs, rather than layers, are the units of replication. Checkpoint selection is shared as a rule, not necessarily as an optimizer step. Appendix~\ref{app:details} gives the training settings, metric definitions, and complete three-condition results.
+
+We report the relative effective update norm $\rho_F$, off-tail norm ratio $q_{\off}$, and the operator-norm $\sin\Theta$ distance between the leading pretrained and adapted singular subspaces. The latter is the sine of the \emph{largest} principal angle: a value near one means at least one direction is far apart, not that the whole leading subspace is orthogonal. The diagnostic cutoff is 512 leading directions and a 256-dimensional tail for each $768\times768$ matrix.
+
+\begin{table}[t]
+\centering
+\caption{Two-sided mixing control for the practical spectral adapter. Each pair is A (unregularized) $\to$ C (two-sided penalty). Scores are multiplied by 100; $n$ is the number of seeds. Spectral entries are means over modules, then seeds, at validation-selected checkpoints. $q_{\off}$ is a norm ratio, not an energy fraction.}
+\label{tab:mixingmain}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccccc}
+\toprule
+Task & $n$ & Task score & $\rho_F$ & $q_{\off}$ & Left drift \\
+\midrule
+\tablerows{tables/mixing_summary_rows.tex}
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Two-sided control changes both placement and magnitude}
+Table~\ref{tab:mixingmain} shows a consistent shift toward lower off-tail allocation and subspace drift under the two-sided penalty. The reductions in $q_{\off}$, $\rho_F$, and both left and right drift occur in all nine paired task/seed comparisons. Task-level mean scores decrease by roughly $0.2$--$1.0$ points. Individual score differences are not uniformly negative across seeds; the experiment supports a descriptive trade-off, not statistical equivalence of task performance.
+
+The geometric change is accompanied by pronounced shrinkage. Mean $\rho_F$ falls from approximately $0.28$--$0.38$ to $0.03$--$0.07$. The update remains nonzero, but that alone does not establish that the backbone update is necessary for the task score, since the head also trains. Meanwhile, the normalized off-tail ratio falls from approximately $0.95$ to $0.81$--$0.88$. Thus the intervention changes placement as well as magnitude relative to unregularized training, but does not achieve near-exact tail confinement.
+
+\subsection{Which blocks change under mixing control?}
+The aggregate off-tail ratio combines direct leading adaptation and cross interaction. To separate them, we reconstruct the four energy fractions from the saved per-matrix diagnostics, square before averaging, and retain equal weighting of modules within each run. Figure~\ref{fig:allocation} shows the resulting leading, cross, and tail allocation. Appendix~\ref{app:blockallocation} gives all four blocks and accounts for the small finite-precision difference between the recorded coordinate and ambient norms.
+
+\begin{figure}[t]
+\centering
+% BEGIN GENERATED BLOCK FIGURE
+% END GENERATED BLOCK FIGURE
+\par\smallskip
+{\small\textcolor{black!80}{\rule{1em}{1ex}} Leading--leading\quad
+\textcolor{black!45}{\rule{1em}{1ex}} Cross\quad
+\textcolor{black!15}{\rule{1em}{1ex}} Tail--tail}
+\caption{Energy allocation in pretrained coordinates. Each bar sums to 100\% and averages per-matrix fractions, then seeds. A: no penalty; B: left-only; C: two-sided. Two-sided control reduces cross energy, but does not remove the leading block. Fractions describe relative placement, not absolute update size; Table~\ref{tab:mixingmain} reports the accompanying shrinkage.}
+\label{fig:allocation}
+\end{figure}
+
+Without regularization, cross blocks contain approximately 43\% of update energy, the leading block 46\%, and the tail 10\%. Two-sided control reduces the cross share to 10--27\% and raises the tail share to 22--34\%. Nevertheless, the leading share rises in four of five task means and remains 44--64\% under C. This is the empirical counterpart of Proposition~\ref{prop:mixing}: suppressing cross interaction in a leading-plus-tail construction does not imply eliminating leading adaptation. An increased \emph{fraction} must not be read as increased absolute leading energy when the total update shrinks.
+
+The decrease in cross share holds for all nine run-level pairs, but is not uniform across matrices: it occurs in 410 of 432 matched module/task/seed pairs. The off-tail norm ratio decreases in 332 pairs, and left and right drift in 260 and 256, respectively. These counts describe heterogeneity within trained models, not additional independent replicates. In particular, the consistent run means do not justify claiming that every layer's leading subspace is stabilized.
+
+\subsection{One-sided control and factor asymmetry}
+Across all nine paired comparisons, condition B decreases $\mu_E$ and increases $\nu_D$ relative to A. Its task score is highest among the three task-level means on RTE, MRPC, and CoLA, while substantial off-tail allocation and drift remain. This pattern is consistent with the distinction between constraining one mixing operator and controlling the complete update. It does not establish that learning moves through the unpenalized side: reciprocal scaler changes can produce the same factor pattern without changing $\Delta$ (Section~\ref{sec:mixing}). Appendix~\ref{app:mixingtable} reports both factors alongside the effective-matrix diagnostics.
+
+\paragraph{Interpreting normalized geometry.}
+The changed norm ratios exclude an explanation based only on multiplying the \emph{same trained matrix} by a scalar. They do not exclude the possibility that magnitude-only regularization during training would produce similar geometry. The distinction is between an observed change in normalized placement and a magnitude-independent benefit, which requires a norm-matched training control. These selected endpoints also concern update geometry, not the time at which mixing arises during learning.
+
+The size of the blocks also matters. An isotropically oriented perturbation has expected leading, cross, and tail energy fractions $k^2/d^2$, $2kr/d^2$, and $r^2/d^2$. At this cutoff these are $4/9$, $4/9$, and $1/9$. The unregularized allocation is close to this dimension-only reference; a large aggregate off-tail fraction alone therefore does not demonstrate preferential use of leading directions. The reference is neither a fitted model nor a significance test (Appendix~\ref{app:dimension}).
+
+\subsection{Downstream viability of the instruments}
+Table~\ref{tab:glue_results_base_large} presents the full six-task GLUE evaluation on both RoBERTa backbones. Its role is to test whether the instruments support useful adaptation, not to rank new adapters. The shared five-task average is 84.20 versus 83.62 for the rotated and diagonal cores on RoBERTa-base, and 87.36 versus 87.54 on RoBERTa-large. The ordering reverses: rotations are not uniformly better. This is compatible with Proposition~\ref{prop:approximation}, which characterizes available directions rather than guaranteeing a benefit from using them. The mixing experiment disables rotations, so its measured regularization effect does not require a rotated core.
+
+\input{tables/glue}
+
+The comparison includes imported VeRA, LoRA, and RandLoRA results~\citep{albert2025randlora}, not uniformly retuned baselines. Their MRPC scores are accuracy, whereas the spectral protocol uses F1; we retain the separate results but exclude MRPC from every average. Even the shared-metric average is not a full GLUE score or a matched comparison: MNLI and QQP are absent, tuning protocols differ, and rotations change capacity. The table does not establish superiority over the wider spectral-PEFT literature or an isolated rotation benefit.
+
+GPT-2 Medium generation results provide a check beyond classification and regression. An exploratory Gemma/Llama study measures adaptation and retention along a separate axis. Neither connects matched spectral measurements to its functional outcomes; these evaluations therefore do not establish that the RoBERTa mixing mechanism transfers to modern generative models.
+
+\paragraph{Computational scope.}
+Compact trainable capacity does not imply a compact spectral reference. For a square $d\times d$ layer, dense SVD initialization costs $O(d^3)$ and the practical implementation stores $2d^2$ frozen basis entries. Its unmerged adapter uses full-basis products with $O(bd^2)$ cost for $b$ token vectors, in addition to the frozen base projection. The merged model has the same linear-layer inference structure as the base model. Appendix~\ref{app:cost} separates setup, storage, trainable capacity, forward computation, regularization, and merging costs; we do not infer training speed or total memory savings from parameter counts alone.

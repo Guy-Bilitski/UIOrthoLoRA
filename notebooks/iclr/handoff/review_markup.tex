@@ -1,0 +1,32 @@
+% Review semantics: blue = pending addition; gray = removed original; black = retained.
+\newif\ifdiff
+\ifdefined\ICLRCleanBuild\difffalse\else\difftrue\fi
+\definecolor{additionblue}{RGB}{0,65,170}
+\definecolor{cutgray}{RGB}{110,110,110}
+\long\def\new#1{{\ifdiff\color{additionblue}\fi#1}}
+\long\def\cut#1{\ifdiff{\color{cutgray}[cut: #1]}\fi}
+\newenvironment{newpart}{\par\begingroup\ifdiff\color{additionblue}\fi}{\par\endgroup}
+\long\def\reviewnote#1{\ifdiff\par{\small\color{additionblue}\textbf{Author review note:} #1}\par\fi}
+\input{review/original_refs}
+\makeatletter
+\newcommand{\reviewcutfile}[1]{%
+  \ifdiff\par\begingroup\small\color{cutgray}%
+  \edef\savedreviewequation{\the\c@equation}%
+  \edef\savedreviewtable{\the\c@table}%
+  \edef\savedreviewfigure{\the\c@figure}%
+  \edef\savedreviewfootnote{\the\c@footnote}%
+  \let\reviewoldheading\subsubsection
+  \def\section##1{\reviewoldheading*{##1}}%
+  \def\subsection##1{\reviewoldheading*{##1}}%
+  \def\subsubsection##1{\reviewoldheading*{##1}}%
+  \let\label\@gobble
+  \long\def\caption##1{\par\textbf{Original caption:} ##1\par}%
+  \def\ref##1{\ifcsname reviewref@##1\endcsname\csname reviewref@##1\endcsname\else original\fi}%
+  \textbf{[cut: original passage replaced or relocated below]}\par
+  \input{#1}\par\textbf{[end cut]}\par
+  \setcounter{equation}{\savedreviewequation}%
+  \setcounter{table}{\savedreviewtable}%
+  \setcounter{figure}{\savedreviewfigure}%
+  \setcounter{footnote}{\savedreviewfootnote}%
+  \endgroup\fi}
+\makeatother

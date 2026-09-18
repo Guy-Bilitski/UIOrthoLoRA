@@ -1,0 +1,3519 @@
+{
+  "interval_scope": "Nominal unadjusted paired t intervals, df=2; normal seed-difference assumption; not equivalence tests.",
+  "learned_since_insertion_available": false,
+  "learning_health": {
+    "20260915T075556Z_4edea9e8b40d": "ok",
+    "20260915T075556Z_53b69e612ef3": "ok",
+    "20260915T075556Z_cc7e7f8944b0": "ok",
+    "20260915T075557Z_97c45bc387bd": "ok",
+    "20260915T084639Z_d2d060ebfa93": "ok",
+    "20260915T084640Z_c58ad0948c06": "ok",
+    "20260915T090945Z_e402b5027cd9": "ok",
+    "20260915T094343Z_fcadc1afbc22": "ok",
+    "20260915T094512Z_47be1c332b72": "ok",
+    "20260915T105130Z_c2b425d1d961": "ok",
+    "20260915T114243Z_391013d74cce": "ok",
+    "20260915T114243Z_5062d33fbceb": "ok",
+    "20260915T114243Z_e1e8dd4c0a0e": "ok",
+    "20260915T130722Z_d63cc1d6651a": "ok",
+    "20260915T142644Z_15887c2a364b": "ok",
+    "20260915T151051Z_54c08f5284dd": "ok",
+    "20260915T152508Z_4a28d7ab3e0f": "ok",
+    "20260915T160909Z_3855f315e3f8": "ok",
+    "20260915T161952Z_c18701296af4": "ok",
+    "20260915T165509Z_eab81e298a46": "ok",
+    "20260915T173452Z_dfe96a7443f7": "ok",
+    "20260915T174530Z_478957d306e5": "ok",
+    "20260915T182600Z_bc137719ec8e": "ok",
+    "20260915T185253Z_af560c77a629": "ok",
+    "20260915T191101Z_5b8a71b69aca": "ok",
+    "20260915T195601Z_d3bd63b590af": "ok",
+    "20260915T200324Z_1d3c3268fbb6": "ok",
+    "20260915T203801Z_943d4b96cad1": "ok",
+    "20260915T211954Z_d7a52081d57d": "ok",
+    "20260915T212602Z_58586c0a5cf0": "ok",
+    "20260915T221233Z_19931be7dae9": "ok",
+    "20260915T224055Z_d4940a071b06": "ok",
+    "20260915T225603Z_c2d576f8406b": "ok",
+    "20260915T233934Z_070308d31c17": "ok",
+    "20260915T235256Z_aff3c233f70d": "ok",
+    "20260916T000843Z_b0efcbf2424f": "ok"
+  },
+  "seed_order": [
+    17,
+    42,
+    123
+  ],
+  "snapshot_rows": 36,
+  "source_sha256": {
+    "runs.csv": "b401cc771f45cfb82fdd4d455c0d12a897d657b4e09ce59610383738896367a9",
+    "selection_final.json": "4c92bfead0c62bdac696d4abdec150351110ffe147609f0a0b036c8f0ba3d6ff"
+  },
+  "tasks": {
+    "mrpc": {
+      "arms": {
+        "P1_MIX": {
+          "LL_pp": {
+            "mean": 69.78591593815959,
+            "nominal_t95": [
+              66.99724138526419,
+              72.57459049105499
+            ],
+            "sample_sd": 1.1225925759828532,
+            "values": [
+              70.11749036684505,
+              70.70537426761479,
+              68.53488318001894
+            ]
+          },
+          "TT_pp": {
+            "mean": 25.756480281590378,
+            "nominal_t95": [
+              22.24334596664359,
+              29.269614596537163
+            ],
+            "sample_sd": 1.4142268757374798,
+            "values": [
+              25.12576790925446,
+              24.76734841354128,
+              27.376324521975388
+            ]
+          },
+          "accuracy_pp": {
+            "mean": 84.51407811080836,
+            "nominal_t95": [
+              83.32552158015072,
+              85.70263464146599
+            ],
+            "sample_sd": 0.47845839022946035,
+            "values": [
+              84.46866485013625,
+              84.0599455040872,
+              85.01362397820164
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": 85.149863760218,
+            "nominal_t95": [
+              83.59894426421675,
+              86.70078325621924
+            ],
+            "sample_sd": 0.6243291137541993,
+            "values": [
+              84.46866485013625,
+              85.28610354223434,
+              85.69482288828338
+            ]
+          },
+          "cross_pp": {
+            "mean": 4.457612930350187,
+            "nominal_t95": [
+              3.614540288887566,
+              5.300685571812808
+            ],
+            "sample_sd": 0.3393824092300574,
+            "values": [
+              4.756751597340755,
+              4.527286528618114,
+              4.088800665091693
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": 5.483638271989496,
+            "nominal_t95": [
+              5.186767401367626,
+              5.780509142611366
+            ],
+            "sample_sd": 0.11950660755291738,
+            "values": [
+              5.498087557662535,
+              5.595263294093443,
+              5.35756396421251
+            ]
+          },
+          "f1_pp": {
+            "mean": 88.86604515493315,
+            "nominal_t95": [
+              87.92256547050071,
+              89.80952483936558
+            ],
+            "sample_sd": 0.37980168328886665,
+            "values": [
+              88.95348837209302,
+              88.45014807502469,
+              89.19449901768172
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": 7.359288669177535e-05,
+            "nominal_t95": [
+              6.349946200573846e-05,
+              8.368631137781224e-05
+            ],
+            "sample_sd": 4.063150218451507e-06,
+            "values": [
+              7.740369460724613e-05,
+              6.931735679408625e-05,
+              7.405760867399367e-05
+            ]
+          },
+          "probe_ce": {
+            "mean": 2.835369829017997,
+            "nominal_t95": [
+              2.412858472934761,
+              3.257881185101233
+            ],
+            "sample_sd": 0.1700837091639212,
+            "values": [
+              2.7209796674905258,
+              3.0308206016437556,
+              2.75430921791971
+            ]
+          },
+          "rho": {
+            "mean": 0.04067563102357215,
+            "nominal_t95": [
+              0.0363551404058721,
+              0.044996121641272195
+            ],
+            "sample_sd": 0.0017392315238068513,
+            "values": [
+              0.04033904469138803,
+              0.039129293464363966,
+              0.04255855491496445
+            ]
+          }
+        },
+        "P1_NORM": {
+          "LL_pp": {
+            "mean": 40.63970124610849,
+            "nominal_t95": [
+              40.11762711112249,
+              41.161775381094486
+            ],
+            "sample_sd": 0.2101631212001596,
+            "values": [
+              40.423672788436775,
+              40.6519693699605,
+              40.843461579928196
+            ]
+          },
+          "TT_pp": {
+            "mean": 13.153635054805584,
+            "nominal_t95": [
+              12.868102026307916,
+              13.439168083303251
+            ],
+            "sample_sd": 0.11494251190285984,
+            "values": [
+              13.273043483887406,
+              13.14411053078482,
+              13.043751149744526
+            ]
+          },
+          "accuracy_pp": {
+            "mean": 84.78655767484105,
+            "nominal_t95": [
+              84.39576269485046,
+              85.17735265483164
+            ],
+            "sample_sd": 0.15731614964295546,
+            "values": [
+              84.87738419618529,
+              84.87738419618529,
+              84.60490463215258
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": 85.55858310626704,
+            "nominal_t95": [
+              84.88170634558053,
+              86.23545986695355
+            ],
+            "sample_sd": 0.27247956403269313,
+            "values": [
+              85.83106267029973,
+              85.28610354223434,
+              85.55858310626702
+            ]
+          },
+          "cross_pp": {
+            "mean": 46.20667442077768,
+            "nominal_t95": [
+              45.96999021411684,
+              46.44335862743852
+            ],
+            "sample_sd": 0.09527821486877379,
+            "values": [
+              46.3032947569182,
+              46.2039309204773,
+              46.112797584937546
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": 46.210956355215906,
+            "nominal_t95": [
+              46.0705174055742,
+              46.35139530485761
+            ],
+            "sample_sd": 0.05653428510792568,
+            "values": [
+              46.25820175219771,
+              46.226346856294995,
+              46.14832045715501
+            ]
+          },
+          "f1_pp": {
+            "mean": 88.96887632223043,
+            "nominal_t95": [
+              88.55942260774732,
+              89.37833003671354
+            ],
+            "sample_sd": 0.1648273010596016,
+            "values": [
+              89.06403940886699,
+              89.06403940886699,
+              88.77855014895731
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": 0.0008260276754097716,
+            "nominal_t95": [
+              0.0007807701285905609,
+              0.0008712852222289824
+            ],
+            "sample_sd": 1.8218614292475347e-05,
+            "values": [
+              0.0008391837348442957,
+              0.0008052332297639276,
+              0.0008336660616210916
+            ]
+          },
+          "probe_ce": {
+            "mean": 2.567270946296108,
+            "nominal_t95": [
+              2.2920401925809224,
+              2.8425017000112933
+            ],
+            "sample_sd": 0.11079528820673461,
+            "values": [
+              2.5210198487260587,
+              2.4870948839175706,
+              2.6936981062446943
+            ]
+          },
+          "rho": {
+            "mean": 0.042279235101565865,
+            "nominal_t95": [
+              0.0411315557993516,
+              0.04342691440378013
+            ],
+            "sample_sd": 0.00046200309137444474,
+            "values": [
+              0.042571855706036076,
+              0.04174662602529807,
+              0.042519223573363456
+            ]
+          }
+        },
+        "P1_UNREG": {
+          "LL_pp": {
+            "mean": 48.00185069399565,
+            "nominal_t95": [
+              47.74248079143746,
+              48.26122059655384
+            ],
+            "sample_sd": 0.10441043639994181,
+            "values": [
+              47.892878697352145,
+              48.10100622544539,
+              48.01166715918942
+            ]
+          },
+          "TT_pp": {
+            "mean": 9.64256124554967,
+            "nominal_t95": [
+              9.496439328440776,
+              9.788683162658565
+            ],
+            "sample_sd": 0.05882198737192673,
+            "values": [
+              9.68938502053941,
+              9.57653859920019,
+              9.66176011690941
+            ]
+          },
+          "accuracy_pp": {
+            "mean": 84.9227974568574,
+            "nominal_t95": [
+              84.53200247686681,
+              85.31359243684798
+            ],
+            "sample_sd": 0.15731614964295546,
+            "values": [
+              84.74114441416893,
+              85.01362397820164,
+              85.01362397820164
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": 85.33151680290645,
+            "nominal_t95": [
+              84.94072182291589,
+              85.72231178289701
+            ],
+            "sample_sd": 0.15731614964294724,
+            "values": [
+              85.42234332425068,
+              85.14986376021798,
+              85.42234332425068
+            ]
+          },
+          "cross_pp": {
+            "mean": 42.35559765774946,
+            "nominal_t95": [
+              42.221798179705026,
+              42.4893971357939
+            ],
+            "sample_sd": 0.053861538115702864,
+            "values": [
+              42.41774615296351,
+              42.322464600981355,
+              42.32658221930353
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": 42.245784258325116,
+            "nominal_t95": [
+              42.15615073861689,
+              42.335417778033346
+            ],
+            "sample_sd": 0.03608234732131122,
+            "values": [
+              42.277372445081994,
+              42.253518352961805,
+              42.20646197693155
+            ]
+          },
+          "f1_pp": {
+            "mean": 89.12150491741333,
+            "nominal_t95": [
+              88.82668676090321,
+              89.41632307392345
+            ],
+            "sample_sd": 0.11868027892304096,
+            "values": [
+              89.04109589041096,
+              89.2578125,
+              89.06560636182903
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": 0.013760499918414874,
+            "nominal_t95": [
+              0.013464354167642113,
+              0.014056645669187635
+            ],
+            "sample_sd": 0.00011921470753236404,
+            "values": [
+              0.013642963035409123,
+              0.013881324442149843,
+              0.013757212277685657
+            ]
+          },
+          "probe_ce": {
+            "mean": 2.7525747973631094,
+            "nominal_t95": [
+              2.5875889439304327,
+              2.917560650795786
+            ],
+            "sample_sd": 0.06641574364187401,
+            "values": [
+              2.8141418571205206,
+              2.6821910923822196,
+              2.7613914425865884
+            ]
+          },
+          "rho": {
+            "mean": 0.1802436007405437,
+            "nominal_t95": [
+              0.1780515538787955,
+              0.18243564760229192
+            ],
+            "sample_sd": 0.0008824176097028253,
+            "values": [
+              0.17934140047726851,
+              0.1811048067751177,
+              0.18028459496924493
+            ]
+          }
+        }
+      },
+      "calibration_cross_range_pp": [
+        42.41278119553922,
+        48.60208640772951
+      ],
+      "calibration_norm_range": [
+        0.021165725016329785,
+        0.1792580586326094
+      ],
+      "energy_ratios_of_seed_means": {
+        "P1_NORM_over_MIX": 11.224286918780255,
+        "P1_UNREG_over_MIX": 186.9813855250324
+      },
+      "matching": [
+        {
+          "error_percent": 5.535111284191441,
+          "passes_5pct": false,
+          "seed": 17,
+          "signed_error_percent": 5.535111284191441
+        },
+        {
+          "error_percent": 6.688933863111468,
+          "passes_5pct": false,
+          "seed": 42,
+          "signed_error_percent": 6.688933863111468
+        },
+        {
+          "error_percent": 0.09241700447673029,
+          "passes_5pct": true,
+          "seed": 123,
+          "signed_error_percent": -0.09241700447673029
+        }
+      ],
+      "module_pairs": [
+        {
+          "globally_rescaled_ratio_quantiles": [
+            0.21191509555162602,
+            0.9470520967843032,
+            1.8392767845446758,
+            3.6997106079590236,
+            341.0445056051029
+          ],
+          "mix_median_rho": 0.023372880029289313,
+          "mix_modules_below_1e6": 0,
+          "modules": {
+            "roberta.encoder.layer.0.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 3.7873261809381344,
+              "mix_rho": 0.012421975897118461,
+              "norm_rho": 0.049650127114447475,
+              "raw_norm_over_mix": 3.996958899748378
+            },
+            "roberta.encoder.layer.0.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 10.44872905768294,
+              "mix_rho": 0.0022581806351731097,
+              "norm_rho": 0.024901133638145796,
+              "raw_norm_over_mix": 11.027077838809339
+            },
+            "roberta.encoder.layer.0.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 15.621966490426587,
+              "mix_rho": 0.0016134813991010946,
+              "norm_rho": 0.026600918792256612,
+              "raw_norm_over_mix": 16.486659720450795
+            },
+            "roberta.encoder.layer.0.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.583937926203224,
+              "mix_rho": 0.00871179929029448,
+              "norm_rho": 0.04214475772885066,
+              "raw_norm_over_mix": 4.83766399161683
+            },
+            "roberta.encoder.layer.1.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 5.65923430719936,
+              "mix_rho": 0.007289306482624956,
+              "norm_rho": 0.04353523152437944,
+              "raw_norm_over_mix": 5.972479223935985
+            },
+            "roberta.encoder.layer.1.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.400989752700173,
+              "mix_rho": 0.007741431199997585,
+              "norm_rho": 0.027785841516812133,
+              "raw_norm_over_mix": 3.589238320276075
+            },
+            "roberta.encoder.layer.1.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 4.231979783858244,
+              "mix_rho": 0.006589457115436258,
+              "norm_rho": 0.029429995301043413,
+              "raw_norm_over_mix": 4.466224574419282
+            },
+            "roberta.encoder.layer.1.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.126301062316122,
+              "mix_rho": 0.009112870791227036,
+              "norm_rho": 0.0396837857925821,
+              "raw_norm_over_mix": 4.3546964180360925
+            },
+            "roberta.encoder.layer.10.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 341.0445056051029,
+              "mix_rho": 7.224200272132276e-05,
+              "norm_rho": 0.026001464323870245,
+              "raw_norm_over_mix": 359.9216985189659
+            },
+            "roberta.encoder.layer.10.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 0.9481683243787415,
+              "mix_rho": 0.017652556978381417,
+              "norm_rho": 0.01766403990128533,
+              "raw_norm_over_mix": 1.0006504962945582
+            },
+            "roberta.encoder.layer.10.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.7327341609138991,
+              "mix_rho": 0.02300526980711877,
+              "norm_rho": 0.017789786777865194,
+              "raw_norm_over_mix": 0.7732918121377698
+            },
+            "roberta.encoder.layer.10.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 11.05572022497223,
+              "mix_rho": 0.0022501488915956653,
+              "norm_rho": 0.026253987163564054,
+              "raw_norm_over_mix": 11.667666642693304
+            },
+            "roberta.encoder.layer.11.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.21191509555162602,
+              "mix_rho": 0.1778007123122508,
+              "norm_rho": 0.03976421042004675,
+              "raw_norm_over_mix": 0.22364483191840914
+            },
+            "roberta.encoder.layer.11.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.1183968505495305,
+              "mix_rho": 0.009342344403501263,
+              "norm_rho": 0.03074568893833585,
+              "raw_norm_over_mix": 3.291003586510168
+            },
+            "roberta.encoder.layer.11.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.6120291225021081,
+              "mix_rho": 0.03789318497381863,
+              "norm_rho": 0.02447542096468897,
+              "raw_norm_over_mix": 0.6459056155242601
+            },
+            "roberta.encoder.layer.11.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.3180225174247879,
+              "mix_rho": 0.12949301375999586,
+              "norm_rho": 0.04346114682893894,
+              "raw_norm_over_mix": 0.335625417673037
+            },
+            "roberta.encoder.layer.2.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1.4796021928698788,
+              "mix_rho": 0.030177321786406613,
+              "norm_rho": 0.047121882561956284,
+              "raw_norm_over_mix": 1.5614998208085635
+            },
+            "roberta.encoder.layer.2.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.473519577047835,
+              "mix_rho": 0.02729727074432865,
+              "norm_rho": 0.04244945413194415,
+              "raw_norm_over_mix": 1.5550805254317799
+            },
+            "roberta.encoder.layer.2.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2.176744153050671,
+              "mix_rho": 0.019134983764557117,
+              "norm_rho": 0.04395744658923255,
+              "raw_norm_over_mix": 2.2972293642941564
+            },
+            "roberta.encoder.layer.2.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.8121635725056193,
+              "mix_rho": 0.023740490251459852,
+              "norm_rho": 0.045402947920978584,
+              "raw_norm_over_mix": 1.9124688428953847
+            },
+            "roberta.encoder.layer.3.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.9835244022716133,
+              "mix_rho": 0.05451405848901757,
+              "norm_rho": 0.056583606897710505,
+              "raw_norm_over_mix": 1.0379635724445258
+            },
+            "roberta.encoder.layer.3.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.6705054169659865,
+              "mix_rho": 0.012661324129848661,
+              "norm_rho": 0.049045816467017576,
+              "raw_norm_over_mix": 3.873671976487329
+            },
+            "roberta.encoder.layer.3.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 3.6262642729448555,
+              "mix_rho": 0.0105356208395953,
+              "norm_rho": 0.04031963169030319,
+              "raw_norm_over_mix": 3.8269820359112288
+            },
+            "roberta.encoder.layer.3.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 2.0637035961956087,
+              "mix_rho": 0.02713251671339279,
+              "norm_rho": 0.05909277331979906,
+              "raw_norm_over_mix": 2.1779318868208963
+            },
+            "roberta.encoder.layer.4.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.9437034140009883,
+              "mix_rho": 0.06677684621562813,
+              "norm_rho": 0.06650562859292196,
+              "raw_norm_over_mix": 0.995938448158657
+            },
+            "roberta.encoder.layer.4.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.7165641614986438,
+              "mix_rho": 0.022356214616980077,
+              "norm_rho": 0.06409368026031173,
+              "raw_norm_over_mix": 2.8669290109440557
+            },
+            "roberta.encoder.layer.4.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 3.1195317497873134,
+              "mix_rho": 0.015578955267538976,
+              "norm_rho": 0.05128905684182226,
+              "raw_norm_over_mix": 3.2922013036837257
+            },
+            "roberta.encoder.layer.4.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.8663899965837323,
+              "mix_rho": 0.03630697725498133,
+              "norm_rho": 0.07151373546059688,
+              "raw_norm_over_mix": 1.9696967598916586
+            },
+            "roberta.encoder.layer.5.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.6503774701671565,
+              "mix_rho": 0.09144778594172849,
+              "norm_rho": 0.06276761919499689,
+              "raw_norm_over_mix": 0.6863765869082177
+            },
+            "roberta.encoder.layer.5.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.474967636705975,
+              "mix_rho": 0.02129295992969077,
+              "norm_rho": 0.055616356416460073,
+              "raw_norm_over_mix": 2.6119598496453738
+            },
+            "roberta.encoder.layer.5.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.9886242553184983,
+              "mix_rho": 0.02452577648849899,
+              "norm_rho": 0.05147216914589876,
+              "raw_norm_over_mix": 2.0986968208748005
+            },
+            "roberta.encoder.layer.5.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3.982010390158206,
+              "mix_rho": 0.01474910822857773,
+              "norm_rho": 0.06198193407761779,
+              "raw_norm_over_mix": 4.2024190966015285
+            },
+            "roberta.encoder.layer.6.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.9588982390968199,
+              "mix_rho": 0.0592318601922369,
+              "norm_rho": 0.05994112166148541,
+              "raw_norm_over_mix": 1.011974323732981
+            },
+            "roberta.encoder.layer.6.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.8049629924322312,
+              "mix_rho": 0.03513324505755294,
+              "norm_rho": 0.06692425406773131,
+              "raw_norm_over_mix": 1.904869702701827
+            },
+            "roberta.encoder.layer.6.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.2838553690247327,
+              "mix_rho": 0.04526310118988116,
+              "norm_rho": 0.061327799247893854,
+              "raw_norm_over_mix": 1.3549181924283185
+            },
+            "roberta.encoder.layer.6.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.7316060669628233,
+              "mix_rho": 0.030200240166639337,
+              "norm_rho": 0.05518950106424439,
+              "raw_norm_over_mix": 1.8274523897730262
+            },
+            "roberta.encoder.layer.7.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.23768082354570003,
+              "mix_rho": 0.20090016854370413,
+              "norm_rho": 0.050393139652444754,
+              "raw_norm_over_mix": 0.2508367216301372
+            },
+            "roberta.encoder.layer.7.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.1380336010852816,
+              "mix_rho": 0.04658905163458209,
+              "norm_rho": 0.05595461701395333,
+              "raw_norm_over_mix": 1.2010250273568432
+            },
+            "roberta.encoder.layer.7.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.1714158419783316,
+              "mix_rho": 0.026632071312311024,
+              "norm_rho": 0.032924031651303774,
+              "raw_norm_over_mix": 1.2362550124324805
+            },
+            "roberta.encoder.layer.7.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.7964069077206678,
+              "mix_rho": 0.06923780447459302,
+              "norm_rho": 0.05819360725247264,
+              "raw_norm_over_mix": 0.8404889163379946
+            },
+            "roberta.encoder.layer.8.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.49920291068896144,
+              "mix_rho": 0.05628382612053213,
+              "norm_rho": 0.029652252799418636,
+              "raw_norm_over_mix": 0.5268343473295183
+            },
+            "roberta.encoder.layer.8.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.8853498396432737,
+              "mix_rho": 0.006979236894930181,
+              "norm_rho": 0.028617720731448283,
+              "raw_norm_over_mix": 4.100408277047682
+            },
+            "roberta.encoder.layer.8.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.4667519713740254,
+              "mix_rho": 0.04021196110922866,
+              "norm_rho": 0.019807897828363837,
+              "raw_norm_over_mix": 0.4925872124107351
+            },
+            "roberta.encoder.layer.8.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.8640616754534278,
+              "mix_rho": 0.030870441811744115,
+              "norm_rho": 0.02815039935779742,
+              "raw_norm_over_mix": 0.9118884507538242
+            },
+            "roberta.encoder.layer.9.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1.154540496569834,
+              "mix_rho": 0.01572194364393828,
+              "norm_rho": 0.019156333023011642,
+              "raw_norm_over_mix": 1.218445597876031
+            },
+            "roberta.encoder.layer.9.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 7.8149636302182195,
+              "mix_rho": 0.0020716218341783523,
+              "norm_rho": 0.017085764394373315,
+              "raw_norm_over_mix": 8.247530563969885
+            },
+            "roberta.encoder.layer.9.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.31510621388602866,
+              "mix_rho": 0.0463951580185575,
+              "norm_rho": 0.015428602788083636,
+              "raw_norm_over_mix": 0.33254769348802266
+            },
+            "roberta.encoder.layer.9.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 2.4853624620976738,
+              "mix_rho": 0.008367120497729608,
+              "norm_rho": 0.021946371703387004,
+              "raw_norm_over_mix": 2.6229300401903
+            }
+          },
+          "modules_within_5pct": 4,
+          "norm_median_rho": 0.04295530048044154,
+          "norm_modules_below_1e6": 0,
+          "raw_ratio_quantiles": [
+            0.22364483191840914,
+            0.9994724842605829,
+            1.9410828013935215,
+            3.904493707302591,
+            359.9216985189659
+          ],
+          "rescaled_modules_within_5pct": 2,
+          "seed": 17
+        },
+        {
+          "globally_rescaled_ratio_quantiles": [
+            0.26634258744922923,
+            0.8056123087293819,
+            1.5173539511610552,
+            2.7590324498615733,
+            24899.577007858963
+          ],
+          "mix_median_rho": 0.027723395996117554,
+          "mix_modules_below_1e6": 1,
+          "modules": {
+            "roberta.encoder.layer.0.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1.635582258204356,
+              "mix_rho": 0.02833888879732943,
+              "norm_rho": 0.0494509436252808,
+              "raw_norm_over_mix": 1.7449852737324303
+            },
+            "roberta.encoder.layer.0.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 33.27368803141539,
+              "mix_rho": 0.0007421355200651086,
+              "norm_rho": 0.02634532339237693,
+              "raw_norm_over_mix": 35.4993430176548
+            },
+            "roberta.encoder.layer.0.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 24.36478826082274,
+              "mix_rho": 0.0010703443631308585,
+              "norm_rho": 0.0278231016905314,
+              "raw_norm_over_mix": 25.994532833476317
+            },
+            "roberta.encoder.layer.0.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.168422877707819,
+              "mix_rho": 0.035785000778370976,
+              "norm_rho": 0.044608791523993364,
+              "raw_norm_over_mix": 1.2465779112391588
+            },
+            "roberta.encoder.layer.1.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1.3456473924072503,
+              "mix_rho": 0.028672157170883002,
+              "norm_rho": 0.04116337903348416,
+              "raw_norm_over_mix": 1.4356568565160552
+            },
+            "roberta.encoder.layer.1.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.3058294670862685,
+              "mix_rho": 0.009495672137721256,
+              "norm_rho": 0.023359969491813782,
+              "raw_norm_over_mix": 2.4600648751358047
+            },
+            "roberta.encoder.layer.1.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2.174996479003016,
+              "mix_rho": 0.01327986235195565,
+              "norm_rho": 0.030815662360902944,
+              "raw_norm_over_mix": 2.320480555008531
+            },
+            "roberta.encoder.layer.1.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 2.0419774546893237,
+              "mix_rho": 0.01627268850140725,
+              "norm_rho": 0.0354510929640018,
+              "raw_norm_over_mix": 2.1785639761331397
+            },
+            "roberta.encoder.layer.10.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 24899.577007858963,
+              "mix_rho": 8.440817609911544e-07,
+              "norm_rho": 0.02242311068807004,
+              "raw_norm_over_mix": 26565.093246109158
+            },
+            "roberta.encoder.layer.10.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 0.7018498326413444,
+              "mix_rho": 0.02379860588400598,
+              "norm_rho": 0.017820303360984443,
+              "raw_norm_over_mix": 0.7487961037650824
+            },
+            "roberta.encoder.layer.10.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.9002312807070382,
+              "mix_rho": 0.017739215430589133,
+              "norm_rho": 0.017037579004456183,
+              "raw_norm_over_mix": 0.9604471556885733
+            },
+            "roberta.encoder.layer.10.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 70.3759780517175,
+              "mix_rho": 0.00026041763485890176,
+              "norm_rho": 0.01955303641366562,
+              "raw_norm_over_mix": 75.08338067911473
+            },
+            "roberta.encoder.layer.11.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.28307737201264865,
+              "mix_rho": 0.13826165815542435,
+              "norm_rho": 0.04175671173177702,
+              "raw_norm_over_mix": 0.3020122302080087
+            },
+            "roberta.encoder.layer.11.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 8.077451466042223,
+              "mix_rho": 0.0037037049578858097,
+              "norm_rho": 0.03191759174315247,
+              "raw_norm_over_mix": 8.617746852430715
+            },
+            "roberta.encoder.layer.11.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.6368427589484674,
+              "mix_rho": 0.038085392760338906,
+              "norm_rho": 0.025876767817569958,
+              "raw_norm_over_mix": 0.6794407499065448
+            },
+            "roberta.encoder.layer.11.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.4036534284800671,
+              "mix_rho": 0.11059626288366206,
+              "norm_rho": 0.047628672049431366,
+              "raw_norm_over_mix": 0.43065353934728073
+            },
+            "roberta.encoder.layer.2.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.5926798631244087,
+              "mix_rho": 0.07092666203322219,
+              "norm_rho": 0.04484861838657219,
+              "raw_norm_over_mix": 0.63232382718878
+            },
+            "roberta.encoder.layer.2.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.1301290482153523,
+              "mix_rho": 0.028864583317876218,
+              "norm_rho": 0.03480268139323256,
+              "raw_norm_over_mix": 1.2057226328182884
+            },
+            "roberta.encoder.layer.2.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.5943293392862945,
+              "mix_rho": 0.023304145622501497,
+              "norm_rho": 0.03963972189422306,
+              "raw_norm_over_mix": 1.7009729743513369
+            },
+            "roberta.encoder.layer.2.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.602382292561232,
+              "mix_rho": 0.025603551053085732,
+              "norm_rho": 0.04377092411382097,
+              "raw_norm_over_mix": 1.7095645843448621
+            },
+            "roberta.encoder.layer.3.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.7518872115862195,
+              "mix_rho": 0.07026192504186682,
+              "norm_rho": 0.05636274264053237,
+              "raw_norm_over_mix": 0.8021804498944147
+            },
+            "roberta.encoder.layer.3.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.2773470584315527,
+              "mix_rho": 0.013725430264696916,
+              "norm_rho": 0.04799188152326955,
+              "raw_norm_over_mix": 3.4965666356346685
+            },
+            "roberta.encoder.layer.3.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2.0164605711648993,
+              "mix_rho": 0.020777956768566773,
+              "norm_rho": 0.04470045543923636,
+              "raw_norm_over_mix": 2.151340285145839
+            },
+            "roberta.encoder.layer.3.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 2.0091678227167797,
+              "mix_rho": 0.02848283562830287,
+              "norm_rho": 0.061054659436997366,
+              "raw_norm_over_mix": 2.143559729577222
+            },
+            "roberta.encoder.layer.4.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1.3613593027830713,
+              "mix_rho": 0.045188807326412714,
+              "norm_rho": 0.06563311516367976,
+              "raw_norm_over_mix": 1.4524197261855463
+            },
+            "roberta.encoder.layer.4.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.7073457673311836,
+              "mix_rho": 0.012618929682283474,
+              "norm_rho": 0.04991200178588062,
+              "raw_norm_over_mix": 3.955327673784829
+            },
+            "roberta.encoder.layer.4.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 4.805814020436339,
+              "mix_rho": 0.008467748768981759,
+              "norm_rho": 0.043416448980263825,
+              "raw_norm_over_mix": 5.127271741847464
+            },
+            "roberta.encoder.layer.4.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.5944390652488236,
+              "mix_rho": 0.03936253617688182,
+              "norm_rho": 0.06695921823219107,
+              "raw_norm_over_mix": 1.70109003981093
+            },
+            "roberta.encoder.layer.5.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.7852352758668562,
+              "mix_rho": 0.07410312473355699,
+              "norm_rho": 0.06208057035484072,
+              "raw_norm_over_mix": 0.837759144139411
+            },
+            "roberta.encoder.layer.5.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.34157422692525,
+              "mix_rho": 0.0196983557721197,
+              "norm_rho": 0.049210443781861436,
+              "raw_norm_over_mix": 2.4982005783199437
+            },
+            "roberta.encoder.layer.5.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2.58626091367158,
+              "mix_rho": 0.01751008172756332,
+              "norm_rho": 0.048314766474084184,
+              "raw_norm_over_mix": 2.759254195714574
+            },
+            "roberta.encoder.layer.5.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.090217342569673,
+              "mix_rho": 0.014070565857265604,
+              "norm_rho": 0.06140126579907068,
+              "raw_norm_over_mix": 4.363809275471674
+            },
+            "roberta.encoder.layer.6.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.6590973705755729,
+              "mix_rho": 0.08720416461700158,
+              "norm_rho": 0.06132056961088174,
+              "raw_norm_over_mix": 0.7031839577868797
+            },
+            "roberta.encoder.layer.6.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.3795121319776842,
+              "mix_rho": 0.04518932478106531,
+              "norm_rho": 0.06650905108642402,
+              "raw_norm_over_mix": 1.4717867861192704
+            },
+            "roberta.encoder.layer.6.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.440378563035816,
+              "mix_rho": 0.0438132473093985,
+              "norm_rho": 0.06732889198865465,
+              "raw_norm_over_mix": 1.536724532495717
+            },
+            "roberta.encoder.layer.6.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.6342731333991878,
+              "mix_rho": 0.031183250587129716,
+              "norm_rho": 0.05437075968692448,
+              "raw_norm_over_mix": 1.743588582434859
+            },
+            "roberta.encoder.layer.7.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.28273681362664455,
+              "mix_rho": 0.1664990683742448,
+              "norm_rho": 0.05022425951024022,
+              "raw_norm_over_mix": 0.3016488920967995
+            },
+            "roberta.encoder.layer.7.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.1100739646031925,
+              "mix_rho": 0.0473570901794427,
+              "norm_rho": 0.05608623687426028,
+              "raw_norm_over_mix": 1.1843260779271194
+            },
+            "roberta.encoder.layer.7.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.2559795379346745,
+              "mix_rho": 0.0255638210282188,
+              "norm_rho": 0.03425529466813402,
+              "raw_norm_over_mix": 1.3399911785613379
+            },
+            "roberta.encoder.layer.7.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.9901150678228238,
+              "mix_rho": 0.04611970550041065,
+              "norm_rho": 0.04871823774694077,
+              "raw_norm_over_mix": 1.0563432098781937
+            },
+            "roberta.encoder.layer.8.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.26634258744922923,
+              "mix_rho": 0.11208592405937173,
+              "norm_rho": 0.03185011951559444,
+              "raw_norm_over_mix": 0.284158066973008
+            },
+            "roberta.encoder.layer.8.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 0.8124046530168906,
+              "mix_rho": 0.04020574667840471,
+              "norm_rho": 0.03484816460064586,
+              "raw_norm_over_mix": 0.8667458629580306
+            },
+            "roberta.encoder.layer.8.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.4395341633598746,
+              "mix_rho": 0.0504544166442181,
+              "norm_rho": 0.023659807199445135,
+              "raw_norm_over_mix": 0.46893431285279696
+            },
+            "roberta.encoder.layer.8.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.8676584636605847,
+              "mix_rho": 0.038523490333339086,
+              "norm_rho": 0.03566102412880192,
+              "raw_norm_over_mix": 0.9256955644525303
+            },
+            "roberta.encoder.layer.9.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 4.4875401273280815,
+              "mix_rho": 0.006154564653597355,
+              "norm_rho": 0.02946626285075782,
+              "raw_norm_over_mix": 4.787708718525645
+            },
+            "roberta.encoder.layer.9.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 30.231440723496647,
+              "mix_rho": 0.0008527704052814852,
+              "norm_rho": 0.027504917078225385,
+              "raw_norm_over_mix": 32.253601799357085
+            },
+            "roberta.encoder.layer.9.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.5592235516409594,
+              "mix_rho": 0.02710790319490568,
+              "norm_rho": 0.016173378664131387,
+              "raw_norm_over_mix": 0.5966296451571662
+            },
+            "roberta.encoder.layer.9.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.8740341573829244,
+              "mix_rho": 0.004958936121747567,
+              "norm_rho": 0.025786740964523606,
+              "raw_norm_over_mix": 5.200055078635731
+            }
+          },
+          "modules_within_5pct": 1,
+          "norm_median_rho": 0.04258658035602042,
+          "norm_modules_below_1e6": 0,
+          "raw_ratio_quantiles": [
+            0.284158066973008,
+            0.8594991832533757,
+            1.618848753423527,
+            2.943582305694598,
+            26565.093246109158
+          ],
+          "rescaled_modules_within_5pct": 1,
+          "seed": 42
+        },
+        {
+          "globally_rescaled_ratio_quantiles": [
+            0.2139301815124208,
+            1.0122328926957784,
+            1.7284275994965426,
+            2.552757820352033,
+            293528803.46000093
+          ],
+          "mix_median_rho": 0.027303029133498136,
+          "mix_modules_below_1e6": 1,
+          "modules": {
+            "roberta.encoder.layer.0.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1.7270891141920266,
+              "mix_rho": 0.02932071665512918,
+              "norm_rho": 0.0505926910551289,
+              "raw_norm_over_mix": 1.7254929901680467
+            },
+            "roberta.encoder.layer.0.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 22.4264870224773,
+              "mix_rho": 0.0011747015916514032,
+              "norm_rho": 0.026320083267400735,
+              "raw_norm_over_mix": 22.405761134961764
+            },
+            "roberta.encoder.layer.0.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 14.138699442400403,
+              "mix_rho": 0.0022674015555606253,
+              "norm_rho": 0.03202848196517212,
+              "raw_norm_over_mix": 14.125632879903769
+            },
+            "roberta.encoder.layer.0.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.221221261097935,
+              "mix_rho": 0.03448144384252806,
+              "norm_rho": 0.04207055602091784,
+              "raw_norm_over_mix": 1.2200926449903953
+            },
+            "roberta.encoder.layer.1.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 2.01600262528397,
+              "mix_rho": 0.023063428674096227,
+              "norm_rho": 0.046452962606771876,
+              "raw_norm_over_mix": 2.0141394960475103
+            },
+            "roberta.encoder.layer.1.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.1843575633692147,
+              "mix_rho": 0.01316435305016892,
+              "norm_rho": 0.028729079037814104,
+              "raw_norm_over_mix": 2.182338845542088
+            },
+            "roberta.encoder.layer.1.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.6154173162171872,
+              "mix_rho": 0.017841856767122466,
+              "norm_rho": 0.028795407905036034,
+              "raw_norm_over_mix": 1.6139243959237408
+            },
+            "roberta.encoder.layer.1.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3.3140117060759327,
+              "mix_rho": 0.012526061665709859,
+              "norm_rho": 0.0414731512925237,
+              "raw_norm_over_mix": 3.310948995729169
+            },
+            "roberta.encoder.layer.10.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 293528803.46000093,
+              "mix_rho": 7.76194233426943e-11,
+              "norm_rho": 0.02276248059712702,
+              "raw_norm_over_mix": 293257532.9325668
+            },
+            "roberta.encoder.layer.10.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 0.8179357640039996,
+              "mix_rho": 0.019261641282156624,
+              "norm_rho": 0.015740225177476003,
+              "raw_norm_over_mix": 0.8171798522723632
+            },
+            "roberta.encoder.layer.10.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.9745119390195358,
+              "mix_rho": 0.018450072847276944,
+              "norm_rho": 0.017963199857848593,
+              "raw_norm_over_mix": 0.9736113242772259
+            },
+            "roberta.encoder.layer.10.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 357.17660313465313,
+              "mix_rho": 6.101925401355361e-05,
+              "norm_rho": 0.021774507911821544,
+              "raw_norm_over_mix": 356.84651121734436
+            },
+            "roberta.encoder.layer.11.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.2139301815124208,
+              "mix_rho": 0.167089358494729,
+              "norm_rho": 0.03571242191116803,
+              "raw_norm_over_mix": 0.21373247364699538
+            },
+            "roberta.encoder.layer.11.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 5.326429785234149,
+              "mix_rho": 0.005052356081680551,
+              "norm_rho": 0.02688614956058884,
+              "raw_norm_over_mix": 5.321507258381079
+            },
+            "roberta.encoder.layer.11.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.8227697355109416,
+              "mix_rho": 0.026215753694059214,
+              "norm_rho": 0.02154959482074623,
+              "raw_norm_over_mix": 0.8220093563676413
+            },
+            "roberta.encoder.layer.11.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.3206497796466399,
+              "mix_rho": 0.12219838989582052,
+              "norm_rho": 0.039146675143027186,
+              "raw_norm_over_mix": 0.3203534447254292
+            },
+            "roberta.encoder.layer.2.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1.7719224978897468,
+              "mix_rho": 0.026976501650347283,
+              "norm_rho": 0.047756094610770135,
+              "raw_norm_over_mix": 1.7702849401955478
+            },
+            "roberta.encoder.layer.2.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.516495177162117,
+              "mix_rho": 0.024070578299853183,
+              "norm_rho": 0.03646918100180603,
+              "raw_norm_over_mix": 1.5150936777463495
+            },
+            "roberta.encoder.layer.2.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.7868847985417724,
+              "mix_rho": 0.022027700806096374,
+              "norm_rho": 0.03932458749363931,
+              "raw_norm_over_mix": 1.78523341313751
+            },
+            "roberta.encoder.layer.2.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.7566089601085038,
+              "mix_rho": 0.027629556616648985,
+              "norm_rho": 0.048489472745736346,
+              "raw_norm_over_mix": 1.7549855547272017
+            },
+            "roberta.encoder.layer.3.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1.2446432708853912,
+              "mix_rho": 0.04867323965139944,
+              "norm_rho": 0.060524833224986065,
+              "raw_norm_over_mix": 1.2434930088580176
+            },
+            "roberta.encoder.layer.3.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 6.345359516532479,
+              "mix_rho": 0.007496615318885723,
+              "norm_rho": 0.047524757769978415,
+              "raw_norm_over_mix": 6.3394953253440205
+            },
+            "roberta.encoder.layer.3.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 3.2317665638429847,
+              "mix_rho": 0.012997930660283596,
+              "norm_rho": 0.04196745676350506,
+              "raw_norm_over_mix": 3.2287798619930004
+            },
+            "roberta.encoder.layer.3.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 2.297275702891121,
+              "mix_rho": 0.028042786782555774,
+              "norm_rho": 0.06436247582254505,
+              "raw_norm_over_mix": 2.295152629501937
+            },
+            "roberta.encoder.layer.4.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.6989068296000599,
+              "mix_rho": 0.09228316595518886,
+              "norm_rho": 0.0644377284382754,
+              "raw_norm_over_mix": 0.6982609208440602
+            },
+            "roberta.encoder.layer.4.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.1063164000702836,
+              "mix_rho": 0.017990602752270414,
+              "norm_rho": 0.05583285759161572,
+              "raw_norm_over_mix": 3.1034456355037694
+            },
+            "roberta.encoder.layer.4.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2.9528342866228083,
+              "mix_rho": 0.0167323113998165,
+              "norm_rho": 0.04936208163995637,
+              "raw_norm_over_mix": 2.95010536562795
+            },
+            "roberta.encoder.layer.4.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.7297660848010588,
+              "mix_rho": 0.037940348647577185,
+              "norm_rho": 0.06556727697063837,
+              "raw_norm_over_mix": 1.7281674868010313
+            },
+            "roberta.encoder.layer.5.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.7028999145115095,
+              "mix_rho": 0.09389010635237326,
+              "norm_rho": 0.06593435680509496,
+              "raw_norm_over_mix": 0.7022503154660484
+            },
+            "roberta.encoder.layer.5.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.088215234715147,
+              "mix_rho": 0.02837995975480479,
+              "norm_rho": 0.059208694802111876,
+              "raw_norm_over_mix": 2.086285368748196
+            },
+            "roberta.encoder.layer.5.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2.3805431119185134,
+              "mix_rho": 0.019217208657338867,
+              "norm_rho": 0.04570511532864558,
+              "raw_norm_over_mix": 2.378343085284201
+            },
+            "roberta.encoder.layer.5.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3.0011422886176926,
+              "mix_rho": 0.01941025818675973,
+              "norm_rho": 0.058199111048933834,
+              "raw_norm_over_mix": 2.9983687228144675
+            },
+            "roberta.encoder.layer.6.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.816874518253678,
+              "mix_rho": 0.07320049078540754,
+              "norm_rho": 0.059740354329473874,
+              "raw_norm_over_mix": 0.8161195872935741
+            },
+            "roberta.encoder.layer.6.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.4632029540347844,
+              "mix_rho": 0.044446923417642066,
+              "norm_rho": 0.0649747663640628,
+              "raw_norm_over_mix": 1.4618507056952503
+            },
+            "roberta.encoder.layer.6.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.4442681931652614,
+              "mix_rho": 0.04388398686195665,
+              "norm_rho": 0.0633216722888404,
+              "raw_norm_over_mix": 1.4429334437645278
+            },
+            "roberta.encoder.layer.6.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.9011488838920565,
+              "mix_rho": 0.029346038096296698,
+              "norm_rho": 0.05573962702911088,
+              "raw_norm_over_mix": 1.8993918990429206
+            },
+            "roberta.encoder.layer.7.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.21981290409698243,
+              "mix_rho": 0.21779243324921232,
+              "norm_rho": 0.04782934390759216,
+              "raw_norm_over_mix": 0.2196097595955627
+            },
+            "roberta.encoder.layer.7.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.1215699713420573,
+              "mix_rho": 0.045980749198024806,
+              "norm_rho": 0.05152296753113391,
+              "raw_norm_over_mix": 1.1205334499714323
+            },
+            "roberta.encoder.layer.7.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.1721386134365708,
+              "mix_rho": 0.02953606845623869,
+              "norm_rho": 0.03458837122116528,
+              "raw_norm_over_mix": 1.1710553580417176
+            },
+            "roberta.encoder.layer.7.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.0248065439211926,
+              "mix_rho": 0.05211886355081836,
+              "norm_rho": 0.05336239088698133,
+              "raw_norm_over_mix": 1.0238594484116192
+            },
+            "roberta.encoder.layer.8.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.30365317354376853,
+              "mix_rho": 0.11922696136048112,
+              "norm_rho": 0.03617018686469522,
+              "raw_norm_over_mix": 0.30337254637678085
+            },
+            "roberta.encoder.layer.8.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.1638986042175126,
+              "mix_rho": 0.03966565672845241,
+              "norm_rho": 0.046124136525682057,
+              "raw_norm_over_mix": 1.1628229639923482
+            },
+            "roberta.encoder.layer.8.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.60339850771671,
+              "mix_rho": 0.04536752385735297,
+              "norm_rho": 0.027349397320121618,
+              "raw_norm_over_mix": 0.6028408648908209
+            },
+            "roberta.encoder.layer.8.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.097402696431123,
+              "mix_rho": 0.03557114220172296,
+              "norm_rho": 0.03899979158801331,
+              "raw_norm_over_mix": 1.0963885097320345
+            },
+            "roberta.encoder.layer.9.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 2.4193989982617747,
+              "mix_rho": 0.011274368175858418,
+              "norm_rho": 0.027251986304116668,
+              "raw_norm_over_mix": 2.417163062181241
+            },
+            "roberta.encoder.layer.9.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 4.034721483766553,
+              "mix_rho": 0.005276596531849192,
+              "norm_rho": 0.021269922180048674,
+              "raw_norm_over_mix": 4.030992715032277
+            },
+            "roberta.encoder.layer.9.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.6702701028276012,
+              "mix_rho": 0.03199966913603633,
+              "norm_rho": 0.021428599533581873,
+              "raw_norm_over_mix": 0.6696506592766649
+            },
+            "roberta.encoder.layer.9.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.8308070906579166,
+              "mix_rho": 0.012272639441453565,
+              "norm_rho": 0.022448070285966425,
+              "raw_norm_over_mix": 1.829115113586983
+            }
+          },
+          "modules_within_5pct": 2,
+          "norm_median_rho": 0.04201900639221145,
+          "norm_modules_below_1e6": 0,
+          "raw_ratio_quantiles": [
+            0.21373247364699538,
+            1.011297417378021,
+            1.7268302384845389,
+            2.5503986380429184,
+            293257532.9325668
+          ],
+          "rescaled_modules_within_5pct": 2,
+          "seed": 123
+        }
+      ],
+      "paired": {
+        "P1_MIX_minus_P1_NORM": {
+          "LL_pp": {
+            "mean": 29.1462146920511,
+            "nominal_t95": [
+              25.984772009156853,
+              32.30765737494534
+            ],
+            "sample_sd": 1.272651941951263,
+            "values": [
+              29.69381757840827,
+              30.05340489765429,
+              27.69142160009074
+            ]
+          },
+          "TT_pp": {
+            "mean": 12.602845226784792,
+            "nominal_t95": [
+              8.870734722808539,
+              16.334955730761045
+            ],
+            "sample_sd": 1.5023766542285806,
+            "values": [
+              11.852724425367054,
+              11.623237882756461,
+              14.332573372230861
+            ]
+          },
+          "accuracy_pp": {
+            "mean": -0.27247956403269313,
+            "nominal_t95": [
+              -1.8233990600339571,
+              1.2784399319685709
+            ],
+            "sample_sd": 0.6243291137542055,
+            "values": [
+              -0.4087193460490397,
+              -0.8174386920980936,
+              0.4087193460490539
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": -0.4087193460490397,
+            "nominal_t95": [
+              -2.4673596448158523,
+              1.649920952717773
+            ],
+            "sample_sd": 0.828714241185043,
+            "values": [
+              -1.3623978201634799,
+              0.0,
+              0.13623978201636078
+            ]
+          },
+          "cross_pp": {
+            "mean": -41.74906149042749,
+            "nominal_t95": [
+              -42.36221441612352,
+              -41.135908564731466
+            ],
+            "sample_sd": 0.24682726839310237,
+            "values": [
+              -41.546543159577446,
+              -41.676644391859185,
+              -42.02399691984586
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": -40.72731808322641,
+            "nominal_t95": [
+              -40.93781925606908,
+              -40.51681691038373
+            ],
+            "sample_sd": 0.08473812536623228,
+            "values": [
+              -40.76011419453517,
+              -40.63108356220155,
+              -40.7907564929425
+            ]
+          },
+          "f1_pp": {
+            "mean": -0.10283116729728665,
+            "nominal_t95": [
+              -1.382071421814965,
+              1.1764090872203918
+            ],
+            "sample_sd": 0.5149635016136747,
+            "values": [
+              -0.11055103677396971,
+              -0.6138913338423038,
+              0.4159488687244135
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": -0.0007524347887179963,
+            "nominal_t95": [
+              -0.0007880745801801815,
+              -0.000716794997255811
+            ],
+            "sample_sd": 1.434694674697202e-05,
+            "values": [
+              -0.0007617800402370496,
+              -0.0007359158729698413,
+              -0.000759608452947098
+            ]
+          },
+          "probe_ce": {
+            "mean": 0.26809888272188925,
+            "nominal_t95": [
+              -0.3496084693817035,
+              0.885806234825482
+            ],
+            "sample_sd": 0.24866067174513015,
+            "values": [
+              0.1999598187644671,
+              0.5437257177261849,
+              0.06061111167501565
+            ]
+          },
+          "rho": {
+            "mean": -0.0016036040779937196,
+            "nominal_t95": [
+              -0.005170216681562641,
+              0.001963008525575201
+            ],
+            "sample_sd": 0.001435754783940732,
+            "values": [
+              -0.002232811014648048,
+              -0.0026173325609341047,
+              3.933134160099411e-05
+            ]
+          }
+        },
+        "P1_MIX_minus_P1_UNREG": {
+          "LL_pp": {
+            "mean": 21.784065244163937,
+            "nominal_t95": [
+              19.030861339600598,
+              24.537269148727276
+            ],
+            "sample_sd": 1.1083137185086023,
+            "values": [
+              22.2246116694929,
+              22.604368042169398,
+              20.523216020829516
+            ]
+          },
+          "TT_pp": {
+            "mean": 16.113919036040706,
+            "nominal_t95": [
+              12.65692590271778,
+              19.57091216936363
+            ],
+            "sample_sd": 1.3916270088464455,
+            "values": [
+              15.43638288871505,
+              15.190809814341092,
+              17.71456440506598
+            ]
+          },
+          "accuracy_pp": {
+            "mean": -0.4087193460490397,
+            "nominal_t95": [
+              -1.6289762799616607,
+              0.8115375878635813
+            ],
+            "sample_sd": 0.49121951981798406,
+            "values": [
+              -0.2724795640326789,
+              -0.9536784741144402,
+              0.0
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": -0.18165304268845262,
+            "nominal_t95": [
+              -1.8511299290337926,
+              1.4878238436568874
+            ],
+            "sample_sd": 0.6720548858741454,
+            "values": [
+              -0.953678474114426,
+              0.13623978201636078,
+              0.27247956403270734
+            ]
+          },
+          "cross_pp": {
+            "mean": -37.897984727399276,
+            "nominal_t95": [
+              -38.647757065711055,
+              -37.1482123890875
+            ],
+            "sample_sd": 0.301823982935623,
+            "values": [
+              -37.66099455562276,
+              -37.79517807236324,
+              -38.237781554211836
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": -36.76214598633562,
+            "nominal_t95": [
+              -37.0017911313444,
+              -36.52250084132684
+            ],
+            "sample_sd": 0.09647015295415996,
+            "values": [
+              -36.77928488741946,
+              -36.65825505886836,
+              -36.84889801271904
+            ]
+          },
+          "f1_pp": {
+            "mean": -0.25545976248018576,
+            "nominal_t95": [
+              -1.4734869046458934,
+              0.9625673796855219
+            ],
+            "sample_sd": 0.49032190784728136,
+            "values": [
+              -0.08760751831793812,
+              -0.8076644249753144,
+              0.12889265585269527
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": -0.013686907031723098,
+            "nominal_t95": [
+              -0.013993118525457003,
+              -0.013380695537989193
+            ],
+            "sample_sd": 0.00012326671435696797,
+            "values": [
+              -0.013565559340801876,
+              -0.013812007085355757,
+              -0.013683154669011663
+            ]
+          },
+          "probe_ce": {
+            "mean": 0.08279503165488755,
+            "nominal_t95": [
+              -0.499010052318443,
+              0.6646001156282181
+            ],
+            "sample_sd": 0.23420806392033677,
+            "values": [
+              -0.09316218962999478,
+              0.3486295092615359,
+              -0.007082224666878467
+            ]
+          },
+          "rho": {
+            "mean": -0.13956796971697155,
+            "nominal_t95": [
+              -0.14498455499975488,
+              -0.13415138443418823
+            ],
+            "sample_sd": 0.0021804690042863686,
+            "values": [
+              -0.1390023557858805,
+              -0.14197551331075373,
+              -0.13772604005428046
+            ]
+          }
+        },
+        "P1_NORM_minus_P1_UNREG": {
+          "LL_pp": {
+            "mean": -7.3621494478871625,
+            "nominal_t95": [
+              -7.780137384939103,
+              -6.944161510835222
+            ],
+            "sample_sd": 0.1682627879605775,
+            "values": [
+              -7.46920590891537,
+              -7.449036855484891,
+              -7.168205579261226
+            ]
+          },
+          "TT_pp": {
+            "mean": 3.511073809255915,
+            "nominal_t95": [
+              3.232656751151029,
+              3.7894908673608008
+            ],
+            "sample_sd": 0.11207794833248717,
+            "values": [
+              3.583658463347996,
+              3.567571931584631,
+              3.381991032835117
+            ]
+          },
+          "accuracy_pp": {
+            "mean": -0.13623978201634657,
+            "nominal_t95": [
+              -0.8131165427028957,
+              0.5406369786702026
+            ],
+            "sample_sd": 0.27247956403270734,
+            "values": [
+              0.13623978201636078,
+              -0.13623978201634657,
+              -0.4087193460490539
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": 0.22706630336058709,
+            "nominal_t95": [
+              -0.1637286766299837,
+              0.6178612833511579
+            ],
+            "sample_sd": 0.15731614964295135,
+            "values": [
+              0.4087193460490539,
+              0.13623978201636078,
+              0.13623978201634657
+            ]
+          },
+          "cross_pp": {
+            "mean": 3.851076763028215,
+            "nominal_t95": [
+              3.7114466346159958,
+              3.9907068914404347
+            ],
+            "sample_sd": 0.05620869074748922,
+            "values": [
+              3.885548603954689,
+              3.8814663194959422,
+              3.786215365634014
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": 3.9651720968907873,
+            "nominal_t95": [
+              3.914041882826857,
+              4.016302310954718
+            ],
+            "sample_sd": 0.02058268099337266,
+            "values": [
+              3.9808293071157124,
+              3.97282850333319,
+              3.941858480223459
+            ]
+          },
+          "f1_pp": {
+            "mean": -0.1526285951828991,
+            "nominal_t95": [
+              -0.5477127990407307,
+              0.24245560867493252
+            ],
+            "sample_sd": 0.1590427946059199,
+            "values": [
+              0.022943518456031597,
+              -0.19377309113301067,
+              -0.28705621287171823
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": -0.012934472243005103,
+            "nominal_t95": [
+              -0.013273518164659708,
+              -0.012595426321350498
+            ],
+            "sample_sd": 0.00013648435030597114,
+            "values": [
+              -0.012803779300564828,
+              -0.013076091212385916,
+              -0.012923546216064565
+            ]
+          },
+          "probe_ce": {
+            "mean": -0.18530385106700167,
+            "nominal_t95": [
+              -0.4660931709613132,
+              0.09548546882730982
+            ],
+            "sample_sd": 0.11303291221320666,
+            "values": [
+              -0.2931220083944619,
+              -0.19509620846464903,
+              -0.06769333634189412
+            ]
+          },
+          "rho": {
+            "mean": -0.13796436563897785,
+            "nominal_t95": [
+              -0.14120800470041905,
+              -0.13472072657753664
+            ],
+            "sample_sd": 0.001305740437069381,
+            "values": [
+              -0.13676954477123243,
+              -0.13935818074981962,
+              -0.13776537139588146
+            ]
+          }
+        }
+      }
+    },
+    "rte": {
+      "arms": {
+        "P1_MIX": {
+          "LL_pp": {
+            "mean": 45.227856932692006,
+            "nominal_t95": [
+              43.02400520833652,
+              47.431708657047494
+            ],
+            "sample_sd": 0.8871697063968172,
+            "values": [
+              44.412002220439696,
+              45.09926224423846,
+              46.17230633339787
+            ]
+          },
+          "TT_pp": {
+            "mean": 44.820193650383764,
+            "nominal_t95": [
+              41.43722724374358,
+              48.20316005702395
+            ],
+            "sample_sd": 1.3618272411711274,
+            "values": [
+              46.18733359802683,
+              44.80950532103222,
+              43.463742032092235
+            ]
+          },
+          "accuracy_pp": {
+            "mean": 72.55689424364122,
+            "nominal_t95": [
+              64.93724959795902,
+              80.17653888932342
+            ],
+            "sample_sd": 3.0673197422729848,
+            "values": [
+              75.90361445783132,
+              71.8875502008032,
+              69.87951807228916
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": 74.43105756358769,
+            "nominal_t95": [
+              70.82248432541952,
+              78.03963080175585
+            ],
+            "sample_sd": 1.452646212463909,
+            "values": [
+              76.10441767068274,
+              73.49397590361446,
+              73.69477911646585
+            ]
+          },
+          "cross_pp": {
+            "mean": 9.951958453908597,
+            "nominal_t95": [
+              8.718536969338615,
+              11.18537993847858
+            ],
+            "sample_sd": 0.496518964609331,
+            "values": [
+              9.400672572562327,
+              10.091241613165359,
+              10.363961175998107
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": 14.94786575511042,
+            "nominal_t95": [
+              12.687526134539997,
+              17.208205375680844
+            ],
+            "sample_sd": 0.9099091446930268,
+            "values": [
+              13.902899970910292,
+              15.375641023524466,
+              15.565056270896505
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": 0.000540683561482483,
+            "nominal_t95": [
+              0.0003532047560486955,
+              0.0007281623669162706
+            ],
+            "sample_sd": 7.547037531345747e-05,
+            "values": [
+              0.0004873481921841864,
+              0.0006270360962723066,
+              0.000507666395990956
+            ]
+          },
+          "probe_ce": {
+            "mean": 2.935881466783306,
+            "nominal_t95": [
+              2.2121996798851615,
+              3.6595632536814504
+            ],
+            "sample_sd": 0.2913211226108734,
+            "values": [
+              3.272126248466227,
+              2.7592395940025995,
+              2.776278557881091
+            ]
+          },
+          "rho": {
+            "mean": 0.07360551134762229,
+            "nominal_t95": [
+              0.0620979262529238,
+              0.08511309644232079
+            ],
+            "sample_sd": 0.004632426391020337,
+            "values": [
+              0.07200127989280279,
+              0.07882681312539781,
+              0.06998844102466625
+            ]
+          }
+        },
+        "P1_NORM": {
+          "LL_pp": {
+            "mean": 40.67387128519353,
+            "nominal_t95": [
+              40.56385700543914,
+              40.783885564947916
+            ],
+            "sample_sd": 0.044286707309086765,
+            "values": [
+              40.63124701054354,
+              40.67071526255088,
+              40.71965158248617
+            ]
+          },
+          "TT_pp": {
+            "mean": 13.14310052235971,
+            "nominal_t95": [
+              13.079135176413786,
+              13.207065868305634
+            ],
+            "sample_sd": 0.025749516882317792,
+            "values": [
+              13.172612772474695,
+              13.12521263429463,
+              13.131476160309804
+            ]
+          },
+          "accuracy_pp": {
+            "mean": 74.63186077643908,
+            "nominal_t95": [
+              73.47987878722995,
+              75.78384276564822
+            ],
+            "sample_sd": 0.4637351559756006,
+            "values": [
+              74.8995983935743,
+              74.8995983935743,
+              74.09638554216868
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": 75.97054886211512,
+            "nominal_t95": [
+              74.71520559317972,
+              77.22589213105053
+            ],
+            "sample_sd": 0.5053436703661824,
+            "values": [
+              75.50200803212851,
+              75.90361445783132,
+              76.50602409638554
+            ]
+          },
+          "cross_pp": {
+            "mean": 46.18303732721166,
+            "nominal_t95": [
+              46.10889935913876,
+              46.257175295284554
+            ],
+            "sample_sd": 0.029844548361039756,
+            "values": [
+              46.196148948474615,
+              46.20408153664841,
+              46.14888149651194
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": 46.251193131144326,
+            "nominal_t95": [
+              45.92733195288958,
+              46.57505430939907
+            ],
+            "sample_sd": 0.13037166849762427,
+            "values": [
+              46.35981046197881,
+              46.28715338910966,
+              46.106615542344514
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": 0.002661274485387857,
+            "nominal_t95": [
+              0.00237657889264538,
+              0.002945970078130334
+            ],
+            "sample_sd": 0.00011460539864571665,
+            "values": [
+              0.0027921712732523704,
+              0.0025789761480192533,
+              0.002612676034891948
+            ]
+          },
+          "probe_ce": {
+            "mean": 2.6138994896162613,
+            "nominal_t95": [
+              2.421408988112198,
+              2.8063899911203247
+            ],
+            "sample_sd": 0.07748785447599829,
+            "values": [
+              2.655903112527818,
+              2.524478825948382,
+              2.6613165303725834
+            ]
+          },
+          "rho": {
+            "mean": 0.07589912191496127,
+            "nominal_t95": [
+              0.07187517971530735,
+              0.0799230641146152
+            ],
+            "sample_sd": 0.001619854720883612,
+            "values": [
+              0.07774422539690223,
+              0.07471081808563414,
+              0.07524232226234744
+            ]
+          }
+        },
+        "P1_UNREG": {
+          "LL_pp": {
+            "mean": 45.93890923722493,
+            "nominal_t95": [
+              45.74598792240805,
+              46.131830552041805
+            ],
+            "sample_sd": 0.0776612801724807,
+            "values": [
+              45.92460587252741,
+              46.02272795784161,
+              45.869393881305754
+            ]
+          },
+          "TT_pp": {
+            "mean": 10.408663310242867,
+            "nominal_t95": [
+              10.307737607372339,
+              10.509589013113395
+            ],
+            "sample_sd": 0.040628062765758165,
+            "values": [
+              10.431329370214815,
+              10.361758848206588,
+              10.432901712307196
+            ]
+          },
+          "accuracy_pp": {
+            "mean": 72.35609103078983,
+            "nominal_t95": [
+              70.8321621016534,
+              73.88001995992626
+            ],
+            "sample_sd": 0.6134639484545938,
+            "values": [
+              71.6867469879518,
+              72.89156626506023,
+              72.48995983935743
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": 75.1004016064257,
+            "nominal_t95": [
+              71.60864177067533,
+              78.59216144217608
+            ],
+            "sample_sd": 1.405622489959841,
+            "values": [
+              73.49397590361446,
+              75.70281124497991,
+              76.10441767068274
+            ]
+          },
+          "cross_pp": {
+            "mean": 43.65243659437141,
+            "nominal_t95": [
+              43.54877690382572,
+              43.7560962849171
+            ],
+            "sample_sd": 0.04172864091094714,
+            "values": [
+              43.64407390580208,
+              43.61552257940233,
+              43.697713297909814
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": 43.535031280282176,
+            "nominal_t95": [
+              43.42760580338795,
+              43.642456757176404
+            ],
+            "sample_sd": 0.043244573916905546,
+            "values": [
+              43.554451430487504,
+              43.485481068410714,
+              43.56516134194831
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": 0.03304201587627298,
+            "nominal_t95": [
+              0.03061342186384585,
+              0.03547060988870011
+            ],
+            "sample_sd": 0.0009776406521142627,
+            "values": [
+              0.03417010525138752,
+              0.03244133765241819,
+              0.032514604725013226
+            ]
+          },
+          "probe_ce": {
+            "mean": 2.885749158646319,
+            "nominal_t95": [
+              2.4687357975237183,
+              3.3027625197689194
+            ],
+            "sample_sd": 0.1678704683541637,
+            "values": [
+              2.910131825116002,
+              2.707020717452568,
+              3.0400949333703866
+            ]
+          },
+          "rho": {
+            "mean": 0.27510467750114487,
+            "nominal_t95": [
+              0.264985558106152,
+              0.28522379689613775
+            ],
+            "sample_sd": 0.004073493730743433,
+            "values": [
+              0.2798082511002251,
+              0.2727274403001856,
+              0.27277834110302385
+            ]
+          }
+        }
+      },
+      "calibration_cross_range_pp": [
+        43.65983936978657,
+        50.91338172995228
+      ],
+      "calibration_norm_range": [
+        0.022855841626924334,
+        0.27657312665838557
+      ],
+      "energy_ratios_of_seed_means": {
+        "P1_NORM_over_MIX": 4.922055477497768,
+        "P1_UNREG_over_MIX": 61.11155994030247
+      },
+      "matching": [
+        {
+          "error_percent": 7.976171413410538,
+          "passes_5pct": false,
+          "seed": 17,
+          "signed_error_percent": 7.976171413410538
+        },
+        {
+          "error_percent": 5.221567226390267,
+          "passes_5pct": false,
+          "seed": 42,
+          "signed_error_percent": -5.221567226390267
+        },
+        {
+          "error_percent": 7.506784207165773,
+          "passes_5pct": false,
+          "seed": 123,
+          "signed_error_percent": 7.506784207165773
+        }
+      ],
+      "module_pairs": [
+        {
+          "globally_rescaled_ratio_quantiles": [
+            0.12751909983553103,
+            1.4577190201681578,
+            4.116885064179179,
+            17516231.129539352,
+            595402580310723.2
+          ],
+          "mix_median_rho": 0.022773339135000258,
+          "mix_modules_below_1e6": 14,
+          "modules": {
+            "roberta.encoder.layer.0.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 3.032429988591797,
+              "mix_rho": 0.03205039230832694,
+              "norm_rho": 0.10494265730513912,
+              "raw_norm_over_mix": 3.2743018024735444
+            },
+            "roberta.encoder.layer.0.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.5160742729994392,
+              "mix_rho": 0.04152077250694051,
+              "norm_rho": 0.06796946123656272,
+              "raw_norm_over_mix": 1.636998955768492
+            },
+            "roberta.encoder.layer.0.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.8085585764078838,
+              "mix_rho": 0.03725074732898027,
+              "norm_rho": 0.07274371788761697,
+              "raw_norm_over_mix": 1.952812308574114
+            },
+            "roberta.encoder.layer.0.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.7758350239934158,
+              "mix_rho": 0.10406199408889058,
+              "norm_rho": 0.0871744968602079,
+              "raw_norm_over_mix": 0.8377169553924053
+            },
+            "roberta.encoder.layer.1.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 270.122556513823,
+              "mix_rho": 0.00027059765569069203,
+              "norm_rho": 0.07892467559166001,
+              "raw_norm_over_mix": 291.6679946476523
+            },
+            "roberta.encoder.layer.1.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.713281159647201,
+              "mix_rho": 0.017593586789138204,
+              "norm_rho": 0.051543880473919196,
+              "raw_norm_over_mix": 2.929697115868435
+            },
+            "roberta.encoder.layer.1.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.4645093403266356,
+              "mix_rho": 0.04330823367100838,
+              "norm_rho": 0.06848422438661736,
+              "raw_norm_over_mix": 1.581321115676496
+            },
+            "roberta.encoder.layer.1.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.4373480596927246,
+              "mix_rho": 0.04468661560504871,
+              "norm_rho": 0.0693533326992384,
+              "raw_norm_over_mix": 1.5519934047411468
+            },
+            "roberta.encoder.layer.10.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 163663912477.5496,
+              "mix_rho": 2.895452879946537e-13,
+              "norm_rho": 0.051167871928517523,
+              "raw_norm_over_mix": 176718026678.65314
+            },
+            "roberta.encoder.layer.10.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 18.67790662833649,
+              "mix_rho": 0.0019701485561812886,
+              "norm_rho": 0.039733342335360904,
+              "raw_norm_over_mix": 20.167688477449378
+            },
+            "roberta.encoder.layer.10.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.32008575433982395,
+              "mix_rho": 0.10017869407540143,
+              "norm_rho": 0.034623393870403606,
+              "raw_norm_over_mix": 0.34561634277587644
+            },
+            "roberta.encoder.layer.10.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 10419117981073.51,
+              "mix_rho": 4.1429354961871665e-15,
+              "norm_rho": 0.04660870663633442,
+              "raw_norm_over_mix": 11250164691009.412
+            },
+            "roberta.encoder.layer.11.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.12751909983553103,
+              "mix_rho": 0.4340074371818184,
+              "norm_rho": 0.059758588978654034,
+              "raw_norm_over_mix": 0.1376902418232511
+            },
+            "roberta.encoder.layer.11.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 285749684.8107104,
+              "mix_rho": 1.285309552988107e-10,
+              "norm_rho": 0.03965714267523626,
+              "raw_norm_over_mix": 308541569.48449296
+            },
+            "roberta.encoder.layer.11.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.3197091248261289,
+              "mix_rho": 0.08797324932345936,
+              "norm_rho": 0.030369216600606985,
+              "raw_norm_over_mix": 0.3452096726465756
+            },
+            "roberta.encoder.layer.11.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 249823726.91995984,
+              "mix_rho": 2.372996650935294e-10,
+              "norm_rho": 0.06401160734731123,
+              "raw_norm_over_mix": 269750095.6104665
+            },
+            "roberta.encoder.layer.2.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 33108528.234359838,
+              "mix_rho": 2.7909213537369846e-09,
+              "norm_rho": 0.09977354391530473,
+              "raw_norm_over_mix": 35749321.198789805
+            },
+            "roberta.encoder.layer.2.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 11.555077872791788,
+              "mix_rho": 0.006380226624957148,
+              "norm_rho": 0.07960436934636449,
+              "raw_norm_over_mix": 12.476730690878734
+            },
+            "roberta.encoder.layer.2.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.5019477111278585,
+              "mix_rho": 0.04605157272053086,
+              "norm_rho": 0.07468393704934331,
+              "raw_norm_over_mix": 1.6217456351072126
+            },
+            "roberta.encoder.layer.2.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.625678170337003,
+              "mix_rho": 0.019292015832850014,
+              "norm_rho": 0.09635648470925962,
+              "raw_norm_over_mix": 4.994630190235794
+            },
+            "roberta.encoder.layer.3.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 88318917.45622765,
+              "mix_rho": 1.0709346987211097e-09,
+              "norm_rho": 0.10212795873687257,
+              "raw_norm_over_mix": 95363385.70300493
+            },
+            "roberta.encoder.layer.3.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.1004174465338488,
+              "mix_rho": 0.02749459668356479,
+              "norm_rho": 0.09204399280894277,
+              "raw_norm_over_mix": 3.3477120566006744
+            },
+            "roberta.encoder.layer.3.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.184248638538489,
+              "mix_rho": 0.07384993321308883,
+              "norm_rho": 0.09443237780145501,
+              "raw_norm_over_mix": 1.2787063399092993
+            },
+            "roberta.encoder.layer.3.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.367226528333054,
+              "mix_rho": 0.02295515612264783,
+              "norm_rho": 0.10824650787786827,
+              "raw_norm_over_mix": 4.715564002244837
+            },
+            "roberta.encoder.layer.4.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 91487.86832766257,
+              "mix_rho": 1.136218006013053e-06,
+              "norm_rho": 0.11224140653701489,
+              "raw_norm_over_mix": 98785.09752795227
+            },
+            "roberta.encoder.layer.4.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 66508.04444123433,
+              "mix_rho": 1.414463082159232e-06,
+              "norm_rho": 0.10157661110341826,
+              "raw_norm_over_mix": 71812.84006957445
+            },
+            "roberta.encoder.layer.4.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.486759146990537,
+              "mix_rho": 0.05553503859828057,
+              "norm_rho": 0.08915293014053513,
+              "raw_norm_over_mix": 1.6053456050590627
+            },
+            "roberta.encoder.layer.4.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.071742381720974,
+              "mix_rho": 0.026701046542975785,
+              "norm_rho": 0.11739145908537073,
+              "raw_norm_over_mix": 4.396511533599524
+            },
+            "roberta.encoder.layer.5.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 33486838.408575986,
+              "mix_rho": 3.254901538720437e-09,
+              "norm_rho": 0.11769009851952726,
+              "raw_norm_over_mix": 36157806.0409758
+            },
+            "roberta.encoder.layer.5.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.15129901704776,
+              "mix_rho": 0.03257551223542636,
+              "norm_rho": 0.11084313278393211,
+              "raw_norm_over_mix": 3.4026520283966106
+            },
+            "roberta.encoder.layer.5.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 46.93507507783205,
+              "mix_rho": 0.0020662277603296876,
+              "norm_rho": 0.10471373084472718,
+              "raw_norm_over_mix": 50.67869711905286
+            },
+            "roberta.encoder.layer.5.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 2.579426941768709,
+              "mix_rho": 0.0409681823105723,
+              "norm_rho": 0.11410320713993734,
+              "raw_norm_over_mix": 2.7851664561278744
+            },
+            "roberta.encoder.layer.6.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1984194501.902983,
+              "mix_rho": 5.231620305712091e-11,
+              "norm_rho": 0.11208522887488413,
+              "raw_norm_over_mix": 2142457256.5502322
+            },
+            "roberta.encoder.layer.6.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1664024.6302984343,
+              "mix_rho": 5.554249342814449e-08,
+              "norm_rho": 0.09979597990879154,
+              "raw_norm_over_mix": 1796750.0871724084
+            },
+            "roberta.encoder.layer.6.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.9006145422906751,
+              "mix_rho": 0.09890700154254138,
+              "norm_rho": 0.09618202482739122,
+              "raw_norm_over_mix": 0.972449101957882
+            },
+            "roberta.encoder.layer.6.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.162027746637383,
+              "mix_rho": 0.022591522147352685,
+              "norm_rho": 0.10152626018135784,
+              "raw_norm_over_mix": 4.493998213982889
+            },
+            "roberta.encoder.layer.7.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.378782210322601,
+              "mix_rho": 0.20234314605578207,
+              "norm_rho": 0.08275723965705059,
+              "raw_norm_over_mix": 0.4089945287014369
+            },
+            "roberta.encoder.layer.7.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 0.36374871034431533,
+              "mix_rho": 0.2003184384085817,
+              "norm_rho": 0.07867745668334729,
+              "raw_norm_over_mix": 0.3927619309954481
+            },
+            "roberta.encoder.layer.7.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.8167627497810855,
+              "mix_rho": 0.05904554410119979,
+              "norm_rho": 0.052072805417354456,
+              "raw_norm_over_mix": 0.8819091467445103
+            },
+            "roberta.encoder.layer.7.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.8776140703031312,
+              "mix_rho": 0.04169601337578369,
+              "norm_rho": 0.0845334879338606,
+              "raw_norm_over_mix": 2.0273757870328235
+            },
+            "roberta.encoder.layer.8.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 151443058511.17767,
+              "mix_rho": 3.4853405273747946e-13,
+              "norm_rho": 0.05699313051935111,
+              "raw_norm_over_mix": 163522416451.7408
+            },
+            "roberta.encoder.layer.8.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 595402580310723.2,
+              "mix_rho": 6.642021812832841e-17,
+              "norm_rho": 0.04270108736292436,
+              "raw_norm_over_mix": 642892910716175.9
+            },
+            "roberta.encoder.layer.8.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.3463966049387351,
+              "mix_rho": 0.08946297392621162,
+              "norm_rho": 0.033461459670169696,
+              "raw_norm_over_mix": 0.37402579191888313
+            },
+            "roberta.encoder.layer.8.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 162.81462485738896,
+              "mix_rho": 0.00028559664157739835,
+              "norm_rho": 0.05020817473530973,
+              "raw_norm_over_mix": 175.80099842211564
+            },
+            "roberta.encoder.layer.9.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 496160496084.88684,
+              "mix_rho": 1.013202268462764e-13,
+              "norm_rho": 0.05428080264555336,
+              "raw_norm_over_mix": 535735107738.2455
+            },
+            "roberta.encoder.layer.9.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 12318798.761265857,
+              "mix_rho": 3.213473251891932e-09,
+              "norm_rho": 0.04274358792460921,
+              "raw_norm_over_mix": 13301367.266537515
+            },
+            "roberta.encoder.layer.9.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.5787482845453588,
+              "mix_rho": 0.04627333842229642,
+              "norm_rho": 0.02891668300856839,
+              "raw_norm_over_mix": 0.6249102397728695
+            },
+            "roberta.encoder.layer.9.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 27049705175968.496,
+              "mix_rho": 1.5555887139051778e-15,
+              "norm_rho": 0.045434446728939586,
+              "raw_norm_over_mix": 29207236027625.926
+            }
+          },
+          "modules_within_5pct": 1,
+          "norm_median_rho": 0.07880106613750365,
+          "norm_modules_below_1e6": 0,
+          "raw_ratio_quantiles": [
+            0.1376902418232511,
+            1.5739891879426586,
+            4.445254873791207,
+            18913355.74960059,
+            642892910716175.9
+          ],
+          "rescaled_modules_within_5pct": 0,
+          "seed": 17
+        },
+        {
+          "globally_rescaled_ratio_quantiles": [
+            0.16510039774481955,
+            1.6143146933011994,
+            3.94634218135823,
+            25409743.084825438,
+            3826703183.8366084
+          ],
+          "mix_median_rho": 0.02087237023185686,
+          "mix_modules_below_1e6": 15,
+          "modules": {
+            "roberta.encoder.layer.0.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 130.32629898707555,
+              "mix_rho": 0.0006943341144072074,
+              "norm_rho": 0.08576499944865314,
+              "raw_norm_over_mix": 123.521223671799
+            },
+            "roberta.encoder.layer.0.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.6217516597445545,
+              "mix_rho": 0.039139399083916344,
+              "norm_rho": 0.060160027719202445,
+              "raw_norm_over_mix": 1.5370708065858927
+            },
+            "roberta.encoder.layer.0.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 7.584155583461166,
+              "mix_rho": 0.008488022827903063,
+              "norm_rho": 0.06101312867412853,
+              "raw_norm_over_mix": 7.18814380111671
+            },
+            "roberta.encoder.layer.0.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3.031311383721005,
+              "mix_rho": 0.026514012380596193,
+              "norm_rho": 0.07617553766416281,
+              "raw_norm_over_mix": 2.8730294219787917
+            },
+            "roberta.encoder.layer.1.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 159637910.0029223,
+              "mix_rho": 5.383178047890069e-10,
+              "norm_rho": 0.08144872695521943,
+              "raw_norm_over_mix": 151302309.2133153
+            },
+            "roberta.encoder.layer.1.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 9.067164801181681,
+              "mix_rho": 0.006840874950288815,
+              "norm_rho": 0.05878854127253781,
+              "raw_norm_over_mix": 8.593716695560385
+            },
+            "roberta.encoder.layer.1.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2.5353429387226223,
+              "mix_rho": 0.02348434295678899,
+              "norm_rho": 0.05643189689282499,
+              "raw_norm_over_mix": 2.402958302757682
+            },
+            "roberta.encoder.layer.1.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3.365646493588851,
+              "mix_rho": 0.020705490614837636,
+              "norm_rho": 0.06604858943669684,
+              "raw_norm_over_mix": 3.1899069993234623
+            },
+            "roberta.encoder.layer.10.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 19321589.60945613,
+              "mix_rho": 2.9637898142838786e-09,
+              "norm_rho": 0.054274993194971415,
+              "raw_norm_over_mix": 18312699.81879114
+            },
+            "roberta.encoder.layer.10.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.0475402635515434,
+              "mix_rho": 0.024811800713497006,
+              "norm_rho": 0.04815043976881246,
+              "raw_norm_over_mix": 1.9406265722027911
+            },
+            "roberta.encoder.layer.10.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.7735575863596891,
+              "mix_rho": 0.05284089986010713,
+              "norm_rho": 0.03874113834401713,
+              "raw_norm_over_mix": 0.733165756953076
+            },
+            "roberta.encoder.layer.10.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3826703183.8366084,
+              "mix_rho": 1.5128241489509266e-11,
+              "norm_rho": 0.054868457254771644,
+              "raw_norm_over_mix": 3626889304.538163
+            },
+            "roberta.encoder.layer.11.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.16510039774481955,
+              "mix_rho": 0.49476659478178575,
+              "norm_rho": 0.07742086374727851,
+              "raw_norm_over_mix": 0.15647956948553607
+            },
+            "roberta.encoder.layer.11.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 0.5293377581497212,
+              "mix_rho": 0.10711750029813095,
+              "norm_rho": 0.05374063901234347,
+              "raw_norm_over_mix": 0.5016980312532664
+            },
+            "roberta.encoder.layer.11.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.39635444835900746,
+              "mix_rho": 0.08694439808237135,
+              "norm_rho": 0.032661405156449094,
+              "raw_norm_over_mix": 0.3756585343831536
+            },
+            "roberta.encoder.layer.11.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.2855489730797677,
+              "mix_rho": 0.3315336301569423,
+              "norm_rho": 0.08972587757936945,
+              "raw_norm_over_mix": 0.27063884148614054
+            },
+            "roberta.encoder.layer.2.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 13603858.241322052,
+              "mix_rho": 6.419106614099849e-09,
+              "norm_rho": 0.082764902862895,
+              "raw_norm_over_mix": 12893523.637868589
+            },
+            "roberta.encoder.layer.2.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.2134237884996177,
+              "mix_rho": 0.03281033872378874,
+              "norm_rho": 0.06883111585292918,
+              "raw_norm_over_mix": 2.0978483773781957
+            },
+            "roberta.encoder.layer.2.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 7.4672776570491415,
+              "mix_rho": 0.009157993978282894,
+              "norm_rho": 0.06481450024993793,
+              "raw_norm_over_mix": 7.0773687342051
+            },
+            "roberta.encoder.layer.2.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.219979958755239,
+              "mix_rho": 0.021039249848876087,
+              "norm_rho": 0.08414923314078107,
+              "raw_norm_over_mix": 3.9996308682686377
+            },
+            "roberta.encoder.layer.3.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 557024208.5675505,
+              "mix_rho": 1.7978622417061528e-10,
+              "norm_rho": 0.09491612615093528,
+              "raw_norm_over_mix": 527938815.0499276
+            },
+            "roberta.encoder.layer.3.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 3.033538630150206,
+              "mix_rho": 0.02541725562637535,
+              "norm_rho": 0.07307817777747799,
+              "raw_norm_over_mix": 2.8751403712383943
+            },
+            "roberta.encoder.layer.3.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.136935133633311,
+              "mix_rho": 0.07119582888087846,
+              "norm_rho": 0.07671843958336858,
+              "raw_norm_over_mix": 1.0775693013101975
+            },
+            "roberta.encoder.layer.3.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 12590424.145523986,
+              "mix_rho": 7.573400022376137e-09,
+              "norm_rho": 0.09037343309275327,
+              "raw_norm_over_mix": 11933006.684677778
+            },
+            "roberta.encoder.layer.4.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1567744962.9982522,
+              "mix_rho": 7.576780005510634e-11,
+              "norm_rho": 0.11258216983459925,
+              "raw_norm_over_mix": 1485884105.8169513
+            },
+            "roberta.encoder.layer.4.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 4.542475136213295,
+              "mix_rho": 0.022067914686416827,
+              "norm_rho": 0.09500870055024607,
+              "raw_norm_over_mix": 4.3052867432338555
+            },
+            "roberta.encoder.layer.4.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 4.811212704927286,
+              "mix_rho": 0.018610595631403815,
+              "norm_rho": 0.0848641671783359,
+              "raw_norm_over_mix": 4.559991999134878
+            },
+            "roberta.encoder.layer.4.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3.2406082284169493,
+              "mix_rho": 0.034324329738074574,
+              "norm_rho": 0.10542366711040986,
+              "raw_norm_over_mix": 3.0713976912262235
+            },
+            "roberta.encoder.layer.5.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 43674203.51093336,
+              "mix_rho": 2.9183695892075355e-09,
+              "norm_rho": 0.12080219001595545,
+              "raw_norm_over_mix": 41393725.614019476
+            },
+            "roberta.encoder.layer.5.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2.6346256872807166,
+              "mix_rho": 0.035707945098813955,
+              "norm_rho": 0.08916477197414463,
+              "raw_norm_over_mix": 2.4970569358556074
+            },
+            "roberta.encoder.layer.5.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.5920037939711338,
+              "mix_rho": 0.058897240324000434,
+              "norm_rho": 0.08886864685758902,
+              "raw_norm_over_mix": 1.5088762456222475
+            },
+            "roberta.encoder.layer.5.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3.998911438739523,
+              "mix_rho": 0.030217089947769553,
+              "norm_rho": 0.11452596151375431,
+              "raw_norm_over_mix": 3.7901055896419287
+            },
+            "roberta.encoder.layer.6.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 524020793.5907996,
+              "mix_rho": 2.043452436561134e-10,
+              "norm_rho": 0.10148984216083141,
+              "raw_norm_over_mix": 496658695.57319224
+            },
+            "roberta.encoder.layer.6.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 85391469.77002041,
+              "mix_rho": 1.3439059614353494e-09,
+              "norm_rho": 0.10876593366474785,
+              "raw_norm_over_mix": 80932696.77037607
+            },
+            "roberta.encoder.layer.6.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.564921769821859,
+              "mix_rho": 0.06647901095602214,
+              "norm_rho": 0.09860222265860222,
+              "raw_norm_over_mix": 1.4832083275701942
+            },
+            "roberta.encoder.layer.6.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 171781222.7054316,
+              "mix_rho": 6.846630522003222e-10,
+              "norm_rho": 0.11147105322172973,
+              "raw_norm_over_mix": 162811550.67955232
+            },
+            "roberta.encoder.layer.7.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.3526200738783543,
+              "mix_rho": 0.2899958290207528,
+              "norm_rho": 0.09691886212973097,
+              "raw_norm_over_mix": 0.334207779667049
+            },
+            "roberta.encoder.layer.7.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.8035354433874868,
+              "mix_rho": 0.046765734324765,
+              "norm_rho": 0.0799395985144705,
+              "raw_norm_over_mix": 1.7093626277592335
+            },
+            "roberta.encoder.layer.7.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 3.047930726575692,
+              "mix_rho": 0.019704332969827768,
+              "norm_rho": 0.05692150220187491,
+              "raw_norm_over_mix": 2.888780974673737
+            },
+            "roberta.encoder.layer.7.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 171886318.96209213,
+              "mix_rho": 5.606461969934514e-10,
+              "norm_rho": 0.09133552188944699,
+              "raw_norm_over_mix": 162911159.2645189
+            },
+            "roberta.encoder.layer.8.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 49899472.30514387,
+              "mix_rho": 1.510497522160421e-09,
+              "norm_rho": 0.07143737587992195,
+              "raw_norm_over_mix": 47293937.81311679
+            },
+            "roberta.encoder.layer.8.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 18.674479284233367,
+              "mix_rho": 0.0036066042305478085,
+              "norm_rho": 0.06383465443733376,
+              "raw_norm_over_mix": 17.6993787942288
+            },
+            "roberta.encoder.layer.8.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.45845827045249987,
+              "mix_rho": 0.0879749564173515,
+              "norm_rho": 0.03822683967511232,
+              "raw_norm_over_mix": 0.43451956365587646
+            },
+            "roberta.encoder.layer.8.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 58203413.547885954,
+              "mix_rho": 1.2721569774858797e-09,
+              "norm_rho": 0.07017762775726205,
+              "raw_norm_over_mix": 55164283.18142915
+            },
+            "roberta.encoder.layer.9.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 745351734.704856,
+              "mix_rho": 8.815370019710808e-11,
+              "norm_rho": 0.062274655810895085,
+              "raw_norm_over_mix": 706432692.804176
+            },
+            "roberta.encoder.layer.9.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 0.46939164253091015,
+              "mix_rho": 0.11829955241897037,
+              "norm_rho": 0.05262934649055569,
+              "raw_norm_over_mix": 0.4448820423611012
+            },
+            "roberta.encoder.layer.9.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.6395038292340759,
+              "mix_rho": 0.0545115895466765,
+              "norm_rho": 0.03304011258462069,
+              "raw_norm_over_mix": 0.6061117068752786
+            },
+            "roberta.encoder.layer.9.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3.8937729239769365,
+              "mix_rho": 0.01599839493915984,
+              "norm_rho": 0.05904138784179825,
+              "raw_norm_over_mix": 3.690456953108499
+            }
+          },
+          "modules_within_5pct": 0,
+          "norm_median_rho": 0.0764469886237657,
+          "norm_modules_below_1e6": 0,
+          "raw_ratio_quantiles": [
+            0.15647956948553607,
+            1.5300221663449813,
+            3.740281271375214,
+            24082956.267598223,
+            3626889304.538163
+          ],
+          "rescaled_modules_within_5pct": 0,
+          "seed": 42
+        },
+        {
+          "globally_rescaled_ratio_quantiles": [
+            0.14106897846477282,
+            1.370857029110947,
+            5.622743829739478,
+            3740127.5584814083,
+            233211814026.29282
+          ],
+          "mix_median_rho": 0.012649662616499278,
+          "mix_modules_below_1e6": 12,
+          "modules": {
+            "roberta.encoder.layer.0.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 2.731012505537459,
+              "mix_rho": 0.03178831654717327,
+              "norm_rho": 0.09333125143312151,
+              "raw_norm_over_mix": 2.936023720998867
+            },
+            "roberta.encoder.layer.0.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 51.19664386471255,
+              "mix_rho": 0.0010479301824443828,
+              "norm_rho": 0.057677936233246595,
+              "raw_norm_over_mix": 55.03986544094769
+            },
+            "roberta.encoder.layer.0.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2.385956271899814,
+              "mix_rho": 0.025120650935880597,
+              "norm_rho": 0.06443609898873157,
+              "raw_norm_over_mix": 2.5650648605086706
+            },
+            "roberta.encoder.layer.0.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.5161087848493694,
+              "mix_rho": 0.13516598884839418,
+              "norm_rho": 0.07499711351377365,
+              "raw_norm_over_mix": 0.554851957602237
+            },
+            "roberta.encoder.layer.1.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.5058498140486829,
+              "mix_rho": 0.14299530365056096,
+              "norm_rho": 0.07776411614201728,
+              "raw_norm_over_mix": 0.5438228680016669
+            },
+            "roberta.encoder.layer.1.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.4228592533247546,
+              "mix_rho": 0.03519629407591243,
+              "norm_rho": 0.05383872315019196,
+              "raw_norm_over_mix": 1.529670227043534
+            },
+            "roberta.encoder.layer.1.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 25.105979395998382,
+              "mix_rho": 0.0018111861751496244,
+              "norm_rho": 0.04888505789303061,
+              "raw_norm_over_mix": 26.99063109235148
+            },
+            "roberta.encoder.layer.1.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 6.190637846510123,
+              "mix_rho": 0.009989645684720976,
+              "norm_rho": 0.06648464505603931,
+              "raw_norm_over_mix": 6.655355670694772
+            },
+            "roberta.encoder.layer.10.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 143155467.15086856,
+              "mix_rho": 3.4527470597306307e-10,
+              "norm_rho": 0.053138412261452384,
+              "raw_norm_over_mix": 153901839.15064436
+            },
+            "roberta.encoder.layer.10.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 0.5050954093048821,
+              "mix_rho": 0.07537702693750958,
+              "norm_rho": 0.04093061746707302,
+              "raw_norm_over_mix": 0.5430118317217003
+            },
+            "roberta.encoder.layer.10.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.48635070070491404,
+              "mix_rho": 0.07086616412598037,
+              "norm_rho": 0.03705308245421585,
+              "raw_norm_over_mix": 0.5228599982968706
+            },
+            "roberta.encoder.layer.10.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4752263325.589561,
+              "mix_rho": 1.1287457909938838e-11,
+              "norm_rho": 0.05766768429906267,
+              "raw_norm_over_mix": 5109005478.39785
+            },
+            "roberta.encoder.layer.11.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.14106897846477282,
+              "mix_rho": 0.45692024946092213,
+              "norm_rho": 0.06929594120859284,
+              "raw_norm_over_mix": 0.15165872226137647
+            },
+            "roberta.encoder.layer.11.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 4225958782.8566375,
+              "mix_rho": 9.038122890890768e-12,
+              "norm_rho": 0.04106193113208079,
+              "raw_norm_over_mix": 4543192389.369454
+            },
+            "roberta.encoder.layer.11.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.34973572259528535,
+              "mix_rho": 0.07440824641381824,
+              "norm_rho": 0.027976728932858554,
+              "raw_norm_over_mix": 0.3759896285858853
+            },
+            "roberta.encoder.layer.11.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 0.24099571751661428,
+              "mix_rho": 0.28661906608206084,
+              "norm_rho": 0.074259201166769,
+              "raw_norm_over_mix": 0.2590867459790973
+            },
+            "roberta.encoder.layer.2.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 20230.485856781783,
+              "mix_rho": 3.821120249113065e-06,
+              "norm_rho": 0.08310609749724937,
+              "raw_norm_over_mix": 21749.144774111584
+            },
+            "roberta.encoder.layer.2.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 5.394240152580097,
+              "mix_rho": 0.012037462160454503,
+              "norm_rho": 0.06980733903681081,
+              "raw_norm_over_mix": 5.799174120450575
+            },
+            "roberta.encoder.layer.2.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2386.1410520186146,
+              "mix_rho": 2.7763642534074498e-05,
+              "norm_rho": 0.07122105914377291,
+              "raw_norm_over_mix": 2565.263511672247
+            },
+            "roberta.encoder.layer.2.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.544343025769508,
+              "mix_rho": 0.01711704291851285,
+              "norm_rho": 0.08362492034820623,
+              "raw_norm_over_mix": 4.885477050347412
+            },
+            "roberta.encoder.layer.3.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 323696448.43605125,
+              "mix_rho": 2.861598904475726e-10,
+              "norm_rho": 0.09958239487863359,
+              "raw_norm_over_mix": 347995642.30640525
+            },
+            "roberta.encoder.layer.3.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 33.122420336724204,
+              "mix_rho": 0.0022457692214148946,
+              "norm_rho": 0.0799692569944815,
+              "raw_norm_over_mix": 35.60884895559248
+            },
+            "roberta.encoder.layer.3.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.0542180477030678,
+              "mix_rho": 0.07539417029520135,
+              "norm_rho": 0.08544842935947701,
+              "raw_norm_over_mix": 1.1333559216171332
+            },
+            "roberta.encoder.layer.3.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 4.16553031225963,
+              "mix_rho": 0.02376479420144155,
+              "norm_rho": 0.10642415929472619,
+              "raw_norm_over_mix": 4.478227683885039
+            },
+            "roberta.encoder.layer.4.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 14863235.137786163,
+              "mix_rho": 6.970958111417942e-09,
+              "norm_rho": 0.11138884294576461,
+              "raw_norm_over_mix": 15978986.125783408
+            },
+            "roberta.encoder.layer.4.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1440.4582447682494,
+              "mix_rho": 6.220698639242108e-05,
+              "norm_rho": 0.09633313800858626,
+              "raw_norm_over_mix": 1548.5903367973297
+            },
+            "roberta.encoder.layer.4.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 127.90044707055722,
+              "mix_rho": 0.0006044943497366425,
+              "norm_rho": 0.08311897511805348,
+              "raw_norm_over_mix": 137.50165763214423
+            },
+            "roberta.encoder.layer.4.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 8.520982839320595,
+              "mix_rho": 0.013261863072544055,
+              "norm_rho": 0.12148708216572936,
+              "raw_norm_over_mix": 9.16063463339802
+            },
+            "roberta.encoder.layer.5.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 288338642.18948454,
+              "mix_rho": 3.9032643024625183e-10,
+              "norm_rho": 0.12099479274284733,
+              "raw_norm_over_mix": 309983601.844521
+            },
+            "roberta.encoder.layer.5.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 32425.03204649041,
+              "mix_rho": 2.6813763738538567e-06,
+              "norm_rho": 0.09347039190646518,
+              "raw_norm_over_mix": 34859.109231324794
+            },
+            "roberta.encoder.layer.5.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 3.537185047028628,
+              "mix_rho": 0.02242131173635726,
+              "norm_rho": 0.08526183369556868,
+              "raw_norm_over_mix": 3.8027138955172024
+            },
+            "roberta.encoder.layer.5.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 1.8548421697381638,
+              "mix_rho": 0.0587042748196822,
+              "norm_rho": 0.11706108894621836,
+              "raw_norm_over_mix": 1.9940811688039193
+            },
+            "roberta.encoder.layer.6.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 1190454853.6875517,
+              "mix_rho": 7.987472343748339e-11,
+              "norm_rho": 0.10222524703451337,
+              "raw_norm_over_mix": 1279819730.6376073
+            },
+            "roberta.encoder.layer.6.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 46720044.42244564,
+              "mix_rho": 2.32081221067153e-09,
+              "norm_rho": 0.11656793930777883,
+              "raw_norm_over_mix": 50227217.338730626
+            },
+            "roberta.encoder.layer.6.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 2.2151626394674557,
+              "mix_rho": 0.04443030516760521,
+              "norm_rho": 0.1058085555130507,
+              "raw_norm_over_mix": 2.381450118650035
+            },
+            "roberta.encoder.layer.6.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 2.292440875925941,
+              "mix_rho": 0.042596232862277074,
+              "norm_rho": 0.1049796710108758,
+              "raw_norm_over_mix": 2.4645294655585626
+            },
+            "roberta.encoder.layer.7.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 0.350561158596954,
+              "mix_rho": 0.23873907243971246,
+              "norm_rho": 0.0899752721570659,
+              "raw_norm_over_mix": 0.3768770282869675
+            },
+            "roberta.encoder.layer.7.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 1.948526754492162,
+              "mix_rho": 0.037500465969664935,
+              "norm_rho": 0.07855591810643757,
+              "raw_norm_over_mix": 2.0947984531707795
+            },
+            "roberta.encoder.layer.7.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 1.2148503564695246,
+              "mix_rho": 0.04318710739840124,
+              "norm_rho": 0.05640437267267633,
+              "raw_norm_over_mix": 1.306046551169676
+            },
+            "roberta.encoder.layer.7.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 611773373.8279911,
+              "mix_rho": 1.3556635580111357e-10,
+              "norm_rho": 0.08916170492334385,
+              "raw_norm_over_mix": 657697880.838156
+            },
+            "roberta.encoder.layer.8.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 26014735.8271933,
+              "mix_rho": 2.510038925748805e-09,
+              "norm_rho": 0.07019977948859266,
+              "raw_norm_over_mix": 27967605.907804944
+            },
+            "roberta.encoder.layer.8.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 2976.9188690207543,
+              "mix_rho": 1.7734324924611597e-05,
+              "norm_rho": 0.05675675161507668,
+              "raw_norm_over_mix": 3200.3897445405423
+            },
+            "roberta.encoder.layer.8.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.40865474008605807,
+              "mix_rho": 0.07441585195435951,
+              "norm_rho": 0.03269323304049407,
+              "raw_norm_over_mix": 0.43933156957667263
+            },
+            "roberta.encoder.layer.8.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 3.5791507617386507,
+              "mix_rho": 0.016605173120788835,
+              "norm_rho": 0.06389388139424142,
+              "raw_norm_over_mix": 3.847829885871501
+            },
+            "roberta.encoder.layer.9.attention.output.dense": {
+              "globally_rescaled_norm_over_mix": 233211814026.29282,
+              "mix_rho": 2.490505925540993e-13,
+              "norm_rho": 0.0624415963814353,
+              "raw_norm_over_mix": 250718521650.86337
+            },
+            "roberta.encoder.layer.9.attention.self.key": {
+              "globally_rescaled_norm_over_mix": 5.851247506898859,
+              "mix_rho": 0.007906389854507038,
+              "norm_rho": 0.049735050745578734,
+              "raw_norm_over_mix": 6.290488030668923
+            },
+            "roberta.encoder.layer.9.attention.self.query": {
+              "globally_rescaled_norm_over_mix": 0.4882606608827943,
+              "mix_rho": 0.0629017929560573,
+              "norm_rho": 0.033017989922053355,
+              "raw_norm_over_mix": 0.5249133350637472
+            },
+            "roberta.encoder.layer.9.attention.self.value": {
+              "globally_rescaled_norm_over_mix": 90257916.70223296,
+              "mix_rho": 6.644339955392462e-10,
+              "norm_rho": 0.06447227885836548,
+              "raw_norm_over_mix": 97033383.73895302
+            }
+          },
+          "modules_within_5pct": 0,
+          "norm_median_rho": 0.07462815734027133,
+          "norm_modules_below_1e6": 0,
+          "raw_ratio_quantiles": [
+            0.15165872226137647,
+            1.4737643080750695,
+            6.044831075559749,
+            4020890.8633693457,
+            250718521650.86337
+          ],
+          "rescaled_modules_within_5pct": 0,
+          "seed": 123
+        }
+      ],
+      "paired": {
+        "P1_MIX_minus_P1_NORM": {
+          "LL_pp": {
+            "mean": 4.553985647498479,
+            "nominal_t95": [
+              2.459910359148993,
+              6.6480609358479645
+            ],
+            "sample_sd": 0.8429787440809573,
+            "values": [
+              3.7807552098961565,
+              4.428546981687582,
+              5.452654750911698
+            ]
+          },
+          "TT_pp": {
+            "mean": 31.677093128024055,
+            "nominal_t95": [
+              28.34526337175476,
+              35.00892288429335
+            ],
+            "sample_sd": 1.3412419692155335,
+            "values": [
+              33.01472082555214,
+              31.68429268673759,
+              30.332265871782432
+            ]
+          },
+          "accuracy_pp": {
+            "mean": -2.074966532797859,
+            "nominal_t95": [
+              -8.865800207341305,
+              4.715867141745587
+            ],
+            "sample_sd": 2.7336784279333535,
+            "values": [
+              1.00401606425703,
+              -3.01204819277109,
+              -4.216867469879517
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": -1.539491298527447,
+            "nominal_t95": [
+              -6.17434019302178,
+              3.0953575959668855
+            ],
+            "sample_sd": 1.865777759674218,
+            "values": [
+              0.6024096385542208,
+              -2.409638554216869,
+              -2.8112449799196924
+            ]
+          },
+          "cross_pp": {
+            "mean": -36.231078873303055,
+            "nominal_t95": [
+              -37.51177467255383,
+              -34.95038307405228
+            ],
+            "sample_sd": 0.5155494372187054,
+            "values": [
+              -36.79547637591229,
+              -36.11283992348305,
+              -35.784920320513834
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": -31.30332737603391,
+            "nominal_t95": [
+              -33.827242862763065,
+              -28.779411889304757
+            ],
+            "sample_sd": 1.016012709288195,
+            "values": [
+              -32.45691049106852,
+              -30.911512365585196,
+              -30.54155927144801
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": -0.002120590923905374,
+            "nominal_t95": [
+              -0.0025601758533044653,
+              -0.0016810059945062826
+            ],
+            "sample_sd": 0.00017695674733539873,
+            "values": [
+              -0.002304823081068184,
+              -0.0019519400517469467,
+              -0.0021050096389009917
+            ]
+          },
+          "probe_ce": {
+            "mean": 0.3219819771670447,
+            "nominal_t95": [
+              -0.3282802952183044,
+              0.9722442495523937
+            ],
+            "sample_sd": 0.26176579072793466,
+            "values": [
+              0.6162231359384087,
+              0.23476076805421764,
+              0.1149620275085077
+            ]
+          },
+          "rho": {
+            "mean": -0.002293610567338983,
+            "nominal_t95": [
+              -0.016096137597357077,
+              0.011508916462679113
+            ],
+            "sample_sd": 0.005556264841881027,
+            "values": [
+              -0.005742945504099442,
+              0.004115995039763676,
+              -0.005253881237681182
+            ]
+          }
+        },
+        "P1_MIX_minus_P1_UNREG": {
+          "LL_pp": {
+            "mean": -0.7110523045329155,
+            "nominal_t95": [
+              -3.011884568258208,
+              1.5897799591923771
+            ],
+            "sample_sd": 0.9262096271356199,
+            "values": [
+              -1.5126036520877122,
+              -0.9234657136031501,
+              0.3029124520921158
+            ]
+          },
+          "TT_pp": {
+            "mean": 34.41153034014089,
+            "nominal_t95": [
+              31.025792538972787,
+              37.797268141309
+            ],
+            "sample_sd": 1.3629428776009607,
+            "values": [
+              35.756004227812014,
+              34.44774647282563,
+              33.03084031978504
+            ]
+          },
+          "accuracy_pp": {
+            "mean": 0.20080321285140693,
+            "nominal_t95": [
+              -8.666465438212356,
+              9.068071863915169
+            ],
+            "sample_sd": 3.569555990889792,
+            "values": [
+              4.216867469879517,
+              -1.00401606425703,
+              -2.6104417670682665
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": -0.66934404283802,
+            "nominal_t95": [
+              -7.729640444994309,
+              6.390952359318269
+            ],
+            "sample_sd": 2.842151773167631,
+            "values": [
+              2.6104417670682807,
+              -2.2088353413654573,
+              -2.409638554216883
+            ]
+          },
+          "cross_pp": {
+            "mean": -33.70047814046281,
+            "nominal_t95": [
+              -34.892215874249636,
+              -32.50874040667599
+            ],
+            "sample_sd": 0.4797389968215127,
+            "values": [
+              -34.24340133323975,
+              -33.52428096623697,
+              -33.33375212191171
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": -28.587165525171756,
+            "nominal_t95": [
+              -30.881059910877493,
+              -26.293271139466018
+            ],
+            "sample_sd": 0.9234167553931137,
+            "values": [
+              -29.651551459577213,
+              -28.109840044886248,
+              -28.000105071051806
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": -0.03250133231479049,
+            "nominal_t95": [
+              -0.03505419998042741,
+              -0.02994846464915358
+            ],
+            "sample_sd": 0.0010276675296997898,
+            "values": [
+              -0.03368275705920334,
+              -0.03181430155614588,
+              -0.032006938329022266
+            ]
+          },
+          "probe_ce": {
+            "mean": 0.05013230813698696,
+            "nominal_t95": [
+              -0.7271807562697833,
+              0.8274453725437573
+            ],
+            "sample_sd": 0.312910617128672,
+            "values": [
+              0.3619944233502248,
+              0.052218876550031545,
+              -0.2638163754892955
+            ]
+          },
+          "rho": {
+            "mean": -0.20149916615352256,
+            "nominal_t95": [
+              -0.21899358083512135,
+              -0.18400475147192377
+            ],
+            "sample_sd": 0.007042449619062779,
+            "values": [
+              -0.2078069712074223,
+              -0.1939006271747878,
+              -0.2027899000783576
+            ]
+          }
+        },
+        "P1_NORM_minus_P1_UNREG": {
+          "LL_pp": {
+            "mean": -5.265037952031395,
+            "nominal_t95": [
+              -5.523554034408966,
+              -5.006521869653823
+            ],
+            "sample_sd": 0.10406672752398406,
+            "values": [
+              -5.293358861983869,
+              -5.352012695290732,
+              -5.149742298819582
+            ]
+          },
+          "TT_pp": {
+            "mean": 2.7344372121168434,
+            "nominal_t95": [
+              2.6525177147296475,
+              2.8163567095040394
+            ],
+            "sample_sd": 0.03297703545206858,
+            "values": [
+              2.7412834022598798,
+              2.763453786088043,
+              2.698574448002608
+            ]
+          },
+          "accuracy_pp": {
+            "mean": 2.275769745649266,
+            "nominal_t95": [
+              0.1990046803969956,
+              4.3525348109015365
+            ],
+            "sample_sd": 0.8360104415526594,
+            "values": [
+              3.2128514056224873,
+              2.00803212851406,
+              1.6064257028112507
+            ]
+          },
+          "best_accuracy_pp": {
+            "mean": 0.8701472556894269,
+            "nominal_t95": [
+              -1.5904873518958849,
+              3.3307818632747384
+            ],
+            "sample_sd": 0.990538727372741,
+            "values": [
+              2.00803212851406,
+              0.20080321285141167,
+              0.40160642570280913
+            ]
+          },
+          "cross_pp": {
+            "mean": 2.5306007328402464,
+            "nominal_t95": [
+              2.3538090895563273,
+              2.7073923761241656
+            ],
+            "sample_sd": 0.07116821360179033,
+            "values": [
+              2.5520750426725343,
+              2.5885589572460788,
+              2.451168198602126
+            ]
+          },
+          "eqm_cross_pp": {
+            "mean": 2.7161618508621523,
+            "nominal_t95": [
+              2.3402807826366647,
+              3.09204291908764
+            ],
+            "sample_sd": 0.15131249223912746,
+            "values": [
+              2.8053590314913066,
+              2.8016723206989482,
+              2.5414542003962026
+            ]
+          },
+          "normalized_cross_energy": {
+            "mean": -0.030380741390885122,
+            "nominal_t95": [
+              -0.03252659094038059,
+              -0.028234891841389654
+            ],
+            "sample_sd": 0.0008638206889142585,
+            "values": [
+              -0.03137793397813515,
+              -0.029862361504398936,
+              -0.029901928690121277
+            ]
+          },
+          "probe_ce": {
+            "mean": -0.27184966903005775,
+            "nominal_t95": [
+              -0.5185192363757452,
+              -0.025180101684370293
+            ],
+            "sample_sd": 0.09929786347268978,
+            "values": [
+              -0.2542287125881839,
+              -0.1825418915041861,
+              -0.3787784029978032
+            ]
+          },
+          "rho": {
+            "mean": -0.19920555558618358,
+            "nominal_t95": [
+              -0.20538396288313068,
+              -0.19302714828923648
+            ],
+            "sample_sd": 0.002487143634509032,
+            "values": [
+              -0.20206402570332288,
+              -0.19801662221455146,
+              -0.1975360188406764
+            ]
+          }
+        }
+      }
+    }
+  },
+  "validation_scope": "Export consistency only; server checkpoint reports not rerun."
+}

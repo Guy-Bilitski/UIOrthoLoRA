@@ -1,0 +1,17 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\begin{figure}[t]
+\centering
+%
+\begin{tabular}{cc}
+\textbf{Fixed tail} & \textbf{Flexible within-tail core}\\[2pt]
+$\begin{pmatrix}0&0\\0&\diag(h)\end{pmatrix}$ &
+$\begin{pmatrix}0&0\\0&H\end{pmatrix}$\\[5pt]
+Paired coefficients only & Same span, more internal freedom\\[9pt]
+\textbf{Coordinate-relaxed core} & \textbf{Zero mixing, practical core}\\[2pt]
+$\begin{pmatrix}C_{LL}&C_{LT}\\C_{TL}&C_{TT}\end{pmatrix}$ &
+$\begin{pmatrix}C_{LL}&0\\0&C_{TT}\end{pmatrix}$\\[5pt]
+Ambient scaling permits interaction & Leading modification may remain
+\end{tabular}
+\caption{Conceptual block structure in pretrained coordinates. Rotations change expressivity inside the tail, not its span. Ambient scaling can introduce off-tail entries. Suppressing both mixing operators restores tail-only support when the leading core is zero, but only block decoupling for the practical leading-plus-tail core. Nonzero blocks denote permitted locations, not arbitrary independent expressivity or measured data.}
+\label{fig:blockschematic}
+\end{figure}

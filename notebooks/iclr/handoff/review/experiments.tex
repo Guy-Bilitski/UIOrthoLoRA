@@ -1,0 +1,273 @@
+Our primary empirical evaluation tests whether the proposed spectrum-aware
+parameterization remains effective on standard natural language understanding
+tasks under compact trainable parameter budgets. We evaluate UILinLoRA and
+UIOrthoLoRA on six GLUE validation tasks using RoBERTa-base and RoBERTa-large. Full training
+details, adapter placement, optimization settings, and evaluation metrics are
+provided in Appendix~\ref{app:training_details}.
+
+We compare against representative PEFT baseline results reported by
+\citet{albert2025randlora}, including VeRA, LoRA, and RandLoRA, and report
+validation performance together with the corresponding trainable parameter
+budgets. As shown in 
+Table~\ref{tab:glue_results_base_large}, UIOrthoLoRA achieves the strongest
+RoBERTa-base average among the compared methods, reaching 85.5 with 0.4M
+trainable parameters. UILinLoRA, which removes the orthogonal rotations and
+keeps only the magnitude-based spectral adaptation with diagonal scalers,
+remains highly competitive, reaching 84.68 with only 0.08M trainable parameters
+on RoBERTa-base and achieving the strongest RoBERTa-large average among the
+compared proposed variants. These results suggest that pretrained singular
+coordinates provide an effective basis for parameter-efficient adaptation, while
+compact orthogonal rotations can provide additional expressiveness in some
+settings without substantially increasing the trainable footprint.
+
+Beyond the main GLUE results, we include three additional empirical studies in
+the appendix. Appendix~\ref{app:soft_mixing_ablation} reports a diagnostic
+soft-mixing regularization ablation that directly tests the leading-tail
+mixing quantities from our analysis. Appendix~\ref{app:gpt2_generation_results}
+reports GPT-2 Medium generation results, and
+Appendices~\ref{app:retention_adaptation_protocol}
+through~\ref{app:retention_adaptation_results} report a retention-oriented
+evaluation protocol and results, which further motivate the
+preservation-adaptation perspective underlying UIOrthoLoRA.
+
+\subsection{Soft-Mixing Regularization Ablation}
+\label{app:soft_mixing_ablation}
+
+This section evaluates whether the scaler-induced mixing quantities derived in
+Section~\ref{sec:uiortholora} can be used as practical regularizers. The goal is
+not to introduce a new primary training recipe, but to provide a diagnostic test
+of the preservation mechanism suggested by the theory.
+
+For the UI update
+\[
+\Delta W^{ui}
+=
+E \bar{U}_r \Sigma'_r \bar{V}_r^\top D,
+\]
+our analysis identifies the left and right leading-tail mixing terms
+\[
+M_E = U_R^\top E \bar{U}_r,
+\qquad
+M_D = V_R^\top D \bar{V}_r.
+\]
+We add the soft-mixing penalty
+\[
+\mathcal{R}_{\mathrm{mix}}
+=
+\lambda_E^{\mathrm{mix}}\|M_E\|_F^2
++
+\lambda_D^{\mathrm{mix}}\|M_D\|_F^2,
+\]
+and train with
+\[
+\mathcal{L}_{\mathrm{total}}
+=
+\mathcal{L}_{\mathrm{task}}
++
+\mathcal{R}_{\mathrm{mix}}.
+\]
+
+\paragraph{Setup.}
+We run this ablation on five GLUE tasks, RTE, MRPC, CoLA, STS-B, and
+SST-2, using RoBERTa-base. The training recipe, adapter placement,
+optimizer, scheduler, and task hyperparameters are kept identical to the
+corresponding GLUE runs. Adapters are inserted into the query, key, value, and
+attention-output projections in all 12 transformer layers. For each adapted
+matrix, we adapt 256 singular values and set \(k_{vec}=0\), so no orthogonal
+tail rotations are used in this diagnostic experiment. All reported values are averaged over two seeds. Spectral metrics are averaged over the 48 adapted attention
+modules for each seed and then averaged across seeds.
+
+We compare three variants:
+\[
+\text{A: } \lambda_E^{\mathrm{mix}}=0,\quad \lambda_D^{\mathrm{mix}}=0,
+\]
+\[
+\text{B: } \lambda_E^{\mathrm{mix}}=10^{-3},\quad
+\lambda_D^{\mathrm{mix}}=0,
+\]
+\[
+\text{C: } \lambda_E^{\mathrm{mix}}=10^{-3},\quad
+\lambda_D^{\mathrm{mix}}=10^{-3}.
+\]
+Variant A is the unregularized adapter, variant B penalizes only left-side
+mixing, and variant C penalizes both left- and right-side mixing.
+
+\paragraph{Metrics.}
+For each adapted layer, we compute the mixing magnitudes
+\[
+\mu_E = \|M_E\|_2,
+\qquad
+\nu_D = \|M_D\|_2,
+\]
+the relative update magnitude
+\[
+\mathrm{RelPert}_F =
+\frac{\|\Delta W^{ui}\|_F}{\|W^{pre}\|_F},
+\]
+and the update in pretrained singular coordinates
+\[
+C = U^\top \Delta W^{ui} V
+=
+\begin{bmatrix}
+C_{11} & C_{12}\\
+C_{21} & C_{22}
+\end{bmatrix}.
+\]
+We report the leading-block leakage
+\[
+\mathrm{Leak}_{11}
+=
+\frac{\|C_{11}\|_2}{\|\Delta W^{ui}\|_2},
+\]
+and the off-tail ratio
+\[
+\mathrm{OffTailRatio}_F
+=
+\frac{\|C_{\mathrm{off}}\|_F}{\|C\|_F},
+\qquad
+C_{\mathrm{off}}
+=
+\begin{bmatrix}
+C_{11} & C_{12}\\
+C_{21} & 0
+\end{bmatrix}.
+\]
+We also report leading left and right subspace drift using the operator-norm
+\(\sin\Theta\) distance between the leading singular subspaces of
+\(W^{pre}\) and \(W^{pre}+\Delta W\).
+
+\begin{table}[h]
+\centering
+\caption{Soft-mixing regularization ablation on five GLUE tasks. Values are
+averaged over two seeds. Spectral metrics are averaged across the 48 adapted
+attention modules for each seed and then averaged across seeds. Variants: A is
+no regularization, B is the \(\mu_E\)-only penalty, and C is the
+\(\mu_E+\nu_D\) penalty. RTE and SST-2 report accuracy, MRPC reports F1, CoLA
+reports Matthews correlation, and STS-B reports Pearson correlation.}
+\label{tab:soft_mixing_ablation}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llccccccccc}
+\toprule
+\textbf{Task} &
+\textbf{Variant} &
+\(\lambda_E^{\mathrm{mix}}\) &
+\(\lambda_D^{\mathrm{mix}}\) &
+\textbf{Score} &
+\(\mu_E\) &
+\(\nu_D\) &
+\(\mathrm{RelPert}_F\) &
+\(\mathrm{Leak}_{11}\) &
+\(\mathrm{OffTailRatio}_F\) &
+\(\mathrm{Drift}_U / \mathrm{Drift}_V\) \\
+\midrule
+RTE   & A & 0 & 0 & 0.7708 & 1.384 & 1.442 & 0.379 & 0.722 & 0.948 & 1.000 / 1.000 \\
+RTE   & B & \(10^{-3}\) & 0 & 0.7906 & 0.278 & 2.112 & 0.285 & 0.633 & 0.934 & 0.999 / 0.999 \\
+RTE   & C & \(10^{-3}\) & \(10^{-3}\) & 0.7672 & 0.221 & 0.204 & 0.063 & 0.590 & 0.838 & 0.523 / 0.512 \\
+\midrule
+MRPC  & A & 0 & 0 & 0.9215 & 1.282 & 1.345 & 0.318 & 0.722 & 0.948 & 0.999 / 1.000 \\
+MRPC  & B & \(10^{-3}\) & 0 & 0.9240 & 0.259 & 1.538 & 0.196 & 0.697 & 0.948 & 0.983 / 0.983 \\
+MRPC  & C & \(10^{-3}\) & \(10^{-3}\) & 0.9132 & 0.230 & 0.188 & 0.043 & 0.626 & 0.857 & 0.667 / 0.662 \\
+\midrule
+CoLA  & A & 0 & 0 & 0.6409 & 1.249 & 1.336 & 0.308 & 0.721 & 0.946 & 0.999 / 0.999 \\
+CoLA  & B & \(10^{-3}\) & 0 & 0.6429 & 0.287 & 1.618 & 0.206 & 0.637 & 0.938 & 0.989 / 0.989 \\
+CoLA  & C & \(10^{-3}\) & \(10^{-3}\) & 0.6315 & 0.160 & 0.144 & 0.034 & 0.580 & 0.880 & 0.559 / 0.552 \\
+\midrule
+STS-B & A & 0 & 0 & 0.9080 & 1.375 & 1.447 & 0.382 & 0.724 & 0.947 & 1.000 / 1.000 \\
+STS-B & B & \(10^{-3}\) & 0 & 0.9048 & 0.275 & 1.722 & 0.251 & 0.667 & 0.940 & 1.000 / 1.000 \\
+STS-B & C & \(10^{-3}\) & \(10^{-3}\) & 0.9058 & 0.202 & 0.248 & 0.068 & 0.508 & 0.806 & 0.749 / 0.746 \\
+\midrule
+SST-2 & A & 0 & 0 & 0.9472 & 1.219 & 1.255 & 0.282 & 0.731 & 0.948 & 1.000 / 1.000 \\
+SST-2 & B & \(10^{-3}\) & 0 & 0.9438 & 0.185 & 1.604 & 0.268 & 0.707 & 0.943 & 1.000 / 1.000 \\
+SST-2 & C & \(10^{-3}\) & \(10^{-3}\) & 0.9369 & 0.134 & 0.170 & 0.056 & 0.565 & 0.850 & 0.685 / 0.672 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\paragraph{Results.}
+Across all five tasks, penalizing both mixing terms reduces the measured
+interaction between the adapted tail components and the preserved leading
+singular structure. Variant C substantially reduces both \(\mu_E\) and
+\(\nu_D\), while variant B reduces \(\mu_E\) but leaves \(\nu_D\) large. This
+one-sided behavior is consistent across the seed-averaged results: when only
+\(\lambda_E^{\mathrm{mix}}\) is active, \(\nu_D\) increases from variant A to
+variant B on every task. Thus, penalizing only one side allows the model to
+route mixing through the unpenalized right-side scaler. The full regularizer
+avoids this compensation, reducing \(\nu_D\) to values between \(0.144\) and
+\(0.248\).
+
+The leakage metrics show the same trend. Moving from the unregularized adapter
+to the full regularizer reduces the mean off-tail ratio on every task. The
+decrease is \(0.948 \rightarrow 0.838\) on RTE,
+\(0.948 \rightarrow 0.857\) on MRPC,
+\(0.946 \rightarrow 0.880\) on CoLA,
+\(0.947 \rightarrow 0.806\) on STS-B, and
+\(0.948 \rightarrow 0.850\) on SST-2. The leading-block leakage
+\(\mathrm{Leak}_{11}\) also decreases under the full regularizer on every task.
+
+The leading-subspace drift metrics provide the clearest separation between the
+one-sided and two-sided penalties. Variants A and B remain close to maximal
+mean drift on most tasks, while variant C consistently reduces the drift of the
+leading singular subspaces. The mean left/right drift decreases from
+approximately \(1.0/1.0\) under the unregularized adapter to \(0.523/0.512\)
+on RTE, \(0.667/0.662\) on MRPC, \(0.559/0.552\) on CoLA, \(0.749/0.746\) on
+STS-B, and \(0.685/0.672\) on SST-2. Since this drift is measured with an
+operator-norm \(\sin\Theta\) distance, values near one indicate that at least
+one leading direction undergoes a large angular change, rather than implying
+that the entire leading subspace is orthogonal. Nevertheless, the consistent
+reduction under variant C indicates improved preservation of the leading
+spectral geometry.
+
+\paragraph{Task performance and update magnitude.}
+The full regularizer keeps downstream performance close to the unregularized
+adapter while substantially reducing spectral leakage. The task-level score
+decreases from variant A to variant C are \(0.36\) points on RTE, \(0.84\)
+points on MRPC, \(0.95\) points on CoLA, \(0.22\) points on STS-B, and
+\(1.03\) points on SST-2. Thus, the full regularizer produces a clear
+structural preservation effect while keeping task performance close to the
+unregularized adapter, with deviations of roughly one point across the
+evaluated settings.
+
+The relative update magnitude decreases under the full regularizer, but it
+does not vanish. Mean \(\mathrm{RelPert}_F\) under variant C remains nonzero
+across all tasks, with values in the approximate range of \(0.03\) to \(0.07\).
+At the seed-resolved level, the reduction from variant A to variant C ranges
+from roughly \(5\times\) to \(17\times\), while the off-tail and drift metrics
+continue to improve. This indicates that the regularizer is not merely
+shrinking the update norm; it also changes where the update lies in the
+pretrained singular coordinate system.
+
+Variant B obtains the strongest downstream score on RTE, MRPC, and CoLA, but
+it does so while leaving substantial right-side mixing. This supports the
+interpretation that partial mixing control can act as an adaptation bias, but
+not as a sufficient preservation mechanism. Variant C is therefore the more
+diagnostic setting for testing the preservation claim: it is the only variant
+that consistently suppresses both sides of scaler-induced mixing and produces
+the strongest reduction in off-tail leakage and leading subspace drift.
+
+\paragraph{Takeaway.}
+This diagnostic ablation supports the interpretation of \(\mu_E\) and
+\(\nu_D\) as meaningful quantities for controlling scaler-induced leakage.
+Penalizing only \(U_R^\top E\bar{U}_r\) reduces left-side mixing but leaves a
+consistent escape route through \(V_R^\top D\bar{V}_r\). Penalizing both
+\(U_R^\top E\bar{U}_r\) and \(V_R^\top D\bar{V}_r\) gives the cleanest
+preservation behavior: it reduces both mixing magnitudes, lowers off-tail
+leakage, reduces leading-block contamination, and substantially decreases
+leading-subspace drift across tasks and seeds, while keeping downstream
+performance close to the unregularized adapter.
+
+\paragraph{Future directions.}
+The present ablation suggests that the mixing magnitudes \(\mu_E\) and
+\(\nu_D\) are not only useful analytical quantities, but may also serve as
+practical control signals during training. Since reducing these quantities also
+reduces off-tail leakage and leading-subspace drift, an interesting direction
+is to study whether such spectral control can improve knowledge preservation
+under broader retention-oriented adaptation settings.
+
+In particular, future work may investigate whether controlling scaler-induced
+mixing helps limit functional forgetting when adapters are trained to acquire
+new task-specific knowledge. This would connect the spectral preservation
+metrics studied here with the retention-adaptation perspective described in
+Appendix~\ref{app:retention_adaptation_protocol}. Overall, this suggests a
+possible path toward PEFT methods that regulate not only how much they adapt,
+but also how much pretrained structure is allowed to drift during fine-tuning.

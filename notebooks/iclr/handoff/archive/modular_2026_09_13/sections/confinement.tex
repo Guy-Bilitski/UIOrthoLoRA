@@ -1,0 +1,44 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\section{Confinement and flexibility}
+\label{sec:confinement}
+
+\input{figures/block_schematic}
+We first remove ambient coordinate scaling and study updates supported entirely in the selected tail:
+\begin{equation}
+\Delta=U_T H V_T^\top.
+\label{eq:tailcore}
+\end{equation}
+This family preserves the leading pretrained block and has zero cross mixing. Its available span, however, does not specify how much freedom is available \emph{inside} that span.
+
+\paragraph{Fixed-tail coefficients.}
+The fixed-direction construction sets $H=\diag(h)$, with $h\in\mathbb R^r$ trainable. We use LinLoRA as its implementation label, not as a claim to originate singular-value or fixed-basis coefficient tuning: these ideas appear in SVDiff and SVFT~\citep{han2023svdiff,lingam2024svft}. This construction changes paired singular-vector coefficients but cannot express off-diagonal interactions within the tail. The coefficients describe an additive update, not the entire singular spectrum of the adapted matrix.
+
+\paragraph{Rotatable tail.}
+The within-tail construction (OrthoLoRA) takes
+\begin{equation}
+H=R_U\diag(h)R_V^\top,\qquad R_U,R_V\in\mathbb O(r).
+\label{eq:rotations}
+\end{equation}
+With unrestricted coefficients and full-tail rotations, the inner SVD makes every real $r\times r$ core representable. Rotations do not move the column spaces of $U_T$ and $V_T$. Practical partial rotations cover only $k_{\mathrm{vec}}$ of the $k_{\mathrm{val}}$ adapted directions, so their representable family is smaller than this full-core reference. Increasing flexibility also changes trainable capacity; this is not an equal-parameter comparison.
+
+\begin{proposition}[Two distinct approximation bottlenecks]
+\label{prop:approximation}
+For an arbitrary target matrix $G\in\mathbb R^{d\times d}$, let $G_{TT}=U_T^\top G V_T$. Then
+\begin{align}
+\min_h\fro{G-U_T\diag(h)V_T^\top}^2
+&=\fro{G}^2-\sum_{i=1}^r |(G_{TT})_{ii}|^2,\label{eq:fixederror}\\
+\min_H\fro{G-U_T H V_T^\top}^2
+&=\fro{G}^2-\fro{G_{TT}}^2.\label{eq:fullerror}
+\end{align}
+The improvement in the best attainable squared error equals the off-diagonal energy of $G_{TT}$. Both families retain the same unavoidable outside-tail residual.
+\end{proposition}
+
+The proof is an orthogonal-projection argument (Appendix~\ref{app:approximation}). This separates a \emph{within-tail coefficient bottleneck} from an \emph{outside-tail subspace bottleneck}. Rotations can address the former, not the latter. For example, a target $u_i v_j^\top$ with distinct tail indices is missed by paired diagonal coefficients but is representable by the full tail core. A leading-only target remains outside both families. These are exact approximation statements for a specified $G$, not assertions that a neural task optimum lies in the tail or that optimization reaches the best approximation.
+
+\paragraph{What strict confinement preserves.}
+For any fixed input $x$, $U_L^\top(W_0+\Delta)x=U_L^\top W_0x$ under~\eqref{eq:tailcore}. This is a local projection identity. Inputs to later layers can change during network adaptation, so it does not prove that pretrained behavior is preserved. The original leading singular pairs remain decoupled and are guaranteed to remain the top-$k$ pairs whenever
+\begin{equation}
+\sigma_k(W_0)>\op{\Sigma_T+H}.
+\label{eq:nocrossing}
+\end{equation}
+Appendix~\ref{app:crossing} gives a tail-only counterexample when this separation fails.

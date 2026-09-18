@@ -1,0 +1,227 @@
+\subsection{LinLoRA Components Analysis}
+
+Let $W^{\ell \ell} = W^{pre} + \Delta W^{\ell \ell}$ be the matrix of the model after adaptation.
+\[
+W^{\ell \ell}
+= W^{pre} + \Delta W^{\ell \ell}
+= U^{pre}\Sigma_R (V^{pre})^\top + U^{pre} \Sigma_r (V^{pre})^\top
+= U^{pre}(\Sigma_R + \Sigma_r)(V^{pre})^\top
+\]
+To cleanly express the addition, we formally define the block structures of the singular-value matrices. Let
+\[
+\Sigma_R =
+\begin{bmatrix}
+\Sigma'_R & 0 \\
+0 & 0
+\end{bmatrix},
+\qquad
+\Sigma_r =
+\begin{bmatrix}
+0 & 0 \\
+0 & \Sigma'_r
+\end{bmatrix}
+\implies
+\Sigma_R + \Sigma_r
+=
+\begin{bmatrix}
+\Sigma'_R & 0 \\
+0 & \Sigma'_r
+\end{bmatrix}.
+\]
+where $\Sigma'_R$ contains the preserved pretrained singular values, and $\Sigma'_r$ contains the learnable adapted singular values.
+
+Let
+\[
+M^{pre}
+=
+\Sigma_R(V^{pre})^\top
+=
+\begin{bmatrix}
+\Sigma'_R (V_R^{pre})^\top \\
+0
+\end{bmatrix}
+=
+\begin{bmatrix}
+M'^{pre} \\
+0
+\end{bmatrix}.
+\]
+Therefore, $W^{pre}=U^{pre}M^{pre}$. Substituting this back into the composite matrix gives:
+\[
+W^{\ell \ell}
+=
+U^{pre}
+\begin{bmatrix}
+M'^{pre} \\
+\Delta M^{\ell \ell}
+\end{bmatrix}
+=
+U^{pre}M^{\ell \ell},
+\Delta M^{\ell \ell}
+=
+\Sigma'_r (V_r^{pre})^\top.
+\]
+
+To summarize, we have established the structural relationship
+\[
+W^{pre}
+=
+U^{pre}
+\begin{bmatrix}
+M'^{pre} \\
+0
+\end{bmatrix},
+\qquad
+W^{\ell \ell}
+=
+U^{pre}
+\begin{bmatrix}
+M'^{pre} \\
+\Delta M^{\ell \ell}
+\end{bmatrix}.
+\]
+
+\subsection{Information Stability and Preservation}
+
+\noindent \textbf{Theorem 1} (LinLoRA Retains Pre-trained Information).
+\textit{
+LinLoRA injects fine-tuning information through $\Delta M^{\ell \ell}$
+strictly orthogonally to the pre-trained information, while preserving the
+pretrained SVD basis during training.
+}
+\[
+W^{\ell \ell}h_{i-1}
+=
+\underbrace{\sum\limits_{j=1}^{R} z^{pre}_j U^{pre}_j}_{\text{pre-trained information}}
++
+\underbrace{\sum\limits_{j=R+1}^{R+r} z^{ft}_j U^{pre}_j}_{\text{fine-tuned information}} .
+\]
+Here, the coefficients are induced by $M^{\ell \ell}h_{i-1}
+=
+\begin{bmatrix}
+z^{pre} \\
+z^{ft}
+\end{bmatrix}
+$. \textit{Proof is provided in Appendix~\ref{app:proof-linlora-retention}.}
+
+\noindent \textbf{Proposition 1} (Fixed-Basis Adaptation Bottleneck). \textit {Assume the pretraining-finetuning paradigm introduced above, namely that the principal singular directions of the pretrained model approximate those of the task-optimal model. Then a fixed-basis adapter, such as LinLoRA, can reduce the PAC-Bayesian perturbation bound only to the extent that its fixed adaptation subspace aligns with the dominant directions of the optimal task-specific perturbation. If this alignment fails, then in the worst case the resulting bound need not improve over the pretrained model.}
+
+\begin{proof}
+Let $W^{opt} \in \mathbb{R}^{m \times n}$ denote a task-optimal weight matrix, with singular value decomposition
+$W^{opt} = U^{opt}\Sigma^{opt}(V^{opt})^\top.$
+Under the pretraining-finetuning paradigm~\ref{def}, we assume that the dominant pretrained singular components approximate the dominant components of the task-optimal solution:
+\[
+U_R^{pre} \approx U_R^{opt}, \quad
+(V_R^{pre})^\top \approx (V_R^{opt})^\top,
+\quad
+\Sigma_R^{pre} \approx \Sigma_R^{opt}.
+\implies
+W^{opt} \approx W_R^{pre} + \Delta W_r^{opt},
+\]
+Thus, the task-optimal weights can be decomposed as $W_R^{pre}$ denotes the dominant pretrained component and $\Delta W_r^{opt}$ denotes the residual task-specific perturbation required to reach the task-optimal solution.
+
+Following the perturbation analysis of \citet{neyshabur2018pacbayesian}, the change in the network output induced by a layer-wise perturbation can be bounded by
+\[
+\Delta L
+\leq
+e \|x\|_2
+\left(
+\prod_{i=1}^{d} \|W_i^{opt}\|_2
+\right)
+\sum_{i=1}^{d}
+\frac{\|\Delta W_i\|_2}{\|W_i^{opt}\|_2}.
+\]
+For the pretrained model, the relevant discrepancy from the task-optimal model is $\Delta W_{r,i}^{opt}$ at each layer. Therefore,
+\[
+\Delta L(W^{pre})
+\leq
+C
+\sum_{i=1}^{d}
+\frac{\|\Delta W_{r,i}^{opt}\|_2}{\|W_i^{opt}\|_2}
+\text{\qquad where\qquad }
+C
+=
+e \|x\|_2
+\prod_{i=1}^{d}
+\|W_i^{opt}\|_2.
+\]
+
+After training a fixed-basis adapter such as LinLoRA, the model captures an adapter perturbation $\Delta W_{r,i}^{\ell \ell}$ in each layer. The remaining discrepancy from the task-optimal perturbation is therefore
+$\Delta W_{r,i}^{opt} - \Delta W_{r,i}^{\ell \ell}.$ 
+Substituting this residual perturbation into the same bound gives
+\[
+\Delta L(W^{\ell \ell})
+\leq
+C
+\sum_{i=1}^{d}
+\frac{\|\Delta W_{r,i}^{opt} - \Delta W_{r,i}^{\ell \ell}\|_2}{\|W_i^{opt}\|_2}.
+\]
+
+The behavior of this residual depends on the relationship between the fixed adapter basis and the singular directions of the optimal perturbation. Let $k$ denote the effective rank of $\Delta W_r^{opt}$, and let $r$ denote the adaptation rank of the fixed-basis adapter.
+
+\textbf{Case 1: sufficient capacity and optimal directional alignment.} If $r \geq k$ and the fixed adapter basis aligns with the singular directions of $\Delta W_r^{opt}$, then the adapter can represent the full task-specific perturbation. Under ideal optimization,
+\[
+\|\Delta W_{r,i}^{opt} - \Delta W_{r,i}^{\ell \ell}\|_2
+\to
+0
+\qquad
+\text{for all } i.
+\]
+Consequently, $\Delta L(W^{\ell \ell}) \to 0$
+so the perturbation bound is reduced relative to the pretrained model.
+
+\textbf{Case 2: insufficient capacity or suboptimal directional alignment.} If $r < k$, or if the fixed adapter basis does not align with the dominant singular directions of $\Delta W_r^{opt}$, then the adapter may fail to capture the leading components of the optimal perturbation. By the Eckart-Young-Mirsky theorem, the best rank-$r$ approximation would leave a residual controlled by the next singular value, $\sigma_{r+1}(\Delta W_{r,i}^{opt})$. However, a fixed basis that is not aligned with the dominant singular directions need not achieve this optimal residual. In the worst case, the leading singular component remains uncaptured, so
+\[
+\|\Delta W_{r,i}^{opt} - \Delta W_{r,i}^{\ell \ell}\|_2
+\approx
+\sigma_1(\Delta W_{r,i}^{opt})
+\implies
+\Delta L(W^{\ell \ell})
+\lesssim
+C
+\sum_{i=1}^{d}
+\frac{\sigma_1(\Delta W_{r,i}^{opt})}{\|W_i^{opt}\|_2}
+\]
+
+which is of the same order as the pretrained discrepancy bound. Hence, without directional alignment, a fixed-basis adapter is not guaranteed to improve the perturbation bound.
+
+This establishes that fixed-basis adaptation is bottlenecked by the alignment between its prescribed adaptation subspace and the dominant singular directions of the task-optimal perturbation.
+\end{proof}
+
+\subsection{OrthoLoRA: Alleviating the Fixed-Basis Bottleneck Within the Selected Tail Subspace}\label{sec}
+
+Proposition~1 exposes a vulnerability in fixed-basis adapters: to reduce the PAC-Bayesian perturbation bound under the idealized analysis, the adapter representational basis must be aligned with the optimal one. To address this, we introduce \textbf{OrthoLoRA} (Orthogonal Low-Rank Adaptation). Unlike LinLoRA, which learns magnitudes in a fixed pretrained basis, OrthoLoRA introduces trainable orthogonal rotations within the selected low-spectrum subspace.
+
+\subsubsection{The Direct Resolution: Full Orthogonal Adaptation}
+
+The mathematically direct way to address Proposition~1 is to operate within the optimal low-spectrum subspace directions. In this resolution, one would discard the fixed low-spectrum subspace vectors entirely and learn a completely new, dense orthogonal basis $\hat{U}_{new} \in \mathbb{R}^{d_{out} \times k_{vec}}$ and $\hat{V}_{new} \in \mathbb{R}^{d_{in} \times k_{vec}}$ from scratch.
+
+However, this approach fails to decouple the parameter count from the underlying matrix dimensions, inheriting the same structural bottleneck as standard LoRA. Specifically, learning dense orthogonal bases directly scales with the matrix dimensions, requiring $\mathcal{O}(d_{out} \cdot k_{vec} + d_{in} \cdot k_{vec})$ trainable parameters.
+
+\subsubsection{Our Approach: Parameter-Efficient Unitary Shifts}
+
+To bridge this gap, OrthoLoRA introduces a novel parameterization based on unitary shifts. We recognize a fundamental property of linear subspaces: any orthogonal basis within the optimal low-spectrum subspace can be perfectly represented as an orthogonal transformation of the existing basis vectors.
+
+Instead of discarding the pre-trained low-spectrum subspace, we freeze the original singular vectors corresponding to the tail components ($U_{r}, V_{r}$) and introduce highly compact, learnable orthogonal transformation matrices $R_U, R_V \in \mathbb{O}(k_{vec})$. By applying these matrices as right multipliers:
+\[
+\bar{U}_{r} = U_{r} \cdot R_U,
+\quad
+\bar{V}_{r} = V_{r} \cdot R_V
+\]
+We allow the adapter to rotate its basis strictly within the selected low-spectrum subspace. Consequently, the adapter can better align its orthogonal directions with task-relevant components of the optimal perturbation that are expressible within this subspace. By capturing the most dominant optimal directions, the adapter drives the theoretical error bound down the singular value spectrum:
+\[
+\Delta L(W^{ortho})
+\leq
+e \|x\|_2
+\left(
+\prod_{i=1}^d
+\|W^{opt}_{i}\|_2
+\right)
+\sum_{i=1}^d
+\frac{\sigma_{r+1}(\Delta W_{r,i}^{opt})}{\|W^{opt}_{i}\|_2}
+\]
+This formulation yields two advantages. First, because $R_U$ and $R_V$ are dimensioned solely by the adaptation rank ($k_{vec} \times k_{vec}$), the parameter cost plummets from $\mathcal{O}(d_{out} \cdot k_{vec})$ to $\mathcal{O}(k_{vec}^2)$. Second, because the pretrained \(U_r\) and \(V_r\) are structurally orthogonal
+to the dominant principal components by definition, any orthogonal rotations
+\(R_U\) and \(R_V\) applied to them keep the rotated bases
+\(\bar{U}_r\) and \(\bar{V}_r\) orthogonal to the preserved leading singular subspaces.
+

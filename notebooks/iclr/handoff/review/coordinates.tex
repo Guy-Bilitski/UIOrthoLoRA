@@ -1,0 +1,13 @@
+Let $W^{pre} \in \mathbb{R}^{m \times n}$ be a weight matrix of a large pretrained model. Let $U^{pre} \in \mathbb{R}^{m \times m}, \Sigma_R \in \mathbb{R}^{m \times n}, V^{pre} \in \mathbb{R}^{n \times n}$ be the singular values and directions matrices obtained from singular value decomposition (SVD) of $W^{pre}$, where $R \leq \min\{m,n\}$ denotes the numerical rank of $W^{pre}$.
+
+The additive nature of the adapter is expressed by:
+\[
+W = W^{pre} + \Delta W
+\]
+\citet{hu2022lora} concluded that the learned low-rank update, $\Delta W = BA$, amplifies task-specific singular directions that already exist within the pre-trained weights, $W^{pre}$. We characterize this mechanism as the \textbf{pretraining-finetuning paradigm}\label{def}: the critical feature directions are established during pretraining, while fine-tuning serves mainly to recalibrate their relative importance. Motivated by this insight, our approach explicitly leverages the pre-trained singular vectors, focusing on adapting their corresponding amplitudes:
+$\Delta W^{\ell \ell} = U^{pre} \underline{\Sigma}_r (V^{pre})^\top
+$
+
+Let $r = \min\{m,n\} - R$ be the number of low tail singular values of $W^{pre}$. By the properties of SVD, the diagonal of $\Sigma_R$ contains the $R$ non-zero pretrained singular values and $r$ zeros. The matrix $\underline{\Sigma}_r$ is defined to have $0$ on the diagonal where the pretrained singular values exist, and trainable parameters in the remaining $r$ diagonal positions. Together, their sum forms a diagonal matrix of rank $\min\{m,n\}$. Underlined quantities denote trainable parameters, while non-underlined quantities are frozen components obtained from the pretrained SVD.
+
+Due to the linear behavior of the trainable components, we call this variant \textbf{LinLoRA}.

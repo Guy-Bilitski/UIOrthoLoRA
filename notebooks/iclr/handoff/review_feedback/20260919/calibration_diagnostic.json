@@ -1,0 +1,2006 @@
+{
+  "analysis": "Post hoc descriptive calibration; no fitted temperature or model change",
+  "definitions": {
+    "ece": "15 fixed equal-width confidence bins; seed-level metric then mean over three seeds",
+    "brier": "Binary Brier mean((p(class 1)-label)^2), not the doubled two-class sum"
+  },
+  "limitations": [
+    "Probabilities reconstructed from saved float32 binary cross-entropy; zero losses saturate at p=1.",
+    "ECE is bin-dependent and noisy on 277/408 fixed examples; these summaries are not independent task replications.",
+    "No inference about temperature-scaled performance or improved representations."
+  ],
+  "evaluator_sha256": "7387734b2791c516d105509401300c7586e5b1d03636e741c35912631758ec62",
+  "source_csv_sha256": "ce19f034bf14731ceb44557b2811a7488a8645bb4631195e959b9746f25f85ea",
+  "summary": {
+    "rte": {
+      "P1_UNREG": {
+        "accuracy": {
+          "mean": 0.717208182912154,
+          "sample_sd": 0.015030079418528079
+        },
+        "nll": {
+          "mean": 2.4285932864063557,
+          "sample_sd": 0.07099567610486394
+        },
+        "ece15": {
+          "mean": 0.2651382978664382,
+          "sample_sd": 0.01566988718530472
+        },
+        "binary_brier": {
+          "mean": 0.2674471337782207,
+          "sample_sd": 0.01595974355113467
+        },
+        "mean_confidence": {
+          "mean": 0.9742497097605554,
+          "sample_sd": 0.002306733201727145
+        },
+        "confidence_on_errors": {
+          "mean": 0.9603334782963865,
+          "sample_sd": 0.009468414228082114
+        },
+        "wrong_nll": {
+          "mean": 8.551585077105399,
+          "sample_sd": 0.6821407661786958
+        },
+        "correct_nll": {
+          "mean": 0.023824891181656156,
+          "sample_sd": 0.0034737868908442425
+        },
+        "fraction_zero_loss": {
+          "mean": 0.05535499398315283,
+          "sample_sd": 0.0480745712525588
+        }
+      },
+      "P1_MIX": {
+        "accuracy": {
+          "mean": 0.713598074608905,
+          "sample_sd": 0.01627887997408988
+        },
+        "nll": {
+          "mean": 1.2291745651613402,
+          "sample_sd": 0.08868190747310598
+        },
+        "ece15": {
+          "mean": 0.22484425833832705,
+          "sample_sd": 0.015755167106723516
+        },
+        "binary_brier": {
+          "mean": 0.24319288061017252,
+          "sample_sd": 0.010250622638359913
+        },
+        "mean_confidence": {
+          "mean": 0.9357427649291167,
+          "sample_sd": 0.008634950747542674
+        },
+        "confidence_on_errors": {
+          "mean": 0.894265278757286,
+          "sample_sd": 0.011165584080109257
+        },
+        "wrong_nll": {
+          "mean": 4.1507994474255945,
+          "sample_sd": 0.13753826887207432
+        },
+        "correct_nll": {
+          "mean": 0.05550378169998108,
+          "sample_sd": 0.011857691218323346
+        },
+        "fraction_zero_loss": {
+          "mean": 0.0048134777376654635,
+          "sample_sd": 0.0041685940013691395
+        }
+      },
+      "P1_NORM": {
+        "accuracy": {
+          "mean": 0.7123947051744886,
+          "sample_sd": 0.01627887997408988
+        },
+        "nll": {
+          "mean": 2.1933980953207146,
+          "sample_sd": 0.32735666385345313
+        },
+        "ece15": {
+          "mean": 0.26961089517433856,
+          "sample_sd": 0.01923853569272707
+        },
+        "binary_brier": {
+          "mean": 0.2700075292647495,
+          "sample_sd": 0.020432695845688586
+        },
+        "mean_confidence": {
+          "mean": 0.9699110252153607,
+          "sample_sd": 0.005139828819587606
+        },
+        "confidence_on_errors": {
+          "mean": 0.9541324104332436,
+          "sample_sd": 0.01675863341476814
+        },
+        "wrong_nll": {
+          "mean": 7.53274577951857,
+          "sample_sd": 0.7525861144659161
+        },
+        "correct_nll": {
+          "mean": 0.028668048810007746,
+          "sample_sd": 0.0007632466570116373
+        },
+        "fraction_zero_loss": {
+          "mean": 0.16365824308062576,
+          "sample_sd": 0.02115330424939464
+        }
+      },
+      "mix_minus_norm_per_seed": {
+        "17": {
+          "ece15": -0.04712011922559012,
+          "binary_brier": -0.038605620714364464
+        },
+        "42": {
+          "ece15": -0.037525581089051435,
+          "binary_brier": -0.012808069098058456
+        },
+        "123": {
+          "ece15": -0.049654210193393,
+          "binary_brier": -0.02903025615130808
+        }
+      }
+    },
+    "mrpc": {
+      "P1_UNREG": {
+        "accuracy": {
+          "mean": 0.8619281045751633,
+          "sample_sd": 0.009279262002941654
+        },
+        "nll": {
+          "mean": 0.8708251324734244,
+          "sample_sd": 0.06759415060871857
+        },
+        "ece15": {
+          "mean": 0.11783106390676028,
+          "sample_sd": 0.004920030012351417
+        },
+        "binary_brier": {
+          "mean": 0.1226506732442944,
+          "sample_sd": 0.004501181479681692
+        },
+        "mean_confidence": {
+          "mean": 0.9763802389180521,
+          "sample_sd": 0.0029455981274154473
+        },
+        "confidence_on_errors": {
+          "mean": 0.9202099342152743,
+          "sample_sd": 0.017394817543108666
+        },
+        "wrong_nll": {
+          "mean": 6.1980691345213135,
+          "sample_sd": 0.1858105959044392
+        },
+        "correct_nll": {
+          "mean": 0.017106913627552366,
+          "sample_sd": 0.0019439415423976988
+        },
+        "fraction_zero_loss": {
+          "mean": 0.0,
+          "sample_sd": 0.0
+        }
+      },
+      "P1_MIX": {
+        "accuracy": {
+          "mean": 0.8545751633986928,
+          "sample_sd": 0.010204245095422228
+        },
+        "nll": {
+          "mean": 0.3945998406321492,
+          "sample_sd": 0.028116813825142875
+        },
+        "ece15": {
+          "mean": 0.0751443785299345,
+          "sample_sd": 0.00366945739034832
+        },
+        "binary_brier": {
+          "mean": 0.10849951976682619,
+          "sample_sd": 0.00737316188732325
+        },
+        "mean_confidence": {
+          "mean": 0.9274237208057293,
+          "sample_sd": 0.009265734373593338
+        },
+        "confidence_on_errors": {
+          "mean": 0.8029488869764446,
+          "sample_sd": 0.013838926867064921
+        },
+        "wrong_nll": {
+          "mean": 2.3659785575598895,
+          "sample_sd": 0.11516852404996189
+        },
+        "correct_nll": {
+          "mean": 0.05965490707761669,
+          "sample_sd": 0.009767984940392414
+        },
+        "fraction_zero_loss": {
+          "mean": 0.0,
+          "sample_sd": 0.0
+        }
+      },
+      "P1_NORM": {
+        "accuracy": {
+          "mean": 0.857843137254902,
+          "sample_sd": 0.006484684585942664
+        },
+        "nll": {
+          "mean": 0.7554733577772133,
+          "sample_sd": 0.0640713600711972
+        },
+        "ece15": {
+          "mean": 0.11587542776582149,
+          "sample_sd": 0.005176398768676445
+        },
+        "binary_brier": {
+          "mean": 0.12492550547427934,
+          "sample_sd": 0.004901281695565415
+        },
+        "mean_confidence": {
+          "mean": 0.9705047897471246,
+          "sample_sd": 0.00109065432474765
+        },
+        "confidence_on_errors": {
+          "mean": 0.9113383686895757,
+          "sample_sd": 0.004309960603565403
+        },
+        "wrong_nll": {
+          "mean": 5.168685368742746,
+          "sample_sd": 0.22366534672624308
+        },
+        "correct_nll": {
+          "mean": 0.023065398755432186,
+          "sample_sd": 0.002759497490264618
+        },
+        "fraction_zero_loss": {
+          "mean": 0.06535947712418301,
+          "sample_sd": 0.07028518370589254
+        }
+      },
+      "mix_minus_norm_per_seed": {
+        "17": {
+          "ece15": -0.037830569071448786,
+          "binary_brier": -0.00553752021818095
+        },
+        "42": {
+          "ece15": -0.049522397610470933,
+          "binary_brier": -0.02731653582848878
+        },
+        "123": {
+          "ece15": -0.03484018102574127,
+          "binary_brier": -0.01642390107568975
+        }
+      }
+    }
+  },
+  "runs": [
+    {
+      "task": "mrpc",
+      "condition": "P1_MIX",
+      "seed": 123,
+      "run_id": "20260915T225603Z_c2d576f8406b",
+      "source_file": "data/locked_evaluation_20260916/per_example/mrpc_P1_MIX_seed123_20260915T225603Z_c2d576f8406b.json",
+      "source_sha256": "003bb455d527b1a40d7080d17bccde1b1374760bf77b0e41ee6b2310977bc0b7",
+      "checkpoint_sha256": "c07f84954bdc57e4de504b7f4fc1686f9e280222c73f2ebf476369da38be0a4f",
+      "n": 408,
+      "accuracy": 0.8627450980392157,
+      "nll": 0.3884269279222138,
+      "ece15": 0.07925041577609683,
+      "binary_brier": 0.10531609688701651,
+      "mean_confidence": 0.9351080504466185,
+      "confidence_on_errors": 0.818678745445121,
+      "wrong_nll": 2.4948117711714337,
+      "correct_nll": 0.053320248314383374,
+      "fraction_zero_loss": 0.0,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 5,
+          "confidence": 0.5196224200516365,
+          "accuracy": 0.2
+        },
+        {
+          "count": 14,
+          "confidence": 0.5685300500959083,
+          "accuracy": 0.42857142857142855
+        },
+        {
+          "count": 9,
+          "confidence": 0.6366349092825263,
+          "accuracy": 0.5555555555555556
+        },
+        {
+          "count": 8,
+          "confidence": 0.6993696840982999,
+          "accuracy": 0.875
+        },
+        {
+          "count": 12,
+          "confidence": 0.7724794377099005,
+          "accuracy": 0.75
+        },
+        {
+          "count": 19,
+          "confidence": 0.8340144504731594,
+          "accuracy": 0.6842105263157895
+        },
+        {
+          "count": 33,
+          "confidence": 0.9020135877811304,
+          "accuracy": 0.7575757575757576
+        },
+        {
+          "count": 308,
+          "confidence": 0.9894785841428706,
+          "accuracy": 0.9285714285714286
+        }
+      ]
+    },
+    {
+      "task": "mrpc",
+      "condition": "P1_MIX",
+      "seed": 17,
+      "run_id": "20260915T203801Z_943d4b96cad1",
+      "source_file": "data/locked_evaluation_20260916/per_example/mrpc_P1_MIX_seed17_20260915T203801Z_943d4b96cad1.json",
+      "source_sha256": "bcc040d194111b14d8c949893b25d62b5f0704f6d9cd3257ed58ba1e35c6349d",
+      "checkpoint_sha256": "aef99151854b6e8b654e401c712aed1e47485863eb9d3b509061d261e43c8000",
+      "n": 408,
+      "accuracy": 0.8431372549019608,
+      "nll": 0.42529022028045305,
+      "ece15": 0.07399704259931666,
+      "binary_brier": 0.11692957020775345,
+      "mean_confidence": 0.9171342975012775,
+      "confidence_on_errors": 0.7926458106488142,
+      "wrong_nll": 2.3301152558997273,
+      "correct_nll": 0.07090416714198339,
+      "fraction_zero_loss": 0.0,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 9,
+          "confidence": 0.5174424515325878,
+          "accuracy": 0.4444444444444444
+        },
+        {
+          "count": 18,
+          "confidence": 0.573675219815404,
+          "accuracy": 0.5555555555555556
+        },
+        {
+          "count": 13,
+          "confidence": 0.625499079389697,
+          "accuracy": 0.6153846153846154
+        },
+        {
+          "count": 15,
+          "confidence": 0.7027076409605145,
+          "accuracy": 0.6
+        },
+        {
+          "count": 14,
+          "confidence": 0.7680831012739925,
+          "accuracy": 0.5
+        },
+        {
+          "count": 23,
+          "confidence": 0.8365265159706433,
+          "accuracy": 0.7391304347826086
+        },
+        {
+          "count": 27,
+          "confidence": 0.9064185256524313,
+          "accuracy": 0.5925925925925926
+        },
+        {
+          "count": 289,
+          "confidence": 0.9898580665598634,
+          "accuracy": 0.9446366782006921
+        }
+      ]
+    },
+    {
+      "task": "mrpc",
+      "condition": "P1_MIX",
+      "seed": 42,
+      "run_id": "20260915T182600Z_bc137719ec8e",
+      "source_file": "data/locked_evaluation_20260916/per_example/mrpc_P1_MIX_seed42_20260915T182600Z_bc137719ec8e.json",
+      "source_sha256": "f0766ffdbe2f3b0b639aa510fa0792ed356c41e26ccef058fc5862342d11ab27",
+      "checkpoint_sha256": "ef313cbf1d4c99bb944b114a8a058ca1bafaf279ecac5bbd1ab139ac7215d7f2",
+      "n": 408,
+      "accuracy": 0.8578431372549019,
+      "nll": 0.37008237369378083,
+      "ece15": 0.07218567721439,
+      "binary_brier": 0.1032528922057086,
+      "mean_confidence": 0.930028814469292,
+      "confidence_on_errors": 0.7975221048353986,
+      "wrong_nll": 2.2730086456085075,
+      "correct_nll": 0.05474030577648331,
+      "fraction_zero_loss": 0.0,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 3,
+          "confidence": 0.5213530204014832,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 11,
+          "confidence": 0.5552171395152102,
+          "accuracy": 0.2727272727272727
+        },
+        {
+          "count": 12,
+          "confidence": 0.6330803284104526,
+          "accuracy": 0.4166666666666667
+        },
+        {
+          "count": 12,
+          "confidence": 0.7006568134606659,
+          "accuracy": 0.6666666666666666
+        },
+        {
+          "count": 17,
+          "confidence": 0.7705557730602614,
+          "accuracy": 0.7058823529411765
+        },
+        {
+          "count": 29,
+          "confidence": 0.8365314489010093,
+          "accuracy": 0.6896551724137931
+        },
+        {
+          "count": 27,
+          "confidence": 0.9051458819391268,
+          "accuracy": 0.8148148148148148
+        },
+        {
+          "count": 297,
+          "confidence": 0.9898237846216694,
+          "accuracy": 0.9393939393939394
+        }
+      ]
+    },
+    {
+      "task": "mrpc",
+      "condition": "P1_NORM",
+      "seed": 123,
+      "run_id": "20260915T233934Z_070308d31c17",
+      "source_file": "data/locked_evaluation_20260916/per_example/mrpc_P1_NORM_seed123_20260915T233934Z_070308d31c17.json",
+      "source_sha256": "4480e77ffd050db290cd628c3655cf9ea68681617c9a5d182cfc5dd73caa3d3f",
+      "checkpoint_sha256": "cad46f69774114b75533670948f0eb05eefeb387abb5bcd18b67690ca2a588da",
+      "n": 408,
+      "accuracy": 0.8602941176470589,
+      "nll": 0.7182581395035451,
+      "ece15": 0.1140905968018381,
+      "binary_brier": 0.12173999796270626,
+      "mean_confidence": 0.9715454241622065,
+      "confidence_on_errors": 0.9073142362150375,
+      "wrong_nll": 5.010200195145189,
+      "correct_nll": 0.021276096279688506,
+      "fraction_zero_loss": 0.0,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 1,
+          "confidence": 0.5184406454882424,
+          "accuracy": 1
+        },
+        {
+          "count": 7,
+          "confidence": 0.5574777337181301,
+          "accuracy": 0.5714285714285714
+        },
+        {
+          "count": 4,
+          "confidence": 0.6340580631408574,
+          "accuracy": 0.25
+        },
+        {
+          "count": 3,
+          "confidence": 0.6947831936128839,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 7,
+          "confidence": 0.7753288285919638,
+          "accuracy": 0.42857142857142855
+        },
+        {
+          "count": 11,
+          "confidence": 0.8291920875285903,
+          "accuracy": 0.7272727272727273
+        },
+        {
+          "count": 10,
+          "confidence": 0.9061391433683765,
+          "accuracy": 0.6
+        },
+        {
+          "count": 365,
+          "confidence": 0.9965461924564959,
+          "accuracy": 0.8958904109589041
+        }
+      ]
+    },
+    {
+      "task": "mrpc",
+      "condition": "P1_NORM",
+      "seed": 17,
+      "run_id": "20260915T212602Z_58586c0a5cf0",
+      "source_file": "data/locked_evaluation_20260916/per_example/mrpc_P1_NORM_seed17_20260915T212602Z_58586c0a5cf0.json",
+      "source_sha256": "2b67f094702cb950705c481c99bef90a7a7061b3e64c02a42661b290886c63ad",
+      "checkpoint_sha256": "2532c377f32d82e1eedd26c33b382144af03123bb7a1f32cf8f64e81a1798fbf",
+      "n": 408,
+      "accuracy": 0.8627450980392157,
+      "nll": 0.7187057935237506,
+      "ece15": 0.11182761167076545,
+      "binary_brier": 0.1224670904259344,
+      "mean_confidence": 0.9693701950235527,
+      "confidence_on_errors": 0.9158862836555373,
+      "wrong_nll": 5.071326640035425,
+      "correct_nll": 0.026243386124166032,
+      "fraction_zero_loss": 0.056372549019607844,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 1,
+          "confidence": 0.525378300503143,
+          "accuracy": 1
+        },
+        {
+          "count": 6,
+          "confidence": 0.5688847839109085,
+          "accuracy": 0.6666666666666666
+        },
+        {
+          "count": 5,
+          "confidence": 0.6465954244572524,
+          "accuracy": 0.6
+        },
+        {
+          "count": 8,
+          "confidence": 0.7054372206077709,
+          "accuracy": 0.5
+        },
+        {
+          "count": 7,
+          "confidence": 0.7829044531096907,
+          "accuracy": 0.5714285714285714
+        },
+        {
+          "count": 8,
+          "confidence": 0.8255052735119022,
+          "accuracy": 0.625
+        },
+        {
+          "count": 12,
+          "confidence": 0.9084372630774373,
+          "accuracy": 0.75
+        },
+        {
+          "count": 361,
+          "confidence": 0.9964051444922443,
+          "accuracy": 0.8919667590027701
+        }
+      ]
+    },
+    {
+      "task": "mrpc",
+      "condition": "P1_NORM",
+      "seed": 42,
+      "run_id": "20260915T191101Z_5b8a71b69aca",
+      "source_file": "data/locked_evaluation_20260916/per_example/mrpc_P1_NORM_seed42_20260915T191101Z_5b8a71b69aca.json",
+      "source_sha256": "00fe664b6804ab2f5507189953036bb7c4ed44ada0b7dfab5be9d1173ff2ba51",
+      "checkpoint_sha256": "3fef5e15bf793b5612be00e0349024c644fb3f41bb49b286945104804426c440",
+      "n": 408,
+      "accuracy": 0.8504901960784313,
+      "nll": 0.8294561403043441,
+      "ece15": 0.12170807482486093,
+      "binary_brier": 0.13056942803419738,
+      "mean_confidence": 0.9705987500556147,
+      "confidence_on_errors": 0.9108145861981525,
+      "wrong_nll": 5.424529271047623,
+      "correct_nll": 0.021676713862442017,
+      "fraction_zero_loss": 0.13970588235294118,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 1,
+          "confidence": 0.5303646596774001,
+          "accuracy": 0
+        },
+        {
+          "count": 4,
+          "confidence": 0.5700939247239498,
+          "accuracy": 0.25
+        },
+        {
+          "count": 6,
+          "confidence": 0.6122829578456296,
+          "accuracy": 0.6666666666666666
+        },
+        {
+          "count": 5,
+          "confidence": 0.7025331897907319,
+          "accuracy": 0.4
+        },
+        {
+          "count": 7,
+          "confidence": 0.7726084756920555,
+          "accuracy": 0.5714285714285714
+        },
+        {
+          "count": 11,
+          "confidence": 0.8343684257030308,
+          "accuracy": 0.6363636363636364
+        },
+        {
+          "count": 13,
+          "confidence": 0.9021836579934469,
+          "accuracy": 0.6923076923076923
+        },
+        {
+          "count": 361,
+          "confidence": 0.9963780786747857,
+          "accuracy": 0.8864265927977839
+        }
+      ]
+    },
+    {
+      "task": "mrpc",
+      "condition": "P1_UNREG",
+      "seed": 123,
+      "run_id": "20260915T221233Z_19931be7dae9",
+      "source_file": "data/locked_evaluation_20260916/per_example/mrpc_P1_UNREG_seed123_20260915T221233Z_19931be7dae9.json",
+      "source_sha256": "c2f17967fc4a16a13fcda302a86288d320f903de0b46cb2c036d89165679e1d6",
+      "checkpoint_sha256": "e58b45a6153e33b7a29f4297dbf4075a2781cc9bdf45e01dc9c8bac27071b417",
+      "n": 408,
+      "accuracy": 0.8725490196078431,
+      "nll": 0.8024466455706584,
+      "ece15": 0.11226127695645743,
+      "binary_brier": 0.11800048544790605,
+      "mean_confidence": 0.9789814063777534,
+      "confidence_on_errors": 0.9387980675823624,
+      "wrong_nll": 6.171144398359152,
+      "correct_nll": 0.018254838983575047,
+      "fraction_zero_loss": 0.0,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 2,
+          "confidence": 0.5125452228409719,
+          "accuracy": 0.5
+        },
+        {
+          "count": 5,
+          "confidence": 0.571306407407736,
+          "accuracy": 0.8
+        },
+        {
+          "count": 3,
+          "confidence": 0.6514581216352298,
+          "accuracy": 0.6666666666666666
+        },
+        {
+          "count": 2,
+          "confidence": 0.7181547207770498,
+          "accuracy": 0.5
+        },
+        {
+          "count": 7,
+          "confidence": 0.7713991715267824,
+          "accuracy": 0.5714285714285714
+        },
+        {
+          "count": 4,
+          "confidence": 0.8235618033745707,
+          "accuracy": 0.5
+        },
+        {
+          "count": 7,
+          "confidence": 0.9025039514130967,
+          "accuracy": 0.42857142857142855
+        },
+        {
+          "count": 378,
+          "confidence": 0.9977262921663109,
+          "accuracy": 0.8968253968253969
+        }
+      ]
+    },
+    {
+      "task": "mrpc",
+      "condition": "P1_UNREG",
+      "seed": 17,
+      "run_id": "20260915T195601Z_d3bd63b590af",
+      "source_file": "data/locked_evaluation_20260916/per_example/mrpc_P1_UNREG_seed17_20260915T195601Z_d3bd63b590af.json",
+      "source_sha256": "a5c9f0ac76f0ab4190f532eb37d3ea9df391f362752f4c7e6262bbfdce99a458",
+      "checkpoint_sha256": "527f60092eb96a19edb2a5aca5c6a44f7b771d91e24b4686f2827fbd9c5bf141",
+      "n": 408,
+      "accuracy": 0.8578431372549019,
+      "nll": 0.8724221054733596,
+      "ece15": 0.11964652439370893,
+      "binary_brier": 0.12296518269841018,
+      "mean_confidence": 0.9731817631435433,
+      "confidence_on_errors": 0.9043249153392507,
+      "wrong_nll": 6.027189777842883,
+      "correct_nll": 0.018203462623552824,
+      "fraction_zero_loss": 0.0,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 1,
+          "confidence": 0.5186740040941101,
+          "accuracy": 1
+        },
+        {
+          "count": 6,
+          "confidence": 0.5671000865606479,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 5,
+          "confidence": 0.6206181064770581,
+          "accuracy": 0.4
+        },
+        {
+          "count": 6,
+          "confidence": 0.6963571958206626,
+          "accuracy": 0.16666666666666666
+        },
+        {
+          "count": 6,
+          "confidence": 0.7670857834786848,
+          "accuracy": 0.8333333333333334
+        },
+        {
+          "count": 6,
+          "confidence": 0.8404518189712319,
+          "accuracy": 0.8333333333333334
+        },
+        {
+          "count": 9,
+          "confidence": 0.8857383979360403,
+          "accuracy": 0.4444444444444444
+        },
+        {
+          "count": 369,
+          "confidence": 0.997937072996408,
+          "accuracy": 0.8943089430894309
+        }
+      ]
+    },
+    {
+      "task": "mrpc",
+      "condition": "P1_UNREG",
+      "seed": 42,
+      "run_id": "20260915T174530Z_478957d306e5",
+      "source_file": "data/locked_evaluation_20260916/per_example/mrpc_P1_UNREG_seed42_20260915T174530Z_478957d306e5.json",
+      "source_sha256": "6cef7431e2ce7c381c2da182821c813b27d44209c8ddb61a53b4fe5f159a6e9a",
+      "checkpoint_sha256": "c4f576ec28cc1c8f5192bdb4a36904b5fb42c98627ca77e7ac1d9fd7b4f70ff4",
+      "n": 408,
+      "accuracy": 0.8553921568627451,
+      "nll": 0.9376066463762552,
+      "ece15": 0.12158539037011448,
+      "binary_brier": 0.126986351586567,
+      "mean_confidence": 0.9769775472328596,
+      "confidence_on_errors": 0.9175068197242097,
+      "wrong_nll": 6.395873227361905,
+      "correct_nll": 0.01486243927552923,
+      "fraction_zero_loss": 0.0,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 2,
+          "confidence": 0.510374819611867,
+          "accuracy": 0
+        },
+        {
+          "count": 2,
+          "confidence": 0.5799179005812625,
+          "accuracy": 0.5
+        },
+        {
+          "count": 4,
+          "confidence": 0.6311766937379448,
+          "accuracy": 0.5
+        },
+        {
+          "count": 7,
+          "confidence": 0.6892369183851509,
+          "accuracy": 0.42857142857142855
+        },
+        {
+          "count": 3,
+          "confidence": 0.7759189473234689,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 9,
+          "confidence": 0.843488579131267,
+          "accuracy": 0.6666666666666666
+        },
+        {
+          "count": 10,
+          "confidence": 0.9108123458271591,
+          "accuracy": 0.6
+        },
+        {
+          "count": 371,
+          "confidence": 0.9974383048909682,
+          "accuracy": 0.889487870619946
+        }
+      ]
+    },
+    {
+      "task": "rte",
+      "condition": "P1_MIX",
+      "seed": 123,
+      "run_id": "20260915T235256Z_aff3c233f70d",
+      "source_file": "data/locked_evaluation_20260916/per_example/rte_P1_MIX_seed123_20260915T235256Z_aff3c233f70d.json",
+      "source_sha256": "b3143a34cd51dec7746da3fe5c860fd4a8d9814b18d701da7c71f725b841386e",
+      "checkpoint_sha256": "c9897cc1e723d440e307d6be1715006d1798371a0e82f492eb7354367923c9c5",
+      "n": 277,
+      "accuracy": 0.7292418772563177,
+      "nll": 1.165068140830812,
+      "ece15": 0.21718544691113523,
+      "binary_brier": 0.23421047046961338,
+      "mean_confidence": 0.9416762896614943,
+      "confidence_on_errors": 0.9064827914491439,
+      "wrong_nll": 4.163067011038462,
+      "correct_nll": 0.05194974842698123,
+      "fraction_zero_loss": 0.007220216606498195,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 1,
+          "confidence": 0.5317234942628376,
+          "accuracy": 1
+        },
+        {
+          "count": 5,
+          "confidence": 0.5620516453323794,
+          "accuracy": 0.6
+        },
+        {
+          "count": 5,
+          "confidence": 0.6293723346786213,
+          "accuracy": 0.2
+        },
+        {
+          "count": 7,
+          "confidence": 0.7068761148800414,
+          "accuracy": 0.42857142857142855
+        },
+        {
+          "count": 11,
+          "confidence": 0.768699896196435,
+          "accuracy": 0.7272727272727273
+        },
+        {
+          "count": 23,
+          "confidence": 0.8296894814502244,
+          "accuracy": 0.6086956521739131
+        },
+        {
+          "count": 14,
+          "confidence": 0.9157866630177565,
+          "accuracy": 0.5
+        },
+        {
+          "count": 211,
+          "confidence": 0.9907478001137027,
+          "accuracy": 0.7819905213270142
+        }
+      ]
+    },
+    {
+      "task": "rte",
+      "condition": "P1_MIX",
+      "seed": 17,
+      "run_id": "20260915T200324Z_1d3c3268fbb6",
+      "source_file": "data/locked_evaluation_20260916/per_example/rte_P1_MIX_seed17_20260915T200324Z_1d3c3268fbb6.json",
+      "source_sha256": "d79b71bee8b37d3dc6f2e2c57d3e6fef18400a4bc375efefc87e8a23af852053",
+      "checkpoint_sha256": "e1e2fb5165da4ef2594e2b60d4448bbbf64b857714cd63923ac6fbe47d8fd887",
+      "n": 277,
+      "accuracy": 0.6967509025270758,
+      "nll": 1.3303816310350869,
+      "ece15": 0.24296464883964208,
+      "binary_brier": 0.25435960030661703,
+      "mean_confidence": 0.9397155513667179,
+      "confidence_on_errors": 0.8917229710045949,
+      "wrong_nll": 4.281792999023483,
+      "correct_nll": 0.04582953305050016,
+      "fraction_zero_loss": 0.007220216606498195,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 11,
+          "confidence": 0.5626336157375967,
+          "accuracy": 0.36363636363636365
+        },
+        {
+          "count": 6,
+          "confidence": 0.64185754677642,
+          "accuracy": 0.16666666666666666
+        },
+        {
+          "count": 9,
+          "confidence": 0.6970976953951328,
+          "accuracy": 0.4444444444444444
+        },
+        {
+          "count": 7,
+          "confidence": 0.768768761241099,
+          "accuracy": 0.7142857142857143
+        },
+        {
+          "count": 11,
+          "confidence": 0.8301790441560516,
+          "accuracy": 0.36363636363636365
+        },
+        {
+          "count": 20,
+          "confidence": 0.9049429100944897,
+          "accuracy": 0.7
+        },
+        {
+          "count": 213,
+          "confidence": 0.9923709126758616,
+          "accuracy": 0.755868544600939
+        }
+      ]
+    },
+    {
+      "task": "rte",
+      "condition": "P1_MIX",
+      "seed": 42,
+      "run_id": "20260915T161952Z_c18701296af4",
+      "source_file": "data/locked_evaluation_20260916/per_example/rte_P1_MIX_seed42_20260915T161952Z_c18701296af4.json",
+      "source_sha256": "866fea643c5e07f2c87ddacfb63ce1b17beb572e2d500a601655f74d9430a7a5",
+      "checkpoint_sha256": "2e5ea9ada4f1d7aa07f87967d716193e86129a9a143ce693f49fa096051d83ec",
+      "n": 277,
+      "accuracy": 0.7148014440433214,
+      "nll": 1.1920739236181215,
+      "ece15": 0.21438267926420382,
+      "binary_brier": 0.24100857105428716,
+      "mean_confidence": 0.9258364537591377,
+      "confidence_on_errors": 0.8845900738181193,
+      "wrong_nll": 4.007538332214838,
+      "correct_nll": 0.06873206362246186,
+      "fraction_zero_loss": 0.0,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 3,
+          "confidence": 0.5121159225161172,
+          "accuracy": 0.6666666666666666
+        },
+        {
+          "count": 11,
+          "confidence": 0.5659018489288845,
+          "accuracy": 0.5454545454545454
+        },
+        {
+          "count": 10,
+          "confidence": 0.6293100740731961,
+          "accuracy": 0.4
+        },
+        {
+          "count": 9,
+          "confidence": 0.7023456953420443,
+          "accuracy": 0.4444444444444444
+        },
+        {
+          "count": 8,
+          "confidence": 0.7734239863429483,
+          "accuracy": 0.625
+        },
+        {
+          "count": 11,
+          "confidence": 0.8351281981446038,
+          "accuracy": 0.5454545454545454
+        },
+        {
+          "count": 24,
+          "confidence": 0.8997129737399294,
+          "accuracy": 0.6666666666666666
+        },
+        {
+          "count": 201,
+          "confidence": 0.9906184285901104,
+          "accuracy": 0.7711442786069652
+        }
+      ]
+    },
+    {
+      "task": "rte",
+      "condition": "P1_NORM",
+      "seed": 123,
+      "run_id": "20260916T000843Z_b0efcbf2424f",
+      "source_file": "data/locked_evaluation_20260916/per_example/rte_P1_NORM_seed123_20260916T000843Z_b0efcbf2424f.json",
+      "source_sha256": "d8fc003b4ca3e80b274f30a7d39beb6c57d01b95e08ecddc0ac6a3f1bb113aea",
+      "checkpoint_sha256": "15a75ad176d00ef996d3d349927bf9386743fa6a6f22381c18107b3325d90194",
+      "n": 277,
+      "accuracy": 0.7111913357400722,
+      "nll": 2.0573189727917405,
+      "ece15": 0.2668396571045282,
+      "binary_brier": 0.26324072662092146,
+      "mean_confidence": 0.9650519985219229,
+      "confidence_on_errors": 0.9377328080033679,
+      "wrong_nll": 7.0532723315060135,
+      "correct_nll": 0.02850542610574132,
+      "fraction_zero_loss": 0.1552346570397112,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 4,
+          "confidence": 0.5162955510296605,
+          "accuracy": 0.25
+        },
+        {
+          "count": 3,
+          "confidence": 0.5604179931472636,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 5,
+          "confidence": 0.6404818572618336,
+          "accuracy": 1
+        },
+        {
+          "count": 3,
+          "confidence": 0.7229304388059975,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 2,
+          "confidence": 0.7517178855816042,
+          "accuracy": 0
+        },
+        {
+          "count": 7,
+          "confidence": 0.8275184275213119,
+          "accuracy": 0.7142857142857143
+        },
+        {
+          "count": 12,
+          "confidence": 0.9015638683570092,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 241,
+          "confidence": 0.9962113511211144,
+          "accuracy": 0.7468879668049793
+        }
+      ]
+    },
+    {
+      "task": "rte",
+      "condition": "P1_NORM",
+      "seed": 17,
+      "run_id": "20260915T211954Z_d7a52081d57d",
+      "source_file": "data/locked_evaluation_20260916/per_example/rte_P1_NORM_seed17_20260915T211954Z_d7a52081d57d.json",
+      "source_sha256": "272ef352ab2f4646ef9170d052d776810ce94cd84edb479afcc82647261949b1",
+      "checkpoint_sha256": "fb1dd80a83a952a4bf1f21aafc2d521332196f5e0cac8ed0569f11790493e545",
+      "n": 277,
+      "accuracy": 0.6967509025270758,
+      "nll": 2.5668459729062723,
+      "ece15": 0.2900847680652322,
+      "binary_brier": 0.2929652210209815,
+      "mean_confidence": 0.9752918492859797,
+      "confidence_on_errors": 0.971228366662405,
+      "wrong_nll": 8.40014863227095,
+      "correct_nll": 0.027999219607656507,
+      "fraction_zero_loss": 0.18772563176895307,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 1,
+          "confidence": 0.5087257753095596,
+          "accuracy": 1
+        },
+        {
+          "count": 4,
+          "confidence": 0.5665248135318737,
+          "accuracy": 0.75
+        },
+        {
+          "count": 1,
+          "confidence": 0.6263557196364813,
+          "accuracy": 1
+        },
+        {
+          "count": 6,
+          "confidence": 0.7045695258731124,
+          "accuracy": 0.5
+        },
+        {
+          "count": 4,
+          "confidence": 0.7758982030680363,
+          "accuracy": 0.75
+        },
+        {
+          "count": 2,
+          "confidence": 0.8411949727352435,
+          "accuracy": 0
+        },
+        {
+          "count": 6,
+          "confidence": 0.907084414400648,
+          "accuracy": 0.5
+        },
+        {
+          "count": 253,
+          "confidence": 0.9972282810425204,
+          "accuracy": 0.7075098814229249
+        }
+      ]
+    },
+    {
+      "task": "rte",
+      "condition": "P1_NORM",
+      "seed": 42,
+      "run_id": "20260915T173452Z_dfe96a7443f7",
+      "source_file": "data/locked_evaluation_20260916/per_example/rte_P1_NORM_seed42_20260915T173452Z_dfe96a7443f7.json",
+      "source_sha256": "fa66442dd5ca7037e42de6869908ee8bf9198f8feebe64d8b3b4505c09351486",
+      "checkpoint_sha256": "c3174dcee157078bfbb823fc68d431348ac0c3dbaacf7cfc10a9587d4ab7570e",
+      "n": 277,
+      "accuracy": 0.7292418772563177,
+      "nll": 1.9560293402641313,
+      "ece15": 0.25190826035325525,
+      "binary_brier": 0.2538166401523456,
+      "mean_confidence": 0.9693892278381795,
+      "confidence_on_errors": 0.9534360566339579,
+      "wrong_nll": 7.144816374778747,
+      "correct_nll": 0.029499500716625417,
+      "fraction_zero_loss": 0.148014440433213,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 1,
+          "confidence": 0.5025701410016984,
+          "accuracy": 0
+        },
+        {
+          "count": 4,
+          "confidence": 0.5484344669079999,
+          "accuracy": 0.75
+        },
+        {
+          "count": 4,
+          "confidence": 0.6273515545368988,
+          "accuracy": 0.75
+        },
+        {
+          "count": 1,
+          "confidence": 0.6679699108823974,
+          "accuracy": 1
+        },
+        {
+          "count": 5,
+          "confidence": 0.7676201080622015,
+          "accuracy": 0.4
+        },
+        {
+          "count": 5,
+          "confidence": 0.8334944115064993,
+          "accuracy": 0.8
+        },
+        {
+          "count": 13,
+          "confidence": 0.9100329248292885,
+          "accuracy": 0.3076923076923077
+        },
+        {
+          "count": 244,
+          "confidence": 0.995127587511835,
+          "accuracy": 0.7581967213114754
+        }
+      ]
+    },
+    {
+      "task": "rte",
+      "condition": "P1_UNREG",
+      "seed": 123,
+      "run_id": "20260915T224055Z_d4940a071b06",
+      "source_file": "data/locked_evaluation_20260916/per_example/rte_P1_UNREG_seed123_20260915T224055Z_d4940a071b06.json",
+      "source_sha256": "5d9485b132a9011ef67e922164ace18435503d447b01a753759a48c420c6f9bf",
+      "checkpoint_sha256": "98f5eb764e778d7981ccb28cd3ff3611b21058feea5bd3d7c6d214583c9c11b0",
+      "n": 277,
+      "accuracy": 0.7292418772563177,
+      "nll": 2.4778729182362254,
+      "ece15": 0.25017723735169983,
+      "binary_brier": 0.25854450832025866,
+      "mean_confidence": 0.973183414339432,
+      "confidence_on_errors": 0.9634971548846111,
+      "wrong_nll": 9.07688760836919,
+      "correct_nll": 0.027743701602698397,
+      "fraction_zero_loss": 0.08664259927797834,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 4,
+          "confidence": 0.5839746753924133,
+          "accuracy": 0.75
+        },
+        {
+          "count": 5,
+          "confidence": 0.6296660952312546,
+          "accuracy": 0.6
+        },
+        {
+          "count": 4,
+          "confidence": 0.7001142028078124,
+          "accuracy": 0.75
+        },
+        {
+          "count": 3,
+          "confidence": 0.771016657855529,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 3,
+          "confidence": 0.8456054168989638,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 11,
+          "confidence": 0.9060967286972481,
+          "accuracy": 0.7272727272727273
+        },
+        {
+          "count": 247,
+          "confidence": 0.9978550183932481,
+          "accuracy": 0.7408906882591093
+        }
+      ]
+    },
+    {
+      "task": "rte",
+      "condition": "P1_UNREG",
+      "seed": 17,
+      "run_id": "20260915T185253Z_af560c77a629",
+      "source_file": "data/locked_evaluation_20260916/per_example/rte_P1_UNREG_seed17_20260915T185253Z_af560c77a629.json",
+      "source_sha256": "6356679602dac4577f5845dcf8ea030125da5d405d20c9769035e620607b3861",
+      "checkpoint_sha256": "db9465af3f735f9e23a4347458ac1dc3a81b50ac8f332cc5f7c87236c6c1ce9c",
+      "n": 277,
+      "accuracy": 0.7003610108303249,
+      "nll": 2.347217023293688,
+      "ece15": 0.2814319073590083,
+      "binary_brier": 0.2858723815000525,
+      "mean_confidence": 0.9768966877907309,
+      "confidence_on_errors": 0.9678149854568173,
+      "wrong_nll": 7.780643576599029,
+      "correct_nll": 0.022606693786763932,
+      "fraction_zero_loss": 0.0,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 1,
+          "confidence": 0.5100173277454755,
+          "accuracy": 1
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 4,
+          "confidence": 0.6384988610233858,
+          "accuracy": 0.5
+        },
+        {
+          "count": 4,
+          "confidence": 0.7029636905120291,
+          "accuracy": 0.75
+        },
+        {
+          "count": 3,
+          "confidence": 0.7730719134713064,
+          "accuracy": 0.3333333333333333
+        },
+        {
+          "count": 5,
+          "confidence": 0.8397814708177392,
+          "accuracy": 0.6
+        },
+        {
+          "count": 10,
+          "confidence": 0.9006353451076584,
+          "accuracy": 0.5
+        },
+        {
+          "count": 250,
+          "confidence": 0.9968001537542646,
+          "accuracy": 0.716
+        }
+      ]
+    },
+    {
+      "task": "rte",
+      "condition": "P1_UNREG",
+      "seed": 42,
+      "run_id": "20260915T151051Z_54c08f5284dd",
+      "source_file": "data/locked_evaluation_20260916/per_example/rte_P1_UNREG_seed42_20260915T151051Z_54c08f5284dd.json",
+      "source_sha256": "caf1abd7713451c0ef6a08e4c95d0152964e4fb889c7a146748ac49bf01fd5d4",
+      "checkpoint_sha256": "594359a938efc73b81763b074f23d2b59a37f75a595880f88808cc18dfb06a0e",
+      "n": 277,
+      "accuracy": 0.7220216606498195,
+      "nll": 2.4606899176891535,
+      "ece15": 0.2638057488886066,
+      "binary_brier": 0.257924511514351,
+      "mean_confidence": 0.9726690271515032,
+      "confidence_on_errors": 0.9496882945477311,
+      "wrong_nll": 8.797224046347978,
+      "correct_nll": 0.02112427815550614,
+      "fraction_zero_loss": 0.07942238267148015,
+      "bins": [
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 0,
+          "confidence": null,
+          "accuracy": null
+        },
+        {
+          "count": 3,
+          "confidence": 0.5172634872436822,
+          "accuracy": 0
+        },
+        {
+          "count": 1,
+          "confidence": 0.5755626441184066,
+          "accuracy": 1
+        },
+        {
+          "count": 3,
+          "confidence": 0.6349509791780185,
+          "accuracy": 0
+        },
+        {
+          "count": 4,
+          "confidence": 0.6939117670628365,
+          "accuracy": 0.75
+        },
+        {
+          "count": 5,
+          "confidence": 0.772654023166098,
+          "accuracy": 0.6
+        },
+        {
+          "count": 7,
+          "confidence": 0.8323363324344896,
+          "accuracy": 1
+        },
+        {
+          "count": 5,
+          "confidence": 0.8915088380642818,
+          "accuracy": 0.2
+        },
+        {
+          "count": 249,
+          "confidence": 0.9978887501049727,
+          "accuracy": 0.7429718875502008
+        }
+      ]
+    }
+  ]
+}

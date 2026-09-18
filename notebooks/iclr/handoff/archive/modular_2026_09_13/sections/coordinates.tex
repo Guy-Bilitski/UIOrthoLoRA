@@ -1,0 +1,30 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\section{PEFT in pretrained singular coordinates}
+\label{sec:coordinates}
+
+For clarity, the main derivations use a square adapted matrix $W_0\in\mathbb R^{d\times d}$, as in the RoBERTa attention projections studied here. Let
+\begin{equation}
+W_0=U\Sigma V^\top
+=U_L\Sigma_L V_L^\top+U_T\Sigma_T V_T^\top
+\label{eq:pretrained}
+\end{equation}
+be a complete SVD with singular values in descending order. A declared cutoff $1\le k<d$ selects the leading $k$ directions, and the remaining $r=d-k$ directions form the tail. The cutoff is not the numerical rank: $\Sigma_T$ generally contains nonzero pretrained singular values. The pretrained weight $W_0$, including this tail, remains frozen. We define the effective update by $\Delta=W_{\mathrm{eff}}-W_0$ and its coordinates by
+\begin{equation}
+C=U^\top\Delta V=
+\begin{bmatrix}C_{LL}&C_{LT}\\C_{TL}&C_{TT}\end{bmatrix}.
+\label{eq:coordinates}
+\end{equation}
+Here $C_{LL}$ modifies the leading block, $C_{TT}$ acts within the tail, and $C_{LT},C_{TL}$ couple the two coordinate groups. We use \emph{cross mixing} for the last two blocks and \emph{off-tail allocation} for all three blocks outside $TT$. These terms are not interchangeable.
+
+Orthogonal invariance and the disjoint blocks give
+\begin{equation}
+\fro{\Delta}^2=\fro{C}^2=\sum_{a,b\in\{L,T\}}\fro{C_{ab}}^2.
+\label{eq:energy}
+\end{equation}
+For a nonzero update define $p_{ab}=\fro{C_{ab}}^2/\fro{\Delta}^2$, $p_{\cross}=p_{LT}+p_{TL}$, and $p_{\off}=p_{LL}+p_{\cross}$. The experiments report the off-tail \emph{norm ratio}, $q_{\off}=\sqrt{p_{\off}}$, and the relative magnitude $\rho_F=\fro{\Delta}/\fro{W_0}$. A mean of norm ratios cannot be squared to obtain the mean energy fraction. Absolute norms, normalized placement, and the aggregation across matrices must therefore be stated separately.
+
+\paragraph{A common reference, not a method-specific score.}
+The same fixed pretrained bases can measure any effective update, including LoRA. Block energies are invariant to orthogonal basis changes within each fixed subspace, although a diagonal coefficient family depends on the chosen paired basis. A singular-value tie across the cutoff makes the partition nonunique; one declared reference must then be held fixed. For rectangular matrices, complementary left and right projectors give an exhaustive decomposition (Appendix~\ref{app:rectangular}). When adapter insertion changes the initial effective matrix, displacement from $W_0$ differs from displacement since initialization; neither should be silently substituted for the other.
+
+\paragraph{Structural change versus functional change.}
+The coordinates describe weights. Leading-subspace drift additionally compares the top-ranked singular subspaces of $W_0$ and $W_0+\Delta$. Even a perfectly confined update can change that ranking if adapted tail singular values cross the boundary. Functional retention is a further question requiring behavior-level measurements; it does not follow from an unchanged block alone.

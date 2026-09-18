@@ -1,4 +1,35 @@
+> **Current preparation status — 19 September 2026:** Start with
+> `EXPERIMENT_PREPARATION_HANDOFF_20260919.md` and
+> `review_feedback/20260919/assessment.md`. The author confirmed **two GPUs**.
+> All 18 practical and 21 RTE band/head confirmations are complete; their
+> protocols and immutable evidence remain unchanged. Prepare the remaining
+> checkpoint evaluations and proposed controls/decoder pilot. New training
+> proposals require the agreed scope and budget; older queue, title, completion
+> and four-GPU statements below are historical. The approved abstract and
+> introduction remain unchanged. This update does not change live server jobs.
+
 # Additional experiments for the ICLR spectral-adaptation paper
+
+## Latest author instruction — tail-adaptation narrative, 2026-09-16
+
+Follow `TAIL_ADAPTATION_EVIDENCE_HANDOFF_20260916.md` before the dated overrides
+below. The paper now centers strict tail capacity and within-tail rotations.
+The head-only/tail-diagonal/tail-rotation block and its loss/accuracy trajectories
+are essential evidence. Refresh existing outcomes, prioritize missing registered
+core runs, and retain every original arm/pilot/failure in the ledger. CENTER is
+secondary; existing-checkpoint calibration may proceed without delaying this
+block. Do not alter registrations or resource limits, or relabel practical
+leading-plus-tail results as strictly confined measurements.
+
+## Author priority override — 2026-09-16, after v4
+
+The writing is frozen. Follow `EVIDENCE_PRIORITY_HANDOFF_20260916.md`: existing
+checkpoint logits/temperature scaling first, CENTER calibration and six
+confirmations next, then head references; inspect any surviving LoRA checkpoint
+without new training. Defer remaining strict-band launches and module-norm-matched
+training. The dated execution plans below remain historical registration context.
+No GPU scheduler was changed by this paper session; the resource owner must
+reconcile the live queue and current device/storage budget before acting.
 
 Project: `6aa54397e58b10444b0fa2aa` only. Created 2026-09-13; expanded after the review panel on 2026-09-14.
 Updated 2026-09-15: the deadline-scoped plan below takes priority. The server agent reports that the repaired-input campaign is underway; this local document is not a live run ledger.

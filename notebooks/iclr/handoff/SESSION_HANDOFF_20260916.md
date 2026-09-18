@@ -1,3 +1,11 @@
+> **Superseded status and queue — 19 September 2026:** Start with
+> `EXPERIMENT_PREPARATION_HANDOFF_20260919.md`. All 21 band/head confirmations
+> are complete and integrated in the manuscript. The author reconfirmed TWO
+> GPUs. Old live-process IDs, four-GPU allocation and missing-band instructions
+> below are historical, not a current launch instruction. Preserve all original
+> exports, including signed roundoff residuals; do not apply the old cosmetic
+> clamping suggestion to raw evidence. Check current artifacts and leases first.
+
 # Session handoff — 2026-09-16 ~11:00 local
 
 > **UPDATE 2026-09-16 ~11:20 local (next session).** Sections 1–4 below are

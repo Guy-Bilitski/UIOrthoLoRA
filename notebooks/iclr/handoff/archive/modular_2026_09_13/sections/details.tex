@@ -1,0 +1,91 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\section{Experimental details}
+\label{app:details}
+
+\subsection{Backbones, tasks, and placement}
+The broader language-understanding evaluation uses RoBERTa-base and RoBERTa-large on a six-task GLUE subset: CoLA, SST-2, MRPC, STS-B, QNLI, and RTE~\citep{wang2018glue}. The mixing intervention uses RoBERTa-base on five of these tasks, excluding QNLI. Neither evaluation covers MNLI or QQP. Our task metrics are Matthews correlation for CoLA, accuracy for SST-2/QNLI/RTE, F1 for MRPC, and Pearson correlation for STS-B. The imported RandLoRA-paper comparisons instead report MRPC accuracy, which is why Table~\ref{tab:glue_results_base_large} excludes MRPC from the shared average. Results use the official validation splits. Pretrained backbone parameters are frozen, and adapters and the prediction head train jointly. The adapted modules are the query, key, value, and attention-output projections; feed-forward projections remain frozen.
+
+\subsection{Training configuration}
+The training recipe uses AdamW with separate adapter and head learning rates, linear decay, a 6\% warmup fraction, batch size 64, and maximum sequence length 256. Table~\ref{tab:recipe} gives the task-specific settings recorded for RoBERTa-base. These task-specific configurations are not a common hyperparameter search across all methods in the supporting benchmark table.
+
+\begin{table}[ht]
+\centering
+\caption{RoBERTa-base training settings from the experimental protocol. The scaler value initializes both ambient diagonal scalers.}
+\label{tab:recipe}
+\begin{tabular}{lccccc}
+\toprule
+Task & Epochs & Head LR & Adapter LR & Scaler & Coefficients\\
+\midrule
+CoLA & 80 & $5\cdot10^{-3}$ & $3\cdot10^{-2}$ & $10^{-2}$ & $10^{-1}$\\
+SST-2 & 40 & $10^{-2}$ & $4\cdot10^{-2}$ & $10^{-1}$ & $10^{-1}$\\
+MRPC & 30 & $10^{-3}$ & $5\cdot10^{-2}$ & $10^{-1}$ & $10^{-1}$\\
+STS-B & 60 & $5\cdot10^{-3}$ & $10^{-2}$ & $10^{-1}$ & $10^{-1}$\\
+QNLI & 25 & $10^{-3}$ & $2\cdot10^{-2}$ & $10^{-1}$ & $10^{-1}$\\
+RTE & 90 & $5\cdot10^{-4}$ & $10^{-2}$ & $10^{-2}$ & $10^{-2}$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Adapter dropout is zero and the nominal adapter scaling coefficient is one. The broad GLUE configurations use $k_{\mathrm{val}}=256$, with $k_{\mathrm{vec}}=0$ for UILinLoRA and 64 for UIOrthoLoRA. The mixing study uses 256 and zero, respectively. Compact rotations, when enabled, use an orthogonal parameterization; only the selected sub-block is rotated. With nonzero initialized scalers and coefficients, the practical adapter need not have zero initial delta. The measured displacement from $W_0$ includes that initial contribution.
+
+\subsection{Seeds and checkpoint selection}
+The broader spectral evaluation protocol reports six seeds $\{42,123,2021,17,31415,1054\}$; Table~\ref{tab:glue_results_base_large} retains its reported means and across-seed standard deviations. The imported comparison uses five runs. The mixing analysis uses the nine task/seed pairs with archived paired summary and module-level records: seeds 42 and 17 for RTE, MRPC, CoLA, and STS-B, and 42 for SST-2. These records permit independent reaggregation of the intervention, whereas the broad GLUE table is a report of the original evaluation, not a newly reconstructed six-seed experiment.
+
+The ablation runner reloads the best validation checkpoint before computing final scores and spectral metrics. Consequently, the selected checkpoints can occur at different steps: the RTE seed-42 A/B/C records, for example, select steps 312, 3198, and 1755. The endpoint analysis does not use stepwise loss-log entries as measurements of spectral trajectories.
+
+\subsection{Metric definitions and aggregation}
+For each adapted matrix, the reported metrics are
+\begin{align}
+\rho_F&=\fro{\Delta}/\fro{W_0},&
+q_{\off}&=\fro{C_{\off}}/\fro{C},\\
+\mathrm{Leak}_{LL}&=\op{C_{LL}}/\op{\Delta},&
+C_{\off}&=\begin{bmatrix}C_{LL}&C_{LT}\\C_{TL}&0\end{bmatrix}.
+\end{align}
+The mixing magnitudes are operator norms, while their training penalties use squared Frobenius norms. Leading left and right drift use the largest-principal-angle sine between the leading subspaces of $W_0$ and $W_0+\Delta$. The tables average each metric across the 48 adapted modules within a run, then across available seeds. They do not pool module energies before normalization. Because each model is a single trained replicate, 48 modules do not constitute 48 independent experimental seeds.
+
+\subsection{Complete mixing results}
+\label{app:mixingtable}
+The accompanying \texttt{scripts/build\_mixing\_tables.py} generates Tables~\ref{tab:mixingmain} and~\ref{tab:mixingfull} from the included per-task/seed CSV summaries. These records retain checkpoint steps and metric columns. The analysis includes the paired A/B/C runs and excludes separate smoke tests and C-only reruns. This makes the aggregation independently checkable without rerunning training.
+\begin{table}[ht]
+\centering
+\caption{Complete mixing-ablation means. A: no penalty; B: left-only penalty; C: two-sided penalty. $n$ is the seed count. Scores are in native metric units. All spectral values are module means followed by seed means.}
+\label{tab:mixingfull}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llcccccccc}
+\toprule
+Task & Condition & $n$ & Score & $\mu_E$ & $\nu_D$ & $\rho_F$ & $q_{\off}$ & Drift$_U$ & Drift$_V$\\
+\midrule
+\tablerows{tables/mixing_full_rows.tex}
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Reconstructing four-block allocation}
+\label{app:blockallocation}
+The 27 run summaries are accompanied by 1,296 module-level records: 48 adapted matrices for each A/B/C run. Their saved Frobenius leakage ratios use $\|\Delta\|_F$ in the denominator, whereas the off-tail ratio uses $\|C\|_F$. Write these recorded quantities as $\ell_{ab}$ for $ab\in\{LL,LT,TL\}$ and $q$ for the off-tail ratio. To obtain an allocation normalized in the recorded coordinate frame, we compute per matrix
+\begin{equation}
+\widehat p_{ab}=q^2\frac{\ell_{ab}^2}{\ell_{LL}^2+\ell_{LT}^2+\ell_{TL}^2},\qquad
+\widehat p_{TT}=1-q^2.
+\label{eq:recordedallocation}
+\end{equation}
+For exact orthogonal bases these agree with Section~\ref{sec:coordinates}. With saved finite-precision bases, the inferred discrepancy $\left|(\ell_{LL}^2+\ell_{LT}^2+\ell_{TL}^2)/q^2-1\right|$ is at most $2.64\cdot10^{-4}$ across the archive. The normalization makes the four recorded fractions sum to one without assuming perfect numerical orthogonality. Diagnostic denominators also include a $10^{-12}$ numerical stabilizer. We square each matrix's ratios before averaging, never a task-mean ratio.
+
+\begin{table}[ht]
+\centering
+\caption{Four-block energy percentages underlying Figure~\ref{fig:allocation}, averaged over modules and then seeds. $n$ is the number of seeds. The two middle columns sum to the cross share. Each row sums to 100\% up to rounding.}
+\label{tab:blockallocation}
+\begin{tabular}{llccccc}
+\toprule
+Task & Condition & $n$ & Leading--leading & Leading--tail & Tail--leading & Tail--tail\\
+\midrule
+% BEGIN GENERATED BLOCK TABLE
+% END GENERATED BLOCK TABLE
+\bottomrule
+\end{tabular}
+\end{table}
+
+The analysis script reconciles every shared summary metric with the mean of its 48 saved module values before calculating these fractions. It excludes smoke tests and unmatched C-only reruns, as in the summary analysis. The 432 matched A/C module pairs measure within-run heterogeneity; replication remains nine task/seed pairs, not hundreds of independent training runs.
+
+\subsection{Assets and compute reporting}
+The experiments use public benchmarks, pretrained models, and the PyTorch/Hugging Face software ecosystem. No new dataset is introduced. The experimental record reports NVIDIA A100-SXM4-40GB and RTX-3090 hardware. The mixing summaries include per-run runtime and memory fields, but not a complete project-wide compute accounting or a controlled throughput comparison across methods. The following analysis therefore reports arithmetic and storage costs separately from empirical efficiency claims.

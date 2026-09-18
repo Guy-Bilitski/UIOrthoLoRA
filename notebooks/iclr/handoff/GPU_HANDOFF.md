@@ -1,4 +1,33 @@
+> **Current preparation status — 19 September 2026:** Start with
+> `EXPERIMENT_PREPARATION_HANDOFF_20260919.md` and
+> `review_feedback/20260919/assessment.md`. The author confirmed **two GPUs**.
+> All 18 practical and 21 RTE band/head confirmations are complete; their
+> protocols and immutable evidence remain unchanged. Prepare the remaining
+> checkpoint evaluations and proposed controls/decoder pilot. New training
+> proposals require the agreed scope and budget; older queue, title, completion
+> and four-GPU statements below are historical. The approved abstract and
+> introduction remain unchanged. This update does not change live server jobs.
+
 # GPU session: start here
+
+## Latest author instruction — tail-adaptation narrative, 2026-09-16
+
+`TAIL_ADAPTATION_EVIDENCE_HANDOFF_20260916.md` supersedes the post-v4 override
+below. The author requests a substantial writing refactor around whether strict
+tail adaptation works and whether rotations improve loss/accuracy or training
+dynamics. Refresh existing band exports first, then prioritize the nine registered
+RTE tail-diagonal/tail-rotation/head-only confirmations over new CENTER training.
+Preserve the full registration and all other arms. This is a planning update,
+not a claim that the live GPU scheduler or resource allocation changed.
+
+## Author priority override — 2026-09-16, after v4
+
+Read `EVIDENCE_PRIORITY_HANDOFF_20260916.md` before the dated queue below. Writing
+is frozen; prioritize frozen-checkpoint temperature scaling, then CENTER
+calibration/six confirmations and head references. Defer new strict-band launches
+and module-norm-matched training. Recover existing LoRA geometry if available.
+This updates planning only: the paper session has not changed server jobs or
+resource allocations. Reconcile the live controller/ledger before execution.
 
 Updated 2026-09-15. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The **Current execution plan — 2026-09-15** at the top of that file supersedes the old launch order and 66-run expanded tranche below.
 
@@ -11,66 +40,6 @@ Updated 2026-09-15. This document is the portable handoff for a fresh agent sess
 - Keep the actual run ledger current, give ETAs for both two and four GPUs, and reserve the last 48 hours before the full-paper deadline for analysis and writing. Read the exact update families, run counts and cutoff rules in the designated plan.
 
 The remaining sections preserve the September 14 handoff and implementation hazards. Their historical claims of "not yet implemented/not run" are not a live statement about the server. Their old expanded launch instructions must not override the current plan. Legacy experimental records remain separate from the repaired new campaign.
-
-
-## Preserved server handoff and historical runbook links
-
-The September 15 priority and evidence-reset instructions above take precedence over the older scope/status notes below. Preserve their server paths, authorization records and commands as context, but verify the live ledger before use; the old tokenizer-corrupted run IDs are not restored to validity by appearing here.
-
-**Current author instruction, 2026-09-14:** the broad campaign has been superseded
-for this submission by a minimal existing-table seed/control extension. Keep the
-50 GiB allowance; do not launch the old 66/75-run package or extra backbones.
-Read [`SUBMISSION_SCOPE_20260914.md`](SUBMISSION_SCOPE_20260914.md) first for the
-scope reduction, deadlines, completed pilots and active focused calibration.
-The expanded plan below remains a scientific reference, not an automatic queue.
-
-**Current execution, 2026-09-14 21:56 UTC:** read
-[`MINIMAL_RUNBOOK_20260914.md`](MINIMAL_RUNBOOK_20260914.md) first when resuming.
-The four-GPU author extension is recorded in the hash-bound authorization and
-allocation extension below. Four focused calibration entries (MIX and UNREG on
-RTE/MRPC) are completed and validated; six NORM entries remain. The two old
-focused queue sessions stopped after a path-check bug despite their controllers
-marking the runs completed. No artifact was lost or overwritten. The corrected
-four-lane queue is documented in the runbook and must be started only once per
-lane.
-
-The prior 15:51 update said both focused MIX calibration targets launched
-at 15:42:46 UTC from `d321e517`, on GPU 2 (RTE, run
-`20260914T154246Z_92f7745b1ee5`) and GPU 3 (MRPC, run
-`20260914T154246Z_5766195517d9`). Actual optimizer progress was verified at
-steps 103 and 114 with finite losses/gradients. See the scope document for exact
-private tmux sessions, immutable protocol, source/preflight and the task-local
-automatic calibration continuation commands. The older status paragraphs below
-are historical; the live ledger is authoritative. No confirmation results exist.
-
-Updated 2026-09-14. This document is the portable handoff for a fresh agent session. Read it and `EXPERIMENTS_REQUIRED.md` before touching a GPU. The expanded P0–P8 campaign is not complete. Persistent smoke/throughput workers and whole-run validation are implemented; the GPU P0 gate passed. The registered initial magnitude grid is implemented but not run. Confirmation and extension orchestration remain pending. Historical handoff scripts reanalyze archived results and test algebra only.
-
-Campaign continuation update, 2026-09-14: a separate server clone now contains a
-prospective optimizer-step engine, compact persistent restart states, cached P1
-penalties, LoRA/full-FT geometry and independent checkpoint reproduction under
-`../campaign/`, with CPU algebra, input-preparation, supervision and tiny-model integration checks.
-All four supplied checks and six original source fingerprints also pass in the
-recorded preflights. The production training driver is still incomplete;
-the first GPU P0 attempt was preserved as interrupted. Its CPU-diagnostic retry
-`20260914T132305Z_8729a4c83ee8` completed eight optimizer steps and six checkpoint
-reload/P3/P8 checks; whole-run validation passed at 13:31:57 UTC. P0 is complete.
-Two seed-31415 throughput pilots are next; magnitude-calibration/confirmation
-have not run. The user authorizes GPUs 2/3 through campaign completion; the
-initial 50 GiB output allocation and public downloads are recorded in
-`data/campaign_v1/RESOURCE_AUTHORIZATION_20260914.json`. Pinned RoBERTa/RTE/MRPC
-and fixed held-out probe inputs are prepared. Read
-[`CAMPAIGN_STATUS_20260914.md`](CAMPAIGN_STATUS_20260914.md) for exact checkout,
-environment, measured resource inventory, validation artifact, durable run ledger,
-remaining implementation and continuation commands. This does not change the
-authoritative P0–P8 plan or promote CPU checks to trained-model evidence.
-
-At 14:02 UTC, after the author coordinated with the other GPU account, GPUs 2
-and 3 were verified free (15 MiB each, zero utilization). No other workload was
-stopped or modified by this campaign. The next actions are the immutable
-two-task timing protocol, one independent worker per assigned GPU, followed by
-measured runtime/storage forecasting and magnitude-calibration registration.
-
-GitHub delivery correction: all files are now ordinary tracked files under `notebooks/iclr/handoff/` in UIOrthoLoRA's existing `ortho_new` branch. Start the server session in this directory after pulling the research repository. This is not a nested Git repository or submodule; do not clone Overleaf to obtain the docs. See `SNAPSHOT_PROVENANCE.md` for the exact source snapshot and portable numerical-audit fixtures.
 
 ## 1. Authority and isolation
 
@@ -115,7 +84,7 @@ No dynamics, spectral specificity, functional retention, equivalence or acceptan
 
 ## 4. Locate and pin the research code
 
-The handoff directory contains the archived data and analysis scripts, **not the complete training implementation**. In this GitHub delivery the surrounding UIOrthoLoRA repository contains that implementation. Use a dedicated server checkout of it; do not modify another agent's shared checkout. Do not assume a fresh pip-installed PEFT has the custom adapter. Historical paths relative to the research repository root:
+The paper repo contains the archived data and analysis scripts, **not the complete training implementation**. Obtain a dedicated clone/export of the author's research repository. Do not assume a fresh pip-installed PEFT has the custom adapter. Historical paths relative to that research root:
 
 - `src/peft/tuners/uiortholora/{layer.py,config.py,model.py}`: actual adapter, merge and parameterization.
 - `notebooks/glue/training_new/training.py`: task/data/metric helpers.
@@ -123,8 +92,6 @@ The handoff directory contains the archived data and analysis scripts, **not the
 - `notebooks/glue/training_new/newer_train/results/`: original source of copied mixing summaries/layer logs.
 
 Observed research Git HEAD on 2026-09-14: `bdbe00e67b05d589b78f129745fd56be2dd3a4ea`. This identifies the inspected checkout, **not a verified historical generating commit**. Relevant file hashes are in `GPU_SOURCE_FINGERPRINTS.sha256`. The shared checkout may have concurrent changes, so verify files and inspect differences rather than resetting it. Pin the chosen isolated source revision plus any local patch and dependency lock in every run manifest.
-
-The delivery is based on published research revision `8cd4a061dad86073f4ef52997ca8a9412465b194`; the other project's 31 unpublished local commits were not included. All six inspected training-source fingerprints match this published revision. From the research root, verify with `sha256sum --check notebooks/iclr/handoff/GPU_SOURCE_FINGERPRINTS.sha256`. Do not try to check out the unpublished observed HEAD on the server; record the actual delivered research revision and any subsequent training changes instead.
 
 Known hazards to fix/test in the isolated implementation before a pilot:
 
@@ -159,7 +126,7 @@ Reciprocal E/D scaling leaves Delta unchanged while changing raw factors. Center
    python3 scripts/audit_manuscript.py
    ```
 
-   Run these commands from `notebooks/iclr/handoff/`. NumPy is needed for algebra; these commands do not launch model training. PyMuPDF is needed only for the optional PDF audit. This delivery supplies hash-verified `audit_baseline/` fixtures from the original Overleaf revision, so the historical-value audit works without that repository's Git history. Missing or altered fixtures fail the audit; they are not silently waived.
+   NumPy is needed for algebra; these commands do not launch model training. PyMuPDF is needed only for the optional PDF audit. If a source archive lacks Git history needed by the historical-value audit, obtain the history or record that limitation; do not waive data checks silently.
 
 4. Implement the P0 fixes and P1 conditions in the **isolated** training copy. Create deterministic unit tests for exact penalties, offsets, zero cases, rectangular accounting and checkpoint reload. Do not assume the old runner supports the new conditions.
 5. One short RTE smoke run: verify forward/delta/merge equivalence, gradients, metric fields, save/reload and device assignment. Retain it with status `smoke`, not `confirmation`. Measure setup, training, diagnostics and memory separately.

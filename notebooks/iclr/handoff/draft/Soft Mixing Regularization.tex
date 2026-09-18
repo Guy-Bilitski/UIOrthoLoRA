@@ -1,0 +1,850 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs,multirow,array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\fro}[1]{\left\|#1\right\|_F}
+\newcommand{\op}[1]{\left\|#1\right\|_2}
+\newcommand{\tr}{\mathrm{tr}}
+\newcommand{\diag}{\mathrm{diag}}
+\newcommand{\Span}{\mathrm{span}}
+\newcommand{\rank}{\mathrm{rank}}
+\newcommand{\sinTheta}{\mathrm{sin}\,\Theta}
+
+\title{Soft Mixing Regularization for Spectrally Structured PEFT:\\
+Definitions, Perturbation Bounds, and Ablation Protocol}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Setup}
+
+Let the pretrained weight matrix be
+\[
+W^{\mathrm{pre}} = U \Sigma V^\top
+=
+\begin{bmatrix} U_R & U_r \end{bmatrix}
+\begin{bmatrix}
+\Sigma_R & 0\\
+0 & \Sigma_r
+\end{bmatrix}
+\begin{bmatrix} V_R & V_r \end{bmatrix}^\top,
+\]
+where:
+\begin{itemize}[leftmargin=2em]
+    \item \(U_R \in \R^{m\times R}\), \(V_R \in \R^{n\times R}\) are the leading singular vectors,
+    \item \(U_r \in \R^{m\times r}\), \(V_r \in \R^{n\times r}\) are the complementary/tail singular vectors,
+    \item \(U=[U_R\ U_r]\) and \(V=[V_R\ V_r]\) are orthogonal.
+\end{itemize}
+
+Consider the structured update
+\[
+\Delta W = E\,U_r\,\Sigma_r' \,V_r^\top D,
+\]
+where:
+\begin{itemize}[leftmargin=2em]
+    \item \(E\in\R^{m\times m}\) and \(D\in\R^{n\times n}\) are diagonal trainable scaling matrices,
+    \item \(\Sigma_r' \in \R^{r\times r}\) is trainable (typically diagonal, but the results below only require it to be an \(r\times r\) matrix).
+\end{itemize}
+
+The adapted weight is
+\[
+\widetilde W = W^{\mathrm{pre}} + \Delta W.
+\]
+
+\section{Left and Right Mixing Terms}
+
+The key quantities governing whether the update leaks into the preserved leading singular structure are the singular-basis cross terms induced by \(E\) and \(D\).
+
+\begin{definition}[Left and right mixing matrices]
+Define
+\[
+M_E := U_R^\top E U_r \in \R^{R\times r},
+\qquad
+M_D := V_R^\top D V_r \in \R^{R\times r}.
+\]
+Their operator-norm magnitudes are
+\[
+\mu_E := \op{M_E},
+\qquad
+\nu_D := \op{M_D}.
+\]
+\end{definition}
+
+\begin{remark}
+The condition \(\mu_E=0\) means that \(E\) does not map any tail left singular direction into the preserved leading left singular subspace. Likewise, \(\nu_D=0\) means that \(D\) does not mix the tail right singular directions into the preserved leading right singular subspace.
+\end{remark}
+
+In practice, it is often easier to optimize a Frobenius penalty:
+\[
+\mathcal{R}_{\mathrm{mix}}
+=
+\lambda_E^{\mathrm{mix}} \fro{M_E}^2
++
+\lambda_D^{\mathrm{mix}} \fro{M_D}^2,
+\]
+since
+\[
+\mu_E = \op{M_E} \le \fro{M_E},
+\qquad
+\nu_D = \op{M_D} \le \fro{M_D}.
+\]
+Thus minimizing \(\mathcal{R}_{\mathrm{mix}}\) also controls \(\mu_E\) and \(\nu_D\).
+
+\section{Blockwise Perturbation Analysis}
+
+Write the perturbation in the singular coordinates of \(W^{\mathrm{pre}}\):
+\[
+C := U^\top \Delta W V.
+\]
+Partition \(C\) according to the \(R/r\) splitting:
+\[
+C=
+\begin{bmatrix}
+C_{11} & C_{12}\\
+C_{21} & C_{22}
+\end{bmatrix}.
+\]
+A direct calculation gives
+\begin{equation}
+\label{eq:block-form}
+C
+=
+\begin{bmatrix}
+U_R^\top E U_r\, \Sigma_r' \,V_r^\top D V_R
+&
+U_R^\top E U_r\, \Sigma_r' \,V_r^\top D V_r
+\\[0.75em]
+U_r^\top E U_r\, \Sigma_r' \,V_r^\top D V_R
+&
+U_r^\top E U_r\, \Sigma_r' \,V_r^\top D V_r
+\end{bmatrix}.
+\end{equation}
+
+The meanings of these blocks are:
+\begin{itemize}[leftmargin=2em]
+    \item \(C_{11}\): direct perturbation of the preserved leading block,
+    \item \(C_{12}\): coupling from the preserved left block to the tail right block,
+    \item \(C_{21}\): coupling from the tail left block to the preserved right block,
+    \item \(C_{22}\): perturbation internal to the tail block.
+\end{itemize}
+
+\begin{proposition}[Blockwise perturbation bounds]
+\label{prop:block-bounds}
+Let \(\Delta W = E U_r \Sigma_r' V_r^\top D\) and let \(C = U^\top \Delta W V\) be partitioned as in \eqref{eq:block-form}. Then:
+\begin{align}
+\op{C_{11}}
+&\le
+\mu_E\, \op{\Sigma_r'}\, \nu_D,
+\label{eq:C11-bound}
+\\
+\op{C_{12}}
+&\le
+\mu_E\, \op{\Sigma_r'}\, \op{D},
+\label{eq:C12-bound}
+\\
+\op{C_{21}}
+&\le
+\op{E}\, \op{\Sigma_r'}\, \nu_D,
+\label{eq:C21-bound}
+\\
+\op{C_{22}}
+&\le
+\op{E}\, \op{\Sigma_r'}\, \op{D}.
+\label{eq:C22-bound}
+\end{align}
+Consequently,
+\begin{equation}
+\label{eq:global-perturb-bound}
+\op{\Delta W}
+\le
+\op{E}\,\op{\Sigma_r'}\,\op{D}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+From \eqref{eq:block-form},
+\[
+C_{11}
+=
+(U_R^\top E U_r)\,\Sigma_r'\,(V_r^\top D V_R).
+\]
+Using submultiplicativity of the operator norm,
+\[
+\op{C_{11}}
+\le
+\op{U_R^\top E U_r}\,\op{\Sigma_r'}\,\op{V_r^\top D V_R}
+=
+\mu_E\,\op{\Sigma_r'}\,\nu_D.
+\]
+This proves \eqref{eq:C11-bound}.
+
+Similarly,
+\[
+C_{12}
+=
+(U_R^\top E U_r)\,\Sigma_r'\,(V_r^\top D V_r),
+\]
+so
+\[
+\op{C_{12}}
+\le
+\op{U_R^\top E U_r}\,\op{\Sigma_r'}\,\op{V_r^\top D V_r}.
+\]
+Since \(V_r\) has orthonormal columns,
+\[
+\op{V_r^\top D V_r}\le \op{D},
+\]
+hence \eqref{eq:C12-bound} follows. The proof of \eqref{eq:C21-bound} is identical:
+\[
+\op{C_{21}}
+\le
+\op{U_r^\top E U_r}\,\op{\Sigma_r'}\,\op{V_r^\top D V_R}
+\le
+\op{E}\,\op{\Sigma_r'}\,\nu_D.
+\]
+Finally,
+\[
+\op{C_{22}}
+\le
+\op{U_r^\top E U_r}\,\op{\Sigma_r'}\,\op{V_r^\top D V_r}
+\le
+\op{E}\,\op{\Sigma_r'}\,\op{D},
+\]
+which proves \eqref{eq:C22-bound}.
+
+For the global bound, since \(U\) and \(V\) are orthogonal,
+\[
+\op{\Delta W}=\op{C}.
+\]
+Also,
+\[
+\Delta W = E U_r \Sigma_r' V_r^\top D,
+\]
+so by submultiplicativity and orthonormality of \(U_r,V_r\),
+\[
+\op{\Delta W}
+\le
+\op{E}\,\op{U_r}\,\op{\Sigma_r'}\,\op{V_r^\top}\,\op{D}
+=
+\op{E}\,\op{\Sigma_r'}\,\op{D}.
+\]
+\end{proof}
+
+
+\begin{proposition}[Tail decomposition, off-tail bound, and exact tail confinement]
+\label{prop:tail-confinement}
+Let
+\[
+\Delta W = E U_r \Sigma_r' V_r^\top D,
+\qquad
+C := U^\top \Delta W V
+=
+\begin{bmatrix}
+C_{11} & C_{12}\\
+C_{21} & C_{22}
+\end{bmatrix},
+\]
+where the block partition is with respect to the pretrained singular splitting
+\(
+U=[U_R\ U_r]
+\)
+and
+\(
+V=[V_R\ V_r].
+\)
+Define the pure tail part and the off-tail part by
+\[
+C_{\mathrm{tail}}
+:=
+\begin{bmatrix}
+0 & 0\\
+0 & C_{22}
+\end{bmatrix},
+\qquad
+C_{\mathrm{off}}
+:=
+C-C_{\mathrm{tail}}
+=
+\begin{bmatrix}
+C_{11} & C_{12}\\
+C_{21} & 0
+\end{bmatrix}.
+\]
+Then:
+\begin{enumerate}
+    \item[(i)] \textbf{(Exact decomposition)} One has
+    \[
+    C = C_{\mathrm{tail}} + C_{\mathrm{off}},
+    \]
+    with
+    \[
+    C_{11} = (U_R^\top E U_r)\,\Sigma_r'\,(V_r^\top D V_R),
+    \]
+    \[
+    C_{12} = (U_R^\top E U_r)\,\Sigma_r'\,(V_r^\top D V_r),
+    \]
+    \[
+    C_{21} = (U_r^\top E U_r)\,\Sigma_r'\,(V_r^\top D V_R),
+    \]
+    \[
+    C_{22} = (U_r^\top E U_r)\,\Sigma_r'\,(V_r^\top D V_r).
+    \]
+
+    \item[(ii)] \textbf{(Off-tail norm bound)} The off-tail part satisfies
+    \[
+    \|C-C_{\mathrm{tail}}\|_2
+    =
+    \|C_{\mathrm{off}}\|_2
+    \le
+    \left\|
+    \begin{bmatrix}
+    \|C_{11}\|_2 & \|C_{12}\|_2\\
+    \|C_{21}\|_2 & 0
+    \end{bmatrix}
+    \right\|_2
+    \le
+    \sqrt{
+    \|C_{11}\|_2^2+\|C_{12}\|_2^2+\|C_{21}\|_2^2
+    }.
+    \]
+
+    \item[(iii)] \textbf{(Mixing-controlled off-tail bound)} If
+    \[
+    \mu_E := \|U_R^\top E U_r\|_2,
+    \qquad
+    \nu_D := \|V_R^\top D V_r\|_2,
+    \]
+    then
+    \[
+    \|C-C_{\mathrm{tail}}\|_2
+    \le
+    \|\Sigma_r'\|_2
+    \sqrt{
+    (\mu_E\nu_D)^2
+    +
+    (\mu_E\|D\|_2)^2
+    +
+    (\|E\|_2\nu_D)^2
+    }.
+    \]
+
+    \item[(iv)] \textbf{(Exact tail confinement)} If
+    \[
+    \mu_E = 0
+    \qquad\text{and}\qquad
+    \nu_D = 0,
+    \]
+    then
+    \[
+    C_{11}=0,\qquad C_{12}=0,\qquad C_{21}=0,
+    \]
+    and therefore
+    \[
+    C=C_{\mathrm{tail}}
+    =
+    \begin{bmatrix}
+    0 & 0\\
+    0 & C_{22}
+    \end{bmatrix}.
+    \]
+    Equivalently, in pretrained singular coordinates, the perturbation is confined entirely to the tail block.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Part (i) follows by direct multiplication:
+\[
+C
+=
+U^\top (E U_r \Sigma_r' V_r^\top D) V.
+\]
+Partitioning with respect to \(U=[U_R\ U_r]\) and \(V=[V_R\ V_r]\) yields the stated expressions for \(C_{11},C_{12},C_{21},C_{22}\), hence also
+\(
+C = C_{\mathrm{tail}} + C_{\mathrm{off}}.
+\)
+
+For part (ii), define
+\[
+a:=\|C_{11}\|_2,\qquad
+b:=\|C_{12}\|_2,\qquad
+c:=\|C_{21}\|_2.
+\]
+Then
+\[
+C_{\mathrm{off}}
+=
+\begin{bmatrix}
+C_{11} & C_{12}\\
+C_{21} & 0
+\end{bmatrix}.
+\]
+For any block vector \(x=(x_1,x_2)\),
+\[
+C_{\mathrm{off}}x
+=
+\begin{bmatrix}
+C_{11}x_1 + C_{12}x_2\\
+C_{21}x_1
+\end{bmatrix},
+\]
+so
+\[
+\|C_{\mathrm{off}}x\|_2
+\le
+\left\|
+\begin{bmatrix}
+a & b\\
+c & 0
+\end{bmatrix}
+\begin{bmatrix}
+\|x_1\|_2\\
+\|x_2\|_2
+\end{bmatrix}
+\right\|_2.
+\]
+Taking the supremum over \(\|x\|_2=1\) gives
+\[
+\|C_{\mathrm{off}}\|_2
+\le
+\left\|
+\begin{bmatrix}
+a & b\\
+c & 0
+\end{bmatrix}
+\right\|_2.
+\]
+Finally, the operator norm is bounded by the Frobenius norm:
+\[
+\left\|
+\begin{bmatrix}
+a & b\\
+c & 0
+\end{bmatrix}
+\right\|_2
+\le
+\left\|
+\begin{bmatrix}
+a & b\\
+c & 0
+\end{bmatrix}
+\right\|_F
+=
+\sqrt{a^2+b^2+c^2},
+\]
+which proves part (ii).
+
+For part (iii), apply Proposition~\ref{prop:block-bounds}:
+\[
+\|C_{11}\|_2 \le \mu_E \|\Sigma_r'\|_2 \nu_D,
+\]
+\[
+\|C_{12}\|_2 \le \mu_E \|\Sigma_r'\|_2 \|D\|_2,
+\]
+\[
+\|C_{21}\|_2 \le \|E\|_2 \|\Sigma_r'\|_2 \nu_D.
+\]
+Substituting these into part (ii) yields
+\[
+\|C-C_{\mathrm{tail}}\|_2
+\le
+\|\Sigma_r'\|_2
+\sqrt{
+(\mu_E\nu_D)^2
++
+(\mu_E\|D\|_2)^2
++
+(\|E\|_2\nu_D)^2
+}.
+\]
+
+For part (iv), if \(\mu_E=0\), then
+\[
+U_R^\top E U_r = 0.
+\]
+If \(\nu_D=0\), then
+\[
+V_R^\top D V_r = 0.
+\]
+Because \(D\) is diagonal (hence symmetric over \(\mathbb{R}\)),
+\[
+V_r^\top D V_R = (V_R^\top D V_r)^\top = 0.
+\]
+Substituting into the formulas in part (i) yields
+\[
+C_{11}=0,\qquad C_{12}=0,\qquad C_{21}=0.
+\]
+Therefore
+\[
+C=C_{\mathrm{tail}}
+=
+\begin{bmatrix}
+0 & 0\\
+0 & C_{22}
+\end{bmatrix}.
+\]
+\end{proof}
+
+\begin{corollary}[Asymptotic tail confinement under soft mixing control]
+\label{cor:asymptotic-tail}
+Assume that along training (or along a sequence of iterates) the mixing quantities satisfy
+\[
+\mu_E = \|U_R^\top E U_r\|_2 \to 0,
+\qquad
+\nu_D = \|V_R^\top D V_r\|_2 \to 0,
+\]
+and that \(\|E\|_2\), \(\|D\|_2\), and \(\|\Sigma_r'\|_2\) remain bounded.
+Then
+\[
+\|C-C_{\mathrm{tail}}\|_2 \to 0.
+\]
+Equivalently, the perturbation converges in operator norm to a pure tail-block perturbation:
+\[
+C \to
+\begin{bmatrix}
+0 & 0\\
+0 & C_{22}
+\end{bmatrix}.
+\]
+\end{corollary}
+
+\begin{proof}
+This follows immediately from Proposition~\ref{prop:tail-confinement}(iii).
+\end{proof}
+
+\begin{remark}
+Proposition~\ref{prop:tail-confinement} and Corollary~\ref{cor:asymptotic-tail}
+make precise that shrinking the mixing terms does \emph{not} force the full perturbation \(C\) to vanish.
+Rather, it forces only the \emph{off-tail part}
+\(
+C-C_{\mathrm{tail}}
+\)
+to vanish, so that the perturbation becomes confined to the tail block.
+\end{remark}
+
+
+\section{Soft Mixing Regularization and Approximate Preservation}
+
+We now turn the above blockwise analysis into a theorem that can be used in the paper.
+
+% \begin{theorem}[Soft mixing regularization yields approximate block preservation]
+% \label{thm:soft-mix}
+% Consider the training objective
+% \[
+% \mathcal{L}_{\mathrm{total}}
+% =
+% \mathcal{L}_{\mathrm{task}}
+% +
+% \lambda_E^{\mathrm{mix}}\fro{U_R^\top E U_r}^2
+% +
+% \lambda_D^{\mathrm{mix}}\fro{V_R^\top D V_r}^2.
+% \]
+% Suppose that at some iterate (or at a local optimum) we have
+% \[
+% \fro{U_R^\top E U_r}\le \varepsilon_E,
+% \qquad
+% \fro{V_R^\top D V_r}\le \varepsilon_D.
+% \]
+% Then the mixing magnitudes satisfy
+% \[
+% \mu_E \le \varepsilon_E,
+% \qquad
+% \nu_D \le \varepsilon_D,
+% \]
+% and the perturbation blocks obey
+% \begin{align*}
+% \op{C_{11}}
+% &\le
+% \varepsilon_E\,\op{\Sigma_r'}\,\varepsilon_D,
+% \\
+% \op{C_{12}}
+% &\le
+% \varepsilon_E\,\op{\Sigma_r'}\,\op{D},
+% \\
+% \op{C_{21}}
+% &\le
+% \op{E}\,\op{\Sigma_r'}\,\varepsilon_D,
+% \\
+% \op{C_{22}}
+% &\le
+% \op{E}\,\op{\Sigma_r'}\,\op{D}.
+% \end{align*}
+% In particular:
+% \begin{enumerate}[label=(\roman*),leftmargin=2em]
+%     \item the direct perturbation of the preserved leading block \(C_{11}\) is second-order in the two mixing levels \(\varepsilon_E,\varepsilon_D\);
+%     \item the cross-block couplings \(C_{12}\) and \(C_{21}\) are each first-order in one of the two mixing levels;
+%     \item the full perturbation remains norm-bounded by \eqref{eq:global-perturb-bound}.
+% \end{enumerate}
+% \end{theorem}
+
+% \begin{proof}
+% Since \(\op{X}\le \fro{X}\) for any matrix \(X\), we have
+% \[
+% \mu_E=\op{U_R^\top E U_r}\le \fro{U_R^\top E U_r}\le \varepsilon_E,
+% \]
+% and likewise \(\nu_D\le \varepsilon_D\). The rest follows immediately from Proposition~\ref{prop:block-bounds}.
+% \end{proof}
+\begin{theorem}[Soft mixing regularization yields approximate tail confinement]
+\label{thm:soft-mix}
+Consider the training objective
+\[
+\mathcal{L}_{\mathrm{total}}
+=
+\mathcal{L}_{\mathrm{task}}
++
+\lambda_E^{\mathrm{mix}}\fro{U_R^\top E U_r}^2
++
+\lambda_D^{\mathrm{mix}}\fro{V_R^\top D V_r}^2.
+\]
+Suppose that at some iterate (or local optimum) one has
+\[
+\fro{U_R^\top E U_r}\le \varepsilon_E,
+\qquad
+\fro{V_R^\top D V_r}\le \varepsilon_D.
+\]
+Then
+\[
+\mu_E := \|U_R^\top E U_r\|_2 \le \varepsilon_E,
+\qquad
+\nu_D := \|V_R^\top D V_r\|_2 \le \varepsilon_D.
+\]
+Consequently, by Proposition~\ref{prop:tail-confinement},
+\[
+\|C-C_{\mathrm{tail}}\|_2
+\le
+\|\Sigma_r'\|_2
+\sqrt{
+(\varepsilon_E\varepsilon_D)^2
++
+(\varepsilon_E\|D\|_2)^2
++
+(\|E\|_2\varepsilon_D)^2
+}.
+\]
+Hence soft regularization of the mixing terms drives the perturbation toward a pure tail-block perturbation, without requiring the full perturbation norm \(\|C\|_2\) to vanish.
+\end{theorem}
+
+\begin{proof}
+The inequalities
+\[
+\mu_E \le \fro{U_R^\top E U_r}\le \varepsilon_E,
+\qquad
+\nu_D \le \fro{V_R^\top D V_r}\le \varepsilon_D
+\]
+follow from \(\|X\|_2\le \|X\|_F\). The stated bound then follows immediately from Proposition~\ref{prop:tail-confinement}(iii).
+\end{proof}
+
+\begin{remark}[Interpretation]
+Theorem~\ref{thm:soft-mix} formalizes the intended preservation--adaptation trade-off:
+\begin{itemize}[leftmargin=2em]
+    \item the global perturbation size remains controlled by \(\op{E}\op{\Sigma_r'}\op{D}\);
+    \item the extent to which this perturbation leaves the pretrained tail block is controlled separately by the mixing terms \(\mu_E\) and \(\nu_D\), or by their regularized surrogates \(\varepsilon_E,\varepsilon_D\).
+\end{itemize}
+Thus soft regularization does not force the full perturbation to vanish, but it makes leakage into the preserved subspace quantitatively small; equivalently, it makes the off-tail component \(C-C_{\mathrm{tail}}\) quantitatively small, thereby promoting approximate confinement of the adapted update to the pretrained tail singular block.
+\end{remark}
+
+\section{Subspace Perturbation Corollary}
+Let the singular values of \(W^{\mathrm{pre}}\) satisfy a spectral gap
+\[
+\gamma := \sigma_R(W^{\mathrm{pre}}) - \sigma_{R+1}(W^{\mathrm{pre}}) > 0.
+\]
+Then one expects the leading singular subspaces of \(\widetilde W\) to remain close to those of \(W^{\mathrm{pre}}\) whenever the perturbation is small relative to \(\gamma\).
+
+\begin{corollary}[Gap-dependent approximate preservation]
+\label{cor:subspace}
+Assume \(\gamma>0\) and let \(\widetilde U_R,\widetilde V_R\) denote the leading \(R\)-dimensional left and right singular subspaces of \(\widetilde W = W^{\mathrm{pre}} + \Delta W\). If
+\[
+\op{\Delta W} < \gamma,
+\]
+then the principal angle deviations\footnote{The quantity \(\|\sin\Theta(A,B)\|_2\) is a standard subspace-distance measure, equal to the largest sine of the principal angles between the two subspace.} satisfy the standard perturbative estimate
+\[
+\op{\sinTheta(\widetilde U_R,U_R)}
+\;\lesssim\;
+\frac{\op{\Delta W}}{\gamma},
+\qquad
+\op{\sinTheta(\widetilde V_R,V_R)}
+\;\lesssim\;
+\frac{\op{\Delta W}}{\gamma}.
+\]
+Using \eqref{eq:global-perturb-bound},
+\[
+\op{\sinTheta(\widetilde U_R,U_R)},
+\ \op{\sinTheta(\widetilde V_R,V_R)}
+\;\lesssim\;
+\frac{\op{E}\,\op{\Sigma_r'}\,\op{D}}{\gamma}.
+\]
+Moreover, the leading-block contamination is sharpened by
+\[
+\op{C_{11}}
+\le
+\mu_E\,\op{\Sigma_r'}\,\nu_D,
+\]
+so small \(\mu_E,\nu_D\) imply that the perturbation of the leading block is much smaller than the total perturbation in operator norm.
+\end{corollary}
+
+\begin{remark}
+Corollary~\ref{cor:subspace} shows the distinction between:
+\begin{itemize}[leftmargin=2em]
+    \item \emph{global perturbation control}: controlled by \(\op{E}\op{\Sigma_r'}\op{D}\),
+    \item \emph{leading-subspace preservation}: improved when \(\mu_E,\nu_D\) are small.
+\end{itemize}
+Thus \(\mu_E,\nu_D\) are the right quantities to regularize if the theoretical goal is not merely bounded perturbation, but approximate preservation of the pretrained dominant spectral geometry.
+\end{remark}
+
+\section{Forward Hidden-State Perturbation}
+
+If a hidden state \(h\in\R^n\) is transformed via the adapted weight \(\widetilde W\), then the update contribution is
+\[
+\Delta h := \Delta W\,h.
+\]
+From \eqref{eq:global-perturb-bound},
+\[
+\norm{\Delta h}_2
+\le
+\op{\Delta W}\,\norm{h}_2
+\le
+\op{E}\,\op{\Sigma_r'}\,\op{D}\,\norm{h}_2.
+\]
+Hence the hidden-state perturbation is always norm-bounded, independently of whether exact block separation holds. Soft mixing regularization does not primarily shrink \(\op{\Delta W}\); rather, it shrinks the \emph{part of \(\Delta W\)} that leaks into or couples with the preserved leading singular structure.
+
+\section{Suggested Ablation Study}
+
+We recommend three training variants:
+
+\begin{enumerate}[leftmargin=2em]
+    \item \textbf{No regularizer}: \(\lambda_E^{\mathrm{mix}}=0,\ \lambda_D^{\mathrm{mix}}=0\).
+    \item \textbf{\(\mu_E\)-only regularizer}: \(\lambda_E^{\mathrm{mix}}>0,\ \lambda_D^{\mathrm{mix}}=0\).
+    \item \textbf{\(\mu_E+\nu_D\) regularizer}: \(\lambda_E^{\mathrm{mix}}>0,\ \lambda_D^{\mathrm{mix}}>0\).
+\end{enumerate}
+
+The metrics below are designed to distinguish:
+\begin{itemize}[leftmargin=2em]
+    \item downstream task performance,
+    \item total perturbation size,
+    \item leakage into the preserved leading block,
+    \item cross-subspace coupling,
+    \item actual movement of the leading singular subspaces.
+\end{itemize}
+
+\subsection{Recommended reported metrics}
+
+For each adapted layer (or averaged across layers), report:
+
+\begin{enumerate}[label=\arabic*.,leftmargin=2em]
+    \item \textbf{Task metric}:
+    \[
+    \text{TaskScore}
+    \in
+    \{\text{Accuracy, F1, Exact Match, Rouge-L, BLEU, perplexity, etc.}\}.
+    \]
+    Choose the standard metric for the downstream benchmark.
+
+    \item \textbf{Total update magnitude}:
+    \[
+    \mathrm{RelPert}
+    :=
+    \frac{\op{\Delta W}}{\op{W^{\mathrm{pre}}}}
+    \quad\text{or}\quad
+    \frac{\fro{\Delta W}}{\fro{W^{\mathrm{pre}}}}.
+    \]
+
+    \item \textbf{Left/right mixing magnitudes}:
+    \[
+    \mu_E = \op{U_R^\top E U_r},
+    \qquad
+    \nu_D = \op{V_R^\top D V_r}.
+    \]
+
+    \item \textbf{Leading-block leakage}:
+    \[
+    \mathrm{Leak}_{11}
+    :=
+    \frac{\op{P_{U_R}\Delta W P_{V_R}}}{\op{\Delta W}}
+    =
+    \frac{\op{C_{11}}}{\op{\Delta W}},
+    \]
+    where \(P_{U_R}=U_RU_R^\top\) and \(P_{V_R}=V_RV_R^\top\).
+
+    \item \textbf{Cross-block couplings}:
+    \[
+    \mathrm{Leak}_{12}
+    :=
+    \frac{\op{P_{U_R}\Delta W (I-P_{V_R})}}{\op{\Delta W}}
+    =
+    \frac{\op{C_{12}}}{\op{\Delta W}},
+    \]
+    \[
+    \mathrm{Leak}_{21}
+    :=
+    \frac{\op{(I-P_{U_R})\Delta W P_{V_R}}}{\op{\Delta W}}
+    =
+    \frac{\op{C_{21}}}{\op{\Delta W}}.
+    \]
+
+    \item \textbf{Leading subspace drift}:
+    \[
+    \mathrm{Drift}_U := \op{\sinTheta(\widetilde U_R,U_R)},
+    \qquad
+    \mathrm{Drift}_V := \op{\sinTheta(\widetilde V_R,V_R)}.
+    \]
+
+    \item \textbf{Leading singular value drift}:
+    \[
+    \mathrm{SVDrift}
+    :=
+    \max_{1\le i\le R}
+    \frac{\left|\sigma_i(\widetilde W)-\sigma_i(W^{\mathrm{pre}})\right|}
+    {\sigma_i(W^{\mathrm{pre}})}.
+    \]
+
+    \item \textbf{Efficiency metrics}:
+    \[
+    \text{TrainableParams},\quad \text{GPU Memory},\quad \text{Train Time / Epoch}.
+    \]
+\end{enumerate}
+
+
+\subsection{What to expect empirically}
+
+A useful hypothesis to test is:
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{No regularizer}: best flexibility, but potentially larger leakage and larger leading-subspace drift.
+    \item \textbf{\(\mu_E\)-only}: reduced left-side leakage, but possibly residual right-side coupling through \(D\).
+    \item \textbf{\(\mu_E+\nu_D\)}: best preservation of the pretrained leading spectral structure, though possibly at some cost in task performance if the task benefits from repurposing leading pretrained directions.
+\end{itemize}
+
+\section{Takeaway}
+
+The key message is:
+
+\begin{center}
+\fbox{
+\parbox{0.93\linewidth}{
+Softly regularizing the singular-basis mixing terms
+\(
+U_R^\top E U_r
+\)
+and
+\(
+V_R^\top D V_r
+\)
+does \emph{not} merely reduce the total perturbation magnitude; rather, it specifically reduces the part of the perturbation that contaminates or couples with the preserved leading singular structure.
+}}
+\end{center}
+
+This yields a sharper and more faithful theoretical justification than a global operator-norm bound alone.
+
+\end{document}

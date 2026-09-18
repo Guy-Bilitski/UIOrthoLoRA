@@ -1,0 +1,28 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\section{Supporting downstream evaluations}
+\label{app:downstream}
+\subsection{Generation}
+\label{app:generation}
+
+Table~\ref{tab:gpt2_generation_appendix} reports GPT-2 Medium results on E2E data-to-text generation~\citep{novikova2017e2e}. The fixed-core and partially rotated coordinate-scaled constructions attain BLEU scores of 68.7 and 68.8, respectively, with 0.078M and 0.35M reported trainable parameters. These results extend the practical setting beyond classification and regression, but contain no block-allocation measurements or mixing intervention. The non-UI comparisons are taken from \citet{gao2024parameter}, whose LoRA and FourierFT generation entries average three final-epoch runs. We retain source-reported uncertainties without treating them as a common inferential comparison. This is supporting task-level evidence, not a uniformly rerun geometry experiment.
+\input{tables/generation}
+
+\section{Exploratory adaptation and retention}
+\label{app:retention}
+
+The additional retention study measures task adaptation and behavior retention for instruction-tuned Gemma-3-12B and Llama-3.2-3B models~\citep{gemma3_2025,llama3_2024}. It remains exploratory support rather than evidence for the spectral-mixing mechanism: the reported checkpoints are not accompanied here by matched block-allocation measurements or mixing interventions.
+
+\paragraph{Targeted adaptation and intrinsic retention.}
+The protocol constructs an error set from TriviaQA/HotpotQA training examples that the frozen model fails under sampled generation, and trains on those examples. Post-training accuracy on this set measures learning of the targeted training examples; it is not held-out adaptation accuracy. Retention is evaluated on non-trained examples. The analysis includes examples with nonzero pre-adaptation answer scores and held-out validation examples; only examples with high initial scores can contribute to the severe negative-shift count below. With normalized pre/post scores $S_{\pre}(x),S_{\mathrm{post}}(x)$, that count uses
+\begin{equation}
+\mathbb I_{\mathrm{neg}}(x)=\mathbb I[S_{\mathrm{post}}(x)-S_{\pre}(x)<-0.8].
+\end{equation}
+The result-processing script uses the strict inequality. For scores that are exact fractions of ten samples, this corresponds to a loss of more than eight successful answers. It measures severe forgetting rather than every decline in answer probability.
+
+\paragraph{Evaluation and training settings.}
+The QA evaluation protocol is 5-shot with ten sampled answers per prompt, temperature 0.5, top-$p$ 0.9, and a 20-token generation limit, using answer-alias matching. The broad evaluation includes 0-shot MMLU~\citep{hendrycks2020measuring} and a nine-task BIG-bench multiple-choice subset~\citep{srivastava2023beyond}. The latter comprises analogical similarity, analytic entailment, causal judgment, cause and effect, common morpheme, conceptual combinations, logical deduction, logical sequence, and odd one out. It is labeled \emph{Reasoning} in Table~\ref{tab:combined_model_performance}; it is not the full BIG-Bench Hard benchmark. The recorded training protocol uses SFTTrainer, ten epochs, fused AdamW, cosine scheduling with warmup ratio 0.05, gradient clipping at 1.0, per-device batch size 64, maximum sequence length 1024, and bfloat16 precision. Baseline adapters cover attention and feed-forward linear projections; reported sweeps use learning rates from $10^{-6}$ to $10^{-2}$, nominal scaling 32, no dropout, and global seed 42.
+
+\paragraph{Interpretation.}
+Table~\ref{tab:combined_model_performance} reports adaptation scores and forgetting counts across coarse capacity tiers: small ($\le10$M trainable parameters), medium ($10$M--$100$M), and large ($>100$M). These are not exact capacity matches, and scores are descriptive outcomes of configuration sweeps rather than matched spectral interventions. The comparisons show no uniform ordering across models, datasets, and capacity tiers. They also omit UILinLoRA, preventing attribution of an outcome to rotations rather than scalers. Their role is to distinguish functional evaluation from structural guarantees, not to infer retained knowledge from a weight-space constraint.
+
+\input{forgetting-results-table}

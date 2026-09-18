@@ -90,6 +90,7 @@ def frontier(rows, selection):
 
 def confirmation_summary(rows, selection):
     lines, complete = [], True
+    match_notes = []
     for task, label in TASKS:
         chosen = fmt_dose(selection[task]["selected_coefficient"])
         by_condition = {}
@@ -102,7 +103,7 @@ def confirmation_summary(rows, selection):
                 and r["condition"] == condition
                 and (condition != "P1_NORM" or fmt_dose(r["coefficient"]) == chosen)
             ]
-            if {int(r["seed"]) for r in sub} != CONFIRMATION_SEEDS:
+            if len(sub) != len(CONFIRMATION_SEEDS) or {int(r["seed"]) for r in sub} != CONFIRMATION_SEEDS:
                 complete = False
             by_condition[condition] = {int(r["seed"]): r for r in sub}
         if not complete:
@@ -111,15 +112,15 @@ def confirmation_summary(rows, selection):
         # of THIS study's runs (e_s = |rho_NORM,s / rho_MIX,s - 1|), never
         # inherited from the calibration-seed label.
         errors = {
-            seed: abs(
+            seed: (
                 float(by_condition["P1_NORM"][seed]["rho_pooled"])
                 / float(by_condition["P1_MIX"][seed]["rho_pooled"])
                 - 1.0
             )
             for seed in sorted(CONFIRMATION_SEEDS)
         }
-        all_matched = all(e <= 0.05 + 1e-12 for e in errors.values())
-        error_text = ", ".join(f"{100 * errors[s]:.1f}" for s in sorted(CONFIRMATION_SEEDS))
+        error_text = ", ".join(f"{100 * errors[s]:+.1f}" for s in sorted(CONFIRMATION_SEEDS))
+        match_notes.append(f"{label}: ${error_text}$\\%")
         block = []
         for condition, name in CONDITIONS:
             sub = list(by_condition[condition].values())
@@ -129,13 +130,13 @@ def confirmation_summary(rows, selection):
                 return f"${mean(values):.{digits}f} \\pm {stdev(values):.{digits}f}$"
 
             cross = [100 * (float(r["pooled_LT"]) + float(r["pooled_TL"])) for r in sub]
+            eqm_cross = [100 * (float(r["eqm_LT"]) + float(r["eqm_TL"])) for r in sub]
             if condition == "P1_NORM":
-                status = "matched all seeds" if all_matched else "match errors " + error_text + "\\%"
-                shown = f"Norm control ($\\beta={chosen}$; {status})"
+                shown = f"NORM ($\\beta={chosen}$)"
             else:
-                shown = name
+                shown = condition.removeprefix("P1_")
             block.append(
-                f"{label} & {shown} & {ms('rho_pooled')} & ${mean(cross):.1f} \\pm {stdev(cross):.1f}$ & "
+                f"{label} & {shown} & {ms('rho_pooled')} & ${mean(cross):.1f} \\pm {stdev(cross):.1f}$ & ${mean(eqm_cross):.1f} \\pm {stdev(eqm_cross):.1f}$ & "
                 f"{ms('pooled_LL', 100, 1)} & {ms('pooled_TT', 100, 1)} & "
                 f"{ms('probe_masked_ce', 1, 2)} & {ms('fixed_accuracy', 100, 1)} \\\\"
             )
@@ -148,30 +149,85 @@ def confirmation_summary(rows, selection):
         [
             "\\begin{table}[t]",
             "\\centering",
-            "\\caption{Confirmation of the matched-magnitude contrast across seeds 42, 17, and 123",
+            "\\caption{Confirmation of the calibration-selected norm control across seeds 17, 42, and 123",
             "(mean$\\pm$sample SD, $n=3$), fixed-step endpoints, common protocol of",
-            "Section~\\ref{sec:matchedcontrol}. Cross, LL, and TT are pooled energy percentages;",
-            "the probe is masked-token cross-entropy under the frozen original MLM head;",
-            "accuracy is the inner-selection split at the fixed step, scaled by 100. The norm-control",
-            "row states the per-seed achieved matching errors",
-            "$e_s=|\\rho_{\\mathrm{NORM},s}/\\rho_{\\mathrm{MIX},s}-1|$ against the declared",
-            "$\\pm5\\%$ rule; matching status is measured on these runs, not inherited from calibration.}",
+            "Section~\\ref{sec:matchedcontrol}. Cross P, LL, and TT are pooled energy percentages; Cross E weights modules equally.",
+            "The probe is masked-token cross-entropy under the frozen original MLM head;",
+            "accuracy is the inner-selection split at the fixed step, scaled by 100. Achieved errors",
+            "$\\delta_s=\\rho_{\\mathrm{NORM},s}/\\rho_{\\mathrm{MIX},s}-1$ (signed; $e_s=|\\delta_s|$) against the declared",
+            "$\\pm5\\%$ rule, in that seed order: " + "; ".join(match_notes) + ".",
+            "N is the dimension-only reference, not a run or test of isotropy.}",
             "\\label{tab:matchedconfirmation}",
             "\\begin{adjustbox}{max width=\\linewidth}",
-            "\\begin{tabular}{llcccccc}",
+            "\\begin{tabular}{llccccccc}",
             "\\toprule",
-            "Task & Condition & $\\rho_F$ & Cross (\\%) & LL (\\%) & TT (\\%) & Probe CE & Acc \\\\",
+            "Task & Condition & $\\rho_F$ & Cross P & Cross E & LL & TT & Probe CE & Acc \\\\",
             "\\midrule",
         ]
         + lines
-        + ["\\bottomrule", "\\end{tabular}", "\\end{adjustbox}", "\\end{table}"]
+        + [r"\midrule", r"--- & N (dimension only) & --- & $44.4$ & $44.4$ & $44.4$ & $11.1$ & --- & --- \\", "\\bottomrule", "\\end{tabular}", "\\end{adjustbox}", "\\end{table}"]
     )
+
+
+def paired_summary(rows, selection):
+    from analyze_focused_confirmation import analyze
+    result = analyze()
+    lines = []
+    contrasts = [("P1_MIX_minus_P1_NORM", "MIX--NORM"),
+                 ("P1_MIX_minus_P1_UNREG", "MIX--UNREG"),
+                 ("P1_NORM_minus_P1_UNREG", "NORM--UNREG")]
+    for task, label in TASKS:
+        for contrast, name in contrasts:
+            for metric, shown in (("cross_pp", "Cross"), ("accuracy_pp", "Accuracy")):
+                item = result["tasks"][task]["paired"][contrast][metric]
+                values = " & ".join(f"${v:.2f}$" for v in item["values"])
+                lo, hi = item["nominal_t95"]
+                lines.append(f"{label} & {name} & {shown} & {values} & ${item['mean']:.2f} \\pm {item['sample_sd']:.2f}$ & $[{lo:.2f}, {hi:.2f}]$ \\\\")
+        if task != TASKS[-1][0]:
+            lines.append("\\midrule")
+    return lines
+
+
+def module_summary(rows, selection):
+    from analyze_focused_confirmation import analyze
+    result = analyze()
+    lines = []
+    for task, label in TASKS:
+        task_result = result["tasks"][task]
+        for match, pair in zip(task_result["matching"], task_result["module_pairs"]):
+            lines.append(f"{label} & {pair['seed']} & ${match['signed_error_percent']:+.1f}$ & "
+                         f"${pair['mix_median_rho']:.4f}$ & ${pair['norm_median_rho']:.4f}$ & "
+                         f"{pair['modules_within_5pct']}/48 & {pair['rescaled_modules_within_5pct']}/48 & "
+                         f"{pair['mix_modules_below_1e6']}/{pair['norm_modules_below_1e6']} \\\\")
+        if task != TASKS[-1][0]:
+            lines.append("\\midrule")
+    return lines
+
+
+def task_outcomes(rows, selection):
+    lines = []
+    for task, label in TASKS:
+        for condition, _ in CONDITIONS:
+            sub = sorted([r for r in rows if r['stage'] == 'confirmation' and r['task'] == task and r['condition'] == condition], key=lambda r: int(r['seed']))
+            assert len(sub) == 3 and {int(r['seed']) for r in sub} == CONFIRMATION_SEEDS
+            for row in sub:
+                def score(key):
+                    return f"${100*float(row[key]):.2f}$" if row[key] else "---"
+                lines.append(f"{label} & {condition.removeprefix('P1_')} & {row['seed']} & "
+                             f"{score('fixed_accuracy')} & {score('fixed_f1')} & {row['best_step']} & "
+                             f"{score('best_accuracy')} & {score('best_f1')} \\\\")
+        if task != TASKS[-1][0]:
+            lines.append("\\midrule")
+    return lines
 
 
 BLOCKS = {
     "FOCUSED MATCHED SUMMARY": matched_summary,
     "FOCUSED FRONTIER": frontier,
     "FOCUSED CONFIRMATION": confirmation_summary,
+    "FOCUSED PAIRED": paired_summary,
+    "FOCUSED MODULES": module_summary,
+    "FOCUSED TASK OUTCOMES": task_outcomes,
 }
 
 

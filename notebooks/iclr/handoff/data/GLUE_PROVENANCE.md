@@ -6,7 +6,7 @@ The six imported VeRA/LoRA/RandLoRA rows match [RandLoRA, version 2, Appendix B.
 
 On 2026-09-14, the author explicitly confirmed that the original Table 2 spectral MRPC values (92.0/90.0 for base and 92.5/93.4 for large) are accuracy. This corrects the prior audit's F1 assignment, inferred from the archived manuscript's metric description and the local training helper `notebooks/glue/training_new/training.py`. Those sources did not establish the metric of the final broad-evaluation table. The correction relies on author confirmation, not newly recovered raw accuracy outputs. The separate mixing-intervention records explicitly report MRPC F1 and are unchanged.
 
-The main table retains every task mean and standard deviation in one MRPC accuracy column. Every Avg6 is recomputed from all six displayed means, with consistent two-decimal rounding; `reported_avg6` retains the originally printed aggregates as historical metadata. The average is not a full GLUE benchmark score. Common task metrics do not establish tuning fairness or uncertainty comparability. No average standard deviation or significance test is inferred from the task standard deviations.
+The main table retains every task mean and standard deviation in one MRPC accuracy column. Avg6 is no longer displayed across unmatched protocols; every six-task mean is still recomputed by the audit, and `reported_avg6` retains the originally printed aggregates as historical metadata. The average is not a full GLUE benchmark score. Common task metrics do not establish tuning fairness or uncertainty comparability. No average standard deviation or significance test is inferred from the task standard deviations.
 
 ## Protocol grouping in the review-panel revision
 
@@ -21,7 +21,7 @@ The old UIOrthoLoRA counts were 0.4M (base) and 0.6M (large); UILinLoRA counts w
 | RoBERTa-base | 48 / 768 | 86,016 | 479,232 |
 | RoBERTa-large | 96 / 1024 | 221,184 | 1,007,616 |
 
-These are analytical counts under the stated configuration, not independently recovered counts of the historical models. In particular, the large-model rotated discrepancy cannot be explained by ordinary rounding. The task head, actual module placement, rotation dimensions, counting convention, and historical implementation must be reconciled before parameter-efficiency claims use the old counts. The counts remain in this source archive but are omitted from the main GLUE table; no replacement is invented.
+These are analytical counts under the stated configuration, not independently recovered counts of the historical models. In particular, the large-model rotated discrepancy cannot be explained by ordinary rounding. The task head, actual module placement, rotation dimensions, counting convention, and historical implementation must be reconciled before parameter-efficiency claims use the old counts. The original spectral counts remain in this source archive but are not silently substituted for verified inventories. The round-3 main table shows explicitly marked configuration-derived adapter counts (0.086/0.479M base, 0.221/1.008M large), with no task head or basis storage included; imported counts retain their source convention. These derived numbers do not resolve the historical inventory discrepancy.
 
 ## Run-level coverage
 

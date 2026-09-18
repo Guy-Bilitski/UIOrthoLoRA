@@ -1,0 +1,90 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\section{Proofs and boundary cases}
+\label{app:proofs}
+
+\subsection{Fixed coefficients and within-tail flexibility}
+\label{app:approximation}
+Let $\widehat G=U^\top G V$ and partition it into the four coordinate blocks. Orthogonal invariance gives
+\begin{equation}
+\fro{G-U_T H V_T^\top}^2
+=\fro{\widehat G_{LL}}^2+\fro{\widehat G_{LT}}^2
++\fro{\widehat G_{TL}}^2+\fro{\widehat G_{TT}-H}^2.
+\end{equation}
+For a free core the last term is minimized at $H=\widehat G_{TT}$. For a diagonal core it is minimized by $h_i=(\widehat G_{TT})_{ii}$, leaving the off-diagonal entries unchanged. Substitution proves Proposition~\ref{prop:approximation}. An SVD of the minimizing free core gives the representation~\eqref{eq:rotations}; this is an existence statement, not a guarantee for a particular optimizer or partial-rotation block.
+
+If the free core is additionally constrained to rank at most $q\le r$, applying truncated SVD to $\widehat G_{TT}$ gives minimum squared error
+\begin{equation}
+\fro{G}^2-\sum_{j=1}^q\sigma_j(\widehat G_{TT})^2.
+\end{equation}
+This expression keeps the outside-tail residual explicit. It should not be replaced by the best unrestricted rank-$q$ approximation error of the entire $G$, whose singular directions may lie outside the selected tail.
+
+\subsection{Proof of the unified mixing bounds}
+\label{app:mixingproof}
+Because $U,V$ are orthogonal,
+\begin{equation}
+C=A\begin{bmatrix}S_L&0\\0&H\end{bmatrix}B.
+\end{equation}
+Direct multiplication gives
+\begin{align}
+C_{LL}&=A_{LL}S_LB_{LL}+A_{LT}HB_{TL},\\
+C_{LT}&=A_{LL}S_LB_{LT}+A_{LT}HB_{TT},\\
+C_{TL}&=A_{TL}S_LB_{LL}+A_{TT}HB_{TL},\\
+C_{TT}&=A_{TL}S_LB_{LT}+A_{TT}HB_{TT}.
+\end{align}
+Symmetry yields $\op{A_{TL}}=\op{A_{LT}}=\mu$ and $\op{B_{TL}}=\op{B_{LT}}=\nu$. Orthogonal compression bounds the diagonal blocks of $A$ by $e$ and those of $B$ by $d_s$. Apply the triangle inequality and submultiplicativity to each product to obtain~\eqref{eq:blockbound1}--\eqref{eq:blockbound2}.
+
+For the tail-only core, $s=0$ and
+\begin{equation}
+C-C_{\mathrm{tail}}=\begin{bmatrix}C_{LL}&C_{LT}\\C_{TL}&0\end{bmatrix}.
+\end{equation}
+For any block vector $(x,y)$, the norms of the two output blocks are bounded componentwise by
+\begin{equation}
+\begin{bmatrix}\op{C_{LL}}&\op{C_{LT}}\\\op{C_{TL}}&0\end{bmatrix}
+\begin{bmatrix}\|x\|_2\\\|y\|_2\end{bmatrix}.
+\end{equation}
+Taking a supremum and bounding the norm of this nonnegative $2\times2$ matrix by its Frobenius norm proves
+\begin{equation}
+\op{C-C_{\mathrm{tail}}}
+\le\sqrt{\op{C_{LL}}^2+\op{C_{LT}}^2+\op{C_{TL}}^2}.
+\end{equation}
+Substitution gives~\eqref{eq:offbound}. If the stated factor norms remain bounded, its right-hand side goes to zero as $\mu,\nu\to0$.
+
+For the general core, let $C_{\mathrm{diag}}=\diag(C_{LL},C_{TT})$. The off-diagonal block matrix satisfies the exact identity
+\begin{equation}
+\op{C-C_{\mathrm{diag}}}=\max\{\op{C_{LT}},\op{C_{TL}}\}.
+\end{equation}
+The cross-block bounds therefore imply convergence to the set of block-diagonal updates when $e,d_s,h_s,s$ are bounded and $\mu,\nu\to0$. The term $A_{LL}S_LB_{LL}$ need not vanish. This proves Corollary~\ref{cor:confinement} and states precisely the different limits in the two cases.
+
+\subsection{Confinement does not prevent singular-value crossings}
+\label{app:crossing}
+For a tail-only update without ambient scaling,
+\begin{equation}
+U^\top(W_0+\Delta)V=
+\begin{bmatrix}\Sigma_L&0\\0&\Sigma_T+H\end{bmatrix}.
+\end{equation}
+The singular values are the union of those of the two diagonal blocks, which proves the sufficient condition~\eqref{eq:nocrossing}. Consider $W_0=\diag(2,1)$, cutoff $k=1$, and $\Delta=\diag(0,2)$. The update is strictly tail-supported with no cross mixing and no leading-block modification, but $W_0+\Delta=\diag(2,3)$ has the other coordinate as its top singular direction. Its largest-principal-angle sine relative to the original leading direction is one. Thus block decoupling and stability of the top-ranked subspace are distinct even in a two-dimensional example.
+
+\subsection{Rectangular weights and complete energy accounting}
+\label{app:rectangular}
+For $W_0\in\mathbb R^{m\times n}$, select $k\le\min(m,n)$ leading singular vectors and define
+\begin{equation}
+P_L=U_LU_L^\top,\quad P_T=I_m-P_L,\qquad
+Q_L=V_LV_L^\top,\quad Q_T=I_n-Q_L.
+\end{equation}
+Then $\Delta_{ab}=P_a\Delta Q_b$ gives
+\begin{equation}
+\Delta=\sum_{a,b}\Delta_{ab},\qquad
+\fro{\Delta}^2=\sum_{a,b}\fro{\Delta_{ab}}^2.
+\end{equation}
+Pairwise Frobenius inner products vanish because complementary projectors multiply to zero. The tail here is the full complement and includes any unmatched null directions. A chosen adapter may span only a subset of it; that available subspace must not be confused with the diagnostic complement. Complete orthogonal bases recover the corresponding coordinate blocks. The square attention-matrix experiment avoids this issue, but an economy-SVD diagnostic is not automatically exhaustive for other layers.
+
+\subsection{A dimension-only reference for allocation}
+\label{app:dimension}
+Let the vectorized nonzero update have a rotationally invariant direction in the $d^2$-dimensional matrix space. By symmetry each squared coordinate has expected fraction $1/d^2$ of the total. The leading, cross, and tail blocks have $k^2$, $2kr$, and $r^2$ coordinates, respectively. Their expected energy fractions are therefore $k^2/d^2$, $2kr/d^2$, and $r^2/d^2$. For $r/d=1/3$, these are $4/9$, $4/9$, and $1/9$, with off-tail expectation $8/9$. The square root $\sqrt{8/9}\simeq0.9428$ is a reference on the norm-ratio scale, not the expectation $\mathbb E[q_{\off}]$. These calculations are a null reference, not a fitted model or a statistical test of the observed updates.
+
+\subsection{Factor-scale identities}
+Write the inner matrix in~\eqref{eq:unified} as $K$. For any $a>0$, $(aE)K(D/a)=EKD$. Because each mixing operator is linear in its respective scaler, this transformation multiplies its two magnitudes by $a$ and $1/a$. For $S_L=0$, the additional identity
+\begin{equation}
+(aE)U_T(H/a^2)V_T^\top(aD)=E U_T H V_T^\top D
+\end{equation}
+shrinks both squared Frobenius penalties by $a^2$. It can make a raw factor penalty arbitrarily small with a fixed effective update if the core is allowed to diverge. It does not refute the bounded-factor confinement statement, nor does it imply that the optimizer follows this path. It motivates measuring the actual update and the norms appearing in the bound.

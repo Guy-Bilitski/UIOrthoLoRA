@@ -1,0 +1,522 @@
+{
+  "practical_held_aside": {
+    "mrpc/P1_MIX": {
+      "accuracy_percent": {
+        "mean": 85.45751633986929,
+        "sample_sd": 1.0204245095422246,
+        "values": [
+          84.31372549019608,
+          85.7843137254902,
+          86.27450980392157
+        ]
+      },
+      "cross_percent": {
+        "mean": 4.457612930350187,
+        "sample_sd": 0.3393824092300574,
+        "values": [
+          4.756751597340755,
+          4.527286528618114,
+          4.088800665091693
+        ]
+      },
+      "nll": {
+        "mean": 0.39459983507792157,
+        "sample_sd": 0.028116789227591914,
+        "values": [
+          0.42529019713401794,
+          0.37008240818977356,
+          0.38842689990997314
+        ]
+      },
+      "rho_pooled": {
+        "mean": 0.04067563102357215,
+        "sample_sd": 0.0017392315238068513,
+        "values": [
+          0.04033904469138803,
+          0.039129293464363966,
+          0.04255855491496445
+        ]
+      }
+    },
+    "mrpc/P1_NORM": {
+      "accuracy_percent": {
+        "mean": 85.7843137254902,
+        "sample_sd": 0.6484684585942662,
+        "values": [
+          86.27450980392157,
+          85.04901960784314,
+          86.02941176470588
+        ]
+      },
+      "cross_percent": {
+        "mean": 46.20667442077768,
+        "sample_sd": 0.09527821486877379,
+        "values": [
+          46.3032947569182,
+          46.2039309204773,
+          46.112797584937546
+        ]
+      },
+      "nll": {
+        "mean": 0.7554733753204346,
+        "sample_sd": 0.06407130228457464,
+        "values": [
+          0.7187058925628662,
+          0.829456090927124,
+          0.7182581424713135
+        ]
+      },
+      "rho_pooled": {
+        "mean": 0.042279235101565865,
+        "sample_sd": 0.00046200309137444474,
+        "values": [
+          0.042571855706036076,
+          0.04174662602529807,
+          0.042519223573363456
+        ]
+      }
+    },
+    "mrpc/P1_UNREG": {
+      "accuracy_percent": {
+        "mean": 86.19281045751633,
+        "sample_sd": 0.927926200294163,
+        "values": [
+          85.7843137254902,
+          85.5392156862745,
+          87.25490196078431
+        ]
+      },
+      "cross_percent": {
+        "mean": 42.35559765774946,
+        "sample_sd": 0.053861538115702864,
+        "values": [
+          42.41774615296351,
+          42.322464600981355,
+          42.32658221930353
+        ]
+      },
+      "nll": {
+        "mean": 0.8708251317342123,
+        "sample_sd": 0.06759416562679618,
+        "values": [
+          0.8724221587181091,
+          0.9376066327095032,
+          0.8024466037750244
+        ]
+      },
+      "rho_pooled": {
+        "mean": 0.1802436007405437,
+        "sample_sd": 0.0008824176097028253,
+        "values": [
+          0.17934140047726851,
+          0.1811048067751177,
+          0.18028459496924493
+        ]
+      }
+    },
+    "rte/P1_MIX": {
+      "accuracy_percent": {
+        "mean": 71.3598074608905,
+        "sample_sd": 1.6278879974089893,
+        "values": [
+          69.67509025270758,
+          71.48014440433214,
+          72.92418772563177
+        ]
+      },
+      "cross_percent": {
+        "mean": 9.951958453908597,
+        "sample_sd": 0.496518964609331,
+        "values": [
+          9.400672572562327,
+          10.091241613165359,
+          10.363961175998107
+        ]
+      },
+      "nll": {
+        "mean": 1.229174534479777,
+        "sample_sd": 0.08868185122526091,
+        "values": [
+          1.3303815126419067,
+          1.1920740604400635,
+          1.1650680303573608
+        ]
+      },
+      "rho_pooled": {
+        "mean": 0.07360551134762229,
+        "sample_sd": 0.004632426391020337,
+        "values": [
+          0.07200127989280279,
+          0.07882681312539781,
+          0.06998844102466625
+        ]
+      }
+    },
+    "rte/P1_NORM": {
+      "accuracy_percent": {
+        "mean": 71.23947051744885,
+        "sample_sd": 1.6278879974089888,
+        "values": [
+          69.67509025270758,
+          72.92418772563177,
+          71.11913357400722
+        ]
+      },
+      "cross_percent": {
+        "mean": 46.18303732721166,
+        "sample_sd": 0.029844548361039756,
+        "values": [
+          46.196148948474615,
+          46.20408153664841,
+          46.14888149651194
+        ]
+      },
+      "nll": {
+        "mean": 2.1933980782826743,
+        "sample_sd": 0.3273568238106694,
+        "values": [
+          2.5668461322784424,
+          1.9560291767120361,
+          2.057318925857544
+        ]
+      },
+      "rho_pooled": {
+        "mean": 0.07589912191496127,
+        "sample_sd": 0.001619854720883612,
+        "values": [
+          0.07774422539690223,
+          0.07471081808563414,
+          0.07524232226234744
+        ]
+      }
+    },
+    "rte/P1_UNREG": {
+      "accuracy_percent": {
+        "mean": 71.72081829121541,
+        "sample_sd": 1.503007941852803,
+        "values": [
+          70.03610108303249,
+          72.20216606498195,
+          72.92418772563177
+        ]
+      },
+      "cross_percent": {
+        "mean": 43.65243659437141,
+        "sample_sd": 0.04172864091094714,
+        "values": [
+          43.64407390580208,
+          43.61552257940233,
+          43.697713297909814
+        ]
+      },
+      "nll": {
+        "mean": 2.428593079249064,
+        "sample_sd": 0.07099564117025996,
+        "values": [
+          2.347216844558716,
+          2.4606897830963135,
+          2.477872610092163
+        ]
+      },
+      "rho_pooled": {
+        "mean": 0.27510467750114487,
+        "sample_sd": 0.004073493730743433,
+        "values": [
+          0.2798082511002251,
+          0.2727274403001856,
+          0.27277834110302385
+        ]
+      }
+    }
+  },
+  "scope": "Behavior-first view of practical held-aside confirmations and all 21 strict-band/head inner-selection confirmations. Two pilots remain separate. No new model evaluation or training.",
+  "seed_order": [
+    17,
+    42,
+    123
+  ],
+  "source_sha256": {
+    "data/final_evidence_20260916/band_coverage.json": "6d5bd4c32609ca246c494be229a81253b5aeb132c7a5946b803bd022b304cad2",
+    "data/final_evidence_20260916/band_results.csv": "ab3bd6c22a0bf0de5ca839b018600db16ed0de037317936d548ed8bd2cbe34a0",
+    "data/focused_norm/runs.csv": "b401cc771f45cfb82fdd4d455c0d12a897d657b4e09ce59610383738896367a9",
+    "data/locked_evaluation_20260916/held_aside_results.csv": "ce19f034bf14731ceb44557b2811a7488a8645bb4631195e959b9746f25f85ea"
+  },
+  "strict_band_snapshot": [
+    {
+      "condition": "BAND_LEAD_DIAG",
+      "fixed_accuracy": "0.7168674698795181",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.7377448889864497",
+      "purpose": "confirmation",
+      "run_id": "20260916T061115Z_cef6abeb647a",
+      "seed": "17",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "8e079a77dd87ef509be3e13d44bfe78222d2fce6850e23c7e9ba9b675c62b773"
+    },
+    {
+      "condition": "BAND_LEAD_DIAG",
+      "fixed_accuracy": "0.7349397590361446",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.7356856036856472",
+      "purpose": "confirmation",
+      "run_id": "20260916T051228Z_e087ae3bb317",
+      "seed": "42",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "b2d0aa9a0596383c12bc83190cba726be397378b28be7c256d92d79c8b01d29d"
+    },
+    {
+      "condition": "BAND_LEAD_DIAG",
+      "fixed_accuracy": "0.7008032128514057",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.8805460901145477",
+      "purpose": "confirmation",
+      "run_id": "20260916T070645Z_42d074cd0e07",
+      "seed": "123",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "fd93d5d37e6a605bc345a054d429a8e44318263658dda0711144a65a103e28aa"
+    },
+    {
+      "condition": "BAND_LEAD_ROT64",
+      "fixed_accuracy": "0.7128514056224899",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "2.2103540121192435",
+      "purpose": "confirmation",
+      "run_id": "20260916T123448Z_4d53529a1c7d",
+      "seed": "17",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "4e97d983155c6da1b81ca61a3901913588ef70ffe3509d0d3e2bff1379e931da"
+    },
+    {
+      "condition": "BAND_LEAD_ROT64",
+      "fixed_accuracy": "0.7329317269076305",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.995712990262901",
+      "purpose": "confirmation",
+      "run_id": "20260916T082801Z_baa7de7788ab",
+      "seed": "42",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "cd46ee709a95d7c4e36dfad2698ab903603d661d5efd1371c6e5d9a49e47b975"
+    },
+    {
+      "condition": "BAND_LEAD_ROT64",
+      "fixed_accuracy": "0.7208835341365462",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "2.018608578955792",
+      "purpose": "confirmation",
+      "run_id": "20260916T083001Z_bfc693e2e5fb",
+      "seed": "123",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "0f1d74f4290b09c1263940aed1ad5527c189ad105f6645a290904f07bd939556"
+    },
+    {
+      "condition": "BAND_MID_DIAG",
+      "fixed_accuracy": "0.7228915662650602",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.7361878707226979",
+      "purpose": "confirmation",
+      "run_id": "20260916T061323Z_27eb1f9cf4cc",
+      "seed": "17",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "9cab62fdfc07fb0f3375be1f2ca58c8a41e5fa58c93e8aae128341093e97cbef"
+    },
+    {
+      "condition": "BAND_MID_DIAG",
+      "fixed_accuracy": "0.6987951807228916",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.7881666991605338",
+      "purpose": "confirmation",
+      "run_id": "20260916T051849Z_520c56e4ea7b",
+      "seed": "42",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "f3e97c1920b2a25236624dac7f6ae4f347358a1c2a6ee8427066d48d64bbb997"
+    },
+    {
+      "condition": "BAND_MID_DIAG",
+      "fixed_accuracy": "0.7088353413654619",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.7526361838461884",
+      "purpose": "confirmation",
+      "run_id": "20260916T070809Z_1ecac81f6784",
+      "seed": "123",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "4947203be39ff60f5260cab1037ed16e3c22a1aa5cd9679e9ef7da7e111a8dc8"
+    },
+    {
+      "condition": "BAND_MID_ROT64",
+      "fixed_accuracy": "0.7208835341365462",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "2.0014483782735812",
+      "purpose": "confirmation",
+      "run_id": "20260916T083401Z_afed887066ba",
+      "seed": "17",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "fdbd410b406cf0a0cd13396b97ecfa3f99e1b2060feb34bd792137be75eaa60a"
+    },
+    {
+      "condition": "BAND_MID_ROT64",
+      "fixed_accuracy": "0.7108433734939759",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.9125422028652634",
+      "purpose": "confirmation",
+      "run_id": "20260916T123817Z_36710343942e",
+      "seed": "42",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "b839138dd008e0e034eb317cd4e9aa0e250a2540e1b810f1161997c03cb2b60f"
+    },
+    {
+      "condition": "BAND_MID_ROT64",
+      "fixed_accuracy": "0.7349397590361446",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.9599759573917312",
+      "purpose": "confirmation",
+      "run_id": "20260916T124048Z_eab05a8545de",
+      "seed": "123",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "27ac590869d48b9046d05cd7ebb495fecc24c25120ebe6b367e84c4910d1c850"
+    },
+    {
+      "condition": "BAND_TAIL_DIAG",
+      "fixed_accuracy": "0.6987951807228916",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "2.1631037205285635",
+      "purpose": "confirmation",
+      "run_id": "20260916T061506Z_88ddae24a40a",
+      "seed": "17",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "1d26803ce0fc651f6c3a6bf6a536e8db8a99e7bd7a09156060c31eabef137205"
+    },
+    {
+      "condition": "BAND_TAIL_DIAG",
+      "fixed_accuracy": "0.7028112449799196",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.9321754647275793",
+      "purpose": "confirmation",
+      "run_id": "20260916T051850Z_a4a32577ad1b",
+      "seed": "42",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "d1c4302b0aecf02647e86dc41a0810a82e045cb45a319e95956a54dfbfa54a37"
+    },
+    {
+      "condition": "BAND_TAIL_DIAG",
+      "fixed_accuracy": "0.6987951807228916",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.9077456323168125",
+      "purpose": "confirmation",
+      "run_id": "20260916T071122Z_49b9a7623bad",
+      "seed": "123",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "48782e414bb7fee5edccd69b0847c919e9e831f467d0f801c723d2e769942ecb"
+    },
+    {
+      "condition": "BAND_TAIL_ROT64",
+      "fixed_accuracy": "0.6726907630522089",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "2.3820593701787622",
+      "purpose": "confirmation",
+      "run_id": "20260916T110502Z_4c248f74d7d2",
+      "seed": "17",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "1535e1b0993e1a076f20ac8c3d972052ead20be7e9f7170864a9d3d279dd9d42"
+    },
+    {
+      "condition": "BAND_TAIL_ROT64",
+      "fixed_accuracy": "0.7228915662650602",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "2.1043426942532273",
+      "purpose": "confirmation",
+      "run_id": "20260916T064705Z_7b77bcef1185",
+      "seed": "42",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "60c54d99e9a93c0df6555ee57e5a5b3b98750a722bcda56e515abf10a4686caf"
+    },
+    {
+      "condition": "BAND_TAIL_ROT64",
+      "fixed_accuracy": "0.7349397590361446",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.8467051714778393",
+      "purpose": "confirmation",
+      "run_id": "20260916T151448Z_49d05f5b9837",
+      "seed": "123",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "1ea400de2036b7c8eb67a7dbb04a6f3a30ba37e8b7bf8b26e572398cf79cd750"
+    },
+    {
+      "condition": "P1_HEAD_BASE",
+      "fixed_accuracy": "0.5903614457831325",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "0.6557141446684259",
+      "purpose": "confirmation",
+      "run_id": "20260916T080555Z_ac67139ae7e0",
+      "seed": "17",
+      "task": "rte",
+      "trainable_adapter_params": "0",
+      "validation_sha256": "390655c797302f23037c7b09eaccf2065235c36eeb2cff9543ad81dcc39d79ce"
+    },
+    {
+      "condition": "P1_HEAD_BASE",
+      "fixed_accuracy": "0.6024096385542169",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "0.6545777203567535",
+      "purpose": "confirmation",
+      "run_id": "20260916T080431Z_707e77109a83",
+      "seed": "42",
+      "task": "rte",
+      "trainable_adapter_params": "0",
+      "validation_sha256": "79bd27ef86de9e9d658696e7217e08cadd6ea460eca5a3ee63d6fdfdb35e8e18"
+    },
+    {
+      "condition": "P1_HEAD_BASE",
+      "fixed_accuracy": "0.6004016064257028",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "0.6523563684708622",
+      "purpose": "confirmation",
+      "run_id": "20260916T081037Z_3a95777a9a43",
+      "seed": "123",
+      "task": "rte",
+      "trainable_adapter_params": "0",
+      "validation_sha256": "6558cbeaadbe7a54af8e1b313a95213a82cdd5055517e174172e4b866e79cd29"
+    },
+    {
+      "condition": "BAND_TAIL_DIAG",
+      "fixed_accuracy": "0.7028112449799196",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "1.8841487001010542",
+      "purpose": "timing_pilot",
+      "run_id": "20260916T023104Z_4fb022f01672",
+      "seed": "31415",
+      "task": "rte",
+      "trainable_adapter_params": "12288",
+      "validation_sha256": "4a12d2dad58b2ac7b495afa24ab19ba3b9ee94466b77b7988ca82726cbbb0276"
+    },
+    {
+      "condition": "BAND_TAIL_ROT64",
+      "fixed_accuracy": "0.7048192771084337",
+      "fixed_steps": "5670",
+      "fixed_task_loss": "2.104374886994809",
+      "purpose": "timing_pilot",
+      "run_id": "20260916T023104Z_70927dc000f6",
+      "seed": "31415",
+      "task": "rte",
+      "trainable_adapter_params": "405504",
+      "validation_sha256": "e45a79bfca9419de994830d53334c00c5914ff63794dd42f762e78b55570dfb1"
+    }
+  ]
+}

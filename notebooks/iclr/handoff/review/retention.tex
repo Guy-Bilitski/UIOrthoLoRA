@@ -1,0 +1,144 @@
+\section{Retention-Adaptation Experimental Protocol}
+\label{app:retention_adaptation_protocol}
+
+This section records the retention-oriented experimental protocol used in our
+broader investigation of spectrum-aware adaptation. These experiments are not
+the main empirical focus of the present paper, but they motivate the
+preservation-adaptation perspective behind UIOrthoLoRA and provide a framework
+for future evaluation of catastrophic forgetting in PEFT.
+
+\subsection{Adaptation and Retention Axes}
+\label{app:adaptation_retention_axes}
+
+The retention-oriented evaluation measures two complementary axes: task
+adaptation and knowledge retention. Task adaptation is measured on examples
+that the frozen base model initially fails to answer, while retention is
+measured by tracking degradation on examples the base model originally answered
+correctly and by evaluating broad reasoning benchmarks.
+
+\paragraph{Task adaptation.}
+The adaptation set is constructed from the training splits of TriviaQA and
+HotpotQA. Before training, the frozen base model is evaluated with multiple
+sampled generations. We then construct an error set
+\(\mathcal{D}_{err}\), consisting of examples for which the frozen model obtains
+an accuracy score of zero. Adapters are trained only on this error set.
+Post-training accuracy on \(\mathcal{D}_{err}\) is used as the task adaptation
+metric.
+
+\paragraph{Intrinsic retention.}
+To measure forgetting of knowledge that the base model originally possessed,
+we construct a known set \(\mathcal{D}_{known}\), defined as the subset of
+examples that the frozen base model answered correctly before adapter training.
+Let \(S_{pre}(x)\) and \(S_{post}(x)\) denote the normalized pre-adaptation and
+post-adaptation scores for an example \(x\), respectively. A negative shift
+event is defined as
+\[
+\mathbb{I}_{neg}(x)
+=
+\mathbb{I}
+\left[
+(S_{post}(x)-S_{pre}(x)) < -\tau
+\right].
+\]
+We set \(\tau = 0.8\), corresponding to a severe degradation of at least eight
+correct answers out of ten sampled generations.
+
+\paragraph{Extrinsic retention.}
+To measure broad retention beyond the training domain, models are evaluated on
+MMLU and BIG-bench Hard. MMLU measures broad world-knowledge retention, while
+BIG-bench Hard measures reasoning-intensive capabilities. Together with the
+intrinsic negative-shift metric, these evaluations characterize the
+retention-adaptation trade-off.
+
+
+\section{Retention-Study Experimental Settings}
+\label{app:retention_study_settings}
+
+\subsection{Inference Details}
+\label{app:retention_inference_details}
+
+All intrinsic and extrinsic evaluations are conducted using Language Model
+Evaluation Harness (\texttt{lm\_eval}) with bfloat16 precision.
+
+\paragraph{Targeted QA evaluation.}
+For TriviaQA and HotpotQA, we use a 5-shot setting. For each prompt, \(N=10\)
+independent answers are generated. The generated responses are parsed and
+matched against the dataset ground-truth aliases to compute the final score.
+The prompt instructs the model to answer with only the entity name.
+
+The generation configuration is:
+\[
+\texttt{temperature}=0.5,
+\qquad
+\texttt{top\_p}=0.9,
+\qquad
+\texttt{max\_new\_tokens}=20.
+\]
+
+\paragraph{MMLU and BIG-bench Hard.}
+MMLU is evaluated in a 0-shot setting. BIG-bench Hard is evaluated on nine
+logic-intensive multiple-choice tasks:
+\textit{Analytic Entailment, Cause and Effect, Conceptual Combinations,
+Causal Judgment, Analogical Similarity, Common Morpheme, Logical Deduction,
+Logical Sequence,} and \textit{Odd One Out}.
+
+\subsection{Training Details}
+\label{app:retention_training_details}
+
+All parameter-efficient fine-tuning in the retention study is executed using
+the Hugging Face \texttt{trl} \texttt{SFTTrainer}.
+
+\paragraph{Optimization setup.}
+Models are trained for 10 epochs using the Fused AdamW optimizer. The learning
+rate follows a cosine scheduler with warmup ratio \(0.05\). The maximum
+gradient norm is clipped at \(1.0\). Training uses per-device batch size \(64\),
+maximum sequence length \(1024\), and bfloat16 precision.
+
+\paragraph{Adapter configurations and sweeps.}
+Baseline adapters are applied across all linear layers in both the attention
+and feed-forward blocks:
+\[
+\texttt{q\_proj},
+\texttt{k\_proj},
+\texttt{v\_proj},
+\texttt{o\_proj},
+\texttt{gate\_proj},
+\texttt{up\_proj},
+\texttt{down\_proj}.
+\]
+The adapter scaling factor is fixed to \(\alpha = 32\), and dropout is
+disabled. Learning rates are swept from \(10^{-6}\) to \(10^{-2}\). Randomized
+initializations, including standard LoRA matrices and orthogonal rotations,
+use a global seed of \(42\).
+
+\paragraph{Model families and capacity tiers.}
+The retention study evaluates instruction-tuned LLMs, including
+Llama-3.2-3B-it \citep{llama3_2024} and Gemma-3-12B-it \citep{gemma3_2025}. Adapter capacity is grouped by trainable
+parameter count into three tiers:
+\[
+\text{small} \leq 10\text{M},
+\qquad
+10\text{M} < \text{medium} \leq 100\text{M},
+\qquad
+\text{large} > 100\text{M}.
+\]
+
+\section{Retention-Adaptation Results}
+\label{app:retention_adaptation_results}
+
+We report additional retention-oriented experiments evaluating the trade-off
+between targeted adaptation and preservation of pretrained capabilities. These
+experiments follow the protocol described in
+Appendix~\ref{app:retention_adaptation_protocol} and the settings in
+Appendix~\ref{app:retention_study_settings}. The results are included as
+additional empirical evidence for the preservation motivation behind
+UIOrthoLoRA.
+
+Table~\ref{tab:combined_model_performance} compares adapter configurations across
+target-task adaptation, intrinsic forgetting, and broad reasoning retention.
+The retention metrics include Negative Shift, which measures severe degradation
+on examples the base model originally answered correctly, and general benchmark
+performance on MMLU \citep{hendrycks2020measuring} and BIG-bench Hard \citep{srivastava2023beyond}.
+
+\input{forgetting-results-table}
+

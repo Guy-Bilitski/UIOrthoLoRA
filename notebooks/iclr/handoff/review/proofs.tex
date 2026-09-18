@@ -1,0 +1,163 @@
+\subsection{Proof of Theorem 1}
+\label{app:proof-linlora-retention}
+
+\begin{proof}
+Recall that
+\[
+W^{\ell \ell}
+=
+U^{pre}M^{\ell \ell},
+\qquad
+M^{\ell \ell}
+=
+\begin{bmatrix}
+M'^{pre} \\
+\Delta M^{\ell \ell}
+\end{bmatrix}.
+\]
+Therefore,
+\[
+W^{\ell \ell}h_{i-1}
+=
+U^{pre}M^{\ell \ell}h_{i-1}
+=
+U^{pre}
+\begin{bmatrix}
+M'^{pre} \\
+\Delta M^{\ell \ell}
+\end{bmatrix}
+h_{i-1}.
+\]
+Let
+\[
+M^{\ell \ell}h_{i-1}
+=
+\begin{bmatrix}
+z^{pre}_1 \\
+\vdots \\
+z^{pre}_R \\
+z^{ft}_{R+1} \\
+\vdots \\
+z^{ft}_{R+r}
+\end{bmatrix}.
+\]
+By the block structure and linearity of the matrix-vector product,
+\[
+W^{\ell \ell}h_{i-1}
+=
+U^{pre}
+\left(
+\begin{bmatrix}
+z^{pre}_1 \\
+\vdots \\
+z^{pre}_R \\
+0 \\
+\vdots \\
+0
+\end{bmatrix}
++
+\begin{bmatrix}
+0 \\
+\vdots \\
+0 \\
+z^{ft}_{R+1} \\
+\vdots \\
+z^{ft}_{R+r}
+\end{bmatrix}
+\right).
+\]
+Since the columns of $U^{pre}$ are orthonormal, the two sums span disjoint
+orthogonal subspaces. Hence,
+\[
+W^{\ell \ell}h_{i-1}
+=
+\sum\limits_{j=1}^{R} z^{pre}_j U^{pre}_j
++
+\sum\limits_{j=R+1}^{R+r} z^{ft}_j U^{pre}_j .
+\]
+This establishes that the pretrained and fine-tuned components are represented
+in orthogonal blocks of the fixed pretrained left-singular basis.
+\end{proof}
+
+
+\subsection{Proof of Proposition 2}
+\label{app:proof-proposition-2-scaler-induces-mixing-bounds}
+\begin{proof}
+The first block is
+\[
+C_{11}
+=
+(U_R^\top E \bar{U}_r)\Sigma'_r(\bar{V}_r^\top D V_R).
+\]
+Using submultiplicativity of the operator norm,
+\[
+\|C_{11}\|_2
+\leq
+\|U_R^\top E \bar{U}_r\|_2
+\|\Sigma'_r\|_2
+\|\bar{V}_r^\top D V_R\|_2 .
+\]
+Since $D$ is diagonal and therefore symmetric,
+\[
+\|\bar{V}_r^\top D V_R\|_2
+=
+\|V_R^\top D \bar{V}_r\|_2
+=
+\nu_D .
+\]
+Thus,
+\[
+\|C_{11}\|_2
+\leq
+\mu_E \|\Sigma'_r\|_2 \nu_D .
+\]
+The other bounds follow identically from submultiplicativity, using
+\[
+\|\bar{V}_r^\top D V_r\|_2 \leq \|D\|_2,
+\qquad
+\|U_r^\top E \bar{U}_r\|_2 \leq \|E\|_2 .
+\]
+\end{proof}
+
+
+\subsection{Proof of Theorem 2}
+\label{app:proof-thm-2-approximate-tail-preservation}
+\begin{proof}
+By the block decomposition,
+\[
+C-C_{\mathrm{tail}}
+=
+\begin{bmatrix}
+C_{11} & C_{12} \\
+C_{21} & 0
+\end{bmatrix}.
+\]
+Therefore,
+\[
+\|C-C_{\mathrm{tail}}\|_2
+\leq
+\sqrt{
+\|C_{11}\|_2^2
++
+\|C_{12}\|_2^2
++
+\|C_{21}\|_2^2
+}.
+\]
+Using Proposition 2,
+\[
+\|C-C_{\mathrm{tail}}\|_2
+\leq
+\|\Sigma'_r\|_2
+\sqrt{
+(\mu_E\nu_D)^2
++
+(\mu_E\|D\|_2)^2
++
+(\|E\|_2\nu_D)^2
+}.
+\]
+If $\mu_E\to 0$ and $\nu_D\to 0$, while $\|E\|_2$, $\|D\|_2$, and
+$\|\Sigma'_r\|_2$ remain bounded, the right-hand side converges to zero.
+\end{proof}
+

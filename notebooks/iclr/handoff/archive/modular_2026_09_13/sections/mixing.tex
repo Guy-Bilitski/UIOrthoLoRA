@@ -1,0 +1,67 @@
+% Inactive modular snapshot; edit the root neurips_2026.tex instead.
+\section{Relaxation and leading--tail interaction}
+\label{sec:mixing}
+
+Trainable diagonal matrices $E,D$ act in the ambient output and input coordinates. For the tail-only family they produce $\Delta=E U_T H V_T^\top D$, relaxing strict confinement. We call this \emph{coordinate-relaxed adaptation}; the UI implementation labels are retained for reproducibility, without assuming a new invariance theorem for these learned scalers.
+
+The practical construction also includes a fixed leading core. Both cases fit
+\begin{equation}
+\Delta=E\bigl(U_L S_L V_L^\top+U_T H V_T^\top\bigr)D,
+\quad
+S_L=\begin{cases}0&\text{tail-only reference},\\I&\text{practical leading-plus-tail form}.
+\end{cases}
+\label{eq:unified}
+\end{equation}
+The entire expression is an addition to $W_0$, including the leading term. Although $S_L$ is fixed, learning $E,D$ changes this contribution. Analyzing both cores exposes the distinction between suppressing cross-subspace interaction and eliminating leading adaptation.
+
+\subsection{Mixing operators and a unified block bound}
+Let $A=U^\top E U$ and $B=V^\top D V$, partitioned as in~\eqref{eq:coordinates}. The scalers are real diagonal, so $A,B$ are symmetric. Define
+\begin{equation}
+M_E=A_{LT}=U_L^\top E U_T,\quad
+M_D=B_{LT}=V_L^\top D V_T,\quad
+\mu=\op{M_E},\quad\nu=\op{M_D}.
+\label{eq:mixingoperators}
+\end{equation}
+These are the $\mu_E,\nu_D$ quantities in the experimental record. Full within-tail orthogonal changes of basis do not change their operator or Frobenius norms. The effective blocks obey
+\begin{equation}
+C_{ab}=A_{aL}S_LB_{Lb}+A_{aT}HB_{Tb},\qquad a,b\in\{L,T\}.
+\label{eq:blockidentity}
+\end{equation}
+
+\begin{proposition}[Interaction bounds with and without a leading core]
+\label{prop:mixing}
+Write $e=\op{E}$, $d_s=\op{D}$, $s=\op{S_L}$, and $h_s=\op{H}$. For~\eqref{eq:unified},
+\begin{align}
+\op{C_{LL}}&\le e s d_s+\mu h_s\nu, &
+\op{C_{LT}}&\le e s\nu+\mu h_s d_s,\label{eq:blockbound1}\\
+\op{C_{TL}}&\le\mu s d_s+e h_s\nu, &
+\op{C_{TT}}&\le\mu s\nu+e h_s d_s.\label{eq:blockbound2}
+\end{align}
+If $\mu=\nu=0$, the cross blocks vanish. In addition, the leading block vanishes when $S_L=0$.
+\end{proposition}
+
+The proof applies submultiplicativity to~\eqref{eq:blockidentity} (Appendix~\ref{app:mixingproof}). The additional leading-core terms are the difference between the idealized and practical analyses. With $S_L=0$, leading--leading leakage requires mixing on both sides, while each cross block can be first order in one mixing quantity. With $S_L\ne0$, direct leading adaptation remains even when the cross terms vanish.
+
+\begin{corollary}[Tail confinement and block decoupling]
+\label{cor:confinement}
+For $S_L=0$, define $C_{\mathrm{tail}}=\diag(0,C_{TT})$. Then
+\begin{equation}
+\op{C-C_{\mathrm{tail}}}
+\le h_s\sqrt{(\mu\nu)^2+(\mu d_s)^2+(e\nu)^2}.
+\label{eq:offbound}
+\end{equation}
+Consequently, $\mu,\nu\to0$ implies absolute tail confinement if $e,d_s,h_s$ stay bounded. If $e,d_s,h_s,s$ stay bounded for a general leading core, the same limit instead makes $C$ block-diagonal; it need not make $C_{LL}$ small.
+\end{corollary}
+
+For example, $E=D=I$, $S_L=I$, and $H=0$ gives zero mixing but $C_{LL}=I$. The practical update can therefore change the leading singular values or their ranking without cross mixing. Tail confinement, block decoupling, and ranked-subspace stability are three different conclusions.
+
+\subsection{Regularization, scale, and effective geometry}
+The soft intervention uses
+\begin{equation}
+\mathcal L=\mathcal L_{\mathrm{task}}
++\sum_{\ell\in\mathcal M}\left(\lambda_E\fro{M_{E,\ell}}^2+\lambda_D\fro{M_{D,\ell}}^2\right).
+\label{eq:regularizer}
+\end{equation}
+Here $\mathcal M$ is the set of adapted matrices; the implementation sums, rather than averages, their penalties. Since $\op{M}\le\fro{M}$, each squared Frobenius penalty upper-bounds its squared mixing magnitude. The bounds are conditional statements about attained factors, not convergence guarantees for this objective. They control absolute blocks, not automatically the normalized fractions in Section~\ref{sec:coordinates}.
+
+The factorization introduces a further distinction. Replacing $E$ by $aE$ and $D$ by $D/a$ leaves either effective update in~\eqref{eq:unified} unchanged, while replacing $(\mu,\nu)$ by $(a\mu,\nu/a)$. Thus a decrease in one raw mixing magnitude and an increase in the other is insufficient to establish redistribution of the matrix update. For the freely scalable tail-only core, $E,D\mapsto aE,aD$ and $H\mapsto H/a^2$ can reduce both raw penalties without changing $\Delta$. This latter limit violates the bounded-core condition when $a\to0$. These identities motivate measuring factor norms and effective blocks alongside the regularizer, and comparing its effect against update-magnitude control.

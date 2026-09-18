@@ -1,0 +1,246 @@
+\section{UIOrthoLoRA - Unit Invariant Flexibility for Structural Adaptation}
+\label{sec:uiortholora}
+
+While OrthoLoRA addresses the fixed-basis bottleneck by allowing rotations within
+the pretrained low-spectrum subspace, it still relies on a strong form of the
+pretraining-finetuning paradigm: the assumption that task-relevant adaptation
+can be expressed entirely within the singular geometry inherited from
+pretraining.
+
+To relax this assumption while retaining structural preservation, we introduce
+trainable diagonal scalers $E$ and $D$, inspired by the unit-invariant SVD
+perspective of \citet{uhlmann2018generalized}. These scalers apply lightweight
+diagonal transformations to the output and input coordinates, respectively:
+\[
+\Delta W^{ui}
+=
+\underline E U_r \underline R_U \underline \Sigma'_r \underline R_V^\top V_r^\top \underline D .
+\]
+Thus, $R_U$ and $R_V$ provide directional flexibility within the pretrained
+low-spectrum subspace, while $E$ and $D$ provide unit-level coordinate
+adaptation around this subspace.
+
+This diagonal scaling eases the strict reliance on the pretrained singular basis. Although the update remains tied to the UI-SVD parameterization, $E$ and $D$ can induce controlled mixing between pretrained singular coordinates. This gives the adapter additional flexibility to express task-specific perturbations that are not perfectly aligned with the original tail singular directions. The linear version, UILinLoRA, disables the orthogonal rotations ($R_U = R_V = I$), and keeps diagonal scalers in place.
+
+\subsection{Scaler-Induced Mixing in Pretrained Singular Coordinates}
+Throughout this section, \(U\), \(V\), and their partitions \(U_R, U_r, V_R, V_r\) refer to the pretrained singular bases. The diagonal scalers $E$ and $D$ relax the strict confinement assumption of
+OrthoLoRA. To analyze their effect, define the rotated tail bases $\bar{U}_r := U_r R_U, \bar{V}_r := V_r R_V .$
+Since $R_U$ and $R_V$ are orthogonal, $\bar{U}_r$ and $\bar{V}_r$ span the same
+tail subspaces as $U_r$ and $V_r$, respectively. Therefore, without the diagonal
+scalers, OrthoLoRA remains exactly confined to the pretrained tail singular
+block.
+
+With unit-invariant scaling, the update becomes
+\[
+\Delta W^{ui}
+=
+\underline E \bar{U}_r \underline \Sigma'_r \bar{V}_r^\top  \underline D .
+\]
+The scalers $E$ and $D$ can change how the rotated tail directions are expressed
+in the original feature coordinates. This gives the adapter additional
+flexibility, but it may also introduce coupling with the preserved leading
+singular structure.
+
+To quantify this effect, we write the perturbation in the pretrained singular coordinates: \\ $C := U^\top \Delta W^{ui} V$.
+Partitioning $C$ according to the leading-tail decomposition gives
+\[
+C
+=
+\begin{bmatrix}
+C_{11} & C_{12} \\
+C_{21} & C_{22}
+\end{bmatrix}
+=
+\begin{bmatrix}
+U_R^\top E \bar{U}_r \Sigma'_r \bar{V}_r^\top D V_R
+&
+U_R^\top E \bar{U}_r \Sigma'_r \bar{V}_r^\top D V_r
+\\[0.5em]
+U_r^\top E \bar{U}_r \Sigma'_r \bar{V}_r^\top D V_R
+&
+U_r^\top E \bar{U}_r \Sigma'_r \bar{V}_r^\top D V_r
+\end{bmatrix}.
+\]
+
+The blocks have the following interpretation:
+\[
+C_{11}: \text{direct leakage into the preserved leading block},
+\]
+\[
+C_{12}, C_{21}: \text{cross-coupling between leading and tail coordinates},
+\]
+\[
+C_{22}: \text{adaptation internal to the tail block}.
+\]
+
+We define the left and right scaler-induced mixing terms as
+\[
+M_E := U_R^\top E \bar{U}_r,
+\quad
+M_D := V_R^\top D \bar{V}_r
+\text{\quad with magnitudes \quad}
+\mu_E := \|M_E\|_2,
+\quad
+\nu_D := \|M_D\|_2 .
+\]
+
+Here, $\mu_E$ measures how much the scaled left tail basis $E\bar{U}_r$ enters
+the preserved left subspace, and $\nu_D$ measures how much the scaled right tail
+basis $D\bar{V}_r$ enters the preserved right subspace.
+
+\noindent \textbf{Proposition 2} (Scaler-Induced Mixing Bounds).
+\textit{
+Let
+\[
+\Delta W^{ui}
+=
+E \bar{U}_r \Sigma'_r \bar{V}_r^\top D, \quad
+C := U^\top \Delta W^{ui} V
+=
+\begin{bmatrix}
+C_{11} & C_{12} \\
+C_{21} & C_{22}
+\end{bmatrix}.
+\]
+Then the perturbation blocks satisfy
+}
+\[
+\|C_{11}\|_2
+\leq
+\mu_E \|\Sigma'_r\|_2 \nu_D,
+\]
+\[
+\|C_{12}\|_2
+\leq
+\mu_E \|\Sigma'_r\|_2 \|D\|_2,
+\]
+\[
+\|C_{21}\|_2
+\leq
+\|E\|_2 \|\Sigma'_r\|_2 \nu_D,
+\]
+\[
+\|C_{22}\|_2
+\leq
+\|E\|_2 \|\Sigma'_r\|_2 \|D\|_2.
+\]
+
+
+\textit{Proof is provided in Appendix~\ref{app:proof-proposition-2-scaler-induces-mixing-bounds}.}
+
+\noindent \textbf{Corollary 1} (Exact Tail Confinement as a Special Case).
+\textit{
+If $\mu_E = 0$ and $\nu_D = 0$, then:
+\[
+C_{11}=0,\qquad C_{12}=0,\qquad C_{21}=0 
+\implies
+C
+=
+\begin{bmatrix}
+0 & 0 \\
+0 & C_{22}
+\end{bmatrix}.
+\]
+}
+
+This means that the update is confined entirely to the tail block in pretrained
+singular coordinates. In particular, pure OrthoLoRA corresponds to the special
+case $E=I$ and $D=I$, for which
+\[
+U_R^\top \bar{U}_r = 0,
+\qquad
+V_R^\top \bar{V}_r = 0,
+\]
+so the update remains strictly orthogonal to the preserved leading singular
+structure.
+
+\noindent \textbf{Remark} (Interpretation).
+The diagonal scalers $E$ and $D$ should be viewed as a controlled relaxation of
+strict tail confinement. When $E=I$ and $D=I$, UIOrthoLoRA adapts only within the pretrained tail subspace. When $E$ and $D$ are learned, the adapter can reweight
+the input and output coordinates, allowing the effective adapted directions
+$E\bar{U}_r$ and $D\bar{V}_r$ to deviate from the original tail coordinates.
+
+This deviation is not unstructured: it is exactly measured by
+\[
+\mu_E = \|U_R^\top E\bar{U}_r\|_2,
+\qquad
+\nu_D = \|V_R^\top D\bar{V}_r\|_2.
+\]
+Thus, $E$ and $D$ provide additional expressive capacity, while the quantities
+$\mu_E$ and $\nu_D$ quantify the extent to which this capacity interacts with
+the preserved dominant singular structure.
+
+
+\noindent \textbf{Theorem 2} (Approximate Tail Preservation under Small Mixing).
+Let
+\[
+C := U^\top \Delta W^{ui} V
+=
+\begin{bmatrix}
+C_{11} & C_{12} \\
+C_{21} & C_{22}
+\end{bmatrix},
+\quad
+C_{\mathrm{tail}}
+=
+\begin{bmatrix}
+0 & 0 \\
+0 & C_{22}
+\end{bmatrix}
+\]
+be the UIOrthoLoRA update written in the pretrained singular coordinates, and its pure tail-block component. Then
+\[
+\|C-C_{\mathrm{tail}}\|_2
+\leq
+\|\Sigma'_r\|_2
+\sqrt{
+(\mu_E\nu_D)^2
++
+(\mu_E\|D\|_2)^2
++
+(\|E\|_2\nu_D)^2
+}.
+\]
+Consequently, if $\|E\|_2$, $\|D\|_2$, and $\|\Sigma'_r\|_2$ remain bounded, and $\mu_E \to 0,
+\nu_D \to 0 \\
+\implies
+\|C-C_{\mathrm{tail}}\|_2 \to 0.
+$
+
+Thus, small scaler-induced mixing implies that the UIOrthoLoRA update remains
+approximately confined to the pretrained tail singular block, even though the
+diagonal scalers $E$ and $D$ relax strict tail confinement.
+
+\textit{Proof is provided in Appendix~\ref{app:proof-thm-2-approximate-tail-preservation}.}
+
+Appendix~\ref{app:soft_mixing_ablation} provides a diagnostic ablation showing
+that these mixing quantities can also be used as soft regularizers: penalizing
+both left- and right-side mixing reduces measured off-tail leakage and
+leading-subspace drift on 5 GLUE tasks while maintaining task performance.
+
+
+\noindent \textbf{Remark} (Gap-Dependent Dominant Subspace Stability).
+The mixing bounds above control how much the UIOrthoLoRA update enters the
+preserved leading block in pretrained singular coordinates. A complementary
+view is obtained from standard singular subspace perturbation theory. Let
+\[
+\gamma := \sigma_R(W^{pre}) - \sigma_{R+1}(W^{pre}) > 0
+\]
+denote the spectral gap between the preserved leading singular components and
+the remaining tail components. If $\|\Delta W^{ui}\|_2 < \gamma$, then the leading left and right singular subspaces of $W^{pre}+\Delta W^{ui}$
+remain close to those of \(W^{pre}\), with subspace movement scaling on the
+order of
+\[
+\mathcal{O}\left(\frac{\|\Delta W^{ui}\|_2}{\gamma}\right).
+\]
+Since $\|\Delta W^{ui}\|_2
+\leq
+\|E\|_2\|\Sigma'_r\|_2\|D\|_2,
+$
+the overall scaled update magnitude controls global dominant-subspace drift,
+while the sharper block-level quantity $\|C_{11}\|_2
+\leq
+\mu_E\|\Sigma'_r\|_2\nu_D
+$
+controls direct leakage into the preserved leading singular coordinates.
+

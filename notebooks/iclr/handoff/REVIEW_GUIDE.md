@@ -1,5 +1,29 @@
 # ICLR manuscript review guide
 
+## Current author review — 2026-09-17
+
+The introduction is awaiting the author's approval. In `neurips_2026.tex`, blue
+is proposed wording, gray is replaced wording, and black is unchanged. The
+abstract and first two introduction paragraphs are unchanged. The follow-up adds
+result/protocol references, classifier and loss definitions, and concrete leading
+and middle results. At the author's request, the first main experiment now
+contains all seven conditions in its result table and explains the training and
+evaluation split beside it. The main design and interpretation changes, added
+table rows, and a detailed protocol paragraph in the appendix are blue; replaced
+text is gray. Other later content is unchanged.
+The gray experiment paragraphs show the wording from the preceding review round.
+This request supersedes the clean-only review instructions below. Review macros
+are inline; the historical `review_markup.tex` remains inactive.
+
+For a clean preview, define `\ICLRCleanBuild` before the manuscript. Audit either
+PDF with `python3 scripts/audit_manuscript.py --review --pdf /path/to/neurips_2026.pdf`.
+The clean preview still must have nine main pages; the review copy includes the
+old paragraphs and can be longer. Local builds are under
+`../build/introduction_review_followup_20260917/{review,clean}/`. The previous supplementary
+ZIP has not been repackaged for this pending prose revision.
+
+## Earlier clean-manuscript guide — 2026-09-14
+
 Authorized Overleaf project: `6aa54397e58b10444b0fa2aa` only.
 Original snapshot: `ebf8e3c3705c2a26e43960030ac31fb74bec29a0`.
 Status, 2026-09-14: clean manuscript revised against the NeurIPS reviews and the supplied review panel. Additional experiments and release confirmations remain outstanding. For a fresh GPU session, start with `GPU_HANDOFF.md`.

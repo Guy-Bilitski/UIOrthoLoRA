@@ -17,96 +17,86 @@
 \newcommand{\op}[1]{\left\|#1\right\|_2}
 \newcommand{\fro}[1]{\left\|#1\right\|_F}
 \newcommand{\allocationbar}[4]{\makebox[1em][l]{#1}\begingroup\setlength{\unitlength}{\dimexpr\linewidth-1em\relax}\textcolor{black!80}{\rule{#2\unitlength}{1.4ex}}\textcolor{black!45}{\rule{#3\unitlength}{1.4ex}}\textcolor{black!15}{\rule{#4\unitlength}{1.4ex}}\endgroup}
-\title{Confinement, Flexibility, and Mixing\\in Spectral Fine-Tuning}
+\title{How Pretrained Spectral Subspaces and Their Interactions Affect Fine-Tuning}
 \author{Anonymous authors}
 % Keep anonymous; do not enable \iclrfinalcopy for submission.
 \begin{document}
 \maketitle
 
 \begin{abstract}
-What does a spectral constraint preserve during fine-tuning? We distinguish confinement to a pretrained singular subspace, suppression of interaction between subspaces, and stability of the top-ranked singular directions. Using fixed tail coefficients, within-tail rotations, and ambient diagonal scalers as experimental instruments, we characterize two approximation bottlenecks and derive mixing bounds with and without a leading core. A projector-commutator characterization shows that the scaler penalty suppresses nonuniformity, motivating a distinction between frame-specific effects and generic regularization. In archived RoBERTa-base runs on five tasks, unregularized leading/cross/tail energy shares lie near a dimension-only reference. Two-sided regularization lowers cross energy from approximately 43\% to 10--27\%, yet leaves 44--64\% in the leading block. These changes accompany 5--9-fold smaller task-mean relative update norms; score changes vary by seed, with task-mean decreases of roughly $0.2$--$1.0$ points. This descriptive result separates block decoupling from tail confinement, but does not identify a benefit beyond shrinkage or scaler homogenization. Supporting GLUE and generation results demonstrate task learning, with substantial frozen-basis storage and unmerged computation. Spectral preservation must therefore specify the object preserved, not just the penalty applied.
+Many fine-tuning methods use the singular value decomposition of pretrained weights to choose which directions to adapt. Can a model learn when its updates stay entirely in the lower spectral tail, the directions with smaller singular values? Does allowing those directions to interact improve adaptation? We introduce a new family of adapters that separates three choices: changing individual tail coefficients, combining directions within the tail, and allowing interaction with leading directions. Our analysis explains the freedom each choice provides and how to control it. In RoBERTa experiments on RTE, training only tail coefficients raises accuracy from 60\% with a trained classifier alone to 70\%. Leading and middle directions reach similar accuracy, and rotations give no consistent further gain. In a separate experiment allowing both leading and tail updates, restricting their interaction roughly halves held-out prediction loss on RTE and MRPC compared with a size penalty tuned for similar update sizes, while mean accuracy changes by less than half a percentage point. In these experiments, accuracy is similar across subspace choices and interaction settings, while interaction control can improve the probabilities assigned to answers.
+
 \end{abstract}
+
 \section{Introduction}
 \label{sec:intro}
 
-Parameter-efficient fine-tuning (PEFT) adapts a pretrained model through a restricted set of trainable parameters. Rank, parameter count, and task performance are natural descriptions of these restrictions, but they leave an important question open: where does the effective update lie relative to the structure of the pretrained weights? Two updates can have the same rank and magnitude while modifying different pretrained directions. Likewise, similar downstream performance need not imply similar spectral changes, as studies comparing LoRA and full fine-tuning demonstrate~\citep{hu2022lora,shuttleworth2025illusion}.
+Fine-tuning adapts a pretrained model to a new task. A growing family of methods uses the singular value decomposition (SVD) of pretrained weights to choose which directions to train. Some begin with the leading directions, associated with larger singular values. Others begin with the lower spectral tail, associated with smaller values, or learn coefficients and rotations in a fixed singular-vector basis~\citep{meng2024pissa,wang2025milora,han2023svdiff,lingam2024svft,zhang2024spectral,wu2026psoft}. These approaches make the pretrained spectrum part of the adaptation design.
 
-The singular value decomposition of a pretrained weight matrix provides a fixed reference for this question. Its leading and tail singular subspaces define a partition of the update into leading--leading, tail--tail, and two cross blocks. This is a geometric distinction, not a semantic assignment: a large singular value does not by itself identify stored knowledge, and a small singular value does not identify dispensable noise. The reference frame instead lets us ask what a constraint preserves, what freedom it removes, and how a relaxation interacts with the original directions.
+Choosing directions is one part of that design. Another is deciding how they may interact during training. Can the lower tail alone support adaptation? Does combining its directions improve learning? What changes when leading and tail directions can interact? We study these questions by separating where an update is allowed from how freely it can change that region, and measuring the resulting prediction loss and accuracy.
 
-This reference frame is already used by spectral fine-tuning methods, including singular-value tuning, singular-vector coefficient tuning, and regularized adaptation of singular factors~\citep{han2023svdiff,lingam2024svft,cao2025sorsa}. Our question is not whether pretrained spectral information can be used for adaptation, but what different uses of that information actually constrain. In particular, orthonormality of trainable factors, confinement to a pretrained subspace, and stability of the largest singular directions are different properties.
+We introduce a family of adapters that separates these choices. LinLoRA learns one coefficient per selected tail direction, changing its singular value. OrthoLoRA adds rotations that shuffle different directions within the tail. Both leave the remaining pretrained directions unchanged. Our analysis quantifies which additional weight changes rotations can express.
 
-We investigate a hierarchy of constraints: fixed tail coefficients, within-tail rotations, and ambient diagonal scalers. Their implementation labels are LinLoRA, OrthoLoRA, UILinLoRA, and UIOrthoLoRA. The historical prefix UI means ``unit-invariant''; here it identifies learned coordinate scalers, not a proved invariance property. These constructions are instruments for comparing constraints, not contenders for a best-adapter claim. The practical scaled update need not be low-rank despite the legacy suffix.
+Their scaled versions, UILinLoRA and UIOrthoLoRA, also learn diagonal matrices for each input and output coordinate of an adapted layer. These diagonal scalers can shuffle tail and leading directions. We derive an interaction penalty that discourages this shuffling while allowing changes within either group.
 
-The analysis yields two separations. First, exact projection identities distinguish an outside-tail approximation residual from the additional error imposed by a diagonal tail core. They hold for any target perturbation, without assuming that task-relevant directions align with the tail. Second, the meaning of mixing control depends on the core being scaled. A tail-only core recovers confinement when mixing vanishes. A practical leading-plus-tail core instead permits direct leading adaptation even when its cross blocks vanish. Thus suppressing mixing need not preserve the leading weight block, and preserving that block need not preserve its rank ordering after adaptation.
+We run two studies with RoBERTa-base. The first tests tail adaptation on RTE (sentence entailment). We attach a small classifier after RoBERTa's final layer to map its sentence-pair representation to label probabilities. We train this classifier either alone or together with LinLoRA or OrthoLoRA adapters in all 48 attention projections. Adapters use 256 tail directions; the pretrained weights remain frozen. \\
+The tail supports useful adaptation beyond the classifier alone while leading directions stay fixed. Leading and middle directions also support adaptation, showing that useful learning is possible in each tested spectral region. Rotations add flexibility but give no consistent further accuracy gain (Table~\ref{tab:tailcapacity}). Section~\ref{sec:tailstudy} describes the training and evaluation design.
 
-Across five GLUE tasks, penalizing both scaler mixing operators reduces cross energy from approximately 43\% to 10--27\% and increases tail allocation. Yet the leading block's share rises in four of five task means. Aggregate off-tail leakage would hide this distinction. The same intervention shrinks updates substantially, while one-sided regularization achieves the highest mean task scores on three tasks without comparable cross suppression. These endpoints establish co-occurring geometric and functional changes, not a necessary geometry--performance trade-off or a magnitude-independent effect.
+The second study asks whether controlling interaction offers more than shrinking weight changes. On RTE and MRPC (paraphrase detection), we train UILinLoRA with both leading and tail updates and the same classifier design. We compare no penalty, our interaction penalty, and a size penalty tuned to give similar update sizes. Interaction control gives lower held-out prediction loss than either alternative, while mean accuracy changes little (Table~\ref{tab:learningandmixing} and Figure~\ref{fig:taskoutcomes}). The gain lies in the probabilities assigned to answers and would be missed by looking only at accuracy. Section~\ref{sec:matchedcontrol} gives the training and evaluation design.
 
-Our contributions are the separation of within-span and outside-span bottlenecks, unified bounds distinguishing confinement from decoupling, and a reproducible analysis of scaler regularization through effective update blocks. The central lesson is that lower cross interaction can coexist with a substantial leading modification. Establishing why this occurs requires separating the pretrained frame from generic scaler homogenization, initialization, and update magnitude.
-\section{PEFT in pretrained singular coordinates}
-\label{sec:coordinates}
+The penalties also produce different update patterns. Interaction control reduces the share of weight change connecting leading and tail directions; shrinking updates leaves that share high (Figure~\ref{fig:crossvsnorm}). Update size alone therefore misses how adaptation is distributed across directions. This loss improvement is achieved while both leading and tail directions are allowed to change.
 
-For clarity, the main derivations use a square adapted matrix $W_0\in\mathbb R^{d\times d}$, as in the RoBERTa attention projections studied here. Let
-\begin{equation}
-W_0=U\Sigma V^\top
-=U_L\Sigma_L V_L^\top+U_T\Sigma_T V_T^\top
-\label{eq:pretrained}
-\end{equation}
-be a complete SVD with singular values in descending order. A declared cutoff $1\le k<d$ selects the leading $k$ directions, and the remaining $r=d-k$ directions form the tail. The cutoff is not the numerical rank: $\Sigma_T$ generally contains nonzero pretrained singular values. The pretrained weight $W_0$, including this tail, remains frozen. We define the effective update by $\Delta=W_{\mathrm{eff}}-W_0$ and its coordinates by
-\begin{equation}
-C=U^\top\Delta V=
-\begin{bmatrix}C_{LL}&C_{LT}\\C_{TL}&C_{TT}\end{bmatrix}.
-\label{eq:coordinates}
-\end{equation}
-Here $C_{LL}$ modifies the leading block, $C_{TT}$ acts within the tail, and $C_{LT},C_{TL}$ couple the two coordinate groups. We use \emph{cross mixing} for the last two blocks and \emph{off-tail allocation} for all three blocks outside $TT$. These terms are not interchangeable.
-
-Orthogonal invariance and the disjoint blocks give
-\begin{equation}
-\fro{\Delta}^2=\fro{C}^2=\sum_{a,b\in\{L,T\}}\fro{C_{ab}}^2.
-\label{eq:energy}
-\end{equation}
-For a nonzero update define $p_{ab}=\fro{C_{ab}}^2/\fro{\Delta}^2$, $p_{\cross}=p_{LT}+p_{TL}$, and $p_{\off}=p_{LL}+p_{\cross}$. The experiments report the off-tail \emph{norm ratio}, $q_{\off}=\sqrt{p_{\off}}$, and the relative magnitude $\rho_F=\fro{\Delta}/\fro{W_0}$. A mean of norm ratios cannot be squared to obtain the mean energy fraction. Absolute norms, normalized placement, and the aggregation across matrices must therefore be stated separately.
-
-\paragraph{A common reference, not a method-specific score.}
-This standard change of coordinates is compatible with singular-subspace perturbation analysis~\citep{wedin1972perturbation} and can measure any effective update. For LoRA, $\Delta=XY^\top$ gives $C_{ab}=(U_a^\top X)(V_b^\top Y)^\top$: low rank alone zeros none of the four blocks. This is an algebraic comparison; our block measurements below concern the spectral instruments. Block energies are invariant to within-subspace basis changes, but a diagonal coefficient family depends on the paired basis. Ties across the cutoff require one fixed declared reference. Rectangular complements are treated in Appendix~\ref{app:rectangular}. When insertion changes the initial effective matrix, displacement from $W_0$ and displacement since insertion are different quantities.
-
-\paragraph{Structural change versus functional change.}
-The coordinates describe weights. Leading-subspace drift additionally compares the top-ranked singular subspaces of $W_0$ and $W_0+\Delta$. Even a perfectly confined update can change that ranking if adapted tail singular values cross the boundary. Functional retention is a further question requiring behavior-level measurements; it does not follow from an unchanged block alone.
-\section{Confinement and flexibility}
+\section{A family of controlled spectral adapters}
 \label{sec:confinement}
 
-\begin{figure}[t]
-\centering
-%
-\begin{tabular}{cc}
-\textbf{Fixed tail} & \textbf{Flexible within-tail core}\\[2pt]
-$\begin{pmatrix}0&0\\0&\diag(h)\end{pmatrix}$ &
-$\begin{pmatrix}0&0\\0&H\end{pmatrix}$\\[5pt]
-Paired coefficients only & Same span, more internal freedom\\[9pt]
-\textbf{Coordinate-relaxed core} & \textbf{Zero mixing, practical core}\\[2pt]
-$\begin{pmatrix}C_{LL}&C_{LT}\\C_{TL}&C_{TT}\end{pmatrix}$ &
-$\begin{pmatrix}C_{LL}&0\\0&C_{TT}\end{pmatrix}$\\[5pt]
-Ambient scaling permits interaction & Leading modification may remain
-\end{tabular}
-\caption{Conceptual block structure in pretrained coordinates. Rotations change expressivity inside the tail, not its span. Ambient scaling can introduce off-tail entries. Suppressing both mixing operators restores tail-only support when the leading core is zero, but only block decoupling for the practical leading-plus-tail core. Nonzero blocks denote permitted locations, not arbitrary independent expressivity or measured data.}
-\label{fig:blockschematic}
-\end{figure}
-We first remove ambient coordinate scaling and study updates supported entirely in the selected tail:
+\subsection{Start with a fixed spectral tail}
+\label{sec:coordinates}
+For a square pretrained weight matrix $W_0\in\mathbb R^{d\times d}$, write
+\begin{equation}
+W_0=U\Sigma V^\top=U_L\Sigma_LV_L^\top+U_T\Sigma_TV_T^\top.
+\label{eq:pretrained}
+\end{equation}
+Singular values are ordered from largest to smallest. We call the first $k$ directions leading ($L$), and the remaining $r=d-k$ directions the tail ($T$). The cutoff divides the pretrained directions into two groups; both can have nonzero singular values. We keep these original bases fixed throughout training and analysis of the confined adapters. Appendix~\ref{app:rectangular} extends the construction to rectangular weights.
+
+An adapted layer is $W_{\mathrm{eff}}=W_0+\Delta$. To guarantee that its update stays in the selected tail, use
 \begin{equation}
 \Delta=U_T H V_T^\top.
 \label{eq:tailcore}
 \end{equation}
-This family preserves the leading pretrained block and has zero cross mixing. Its available span, however, does not specify how much freedom is available \emph{inside} that span.
+Only the small matrix $H$ is learned. Multiplication by the fixed tail bases keeps every update inside the selected region. We can therefore change the freedom of $H$ while holding the allowed region constant.
 
-\paragraph{Fixed-tail coefficients.}
-The fixed-direction construction sets $H=\diag(h)$, with $h\in\mathbb R^r$ trainable. We use LinLoRA as its implementation label, not as a claim to originate singular-value or fixed-basis coefficient tuning: these ideas appear in SVDiff and SVFT~\citep{han2023svdiff,lingam2024svft}. This construction changes paired singular-vector coefficients but cannot express off-diagonal interactions within the tail. The coefficients describe an additive update, not the entire singular spectrum of the adapted matrix.
+\begin{figure}[t]
+\centering
+\begin{tabular}{cc}
+\textbf{Change tail strengths} & \textbf{Combine tail directions}\\[2pt]
+$\begin{pmatrix}0&0\\0&\diag(h)\end{pmatrix}$ &
+$\begin{pmatrix}0&0\\0&H\end{pmatrix}$\\[5pt]
+Fixed directions & Rotations inside the same tail\\[9pt]
+\textbf{Allow interaction} & \textbf{Penalize interaction}\\[2pt]
+$\begin{pmatrix}C_{LL}&C_{LT}\\C_{TL}&C_{TT}\end{pmatrix}$ &
+$\begin{pmatrix}C_{LL}&0\\0&C_{TT}\end{pmatrix}$\\[5pt]
+Input/output scaling & Leading changes can remain
+\end{tabular}
+\caption{Adapter structure in the original pretrained basis. Top: coefficients and rotations both keep updates inside the tail. Bottom: the scaled adapter permits changes in both groups and between them; its zero-interaction limit retains the two within-group blocks. The diagrams show the update patterns allowed by each construction.}
+\label{fig:blockschematic}
+\end{figure}
 
-\paragraph{Rotatable tail.}
-The within-tail construction (OrthoLoRA) takes
+\subsection{Change coefficients, then allow rotations}
+The first adapter sets $H=\diag(h)$, with $h\in\mathbb R^r$ trainable. It changes the strength of each selected pair of pretrained directions independently. We use LinLoRA as its implementation label. SVDiff and SVFT already establish fixed-basis coefficient tuning~\citep{han2023svdiff,lingam2024svft}; SVFT also learns selected off-diagonal coefficients. Here the diagonal family provides a simple restricted reference.
+
+The second adapter allows two learned orthogonal rotations inside the last $q\le r$ tail directions. Split the tail into $r-q$ fixed directions ($M$) and $q$ rotatable directions ($S$), and set
 \begin{equation}
-H=R_U\diag(h)R_V^\top,\qquad R_U,R_V\in\mathbb O(r).
+H=\begin{bmatrix}
+\diag(h_M)&0\\0&R_U\diag(h_S)R_V^\top
+\end{bmatrix},\qquad R_U,R_V\in\mathbb O(q).
 \label{eq:rotations}
 \end{equation}
-With unrestricted coefficients and full-tail rotations, the inner SVD makes every real $r\times r$ core representable without moving the spans of $U_T,V_T$. In code, $k_{\mathrm{val}}=r$ counts adapted coefficients and $k_{\mathrm{vec}}\le r$ counts directions covered by partial rotations. Such partial rotations give a smaller family, and increasing their size also changes capacity. Singular-vector rotations precede this study~\citep{zhang2024spectral,wu2026psoft}; Section~\ref{sec:related} distinguishes the cores and selected spans.
+This is the OrthoLoRA construction. At $q=0$, it reduces to fixed coefficients. At $q=r$, arbitrary coefficients and the inner SVD can represent any real tail matrix $H$. Intermediate values give more freedom to a smaller block. The implementation settings $k_{\mathrm{val}}=r$ and $k_{\mathrm{vec}}=q$ specify these two dimensions. The rotation size $q$ controls the added freedom and the number of trainable parameters. Our controlled study enforces orthogonality through a matrix exponential (Appendix~\ref{app:bandstudy}).
+
+Both adapters remain inside the same tail. The difference is whether a tail input direction can connect only to its paired output direction or also to other output directions in the tail. This isolates flexibility within the selected region.
+
+\subsection{Separate location from flexibility}
+The following result quantifies the extra freedom supplied by a full tail core. Let $G$ be a target weight update; $\|\cdot\|_F$ denotes the Frobenius norm, the square root of the sum of squared entries.
 
 \begin{proposition}[Two distinct approximation bottlenecks]
 \label{prop:approximation}
@@ -120,44 +110,329 @@ For an arbitrary target matrix $G\in\mathbb R^{d\times d}$, let $G_{TT}=U_T^\top
 The improvement in the best attainable squared error equals the off-diagonal energy of $G_{TT}$. Both families retain the same unavoidable outside-tail residual.
 \end{proposition}
 
-The proof is an orthogonal-projection argument (Appendix~\ref{app:approximation}). This separates a \emph{within-tail coefficient bottleneck} from an \emph{outside-tail subspace bottleneck}. Rotations can address the former, not the latter. For example, a target $u_i v_j^\top$ with distinct tail indices is missed by paired diagonal coefficients but is representable by the full tail core. A leading-only target remains outside both families. These are exact approximation statements for a specified $G$, not assertions that a neural task optimum lies in the tail or that optimization reaches the best approximation.
 
-\paragraph{What strict confinement preserves.}
-For fixed input $x$, $U_L^\top(W_0+\Delta)x=U_L^\top W_0x$ under~\eqref{eq:tailcore}. Inputs to later layers can change, so this local identity is not a behavioral guarantee. The original leading singular subspaces remain the top-$k$ subspaces whenever
+For example, connecting one tail input direction to a different tail output direction requires an off-diagonal entry of $H$. A full tail core can express that connection. Diagonal coefficients leave it out. Proposition~\ref{prop:approximation} separates this within-tail restriction from the residual outside the selected region. The proof follows by orthogonal projection (Appendix~\ref{app:approximation}). Training determines which of the permitted updates is learned.
+
+Confinement is defined relative to the original layer coordinates. For the same input $x$, $U_L^\top(W_0+\Delta)x=U_L^\top W_0x$. The network still learns through the changed tail outputs and through inputs altered by preceding layers. The original leading directions remain top-ranked when
 \begin{equation}
-\sigma_k(W_0)>\op{\Sigma_T+H}.
+\sigma_k(W_0)>\|\Sigma_T+H\|_2.
 \label{eq:nocrossing}
 \end{equation}
-Appendix~\ref{app:crossing} gives a tail-only counterexample when this separation fails.
-\section{Relaxation and leading--tail interaction}
+Appendix~\ref{app:crossing} gives a counterexample when this separation fails.
+
+\section{Controlling leading--tail interaction}
 \label{sec:mixing}
 
-Trainable diagonal matrices $E,D$ act in the ambient output and input coordinates. For the tail-only family they produce $\Delta=E U_T H V_T^\top D$, relaxing strict confinement. We call this \emph{coordinate-relaxed adaptation}; the UI implementation labels are retained for reproducibility, without assuming a new invariance theorem for these learned scalers.
+The confined families test what can be learned inside the tail. To study a relaxation, add diagonal output and input scalers $E,D$. They act in the layer's original coordinates, rather than in its singular-vector basis. Consequently, $EU_THV_T^\top D$ can affect directions outside the tail.
 
-The practical construction also includes a fixed leading core. Both cases fit
+The scaled adapter used in our main experiment also includes a leading core. We write both choices in one form:
 \begin{equation}
-\Delta=E\bigl(U_L S_L V_L^\top+U_T H V_T^\top\bigr)D,
-\quad
-S_L=\begin{cases}0&\text{tail-only reference},\\I&\text{practical leading-plus-tail form}.
+\Delta=E\bigl(U_LS_LV_L^\top+U_THV_T^\top\bigr)D,
+\quad S_L=\begin{cases}0&\text{tail core only},\\I&\text{practical adapter}.
 \end{cases}
 \label{eq:unified}
 \end{equation}
-The entire expression is added to $W_0$. For invertible $E,D$, its rank is $\operatorname{rank}(H)$ when $S_L=0$, and $k+\operatorname{rank}(H)$ when $S_L=I$; the latter is full-rank for nonsingular $H$. Compact trainable capacity therefore need not mean a low-rank update. Learning the scalers changes the fixed leading contribution as well as the trainable tail core.
+The expression is added to $W_0$. Thus $S_L=I$ adds an identity core in the leading coordinates, and learning $E,D$ changes its contribution along with the tail contribution. We call this the practical adapter. UILinLoRA uses diagonal $H$; UIOrthoLoRA also includes the rotations. Our completed interaction experiment uses the practical UILinLoRA form.
 
-\subsection{Mixing operators and a unified block bound}
-Let $A=U^\top E U$ and $B=V^\top D V$, partitioned as in~\eqref{eq:coordinates}. The scalers are real diagonal, so $A,B$ are symmetric. Define
+\subsection{Identify the interactions to control}
+We inspect the effective update in the original pretrained basis:
 \begin{equation}
-M_E=A_{LT}=U_L^\top E U_T,\quad
-M_D=B_{LT}=V_L^\top D V_T,\quad
-\mu=\op{M_E},\quad\nu=\op{M_D}.
+C=U^\top\Delta V=
+\begin{bmatrix}C_{LL}&C_{LT}\\C_{TL}&C_{TT}\end{bmatrix}.
+\label{eq:coordinates}
+\end{equation}
+$C_{TT}$ records tail-to-tail changes, including any within-tail combinations. $C_{LL}$ records changes among leading directions. The two cross blocks link the leading and tail groups. Strict tail confinement leaves only $C_{TT}$. Decoupling the two groups instead leaves both within-group blocks, $C_{LL}$ and $C_{TT}$.
+
+Let $A=U^\top EU$, $B=V^\top DV$, and define the two scaler-mixing operators
+\begin{equation}
+M_E=U_L^\top EU_T,\qquad M_D=V_L^\top DV_T,\qquad
+\mu=\|M_E\|_2,\quad\nu=\|M_D\|_2.
 \label{eq:mixingoperators}
 \end{equation}
-These are the $\mu_E,\nu_D$ quantities in our archived runs. Within-tail orthogonal basis changes leave their norms unchanged. The effective blocks obey
+The norm $\|\cdot\|_2$ is the operator norm. Direct multiplication gives
 \begin{equation}
 C_{ab}=A_{aL}S_LB_{Lb}+A_{aT}HB_{Tb},\qquad a,b\in\{L,T\}.
 \label{eq:blockidentity}
 \end{equation}
+The two operators measure how the scalers connect the groups. When both are zero, the cross blocks vanish. A tail-only core then recovers strict confinement. The practical core retains its leading block: for example, $E=D=I,H=0$ gives $C_{LL}=I$. With bounded factor norms, small mixing operators bound the cross blocks as stated in Proposition~\ref{prop:mixing} and Corollary~\ref{cor:confinement} (Appendix~\ref{app:mixingproof}).
 
+\subsection{How the interaction penalty works}
+We train with
+\begin{equation}
+\mathcal L=\mathcal L_{\mathrm{task}}+
+\sum_{\ell\in\mathcal M}\left(\lambda_E\|M_{E,\ell}\|_F^2+
+\lambda_D\|M_{D,\ell}\|_F^2\right),
+\label{eq:regularizer}
+\end{equation}
+where $\mathcal M$ contains the adapted matrices. The two coefficients control the pressure on output-side and input-side interaction. Task training and the interaction penalty jointly determine the update.
+
+The penalty's mechanism is explicit. Write $P=U_LU_L^\top$ and $E=\diag(\epsilon)$. Then
+\begin{equation}
+\|M_E\|_F^2=\tfrac12\|EP-PE\|_F^2
+=\sum_{i<j}P_{ij}^2(\epsilon_i-\epsilon_j)^2.
+\label{eq:commutator}
+\end{equation}
+It penalizes differences between scaling factors, with weights determined by the pretrained projector. If the associated graph is connected, its zero-penalty solutions are uniform scalers. Isolated penalty dynamics then approach $E=aI,D=bI$. For the practical core this gives $C_{LL}=abI$, $C_{TT}=abH$, and zero cross blocks. This gives the mechanism of the penalty: it suppresses connections between the groups while retaining a uniformly scaled leading contribution. During adaptation, task gradients act alongside this pressure. Our experiment measures the resulting interaction, loss and accuracy.
+
+We compare this intervention with penalizing the size of the effective update. The two objectives act on different quantities: one penalizes scaler interactions, while the other penalizes total displacement from the pretrained weights. Their behavior during factor training is analyzed in Appendices~\ref{app:commutator}--\ref{app:factorflow}. We evaluate the final effective update directly, which also accounts for reciprocal rescalings of the adapter factors.
+
+\section{Measuring adaptation}
+\label{sec:measurement}
+
+We evaluate behavior and weight changes at the same saved checkpoint. Behavior tells us how well the adapted model predicts. The weight measurements show what the adapter changed to produce those predictions.
+
+\paragraph{Prediction loss and accuracy.}
+Accuracy counts correct predicted labels. Prediction loss is cross-entropy, the mean negative log probability assigned to the correct label. Two models can predict the same label while assigning it different probabilities, so loss can reveal a difference that accuracy misses. We report both on held-out task examples at the fixed training endpoint. The three paired training seeds are the units of replication; tables give means and sample standard deviations, with paired differences in the appendix.
+
+\paragraph{Interaction between leading and tail directions.}
+The four blocks in~\eqref{eq:coordinates} partition the squared update norm:
+\begin{equation}
+\|\Delta\|_F^2=\sum_{a,b\in\{L,T\}}\|C_{ab}\|_F^2.
+\label{eq:energy}
+\end{equation}
+For a nonzero update, $p_{ab}=\|C_{ab}\|_F^2/\|\Delta\|_F^2$ is the fraction of energy in a block. We call $p_\cross=p_{LT}+p_{TL}$ the cross share: it measures the share connecting leading and tail directions. The total share outside the tail is $p_\off=p_{LL}+p_\cross$. Off-diagonal entries \emph{inside} $C_{TT}$ instead describe combinations within the tail. These measurements distinguish the three choices in our adapter family. Fractions at an exactly zero update are undefined.
+
+\paragraph{Overall size and distribution across the network.}
+Relative update size is $\rho_F=\|\Delta\|_F/\|W_0\|_F$. We use it to compare interaction control with reducing the overall amount of weight change. For the network-wide summary, we sum squared energies across adapted matrices before taking ratios. We also report each matrix's norm, the equal-module mean of block fractions, and the cumulative energy carried by the largest updates. These views distinguish a broadly distributed change from one concentrated in a few matrices. Appendix~\ref{app:details} gives the exact aggregations, including the archived ratio $q_\off=\sqrt{p_\off}$.
+
+\paragraph{Changes learned after insertion.}
+The practical adapter starts with a nonzero contribution. We therefore measure both its total displacement from the pretrained weights, $\Delta=W_{\mathrm{eff}}-W_0$, and its displacement during training, $\Delta_{\mathrm{learned}}=W_{\mathrm{eff}}-W_{\mathrm{eff}}(0)$. We subtract matrices before computing energies. Within the learned leading block, we also separate its scalar identity component from the remaining structure. This connects the measured endpoint to the uniform-scaler limit derived in Section~\ref{sec:mixing}.
+
+\paragraph{A separate masked-token behavior.}
+We evaluate a fixed masked-token probe using the original frozen language-model head. It measures a pretraining-style behavior on the same adapted checkpoints. The task head and language-model head test different predictions; their losses are reported separately.
+
+\section{Experiments: tail adaptation and interaction control}
+\label{sec:experiments}
+
+\subsection{The tail supports adaptation beyond the trained head}
+\label{sec:tailstudy}
+
+
+On RTE, we compare classifier-only training on frozen RoBERTa-base with six adapters: coefficients alone or coefficients plus rotations, using 256 leading, middle or tail directions in all 48 attention projections. Every condition trains the same classification head, which maps sentence-pair representations to two label probabilities. Pretrained weights remain frozen; adapters start at zero and, when enabled, rotate 64 directions. Conditions share head initialization, data order and 5{,}670 optimizer steps within each of three seeds. We train on 80\% of RTE's training set and report accuracy and cross-entropy at the final step on the remaining 20\% (inner-selection). The official validation set remains unevaluated for this study. Appendix~\ref{app:bandstudy} gives optimizer settings and individual runs.
+
+% BEGIN GENERATED STORY TAIL RESULTS
+% Generated by scripts/build_tail_story_tables.py.
+\begin{table}[t]
+\centering
+\caption{RTE adaptation in leading, middle and tail directions. Accuracy and cross-entropy (lower is better) are fixed-endpoint inner-selection results, mean$\pm$sample SD over three paired seeds. Every condition trains the same 592,130-parameter classifier; adapter counts exclude it.}
+\label{tab:tailcapacity}
+\begin{tabular}{lccc}
+\toprule
+Trainable backbone update & Accuracy (\%) & Task loss (nat) & Adapter params\\
+\midrule
+Classifier only & $59.77 \pm 0.65$ & $0.654 \pm 0.002$ & 0 \\
+Leading coefficients & $71.75 \pm 1.71$ & $1.785 \pm 0.083$ & 12,288 \\
+Leading coefficients + rotations & $72.22 \pm 1.01$ & $2.075 \pm 0.118$ & 405,504 \\
+Middle coefficients & $71.02 \pm 1.21$ & $1.759 \pm 0.027$ & 12,288 \\
+Middle coefficients + rotations & $72.22 \pm 1.21$ & $1.958 \pm 0.044$ & 405,504 \\
+Tail coefficients & $70.01 \pm 0.23$ & $2.001 \pm 0.141$ & 12,288 \\
+Tail coefficients + rotations & $71.02 \pm 3.30$ & $2.111 \pm 0.268$ & 405,504 \\
+\bottomrule
+\end{tabular}
+\end{table}
+% END GENERATED STORY TAIL RESULTS
+
+
+Diagonal coefficients improve accuracy over classifier-only training in each tested spectral region (Table~\ref{tab:tailcapacity}). Useful adaptation is therefore possible in several parts of the spectrum. The band comparisons do not establish equal performance across regions (Table~\ref{tab:bandpaired}). Rotations expand the allowed updates without a consistent accuracy gain. Every adapter has higher cross-entropy than the classifier alone, and rotations increase mean loss in every region. Accuracy gains and added flexibility therefore do not guarantee better label probabilities.
+
+\subsection{Experimental design for interaction control}
+\label{sec:matchedcontrol}
+The main experiment uses RoBERTa-base~\citep{liu2019roberta} on RTE, a textual-entailment task, and MRPC, a paraphrase task. We freeze the backbone and train adapters in all 48 attention projections together with the task head. Each $768\times768$ projection has 256 tail coefficients and input/output scalers, with the practical leading core $S_L=I$ and no rotations. Thus each condition can change both leading and tail directions; the intervention controls how those groups interact.
+
+We compare three conditions. UNREG trains only on the task loss. MIX adds the two-sided interaction penalty with $\lambda_E=\lambda_D=10^{-3}$. NORM adds the size penalty $\beta\,\mathrm{mean}_\ell\|\Delta_\ell\|_F^2/\|W_{0,\ell}\|_F^2$. The size control asks whether the effect of MIX is reproduced by making the overall update smaller. Its dose is selected using update size on a separate calibration seed, without using task scores.
+
+Each condition uses confirmation seeds 17, 42 and 123, giving 18 runs across the two tasks. Conditions share initialization, data order, optimizer settings and step budgets within a task and seed. Training ends at 5{,}670 steps on RTE and 2{,}760 on MRPC. After freezing these endpoints, we evaluate once on the previously held-out official validation sets: 277 examples for RTE and 408 for MRPC. All runs pass checkpoint reload and metric-reproduction checks. Appendix~\ref{app:matchedprotocol} records the complete calibration frontier, per-seed matches and inner-selection outcomes; Appendix~\ref{app:freshrecipe} gives the executed recipes.
+
+\subsection{Interaction control lowers prediction loss}
+MIX has lower held-out prediction loss than both controls in every paired seed (Table~\ref{tab:learningandmixing}).
+
+% BEGIN GENERATED STORY MAIN RESULTS
+% Generated by scripts/build_tail_story_tables.py.
+\begin{table}[t]
+\centering
+\caption{Interaction control, size control and unregularized training at the same fixed endpoints. All conditions use the practical leading-plus-tail adapter without rotations. Entries are mean$\pm$sample SD over three seeds. Accuracy and prediction loss use held-out task examples; Cross is the pooled percentage of update energy connecting leading and tail directions, and $\rho_F$ is relative update size. Table~\ref{tab:matchedconfirmation} gives per-seed size differences after calibration.}
+\label{tab:learningandmixing}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llcccc}
+\toprule
+Task & Condition & Accuracy (\%) & Task loss (nat) & Cross (\%) & $\rho_F$\\
+\midrule
+RTE & UNREG & $71.72 \pm 1.50$ & $2.429 \pm 0.071$ & $43.7 \pm 0.0$ & $0.2751 \pm 0.0041$ \\
+RTE & MIX & $71.36 \pm 1.63$ & $1.229 \pm 0.089$ & $10.0 \pm 0.5$ & $0.0736 \pm 0.0046$ \\
+RTE & NORM & $71.24 \pm 1.63$ & $2.193 \pm 0.327$ & $46.2 \pm 0.0$ & $0.0759 \pm 0.0016$ \\
+\midrule
+MRPC & UNREG & $86.19 \pm 0.93$ & $0.871 \pm 0.068$ & $42.4 \pm 0.1$ & $0.1802 \pm 0.0009$ \\
+MRPC & MIX & $85.46 \pm 1.02$ & $0.395 \pm 0.028$ & $4.5 \pm 0.3$ & $0.0407 \pm 0.0017$ \\
+MRPC & NORM & $85.78 \pm 0.65$ & $0.755 \pm 0.064$ & $46.2 \pm 0.1$ & $0.0423 \pm 0.0005$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+% END GENERATED STORY MAIN RESULTS
+
+Relative to NORM, mean loss falls from $2.193$ to $1.229$ on RTE and from $0.755$ to $0.395$ on MRPC: reductions of $44\%$ and $48\%$. Mean accuracy is $71.36\%$ versus $71.24\%$ on RTE and $85.46\%$ versus $85.78\%$ on MRPC for MIX and NORM. Their differences are $+0.12$ and $-0.33$ percentage points. Figure~\ref{fig:taskoutcomes} shows every seed: the loss values separate by condition much more clearly than the accuracies. The result concerns the probabilities assigned to answers, which an accuracy-only comparison would miss. Section~\ref{sec:scope} discusses confidence calibration and the precision of the accuracy comparison.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=.94\linewidth]{figures/interaction_task_outcomes.pdf}
+\caption{Held-out prediction loss and accuracy at the fixed endpoints. Symbols identify seeds 17, 42 and 123; gray lines connect the same seed across conditions, and black bars mark means. MIX has lower loss than both alternatives in every pair. Table~\ref{tab:learningandmixing} gives the means and sample standard deviations.}
+\label{fig:taskoutcomes}
+\end{figure}
+
+\subsection{Smaller updates retain substantial interaction}
+The two penalties produce different update patterns. At its selected doses, NORM retains $46.2\%$ cross share on both tasks. MIX has $10.0\pm0.5\%$ on RTE and $4.5\pm0.3\%$ on MRPC, compared with the unregularized $43.7\%$ and $42.4\%$. Interaction control therefore changes the relative allocation of the update as well as its size.
+
+The calibration procedure selects $\beta=7.5$ for RTE and $27$ for MRPC. Their overall sizes differ from the MIX targets by $4.1\%$ and $2.3\%$ on the calibration seed. Across confirmation seeds, absolute differences range from $0.1$ to $8.0\%$; Table~\ref{tab:matchedconfirmation} gives each signed error. We retain the frozen doses and all confirmation pairs.
+
+The full seven-dose sweep per task provides a broader view (Figure~\ref{fig:crossvsnorm}). On the calibration seed, NORM reduces update size by $12.1\times$ on RTE and $8.5\times$ on MRPC. Cross share remains $43.7$--$50.9\%$ and $42.4$--$48.6\%$, respectively. None of these tested doses reproduces MIX's low cross share. The distinction is visible across a wide range of achieved sizes, as well as at the selected doses.
+
+\subsection{Interaction control redistributes adaptation}
+The global norm summarizes how much changed, but not where the change occurred. On RTE, the three largest MIX updates carry $61.9$--$68.3\%$ of total energy, versus $15.2$--$16.7\%$ for NORM. Between 12 and 15 of MIX's 48 module-relative norms are below $10^{-6}$. On MRPC, its top three modules carry $35.7$--$50.1\%$, versus $17.5$--$19.5\%$ for NORM. Interaction control produces a more concentrated distribution in both tasks. Appendix~\ref{app:focusedmodules} shows the individual matrices and complete cumulative curves.
+
+Leading changes remain after subtracting the insertion state: they account for $45.2\%$ and $65.5\%$ of MIX's pooled learned energy on RTE and MRPC. Of that leading energy, $84.7\%$ and $89.5\%$ lies in module-wise scalar identity components. This is the structure predicted by the uniform-scaler limit. The remaining non-identity leading energy is about $6.9\%$ of total learned energy on both tasks (Appendix~\ref{app:reviewidentity}). Thus interaction suppression coexists with substantial, mostly identity-shaped leading changes.
+
+Equal-module averages and the small-update sensitivity analysis also retain the cross-share gap (Appendix~\ref{app:reviewsensitivity}). Similar global sizes can conceal different module distributions and block allocations.
+
+\subsection{Task adaptation and masked-token behavior differ}
+The fixed language-model probe (Appendix~\ref{app:freshrecipe}) has original-backbone loss $2.0956$ nats. Every arm's mean probe loss is $0.47$--$0.84$ nats higher, and MIX has the highest mean on both tasks. Its lower task loss therefore accompanies worse masked-token loss on this probe. Measuring both makes the functional outcome concrete: the favorable result is the held-out task prediction loss.
+
+\subsection{Broader task results}
+Table~\ref{tab:glue_results_base_large} reports the scaled diagonal and rotated adapters across six GLUE tasks and two RoBERTa sizes. On RoBERTa-base, the rotated form has higher reported scores on four tasks, the diagonal form on one, and they tie on one. On RoBERTa-large, each leads on two tasks and they tie on two. Both constructions support task learning across this evaluation; the advantage of the rotated form varies by task and backbone.
+
+\begin{table}[t]
+\centering
+\caption{Historical RoBERTa results on six GLUE tasks: reported central values$\pm$SD, multiplied by 100, with source rounding retained. Imported reference runs~\citep{albert2025randlora} and spectral runs use separate tuning protocols. MRPC is accuracy throughout. Params are source-reported for imported runs; $\dagger$ marks adapter-only counts derived from the stated spectral configurations rather than verified checkpoint inventories. Appendix~\ref{app:cost} accounts for frozen storage and computation.}
+\label{tab:glue_results_base_large}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+Method & SST-2 & MRPC Acc. & CoLA & QNLI & RTE & STS-B & Params \\
+\midrule
+% BEGIN GENERATED GLUE ROWS
+\multicolumn{8}{c}{RoBERTa-base} \\
+\midrule
+\multicolumn{8}{l}{\textit{Imported reference runs (RandLoRA protocol; five runs)}} \\
+VeRA-1024 & 91.9{\scriptsize$\pm$0.4} & 88.4{\scriptsize$\pm$1.2} & 59.9{\scriptsize$\pm$2.2} & 90.5{\scriptsize$\pm$0.4} & 74.9{\scriptsize$\pm$1.5} & 90.4{\scriptsize$\pm$0.2} & 0.26M \\
+LoRA-4 & 94.4{\scriptsize$\pm$0.5} & 87.3{\scriptsize$\pm$0.2} & 58.4{\scriptsize$\pm$0.8} & 92.7{\scriptsize$\pm$0.2} & 71.5{\scriptsize$\pm$1.2} & 90.5{\scriptsize$\pm$0.1} & 0.7M \\
+RandLoRA-64 & 92.2{\scriptsize$\pm$0.3} & 88.0{\scriptsize$\pm$1.5} & 59.4{\scriptsize$\pm$2.1} & 91.3{\scriptsize$\pm$0.4} & 74.7{\scriptsize$\pm$1.9} & 90.3{\scriptsize$\pm$0.2} & 0.7M \\
+\addlinespace
+\multicolumn{8}{l}{\textit{Spectral instruments (reported protocol; six seeds)}} \\
+UIOrthoLoRA & 94.8{\scriptsize$\pm$0.3} & 92.0{\scriptsize$\pm$1.0} & 64.4{\scriptsize$\pm$1.0} & 92.4{\scriptsize$\pm$0.1} & 78.7{\scriptsize$\pm$1.0} & 90.7{\scriptsize$\pm$0.1} & 0.479M$^{\dagger}$ \\
+UILinLoRA & 93.1{\scriptsize$\pm$1.0} & 90.0{\scriptsize$\pm$1.0} & 65.8{\scriptsize$\pm$1.0} & 92.4{\scriptsize$\pm$0.2} & 76.2{\scriptsize$\pm$1.0} & 90.6{\scriptsize$\pm$0.1} & 0.086M$^{\dagger}$ \\
+\midrule
+\multicolumn{8}{c}{RoBERTa-large} \\
+\midrule
+\multicolumn{8}{l}{\textit{Imported reference runs (RandLoRA protocol; five runs)}} \\
+VeRA-256 & 95.8{\scriptsize$\pm$0.3} & 89.3{\scriptsize$\pm$1.2} & 65.3{\scriptsize$\pm$1.1} & 94.1{\scriptsize$\pm$0.3} & 81.6{\scriptsize$\pm$0.8} & 91.8{\scriptsize$\pm$0.1} & 0.26M \\
+LoRA-4 & 95.5{\scriptsize$\pm$0.2} & 87.2{\scriptsize$\pm$0.7} & 64.7{\scriptsize$\pm$1.2} & 94.5{\scriptsize$\pm$0.1} & 83.6{\scriptsize$\pm$0.4} & 91.8{\scriptsize$\pm$0.1} & 1.8M \\
+RandLoRA-100 & 95.5{\scriptsize$\pm$0.3} & 90.1{\scriptsize$\pm$0.4} & 67.4{\scriptsize$\pm$0.3} & 94.1{\scriptsize$\pm$0.3} & 84.5{\scriptsize$\pm$0.3} & 91.4{\scriptsize$\pm$0.6} & 1.8M \\
+\addlinespace
+\multicolumn{8}{l}{\textit{Spectral instruments (reported protocol; six seeds)}} \\
+UIOrthoLoRA & 96.3{\scriptsize$\pm$0.3} & 92.5{\scriptsize$\pm$0.2} & 67.4{\scriptsize$\pm$0.5} & 95.0{\scriptsize$\pm$0.1} & 86.0{\scriptsize$\pm$0.2} & 92.1{\scriptsize$\pm$0.2} & 1.008M$^{\dagger}$ \\
+UILinLoRA & 96.3{\scriptsize$\pm$0.2} & 93.4{\scriptsize$\pm$0.7} & 68.7{\scriptsize$\pm$1.0} & 94.7{\scriptsize$\pm$0.1} & 86.0{\scriptsize$\pm$1.1} & 92.0{\scriptsize$\pm$0.2} & 0.221M$^{\dagger}$ \\
+% END GENERATED GLUE ROWS
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+These historical experiments and the imported reference results use their respective training and selection protocols, recorded in Appendix~\ref{app:details}. They provide context for the adapter family alongside the fresh controlled experiment. Supporting GPT-2 generation results appear in Appendix~\ref{app:generation}.
+
+A separate 27-run, five-task archive tests the practical interaction penalty. Cross share falls in all nine paired task/seed settings. The two-sided penalty's task-mean scores are lower by $0.23$--$1.03$ points, while one-sided control has the highest means on three tasks (Appendix~\ref{app:archiveddesign}). This earlier experiment separates the consistent reduction in interaction from the task-dependent score response. The fresh experiment adds the size control and held-out loss evaluation.
+
+\section{Relation to spectral adaptation methods}
+\label{sec:related}
+\paragraph{Choosing directions.}
+LoRA restricts update rank~\citep{hu2022lora}; AdaLoRA allocates an update's singular-value budget~\citep{zhang2023adalora}. PiSSA and MiLoRA initialize trainable factors from leading and minor pretrained components~\citep{meng2024pissa,wang2025milora}. KaSA and CorDA make other decomposition-guided choices~\citep{wang2025kasa,yang2024corda}. We use a fixed pretrained reference to distinguish the initial choice from the region occupied by the trained update. Free factors can move beyond their initial spans, while our fixed tail bases enforce confinement throughout training.
+
+\paragraph{Combining directions.}
+SVDiff trains spectral shifts, SVFT learns selected combinations of fixed singular vectors, and LoRA-XS trains a small core on fixed support~\citep{han2023svdiff,lingam2024svft,balazy2024lora}. Spectral Adapter rotates a selected leading core, and PSOFT relaxes orthogonality inside principal support~\citep{zhang2024spectral,wu2026psoft}. Our adapter family brings these choices into one controlled construction. The approximation identity separates flexibility within the chosen region from access to directions outside it; the interaction analysis explains how ambient scaling connects the groups. Appendix~\ref{app:methodcoordinates} derives the coordinate forms of these methods.
+
+\paragraph{Rotations, scaling and restricted adaptation.}
+OFT/BOFT and HRA use orthogonal transformations~\citep{qiu2023oft,liu2024boft,yuan2024hra}. VeRA, RandLoRA, DoRA, SSF and IA3 use other scaling or factor restrictions~\citep{kopiczko2023vera,albert2025randlora,liu2024dora,lian2022ssf,liu2022ia3}, while FourierFT selects Fourier coefficients~\citep{gao2024parameter}. Work on restricted parameter spaces motivates studying which freedoms matter for adaptation~\citep{li2018measuring,aghajanyan2020intrinsic}. We connect that question to measured weight changes and task behavior, treating behavioral retention~\citep{shuttleworth2025illusion} and ranked-subspace perturbation~\citep{wedin1972perturbation} as separate measurements. Our controlled result compares interaction and size penalties within the same spectral adapter.
+
+\section{Scope and practical considerations}
+\label{sec:scope}
+The controlled evidence covers one encoder, two tasks, three confirmation seeds and one fixed interaction strength. The loss ordering was identified after inspecting the held-out evaluation. Cross-entropy depends on confidence as well as predicted labels; temperature scaling fitted on separate inner-selection logits is the next check (Appendix~\ref{app:heldloss}). The MIX--NORM accuracy differences have nominal 95\% paired intervals $[-3.92,4.16]$ points on RTE and $[-3.89,3.24]$ on MRPC. The small observed mean differences therefore describe these runs rather than establish equivalent accuracy.
+
+The comparison measures the full effect of the two training penalties. Confirmation size errors reach $8.0\%$, with five of six pairs outside the calibration rule's $5\%$ tolerance, and module allocations differ. The small-update sensitivity analysis conditions on attained norms, a post-treatment variable. Isolating cross share as the cause of the loss difference, or the pretrained projector as the essential ingredient, requires additional controls. The separate 21-run band study uses RTE inner-selection scores; its frozen checkpoints have not yet been evaluated on the official held-out split. It establishes neither tail superiority across tasks nor a convergence advantage. Rotations add parameters as well as flexibility.
+
+The practical base adapter has 86{,}016 trainable adapter entries and stores 108 MiB of frozen bases at two bytes per entry. Its two dense basis products require about 192 times the branch multiply--accumulates of rank-4 LoRA at width 768; this is an arithmetic comparison. Merging the update removes the adapter branch for inference. Appendix~\ref{app:cost} separates setup, storage, training and merge costs. The historical benchmark protocols and configuration-derived parameter counts remain separately labeled.
+
+\section{Conclusion}
+\label{sec:conclusion}
+Our adapters separate where a model can adapt from how directions can interact. Strict tail coefficients improve RTE accuracy over a trained head alone; adding rotations within that tail does not give a consistent gain. When both leading and tail updates are allowed, interaction control lowers held-out prediction loss by $44\%$ and $48\%$ relative to the tested size penalty, with mean accuracy differences below half a point. Controlling interaction changes how the model adapts, and accuracy alone misses the resulting difference in prediction loss.
+
+\clearpage
+\section*{Reproducibility statement}
+Complete proofs appear in Appendix~\ref{app:proofs}, training and metric definitions in Appendix~\ref{app:details}, and computational costs in Appendix~\ref{app:cost}. Archived records and scripts reproduce the legacy tables; separate exports reproduce the focused dose frontier, confirmation contrasts, module profiles and all 21 band/head outcomes. Synthetic-matrix checks cover the algebra and boundary cases. The supplementary archive, \texttt{analysis\_artifact.zip}, contains manuscript sources, exported measurements, per-example held-aside predictions, 13 recipe manifests, the recorded experiment implementation, and regeneration/audit scripts with file hashes. Private identifiers are sanitized, with original and distributed hashes distinguished. No model checkpoints or prepared dataset tensors are included; the analysis audit does not rerun training or checkpoint validation. Supporting benchmark tables distinguish imported comparisons from the spectral-variant results.
+
+\begin{samepage}
+\section*{AI use statement}
+Generative AI tools assisted with conceptual framing, mathematical formulation and proof drafting, literature lookup, experiment design, implementation of experiment and analysis code, interpretation of results, figure and table generation, and manuscript drafting and editing. The reported model measurements come from experimental artifacts; synthetic-matrix checks are identified separately. Automated algebra, data-reconstruction, and document checks support verification but do not replace author review of the scientific claims. The authors are responsible for the final text, code, and reported results.
+\par\end{samepage}
+
+\begin{samepage}
+\section*{Ethics statement}
+The study analyzes adaptation of existing language models using existing benchmarks. Weight-space stability does not certify factual correctness, fairness, privacy, or safe behavior. Efficient adaptation can reduce training costs but can also facilitate harmful specialization or preserve biases present in a base model. Our structural claims should not be interpreted as deployment guarantees.\par
+\end{samepage}
+\bibliography{reference}
+\bibliographystyle{iclr2027_conference}
+\clearpage
+\appendix
+\section*{Notation guide}
+\begin{center}
+\begin{tabular}{lp{0.73\linewidth}}
+\toprule
+Symbol & Meaning\\
+\midrule
+$W_0,W_{\mathrm{eff}}$ & Pretrained and adapted effective weight matrices.\\
+$U,\Sigma,V$ & Fixed pretrained SVD; $L$ denotes leading and $T$ its tail complement.\\
+$d,k,r,q$ & Square weight width, leading cutoff, tail width $r=d-k$, rotated tail width.\\
+$\Delta,C$ & Effective update $W_{\mathrm{eff}}-W_0$ and coordinates $U^\top\Delta V$.\\
+$C_{ab}$ & Block with output subspace $a$ and input subspace $b$, $a,b\in\{L,T\}$.\\
+$\Delta_{\mathrm{learned}}$ & Displacement from the inserted model, $W_{\mathrm{eff}}-W_{\mathrm{eff}}(0)$.\\
+$S_L,H$ & Leading and tail cores in the unified additive update; practical $S_L=I$.\\
+$E,D$ & Ambient diagonal output/input scalers.\\
+$A,B$ & In the bounds: $U^\top EU,V^\top DV$; prior-method factor conventions are stated locally.\\
+$M_E,M_D$ & Scaler mixing operators $U_L^\top EU_T,V_L^\top DV_T$.\\
+$\mu,\nu$ & Operator norms of $M_E,M_D$.\\
+$e,d_s,s,h_s$ & Operator norms of $E,D,S_L,H$, respectively.\\
+$p_{ab},p_\cross$ & Normalized block energies and $p_{LT}+p_{TL}$.\\
+$p_\off,q_\off$ & Off-tail energy fraction and its square root (norm ratio).\\
+$\rho_F$ & Relative Frobenius update norm; pooling convention specified per table.\\
+$\eta_I$ & Fraction of leading-block energy in its fitted scalar-identity component.\\
+$P,Q$ & Left/right leading projectors; context specifies any random projector.\\
+$d_{\mathrm{ch}},o$ & Normalized chordal distance and leading-subspace overlap.\\
+$\lambda_E,\lambda_D$ & Coefficients of the summed scaler-mixing penalties.\\
+$\beta$ & Coefficient of the mean module-relative squared-norm penalty.\\
+$\delta_s,e_s$ & Signed NORM/MIX norm error and its absolute value for seed $s$.\\
+$k_{\mathrm{val}},k_{\mathrm{vec}}$ & Implementation settings for coefficient and rotation dimensions.\\
+\bottomrule
+\end{tabular}
+\end{center}
+\clearpage
+\section{Proofs and boundary cases}
+\label{app:proofs}
+
+\subsection{Fixed coefficients and within-tail flexibility}
+\label{app:approximation}
+Let $\widehat G=U^\top G V$ and partition it into the four coordinate blocks. Orthogonal invariance gives
+\begin{equation}
+\fro{G-U_T H V_T^\top}^2
+=\fro{\widehat G_{LL}}^2+\fro{\widehat G_{LT}}^2
++\fro{\widehat G_{TL}}^2+\fro{\widehat G_{TT}-H}^2.
+\end{equation}
+For a free core the last term is minimized at $H=\widehat G_{TT}$. For a diagonal core it is minimized by $h_i=(\widehat G_{TT})_{ii}$, leaving the off-diagonal entries unchanged. Substitution proves Proposition~\ref{prop:approximation}. An SVD of the minimizing free core gives the representation~\eqref{eq:rotations} with $q=r$. Thus full within-tail rotations can attain the free-core approximation optimum.
+
+For a separate family whose free core has rank at most $q\le r$, rather than the partial-rotation core of~\eqref{eq:rotations}, truncated SVD of $\widehat G_{TT}$ gives minimum squared error
+\begin{equation}
+\fro{G}^2-\sum_{j=1}^q\sigma_j(\widehat G_{TT})^2.
+\end{equation}
+This expression keeps the outside-tail residual explicit. It is the optimum under the fixed-tail restriction; the unrestricted rank-$q$ approximation of $G$ can use directions elsewhere.
+
+\subsection{Proof of the unified mixing bounds}
+\label{app:mixingproof}
 \begin{proposition}[Interaction bounds with and without a leading core]
 \label{prop:mixing}
 Write $e=\op{E}$, $d_s=\op{D}$, $s=\op{S_L}$, and $h_s=\op{H}$. For~\eqref{eq:unified},
@@ -170,7 +445,7 @@ Write $e=\op{E}$, $d_s=\op{D}$, $s=\op{S_L}$, and $h_s=\op{H}$. For~\eqref{eq:un
 If $\mu=\nu=0$, the cross blocks vanish. In addition, the leading block vanishes when $S_L=0$.
 \end{proposition}
 
-The proof applies submultiplicativity to~\eqref{eq:blockidentity} (Appendix~\ref{app:mixingproof}). The additional leading-core terms are the difference between the idealized and practical analyses. With $S_L=0$, leading--leading leakage requires mixing on both sides, while each cross block can be first order in one mixing quantity. With $S_L\ne0$, direct leading adaptation remains even when the cross terms vanish.
+The proof applies submultiplicativity to~\eqref{eq:blockidentity}. The additional leading-core terms are the difference between the idealized and practical analyses. With $S_L=0$, leading--leading leakage requires mixing on both sides, while each cross block can be first order in one mixing quantity. With $S_L\ne0$, direct leading adaptation remains even when the cross terms vanish.
 
 \begin{corollary}[Tail confinement and block decoupling]
 \label{cor:confinement}
@@ -180,316 +455,10 @@ For $S_L=0$, define $C_{\mathrm{tail}}=\diag(0,C_{TT})$. Then
 \le h_s\sqrt{(\mu\nu)^2+(\mu d_s)^2+(e\nu)^2}.
 \label{eq:offbound}
 \end{equation}
-Consequently, $\mu,\nu\to0$ implies absolute tail confinement if $e,d_s,h_s$ stay bounded. If $e,d_s,h_s,s$ stay bounded for a general leading core, the same limit instead makes $C$ block-diagonal; it need not make $C_{LL}$ small.
+Consequently, $\mu,\nu\to0$ implies confinement in absolute block norm if $e,d_s,h_s$ stay bounded. If $e,d_s,h_s,s$ stay bounded for a general leading core, the same limit instead makes $C$ block-diagonal; it need not make $C_{LL}$ small.
 \end{corollary}
 
-For example, $E=D=I$, $S_L=I$, and $H=0$ gives zero mixing but $C_{LL}=I$. The practical update can therefore change the leading singular values or their ranking without cross mixing. Tail confinement, block decoupling, and ranked-subspace stability are three different conclusions.
 
-\subsection{Regularization, scale, and effective geometry}
-The soft intervention uses
-\begin{equation}
-\mathcal L=\mathcal L_{\mathrm{task}}
-+\sum_{\ell\in\mathcal M}\left(\lambda_E\fro{M_{E,\ell}}^2+\lambda_D\fro{M_{D,\ell}}^2\right).
-\label{eq:regularizer}
-\end{equation}
-Here $\mathcal M$ is the set of adapted matrices; the implementation sums, rather than averages, their penalties. Since $\op{M}\le\fro{M}$, each squared Frobenius penalty upper-bounds its squared mixing magnitude. The bounds are conditional statements about attained factors, not convergence guarantees for this objective. They control absolute blocks, not automatically the normalized fractions in Section~\ref{sec:coordinates}.
-
-\paragraph{What the scaler penalty constrains.}
-Let $P=U_LU_L^\top$ and $E=\diag(\epsilon)$. An equivalent expression is
-\begin{equation}
-\fro{M_E}^2=\tfrac12\fro{EP-PE}^2
-=\sum_{i<j}P_{ij}^2(\epsilon_i-\epsilon_j)^2.
-\label{eq:commutator}
-\end{equation}
-The edge weights $P_{ij}^2$ penalize differences between ambient scales. Zero penalty requires constant scales on each connected component; a connected graph permits only $E=aI$. The right side is analogous. Unlike a Gram-orthonormality penalty, this constrains commutation with a fixed subspace projector. Appendix~\ref{app:commutator} gives the proof.
-
-This also exposes a competing explanation: scaler homogenization. Under the penalty alone, gradient flow preserves the mean scaler and damps its nonconstant components; task gradients and weight decay can change that mean. Different projectors share scalar zero-penalty solutions but generally penalize nonuniform scales differently. For a uniformly random rank-$k$ projector, the expected penalty is exactly $\frac{k(d-k)}{(d-1)(d+2)}\|\epsilon-\bar\epsilon\mathbf1\|_2^2$ (Appendix~\ref{app:randompenalty}). Thus a pretrained-frame intervention must be compared with centered-scaler and random-projector controls before its effect is attributed to spectral specificity.
-
-The factorization introduces a further distinction. Replacing $E$ by $aE$ and $D$ by $D/a$ leaves either effective update in~\eqref{eq:unified} unchanged, while replacing $(\mu,\nu)$ by $(a\mu,\nu/a)$. Thus a decrease in one raw mixing magnitude and an increase in the other is insufficient to establish redistribution of the matrix update. For the freely scalable tail-only core, $E,D\mapsto aE,aD$ and $H\mapsto H/a^2$ can reduce both raw penalties without changing $\Delta$. This latter limit violates the bounded-core condition when $a\to0$. These identities motivate measuring factor norms and effective blocks alongside the regularizer, and comparing its effect against update-magnitude control.
-\section{Spectral geometry under scaler regularization}
-\label{sec:experiments}
-
-We ask how scaler regularization changes block allocation, how one- and two-sided penalties differ, and whether the instruments learn the downstream tasks. The intervention is primary; the broader benchmarks supply context.
-
-\subsection{Study design and measurements}
-The intervention uses RoBERTa-base~\citep{liu2019roberta} on RTE, MRPC, CoLA, STS-B, and SST-2. Adapters modify the query, key, value, and attention-output projections in each of its 12 layers, giving 48 adapted matrices. The configuration adapts 256 coefficients with $k_{\mathrm{vec}}=0$, holding rotations out of the comparison. The analysis uses the practical leading-plus-tail form~\eqref{eq:unified}. The three conditions are A: no penalty, B: $\lambda_E=10^{-3},\lambda_D=0$, and C: $\lambda_E=\lambda_D=10^{-3}$. The backbone is frozen and the task head trains jointly with the adapter.
-
-The analysis comprises seeds 42 and 17 for RTE, MRPC, CoLA, and STS-B, and seed 42 for SST-2: nine paired task/seed comparisons. Spectral quantities are measured at each run's validation-selected checkpoint, averaged over its 48 matrices, then averaged over seeds within a task. Runs, rather than layers, are the units of replication. Checkpoint selection is shared as a rule, not necessarily as an optimizer step. Appendix~\ref{app:details} gives the training settings, metric definitions, and complete three-condition results.
-
-The diagnostic cutoff is $k=512$ in each $768\times768$ matrix, leaving the 256 adapted tail directions. Table~\ref{tab:mixingmain} reports task score, relative norm $\rho_F$, and cross energy. Appendix~\ref{app:mixingtable} retains $q_{\off}$ and both largest-principal-angle sines. The latter saturate near one under A: a single boundary direction can cause this, so they are supplementary indicators, not measures of how much the entire leading subspace moved.
-
-\begin{table}[t]
-\centering
-\caption{All three conditions: A unregularized, B left-only, C two-sided. Entries are mean$\pm$sample SD across $n$ seeds; $n=1$ is a single run, with no estimated dispersion. Scores and cross fractions are multiplied by 100. Spectral metrics first average 48 modules within each selected checkpoint. Scores use MRPC F1 here, unlike Table~\ref{tab:glue_results_base_large}. Per-seed values and selection steps appear in Appendix~\ref{app:mixingtable}.}
-\label{tab:mixingmain}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llcccc}
-\toprule
-Task & Condition & $n$ & Task score & $\rho_F$ & Cross energy (\%) \\
-\midrule
-% BEGIN GENERATED MIXING SUMMARY
-% Generated by scripts/build_mixing_tables.py from data/legacy_mixing/*.csv.
-RTE & A & 2 & $77.08 \pm 1.28$ & $0.3787 \pm 0.0142$ & $43.41 \pm 0.15$ \\
-RTE & B & 2 & $79.06 \pm 1.02$ & $0.2847 \pm 0.0212$ & $43.55 \pm 0.43$ \\
-RTE & C & 2 & $76.71 \pm 0.77$ & $0.0626 \pm 0.0004$ & $27.45 \pm 1.93$ \\
-\midrule
-MRPC & A & 2 & $92.15 \pm 0.45$ & $0.3174 \pm 0.0571$ & $43.25 \pm 0.14$ \\
-MRPC & B & 2 & $92.40 \pm 0.06$ & $0.1958 \pm 0.0552$ & $40.32 \pm 2.13$ \\
-MRPC & C & 2 & $91.32 \pm 0.04$ & $0.0430 \pm 0.0109$ & $10.08 \pm 3.47$ \\
-\midrule
-CoLA & A & 2 & $64.09 \pm 1.40$ & $0.3076 \pm 0.0048$ & $43.75 \pm 0.10$ \\
-CoLA & B & 2 & $64.30 \pm 1.11$ & $0.2057 \pm 0.0041$ & $42.38 \pm 0.23$ \\
-CoLA & C & 2 & $63.14 \pm 1.22$ & $0.0334 \pm 0.0208$ & $21.09 \pm 5.63$ \\
-\midrule
-STS-B & A & 2 & $90.80 \pm 0.27$ & $0.3820 \pm 0.0030$ & $43.46 \pm 0.01$ \\
-STS-B & B & 2 & $90.48 \pm 0.13$ & $0.2506 \pm 0.0702$ & $41.96 \pm 0.23$ \\
-STS-B & C & 2 & $90.58 \pm 0.39$ & $0.0679 \pm 0.0128$ & $13.71 \pm 1.36$ \\
-\midrule
-SST-2 & A & 1 & $94.72$ & $0.2820$ & $43.33$ \\
-SST-2 & B & 1 & $94.38$ & $0.2676$ & $40.19$ \\
-SST-2 & C & 1 & $93.69$ & $0.0557$ & $17.21$ \\
-% END GENERATED MIXING SUMMARY
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
-
-\subsection{Two-sided control changes both placement and magnitude}
-Cross share, $q_{\off}$, and $\rho_F$ fall in all nine A/C pairs. Scores decrease in seven pairs, tie in one, and increase in one; task-mean decreases are roughly $0.2$--$1.0$ points. Table~\ref{tab:mixingmain} exposes the seed variability rather than treating these differences as significant or performance-equivalent. The paired data are descriptive: shared tasks, data, and model preclude treating nine signs or hundreds of modules as independent evidence for a universal effect.
-
-Mean $\rho_F$ falls from $0.28$--$0.38$ to $0.03$--$0.07$, while $q_{\off}$ falls from approximately $0.95$ to $0.81$--$0.88$. A is a substantial perturbation under this recipe, not a calibrated reference for typical LoRA magnitudes. Since the task head also trains, nonzero backbone displacement alone cannot establish its necessity for task learning. The observed endpoint is reduced cross interaction, not near-exact tail confinement.
-
-\subsection{A magnitude-matched control separates placement from shrinkage}
-\label{sec:matchedcontrol}
-The preceding comparison leaves open a central question: does magnitude-only regularization reproduce the cross-band suppression induced by the mixing penalty? We answer it with a prospective, registered control study on RTE and MRPC under a new common protocol: the same 48-matrix placement and practical form, sequence length 128, effective batch 32, an inner training/selection split with the official validation set held aside, fixed optimizer-step endpoints from the reference epoch budgets (5{,}670 steps for RTE; 2{,}760 for MRPC), and a separate calibration seed (31415). Three arms share identical initialization and data order: unregularized, the two-sided mixing penalty ($\lambda_E=\lambda_D=10^{-3}$), and an effective-delta Frobenius penalty $\beta\,\mathrm{mean}_\ell\,\|\Delta_\ell\|_F^2/\|W_{\mathrm{pre},\ell}\|_F^2$ whose dose was selected \emph{only} to match the mixing arm's pooled relative update norm at the fixed endpoint, under a predeclared $\pm5\%$ rule with one bounded, norms-only refinement round per task (Appendix~\ref{app:matchedprotocol}). Both tasks matched at the calibration seed: RTE at $\beta=7.5$ ($4.1\%$ error) and MRPC at $\beta=27$ ($2.3\%$ error). A nine-run confirmation per task (three arms $\times$ three seeds) followed with every dose frozen.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/focused_cross_vs_norm.pdf}
-\caption{Cross-band energy share versus achieved update magnitude. The Frobenius control's full dose frontier (calibration seed; smaller markers) and the unregularized endpoint lie on one flat curve on both tasks; mixing-regularized runs (diamonds; open markers are the three confirmation seeds) sit far below at the same achieved magnitude (dotted line: the mixing arm's calibration norm). Calibration points are exploratory; confirmation points are the registered seed replicates.}
-\label{fig:crossvsnorm}
-\end{figure}
-
-% BEGIN GENERATED FOCUSED CONFIRMATION
-% Generated by scripts/build_focused_tables.py from data/focused_norm/runs.csv.
-\begin{table}[t]
-\centering
-\caption{Confirmation of the matched-magnitude contrast across seeds 42, 17, and 123
-(mean$\pm$sample SD, $n=3$), fixed-step endpoints, common protocol of
-Section~\ref{sec:matchedcontrol}. Cross, LL, and TT are pooled energy percentages;
-the probe is masked-token cross-entropy under the frozen original MLM head;
-accuracy is the inner-selection split at the fixed step, scaled by 100. The norm-control
-row states the per-seed achieved matching errors
-$e_s=|\rho_{\mathrm{NORM},s}/\rho_{\mathrm{MIX},s}-1|$ against the declared
-$\pm5\%$ rule; matching status is measured on these runs, not inherited from calibration.}
-\label{tab:matchedconfirmation}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llcccccc}
-\toprule
-Task & Condition & $\rho_F$ & Cross (\%) & LL (\%) & TT (\%) & Probe CE & Acc \\
-\midrule
-RTE & Unregularized & $0.2751 \pm 0.0041$ & $43.7 \pm 0.0$ & $45.9 \pm 0.1$ & $10.4 \pm 0.0$ & $2.89 \pm 0.17$ & $72.4 \pm 0.6$ \\
-RTE & Two-sided mixing & $0.0736 \pm 0.0046$ & $10.0 \pm 0.5$ & $45.2 \pm 0.9$ & $44.8 \pm 1.4$ & $2.94 \pm 0.29$ & $72.6 \pm 3.1$ \\
-RTE & Norm control ($\beta=7.5$; match errors 8.0, 5.2, 7.5\%) & $0.0759 \pm 0.0016$ & $46.2 \pm 0.0$ & $40.7 \pm 0.0$ & $13.1 \pm 0.0$ & $2.61 \pm 0.08$ & $74.6 \pm 0.5$ \\
-\midrule
-MRPC & Unregularized & $0.1802 \pm 0.0009$ & $42.4 \pm 0.1$ & $48.0 \pm 0.1$ & $9.6 \pm 0.1$ & $2.75 \pm 0.07$ & $84.9 \pm 0.2$ \\
-MRPC & Two-sided mixing & $0.0407 \pm 0.0017$ & $4.5 \pm 0.3$ & $69.8 \pm 1.1$ & $25.8 \pm 1.4$ & $2.84 \pm 0.17$ & $84.5 \pm 0.5$ \\
-MRPC & Norm control ($\beta=27$; match errors 5.5, 6.7, 0.1\%) & $0.0423 \pm 0.0005$ & $46.2 \pm 0.1$ & $40.6 \pm 0.2$ & $13.2 \pm 0.1$ & $2.57 \pm 0.11$ & $84.8 \pm 0.2$ \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
-% END GENERATED FOCUSED CONFIRMATION
-
-Table~\ref{tab:matchedconfirmation} and Figure~\ref{fig:crossvsnorm} give the confirmed result. At overlapping update magnitudes (per-seed matching errors $0.1$--$8.0\%$; three of six paired seeds marginally exceed the calibration tolerance, an observed seed-level norm variability we report rather than re-tune), the Frobenius control leaves the cross-band share at or slightly above the unregularized level ($46.2\%$ versus $42$--$44\%$), while the mixing penalty reduces it to $10.0\pm0.5\%$ (RTE) and $4.5\pm0.3\%$ (MRPC). In absolute terms the mixing arm carries roughly $5\times$ (RTE) and $11\times$ (MRPC) less cross-band energy than the matched control, and $60\times$/$185\times$ less than unregularized adaptation. Across the entire dose frontier, spanning pooled norms from $0.36$ to $0.02$, the control's cross share stays within $43$--$51\%$ and drifts mildly \emph{upward} at extreme shrinkage---the opposite direction of the mixing effect. Within this tested family, magnitude control does not reproduce the suppression; the geometric effect is attributable to the pretrained-frame penalty, though universal spectral specificity would require the deferred frame and scaler controls.
-
-The surviving update occupies different bands on different tasks: on RTE the mixing arm is nearly block-diagonal ($45.2\pm0.9\%$ leading, $44.8\pm1.4\%$ tail), while on MRPC it is leading-dominated ($69.8\pm1.1\%$), and the insertion offset accounts for almost none of this (learned-since-insertion decompositions differ by under five points). Fixed-endpoint task accuracies are statistically indistinguishable across arms on both tasks (RTE $72.4/72.6/74.6\pm0.5$--$3.1$; MRPC $84.9/84.5/84.8\pm0.2$--$0.5$), and every run passes an explicit learning-health check. The frozen-original-head probe is a secondary functional measurement: all trained arms sit $0.5$--$0.9$ nats above the genuine unadapted reference ($2.10$), and the mixing arm is not closer to it than the matched control---geometric confinement does not by itself track pretrained-behavior proximity.
-
-\subsection{Which blocks change under mixing control?}
-The aggregate off-tail ratio combines direct leading adaptation and cross interaction. To separate them, we reconstruct the four energy fractions from the saved per-matrix diagnostics, square before averaging, and retain equal weighting of modules within each run. Figure~\ref{fig:allocation} shows the resulting leading, cross, and tail allocation. Appendix~\ref{app:blockallocation} gives all four blocks and accounts for the small finite-precision difference between the recorded coordinate and ambient norms.
-
-\begin{figure}[t]
-\centering
-% BEGIN GENERATED BLOCK FIGURE
-\begin{minipage}[t]{0.19\linewidth}
-\centering\small RTE ($n=2$)\par\smallskip
-\allocationbar{A}{0.4638846}{0.4340701}{0.1020454}\par\smallskip
-\allocationbar{B}{0.4363037}{0.4355409}{0.1281555}\par\smallskip
-\allocationbar{C}{0.4430157}{0.2745369}{0.2824474}\par\smallskip
-\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.19\linewidth}
-\centering\small MRPC ($n=2$)\par\smallskip
-\allocationbar{A}{0.4656407}{0.4324835}{0.1018758}\par\smallskip
-\allocationbar{B}{0.4962905}{0.4031637}{0.1005458}\par\smallskip
-\allocationbar{C}{0.6364850}{0.1008374}{0.2626776}\par\smallskip
-\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.19\linewidth}
-\centering\small CoLA ($n=2$)\par\smallskip
-\allocationbar{A}{0.4574255}{0.4374997}{0.1050748}\par\smallskip
-\allocationbar{B}{0.4561447}{0.4238463}{0.1200090}\par\smallskip
-\allocationbar{C}{0.5698152}{0.2108519}{0.2193329}\par\smallskip
-\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.19\linewidth}
-\centering\small STS-B ($n=2$)\par\smallskip
-\allocationbar{A}{0.4625905}{0.4346104}{0.1027991}\par\smallskip
-\allocationbar{B}{0.4634592}{0.4196426}{0.1168983}\par\smallskip
-\allocationbar{C}{0.5226626}{0.1371491}{0.3401883}\par\smallskip
-\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.19\linewidth}
-\centering\small SST-2 ($n=1$)\par\smallskip
-\allocationbar{A}{0.4651930}{0.4333157}{0.1014913}\par\smallskip
-\allocationbar{B}{0.4875879}{0.4019357}{0.1104764}\par\smallskip
-\allocationbar{C}{0.5573737}{0.1720633}{0.2705630}\par\smallskip
-\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
-\end{minipage}
-% END GENERATED BLOCK FIGURE
-\par\smallskip
-{\small\textcolor{black!80}{\rule{1em}{1ex}} Leading--leading\quad
-\textcolor{black!45}{\rule{1em}{1ex}} Cross\quad
-\textcolor{black!15}{\rule{1em}{1ex}} Tail--tail}
-\caption{Leading/cross/tail allocation, averaged over modules then $n$ seeds. A: no penalty; B: left-only; C: two-sided. N is the dimension-only reference $(4/9,4/9,1/9)$, not a training run. C reduces cross share but retains a leading block; Table~\ref{tab:mixingmain} supplies magnitude and dispersion, and Appendix~\ref{app:blockallocation} supplies each seed's four fractions.}
-\label{fig:allocation}
-\end{figure}
-
-Without regularization, cross blocks contain approximately 43\% of update energy, the leading block 46\%, and the tail 10\%. Under C, cross share is 10--27\%, tail share 22--34\%, and leading share 44--64\%; the last rises in four task means. This is consistent with Proposition~\ref{prop:mixing}, which permits a leading modification after cross decoupling. It is not evidence that this modification is task-specific: constant scalers leave an identity-shaped leading core, and the measured delta includes initialization. Appendix~\ref{app:offset} quantifies the prescribed initial contribution. A larger fraction also need not mean larger absolute energy.
-
-Run means conceal module heterogeneity (Appendix~\ref{app:blockallocation}); they do not show that every layer's leading subspace is stabilized.
-
-\subsection{One-sided control and factor asymmetry}
-B has the highest mean score on RTE, MRPC, and CoLA while its cross shares remain approximately 40--44\% (Table~\ref{tab:mixingmain}). Better task scores therefore do not coincide with stronger cross suppression across these conditions. The variation is too sparsely replicated to identify a benefit or its cause. In all nine A/B pairs, $\mu_E$ falls while $\nu_D$ rises; the reciprocal factor symmetry in Section~\ref{sec:mixing} shows why this alone cannot demonstrate transfer of learning to the unpenalized side. Optimization and generic regularization remain alternative explanations.
-
-\paragraph{Interpreting normalized geometry.}
-The changed norm ratios exclude an explanation based only on multiplying the \emph{same trained matrix} by a scalar. They do not exclude the possibility that magnitude-only regularization during training would produce similar geometry. The distinction is between an observed change in normalized placement and a magnitude-independent benefit, which requires a norm-matched training control. These selected endpoints also concern update geometry, not the time at which mixing arises during learning.
-
-An isotropically oriented perturbation has expected leading/cross/tail fractions $k^2/d^2$, $2kr/d^2$, and $r^2/d^2$ (Appendix~\ref{app:dimension}). Figure~\ref{fig:allocation} makes this dimension-only reference explicit. A lies nearby, but agreement of three aggregate fractions is not a test of isotropy or evidence that pretrained structure is unused. Equal-dimensional random-frame controls and measurements of other adapters are needed to distinguish those interpretations.
-
-\subsection{Downstream viability of the instruments}
-Table~\ref{tab:glue_results_base_large} retains the six-task GLUE subset on both RoBERTa backbones as evidence of task learning. Comparing the spectral rows, the rotated core has a higher average on base and a lower average on large: rotations are not uniformly better. Proposition~\ref{prop:approximation} concerns available directions, not guaranteed performance gains. The mixing intervention itself disables rotations.
-
-\begin{table}[t]
-\centering
-\caption{Reported RoBERTa results on a six-task GLUE subset, mean$\pm$SD, multiplied by 100. Imported reference runs~\citep{albert2025randlora} and spectral runs use different tuning protocols and are grouped separately; this is not a matched ranking. MRPC is accuracy throughout. Avg6 is the mean of the six displayed metrics, not a full GLUE score; MNLI and QQP are absent.}
-\label{tab:glue_results_base_large}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{@{}lccccccc@{}}
-\toprule
-Method & SST-2 & MRPC Acc. & CoLA & QNLI & RTE & STS-B & Avg6 \\
-\midrule
-% BEGIN GENERATED GLUE ROWS
-\multicolumn{8}{c}{RoBERTa-base} \\
-\midrule
-\multicolumn{8}{l}{\textit{Imported reference runs (RandLoRA protocol; five runs)}} \\
-VeRA-1024 & 91.9{\scriptsize$\pm$0.4} & 88.4{\scriptsize$\pm$1.2} & 59.9{\scriptsize$\pm$2.2} & 90.5{\scriptsize$\pm$0.4} & 74.9{\scriptsize$\pm$1.5} & 90.4{\scriptsize$\pm$0.2} & 82.67 \\
-LoRA-4 & 94.4{\scriptsize$\pm$0.5} & 87.3{\scriptsize$\pm$0.2} & 58.4{\scriptsize$\pm$0.8} & 92.7{\scriptsize$\pm$0.2} & 71.5{\scriptsize$\pm$1.2} & 90.5{\scriptsize$\pm$0.1} & 82.47 \\
-RandLoRA-64 & 92.2{\scriptsize$\pm$0.3} & 88.0{\scriptsize$\pm$1.5} & 59.4{\scriptsize$\pm$2.1} & 91.3{\scriptsize$\pm$0.4} & 74.7{\scriptsize$\pm$1.9} & 90.3{\scriptsize$\pm$0.2} & 82.65 \\
-\addlinespace
-\multicolumn{8}{l}{\textit{Spectral instruments (reported protocol; six seeds)}} \\
-UIOrthoLoRA & 94.8{\scriptsize$\pm$0.3} & 92.0{\scriptsize$\pm$1.0} & 64.4{\scriptsize$\pm$1.0} & 92.4{\scriptsize$\pm$0.1} & 78.7{\scriptsize$\pm$1.0} & 90.7{\scriptsize$\pm$0.1} & 85.50 \\
-UILinLoRA & 93.1{\scriptsize$\pm$1.0} & 90.0{\scriptsize$\pm$1.0} & 65.8{\scriptsize$\pm$1.0} & 92.4{\scriptsize$\pm$0.2} & 76.2{\scriptsize$\pm$1.0} & 90.6{\scriptsize$\pm$0.1} & 84.68 \\
-\midrule
-\multicolumn{8}{c}{RoBERTa-large} \\
-\midrule
-\multicolumn{8}{l}{\textit{Imported reference runs (RandLoRA protocol; five runs)}} \\
-VeRA-256 & 95.8{\scriptsize$\pm$0.3} & 89.3{\scriptsize$\pm$1.2} & 65.3{\scriptsize$\pm$1.1} & 94.1{\scriptsize$\pm$0.3} & 81.6{\scriptsize$\pm$0.8} & 91.8{\scriptsize$\pm$0.1} & 86.32 \\
-LoRA-4 & 95.5{\scriptsize$\pm$0.2} & 87.2{\scriptsize$\pm$0.7} & 64.7{\scriptsize$\pm$1.2} & 94.5{\scriptsize$\pm$0.1} & 83.6{\scriptsize$\pm$0.4} & 91.8{\scriptsize$\pm$0.1} & 86.22 \\
-RandLoRA-100 & 95.5{\scriptsize$\pm$0.3} & 90.1{\scriptsize$\pm$0.4} & 67.4{\scriptsize$\pm$0.3} & 94.1{\scriptsize$\pm$0.3} & 84.5{\scriptsize$\pm$0.3} & 91.4{\scriptsize$\pm$0.6} & 87.17 \\
-\addlinespace
-\multicolumn{8}{l}{\textit{Spectral instruments (reported protocol; six seeds)}} \\
-UIOrthoLoRA & 96.3{\scriptsize$\pm$0.3} & 92.5{\scriptsize$\pm$0.2} & 67.4{\scriptsize$\pm$0.5} & 95.0{\scriptsize$\pm$0.1} & 86.0{\scriptsize$\pm$0.2} & 92.1{\scriptsize$\pm$0.2} & 88.22 \\
-UILinLoRA & 96.3{\scriptsize$\pm$0.2} & 93.4{\scriptsize$\pm$0.7} & 68.7{\scriptsize$\pm$1.0} & 94.7{\scriptsize$\pm$0.1} & 86.0{\scriptsize$\pm$1.1} & 92.0{\scriptsize$\pm$0.2} & 88.52 \\
-% END GENERATED GLUE ROWS
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
-
-The imported LoRA and VeRA rows are RandLoRA's reference runs, not the original methods' canonical results. Different ranks, schedules, seed aggregation, and intermediate-task initialization can materially change such comparisons~\citep{hu2022lora,kopiczko2023vera}. The table preserves the reported observations without treating their cross-protocol gaps as method effects. Appendix~\ref{app:cost} gives configuration-derived costs separately from historical parameter counts that require run-level reconciliation.
-
-GPT-2 Medium generation provides additional task-learning evidence (Appendix~\ref{app:generation}), but no matched spectral measurements. Functional retention requires a separate, matched evaluation (Appendix~\ref{app:retention}).
-
-\paragraph{Computational scope.}
-The unrotated $d=768,r=256$ instrument trains 1,792 entries per matrix but stores 1,179,648 frozen basis entries: 56.6M across 48 matrices, or 113.2 MB at two bytes per entry. Two full-basis products cost approximately $2d^2$ multiply--accumulates per token, versus $2d\ell$ for rank-$\ell$ LoRA, excluding regularization and backward computation. These are arithmetic counts, not measured speed ratios. Merging removes the inference branch. Appendix~\ref{app:cost} gives full accounting, and Appendix~\ref{app:loggedcost} reports the available runtime/memory logs without inferring matched throughput.
-\section{Related work}
-\label{sec:related}
-
-\paragraph{Efficient parameterizations.}
-LoRA restricts update rank~\citep{hu2022lora}; AdaLoRA allocates an update's singular-value budget, not a fixed pretrained SVD~\citep{zhang2023adalora}. VeRA and RandLoRA learn scales around random factors, while DoRA and FourierFT use weight decomposition and Fourier coefficients~\citep{kopiczko2023vera,albert2025randlora,liu2024dora,gao2024parameter}. Intrinsic-dimension studies establish the usefulness of restricted parameter spaces~\citep{li2018measuring,aghajanyan2020intrinsic}; their dimension alone does not determine spectral placement.
-
-\paragraph{Pretrained spectral information.}
-SVDiff and SVFT precede fixed-basis coefficient tuning~\citep{han2023svdiff,lingam2024svft}. PiSSA and MiLoRA initialize free factors from leading and minor components, respectively~\citep{meng2024pissa,wang2025milora}; initialization is not continued confinement. KaSA combines a truncated pretrained component with singular-value-aware adaptation~\citep{wang2025kasa}. LoRA-XS and CorDA provide further decomposition-guided choices~\citep{balazy2024lora,yang2024corda}. Our focus is the constraint each choice imposes, not novelty of the SVD frame.
-
-\paragraph{Rotations and scalers.}
-Spectral Adapter's rotational form replaces a leading core by $R_U\Sigma_LR_V^\top$, giving $C_{LL}=R_U\Sigma_LR_V^\top-\Sigma_L$ and zero other blocks~\citep{zhang2024spectral}. Our tail instrument instead adds a trainable core to the frozen pretrained tail. PSOFT acts in a principal subspace with compact orthogonal transforms and vector relaxations~\citep{wu2026psoft}; these are important antecedents, not identical update forms. OFT and BOFT provide ambient orthogonal transforms~\citep{qiu2023oft,liu2024boft}. SSF and $(\mathrm{IA})^3$ learn feature scales~\citep{lian2022ssf,liu2022ia3}, while DoRA separates weight magnitude and direction. Diagonal scaling has these precedents; our commutator identity characterizes a scaler relative to a fixed projector, not every component of those methods.
-
-\paragraph{Orthonormality versus confinement.}
-SORSA trains principal singular factors, freezes a residual, and penalizes deviations of the factors' Gram matrices from identity~\citep{cao2025sorsa}. Our rotations preserve prescribed spans; our scaler penalty acts on fixed-projector overlaps. Orthonormal factors can span a different subspace, so these constraints are distinct. This is an analytical contrast, not a measured advantage over SORSA.
-
-\paragraph{Geometry, intervention, and retention.}
-\citet{shuttleworth2025illusion} compare LoRA and full-fine-tuning spectra and intervene on intruder directions; \citet{xie2026intruder} additionally studies spectral thresholds and norm-matched interventions. Those interventions do not supply our missing within-family controls. CLoRA regularizes subspaces~\citep{lu2025controlled}; \citet{biderman2024lora} study adaptation and forgetting. We focus on ambient scaling around spectral cores, distinguishing factor-level constraints from effective-update measurements and behavioral outcomes.
-\section{Discussion and limitations}
-\label{sec:discussion}
-
-\paragraph{Reading spectral evidence.}
-A spectral report should declare the pretrained checkpoint and cutoff rule; separate total and since-insertion deltas; report all block energies and their dimension-only reference; and pair norm and subspace diagnostics with task outcomes on the same checkpoint. The cutoff here is determined by the 256-direction adaptation span, not selected for a large spectral gap. A reusable metric specification, including non-maximal-angle drift and initialization checks, appears in Appendix~\ref{app:reportcard}. This prevents one ``preservation'' score from conflating reduced interaction, residual leading modification, and update shrinkage.
-
-\paragraph{What the tail reference does and does not imply.}
-Our projection identities require no task-alignment assumption, but do not establish the tail's empirical suitability. That requires equal-dimensional leading, tail, and mixed/random controls. Increased within-tail expressivity likewise need not improve a trained model: useful directions, optimization, and the statistical cost of added capacity all matter.
-
-\paragraph{Scope of the intervention.}
-The five-task intervention has limited replication, a single penalty strength, and validation-selected endpoints at unequal steps. Norm-matched, centered-scaler, random-projector, and head-only controls are absent. The data therefore cannot separate spectral specificity from shrinkage, homogenization, or head-dominated learning. Nor do the archived ratios determine the initialization-corrected block energies or identity alignment of the leading core. Our approximation identities concern representability; the mixing bounds require attained factor norms, and ranked stability additionally requires spectral separation.
-
-\paragraph{External validity and comparison coverage.}
-The block measurements use one backbone and one adapter family. Although the coordinates apply algebraically to LoRA, full fine-tuning, and spectral alternatives, the present data do not demonstrate cross-method geometric differences. The supporting benchmarks are not uniformly tuned comparisons. Testing the same controls and behavior probes on a generative backbone is necessary before extending the findings beyond this setting.
-
-\section{Conclusion}
-\label{sec:conclusion}
-Spectral confinement, cross-block decoupling, and ranked-subspace stability are distinct. Tail rotations change within-span capacity; ambient scalers can break confinement, and suppressing their mixing leaves a leading contribution when the core contains one. The archived intervention exhibits that distinction alongside substantial shrinkage, without isolating spectral specificity. A defensible account of adaptation must separate its reference frame, insertion offset, effective magnitude, and block allocation. This is the role of the spectral instruments, independently of which adapter scores highest.
-\clearpage
-\section*{Reproducibility statement}
-Complete proofs appear in Appendix~\ref{app:proofs}, training and metric definitions in Appendix~\ref{app:details}, and computational costs in Appendix~\ref{app:cost}. Equation~\eqref{eq:unified} specifies the practical parameterization separately from the tail-only reference. Archived summary and module-level records, with analysis scripts, reproduce the mixing tables and block-allocation figure; a separate synthetic-matrix script checks the algebraic identities and boundary cases. These checks do not rerun model training. Supporting benchmark tables distinguish imported comparisons from the spectral-variant results.
-
-\begin{samepage}
-\section*{AI use statement}
-Generative AI tools were used to assist with restructuring and drafting the manuscript, literature lookup, mathematical formulation and proof drafting, interpretation of existing experimental records, and design of additional experiments. AI assistance was also used to write scripts for consistency checks and table reconstruction. The numerical experimental results reported here come from existing research records, not generated or simulated outcomes attributed to unperformed training runs.
-\par\end{samepage}
-
-\begin{samepage}
-\section*{Ethics statement}
-The study analyzes adaptation of existing language models using existing benchmarks. Weight-space stability does not certify factual correctness, fairness, privacy, or safe behavior. Efficient adaptation can reduce training costs but can also facilitate harmful specialization or preserve biases present in a base model. Our structural claims should not be interpreted as deployment guarantees.\par
-\end{samepage}
-\bibliography{reference}
-\bibliographystyle{iclr2027_conference}
-\clearpage
-\appendix
-\section{Proofs and boundary cases}
-\label{app:proofs}
-
-\subsection{Fixed coefficients and within-tail flexibility}
-\label{app:approximation}
-Let $\widehat G=U^\top G V$ and partition it into the four coordinate blocks. Orthogonal invariance gives
-\begin{equation}
-\fro{G-U_T H V_T^\top}^2
-=\fro{\widehat G_{LL}}^2+\fro{\widehat G_{LT}}^2
-+\fro{\widehat G_{TL}}^2+\fro{\widehat G_{TT}-H}^2.
-\end{equation}
-For a free core the last term is minimized at $H=\widehat G_{TT}$. For a diagonal core it is minimized by $h_i=(\widehat G_{TT})_{ii}$, leaving the off-diagonal entries unchanged. Substitution proves Proposition~\ref{prop:approximation}. An SVD of the minimizing free core gives the representation~\eqref{eq:rotations}; this is an existence statement, not a guarantee for a particular optimizer or partial-rotation block.
-
-If the free core is additionally constrained to rank at most $q\le r$, applying truncated SVD to $\widehat G_{TT}$ gives minimum squared error
-\begin{equation}
-\fro{G}^2-\sum_{j=1}^q\sigma_j(\widehat G_{TT})^2.
-\end{equation}
-This expression keeps the outside-tail residual explicit. It should not be replaced by the best unrestricted rank-$q$ approximation error of the entire $G$, whose singular directions may lie outside the selected tail.
-
-\subsection{Proof of the unified mixing bounds}
-\label{app:mixingproof}
 Because $U,V$ are orthogonal,
 \begin{equation}
 C=A\begin{bmatrix}S_L&0\\0&H\end{bmatrix}B.
@@ -548,6 +517,41 @@ Then $\Delta_{ab}=P_a\Delta Q_b$ gives
 \end{equation}
 Pairwise Frobenius inner products vanish because complementary projectors multiply to zero. The tail here is the full complement and includes any unmatched null directions. A chosen adapter may span only a subset of it; that available subspace must not be confused with the diagnostic complement. Complete orthogonal bases recover the corresponding coordinate blocks. The square attention-matrix experiment avoids this issue, but an economy-SVD diagnostic is not automatically exhaustive for other layers.
 
+\subsection{Representative methods in the fixed coordinate frame}
+\label{app:methodcoordinates}
+These are algebraic consequences of update forms, not measurements on prior methods. Let $Q_J$ select the declared pretrained singular indices $J$, and write $A_a=U_a^\top A$, $B_b=B V_b$. Any additive update $AB$ has $C_{ab}=A_aB_b$; low rank alone forces no LL/LT/TL/TT block to vanish. A learned sum of low-rank terms has the sum of these blocks. A fixed-basis core instead has $\Delta=UQ_JKQ_J^\top V^\top$ and $C=Q_JKQ_J^\top$, so only its selected support is reachable.
+
+\begin{table}[t]
+\centering
+\caption{Representative coordinate placements, relative to the original $W_0$. ``All'' means no block is structurally forced to zero, not that every fitted update populates every block. The formulas absorb any fixed adapter scaling into the coefficients.}
+\label{tab:methodcoordinates}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llll}
+\toprule
+Method/form & Effective update & Coordinates $C$ & Permitted support\\
+\midrule
+LoRA / AdaLoRA & $AB$ / $APB$ & $U^\top ABV$ / $U^\top APBV$ & All\\
+PiSSA / MiLoRA & $AB-A_0B_0$ & $U^\top(AB-A_0B_0)V$ & All after free-factor training\\
+SVDiff & $U\diag(h)V^\top$ & $\diag(h)$ & LL, TT diagonal\\
+SVFT & $UMV^\top$ & $M$ & Declared sparsity pattern\\
+LoRA-XS & $U_J\Sigma_JRV_J^\top$ & $Q_J\Sigma_JRQ_J^\top$ & $J\times J$\\
+Spectral Adapter (rotation) & $U_L(R_U\Sigma_LR_V^\top-\Sigma_L)V_L^\top$ & leading core difference & LL\\
+PSOFT & $A'(K_P-I)B'$ & $Q_J(K_P-I)\Sigma_JQ_J^\top$ & $J\times J$ (principal)\\
+OFT / BOFT (pure left map) & $(R-I)W_0$ & $(U^\top RU-I)\Sigma$ & All\\
+HRA (pure right map) & $W_0(R-I)$ & $\Sigma(V^\top RV-I)$ & All\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+For LoRA and AdaLoRA the low-rank factors are trainable~\citep{hu2022lora,zhang2023adalora}. PiSSA/MiLoRA's retained residual means displacement from the original checkpoint subtracts the initial product; the leading/minor initialization does not freeze the factor spans~\citep{meng2024pissa,wang2025milora}. SVDiff changes singular values~\citep{han2023svdiff}; SVFT explicitly permits off-diagonal entries~\citep{lingam2024svft}. In LoRA-XS the published initialization includes $\Sigma_J$ in the left fixed factor, hence $C_{JJ}=\Sigma_JR$, not literally $R$ unless it is reparameterized~\citep{balazy2024lora}. If $J$ lies inside the declared leading set, every other diagnostic block is zero.
+
+The Spectral Adapter entry describes its rotational leading-core variant~\citep{zhang2024spectral}. OFT/BOFT and HRA use orthogonal $R$ in the pure forms shown~\citep{qiu2023oft,liu2024boft,yuan2024hra}; singular-value preservation is compatible with nonzero cross blocks. Left/right placement follows the stated weight convention. Additional learned magnitude scales, such as rescaled OFT, invalidate the pure orthogonal spectrum-preservation statement. These examples distinguish fixed support, a coefficient pattern, and an ambient isometry without equating any of them with preserved behavior. They do not establish cross-method empirical effects.
+
+For PSOFT, $A'=U_J$, $B'=\Sigma_JV_J^\top$, and $K_P=\diag(\alpha)R\diag(\beta)$ act inside a fixed principal core; the residual of $W_0$ stays frozen~\citep{wu2026psoft}. Thus $C_{JJ}=(K_P-I)\Sigma_J$, with zero support outside $J\times J$ even after vector relaxation. Its geometry condition $R^\top A^\top AR=A^\top A$ preserves column Gram geometry; choosing $A'=U_J$ reduces it to orthogonality. Our Corollary~\ref{cor:confinement} instead bounds support outside specified blocks. Neither property alone implies the other: a nonorthogonal core remains confined, while an ambient orthogonal map can mix blocks. Principal versus tail selection is a further independent choice.
+
+GaLore projects gradients into low-rank subspaces that can change during training~\citep{zhao2024galore}; the sum of such updates need not remain inside one fixed pretrained span. GOFT/qGOFT use Givens rotations and relaxed angular/norm constraints~\citep{ma2024qgoft}, complementing the ambient-transform examples above. These differ from a fixed update-support constraint.
+
 \subsection{A dimension-only reference for allocation}
 \label{app:dimension}
 Let the vectorized nonzero update have a rotationally invariant direction in the $d^2$-dimensional matrix space. By symmetry each squared coordinate has expected fraction $1/d^2$ of the total. The leading, cross, and tail blocks have $k^2$, $2kr$, and $r^2$ coordinates, respectively. Their expected energy fractions are therefore $k^2/d^2$, $2kr/d^2$, and $r^2/d^2$. For $r/d=1/3$, these are $4/9$, $4/9$, and $1/9$, with off-tail expectation $8/9$. The square root $\sqrt{8/9}\simeq0.9428$ is a reference on the norm-ratio scale, not the expectation $\mathbb E[q_{\off}]$. These calculations are a null reference, not a fitted model or a statistical test of the observed updates.
@@ -576,23 +580,38 @@ To verify the constant, write $P=QQ^\top$ for the first $k$ columns of a Haar or
 This expectation motivates a centered-scaler control. It does not equate one fixed random projector with the pretrained projector: their positive-eigenvalue directions and strengths generally differ. It also cannot be substituted into training when the learned scalers depend on the sampled projector. A shared scalar nullspace alone does not imply identical trajectories or endpoints.
 
 \subsection{Factor-scale identities}
+\label{app:factorscale}
 Write the inner matrix in~\eqref{eq:unified} as $K$. For any $a>0$, $(aE)K(D/a)=EKD$. Because each mixing operator is linear in its respective scaler, this transformation multiplies its two magnitudes by $a$ and $1/a$. For $S_L=0$, the additional identity
 \begin{equation}
 (aE)U_T(H/a^2)V_T^\top(aD)=E U_T H V_T^\top D
 \end{equation}
-shrinks both squared Frobenius penalties by $a^2$. It can make a raw factor penalty arbitrarily small with a fixed effective update if the core is allowed to diverge. It does not refute the bounded-factor confinement statement, nor does it imply that the optimizer follows this path. It motivates measuring the actual update and the norms appearing in the bound.
+shrinks both squared Frobenius penalties by $a^2$. It can make a raw factor penalty arbitrarily small with a fixed effective update if the core is allowed to diverge. This rescaling illustrates why the confinement bound assumes bounded factors. Measuring the effective update and the factor norms checks both sides of that statement.
+\subsection{Magnitude flow in effective and factor coordinates}
+\label{app:factorflow}
+For a freely optimized effective update $x=\operatorname{vec}(\Delta)$, isolated gradient flow of $\beta\|x\|_2^2$ is radial, $\dot x=-2\beta x$, and preserves block fractions. If $x=f(\theta)$ is parameterized by adapter factors with Jacobian $J_\theta$, ordinary parameter gradient flow instead induces
+\begin{equation}
+\dot x=-2\beta J_\theta J_\theta^\top x.
+\end{equation}
+This need not be radial. A task objective or adaptive optimizer introduces further changes. For an explicit penalty-only example, fix $E=\diag(2,1)$, $D=V=I$, let $U$ rotate by $\pi/6$, fix $S_L=1$ and train only $H=h$. Then
+\begin{equation}
+C=\begin{bmatrix}7/4&-\sqrt3h/4\\-\sqrt3/4&5h/4\end{bmatrix},\quad
+\|C\|_F^2=(13+7h^2)/4,\quad
+p_\cross=\frac{3(1+h^2)}{4(13+7h^2)}.
+\end{equation}
+Magnitude-only flow decreases $h$ and changes $p_\cross$ ($0.075$ at $h=1$, approaching $3/52$ at zero). Thus orthogonal invariance of the norm objective does not force a constant trained cross share. On the MIX side, connected-projector, penalty-only homogenization predicts a scalar limit; finite task-trained cross shares and identity residuals remain empirical quantities.
+
 \section{Experimental details}
 \label{app:details}
 
 \subsection{Backbones, tasks, and placement}
-The broader language-understanding evaluation uses RoBERTa-base and RoBERTa-large on a six-task GLUE subset: CoLA, SST-2, MRPC, STS-B, QNLI, and RTE~\citep{wang2018glue}. The mixing intervention uses RoBERTa-base on five of these tasks, excluding QNLI. Neither evaluation covers MNLI or QQP. Table~\ref{tab:glue_results_base_large} reports Matthews correlation for CoLA, accuracy for SST-2/MRPC/QNLI/RTE, and Pearson correlation for STS-B, consistently across spectral and imported comparisons. The separate mixing intervention reports F1 for MRPC; its other task metrics are unchanged. Results use the official validation splits. Pretrained backbone parameters are frozen, and adapters and the prediction head train jointly. The adapted modules are the query, key, value, and attention-output projections; feed-forward projections remain frozen.
+The broader language-understanding evaluation uses RoBERTa-base and RoBERTa-large on a six-task GLUE subset: CoLA, SST-2, MRPC, STS-B, QNLI, and RTE~\citep{wang2018glue}. The archived mixing intervention uses RoBERTa-base on five of these tasks, excluding QNLI. Neither covers MNLI or QQP. Table~\ref{tab:glue_results_base_large} reports Matthews correlation for CoLA, accuracy for SST-2/MRPC/QNLI/RTE, and Pearson correlation for STS-B. The archived mixing intervention instead reports MRPC F1. These historical evaluations use official validation splits; the new fixed-endpoint study uses an inner split and evaluates official validation only after freezing its confirmation checkpoints (Appendix~\ref{app:matchedprotocol}). Backbone parameters are frozen; adapters and the task head train jointly. The adapted matrices are the query, key, value, and attention-output projections; feed-forward projections remain frozen.
 
-\subsection{Training configuration}
-The training recipe uses AdamW with separate adapter and head learning rates, linear decay, a 6\% warmup fraction, batch size 64, and maximum sequence length 256. Table~\ref{tab:recipe} gives the task-specific settings recorded for RoBERTa-base. These task-specific configurations are not a common hyperparameter search across all methods in the supporting benchmark table.
+\subsection{Historical training configuration}
+The historical recipe uses AdamW with separate adapter and head learning rates, linear decay, a 6\% warmup fraction, batch size 64, and maximum sequence length 256. Table~\ref{tab:recipe} gives the recorded RoBERTa-base settings. The fresh controlled experiment uses its own common recipe, given in Appendix~\ref{app:freshrecipe}. Imported benchmark methods retain their source protocols.
 
 \begin{table}[ht]
 \centering
-\caption{RoBERTa-base training settings from the experimental protocol. The scaler value initializes both ambient diagonal scalers.}
+\caption{Historical RoBERTa-base training settings. The scaler value initializes both ambient diagonal scalers. The new fixed-endpoint study has a separate protocol (Appendix~\ref{app:matchedprotocol}).}
 \label{tab:recipe}
 \begin{tabular}{lccccc}
 \toprule
@@ -612,6 +631,8 @@ Adapter dropout is zero and the nominal adapter scaling coefficient is one. The 
 
 \subsection{Initialization and residual leading structure}
 \label{app:offset}
+The fixed choice $S_L=I_k$ gives equal inner coefficients to the leading directions, independent of their pretrained singular values. Choosing $S_L=\Sigma_L$ would instead weight this contribution by the pretrained spectrum. All practical conditions use the identity choice; the experiment does not compare these two designs.
+
 For the prescribed identity rotations, $E=D=s_0I$, $H=h_0I_r$, and $S_L=I_k$, insertion adds
 \begin{equation}
 \Delta_{\mathrm{init}}=s_0^2(U_LV_L^\top+h_0U_TV_T^\top),\quad
@@ -619,7 +640,7 @@ For the prescribed identity rotations, $E=D=s_0I$, $H=h_0I_r$, and $S_L=I_k$, in
 p_{LL,\mathrm{init}}=\frac{k}{k+rh_0^2}.
 \label{eq:initoffset}
 \end{equation}
-The cross blocks are initially zero. With $k=512,r=256$, the prescribed norm is approximately $0.22684$ for MRPC/STS-B/SST-2, $0.0022684$ for CoLA, and $0.0022628$ for RTE. Leading energy is approximately 99.50\% in the first four tasks and 99.995\% in RTE. These are analytical values from Table~\ref{tab:recipe}, not recovered checkpoint measurements. The missing pretrained matrix norms prevent inferring their relative contribution to the trained update from these values alone.
+The cross blocks are initially zero. With $k=512,r=256$, the prescribed norm is approximately $0.22684$ for MRPC/STS-B/SST-2, $0.0022684$ for CoLA, and $0.0022628$ for RTE. Leading energy is approximately 99.50\% in the first four tasks and 99.995\% in RTE. These are analytical values from Table~\ref{tab:recipe}, not recovered checkpoint measurements. These recipe calculations alone do not quantify the offset relative to each archived trained update. The fresh confirmation export separately supplies measured initial and learned deltas.
 
 For an attained leading block, define its identity alignment
 \begin{equation}
@@ -627,12 +648,12 @@ For an attained leading block, define its identity alignment
 0\le\eta_I\le1\quad(C_{LL}\ne0).
 \label{eq:identityalignment}
 \end{equation}
-It equals the fraction of leading-block Frobenius energy in the projection onto $\operatorname{span}(I_k)$. Under constant scalers and $S_L=I_k$, $C_{LL}=abI_k$ has $\eta_I=1$ when $ab\ne0$, even though cross mixing vanishes. This motivates reporting $C-C_{\mathrm{init}}$, $C_{LL}-(\operatorname{tr}C_{LL}/k)I_k$, and centered scaler norms alongside total block energies. Subtracting the initialization and subtracting a fitted identity component answer different questions; neither can be reconstructed by subtracting squared norms. The current summaries lack the signed blocks and scaler vectors needed for these trained measurements.
+It equals the fraction of leading-block Frobenius energy in the projection onto $\operatorname{span}(I_k)$. Under constant scalers and $S_L=I_k$, $C_{LL}=abI_k$ has $\eta_I=1$ when $ab\ne0$, even though cross mixing vanishes. This motivates reporting $C-C_{\mathrm{init}}$, $C_{LL}-(\operatorname{tr}C_{LL}/k)I_k$, and centered scaler norms alongside total block energies. Subtracting the initialization and subtracting a fitted identity component answer different questions; neither can be reconstructed by subtracting squared norms. The fresh confirmation export supplies identity alignment and residual energies, analyzed in Appendix~\ref{app:reviewidentity}; centered scaler vectors remain unavailable. The older archive lacks these trained measurements.
 
 \subsection{Seeds and checkpoint selection}
 The broader spectral evaluation protocol reports six seeds $\{42,123,2021,17,31415,1054\}$; Table~\ref{tab:glue_results_base_large} retains its reported means and across-seed standard deviations. The imported comparison uses five runs. The mixing analysis uses the nine task/seed pairs with archived paired summary and module-level records: seeds 42 and 17 for RTE, MRPC, CoLA, and STS-B, and 42 for SST-2. These records permit independent reaggregation of the intervention, whereas the broad GLUE table is a report of the original evaluation, not a newly reconstructed six-seed experiment.
 
-The ablation runner selects the best validation checkpoint using the same task metric subsequently reported, then reloads it for scoring and spectral measurements. Thus these validation scores are selection-conditioned, not untouched test estimates. Table~\ref{tab:mixingfull} reports each selected step; RTE seed-42 A/B/C select steps 312, 3198, and 1755. We report sample SD in the main table and every available seed in the appendix. With one or two seeds per task, these do not support precise confidence intervals or cross-task independence assumptions. Stepwise loss logs are not substituted for missing spectral trajectories.
+The archived ablation runner selects the best validation checkpoint by the reported task metric, then reloads it for scoring and spectral measurements. Table~\ref{tab:mixingfull} records each selected step; RTE seed-42 A/B/C select steps 312, 3198, and 1755. These are selection-set outcomes. Table~\ref{tab:mixingmain} gives sample SD for the two-seed settings and individual values for the one-seed setting. The fresh study instead fixes training endpoints before held-out evaluation.
 
 \subsection{Metric definitions and aggregation}
 For each adapted matrix, the reported metrics are
@@ -642,7 +663,59 @@ q_{\off}&=\fro{C_{\off}}/\fro{C},\\
 \mathrm{Leak}_{LL}&=\op{C_{LL}}/\op{\Delta},&
 C_{\off}&=\begin{bmatrix}C_{LL}&C_{LT}\\C_{TL}&0\end{bmatrix}.
 \end{align}
-The mixing magnitudes are operator norms, while their training penalties use squared Frobenius norms. Leading left and right drift use the largest-principal-angle sine between the leading subspaces of $W_0$ and $W_0+\Delta$. The tables average each metric across the 48 adapted modules within a run, then across available seeds. They do not pool module energies before normalization. Because each model is a single trained replicate, 48 modules do not constitute 48 independent experimental seeds.
+The mixing magnitudes are operator norms, while their penalties use squared Frobenius norms. Leading left and right drift use the largest-principal-angle sine between the leading subspaces of $W_0$ and $W_0+\Delta$. The archived tables average each metric across the 48 modules within a run, then across seeds; they do not pool module energies before normalization.
+
+The new fixed-endpoint study instead reports
+\begin{equation}
+\rho_{F,\mathrm{pool}}=\sqrt{\frac{\sum_\ell\|\Delta_\ell\|_F^2}{\sum_\ell\|W_{0,\ell}\|_F^2}},\qquad
+p_{ab,\mathrm{pool}}=\frac{\sum_\ell\|C_{ab,\ell}\|_F^2}{\sum_\ell\|\Delta_\ell\|_F^2}.
+\label{eq:pooledmetrics}
+\end{equation}
+Its equal-module comparison averages the individual $p_{ab,\ell}$ instead. A pooled fraction weights modules by update energy; an equal-module fraction does not. NORM's training objective averages squared module-relative norms, whereas calibration targets $\rho_{F,\mathrm{pool}}$. Neither matching a pooled norm nor rescaling it matches each module. Zero-update fractions are undefined. In both protocols, seeds, not modules, are the replication units.
+
+\subsection{Archived intervention: design and summary}
+\label{app:archiveddesign}
+The archived intervention uses RoBERTa-base~\citep{liu2019roberta} on RTE, MRPC, CoLA, STS-B, and SST-2. Adapters modify the query, key, value, and attention-output projections in each of its 12 layers, giving 48 adapted matrices. The configuration adapts 256 coefficients with $k_{\mathrm{vec}}=0$, holding rotations out of the comparison. The analysis uses the practical leading-plus-tail form~\eqref{eq:unified}. The three conditions are A: no penalty, B: $\lambda_E=10^{-3},\lambda_D=0$, and C: $\lambda_E=\lambda_D=10^{-3}$. The backbone is frozen and the task head trains jointly with the adapter.
+
+The analysis comprises seeds 42 and 17 for RTE, MRPC, CoLA, and STS-B, and seed 42 for SST-2: nine paired task/seed comparisons. Spectral quantities are measured at each run's validation-selected checkpoint, averaged over its 48 matrices, then averaged over seeds within a task. Runs, rather than layers, are the units of replication. Checkpoint selection is shared as a rule, not necessarily as an optimizer step. Appendix~\ref{app:details} gives the training settings, metric definitions, and complete three-condition results.
+
+The diagnostic cutoff is $k=512$ in each $768\times768$ matrix, leaving the 256 adapted tail directions. Table~\ref{tab:mixingmain} reports task score, relative norm $\rho_F$, and cross energy. Appendix~\ref{app:mixingtable} retains $q_{\off}$ and both largest-principal-angle sines. The latter saturate near one under A: a single boundary direction can cause this, so they are supplementary indicators, not measures of how much the entire leading subspace moved.
+
+\begin{table}[t]
+\centering
+\caption{All three conditions: A unregularized, B left-only, C two-sided. Entries are mean$\pm$sample SD across $n$ seeds; $n=1$ is a single run, with no estimated dispersion. Scores and cross fractions are multiplied by 100. Spectral metrics first average 48 modules within each selected checkpoint. Scores use MRPC F1 here, unlike Table~\ref{tab:glue_results_base_large}. Per-seed values and selection steps appear in Appendix~\ref{app:mixingtable}.}
+\label{tab:mixingmain}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llcccc}
+\toprule
+Task & Condition & $n$ & Task score & $\rho_F$ & Cross energy (\%) \\
+\midrule
+% BEGIN GENERATED MIXING SUMMARY
+% Generated by scripts/build_mixing_tables.py from data/legacy_mixing/*.csv.
+RTE & A & 2 & $77.08 \pm 1.28$ & $0.3787 \pm 0.0142$ & $43.41 \pm 0.15$ \\
+RTE & B & 2 & $79.06 \pm 1.02$ & $0.2847 \pm 0.0212$ & $43.55 \pm 0.43$ \\
+RTE & C & 2 & $76.71 \pm 0.77$ & $0.0626 \pm 0.0004$ & $27.45 \pm 1.93$ \\
+\midrule
+MRPC & A & 2 & $92.15 \pm 0.45$ & $0.3174 \pm 0.0571$ & $43.25 \pm 0.14$ \\
+MRPC & B & 2 & $92.40 \pm 0.06$ & $0.1958 \pm 0.0552$ & $40.32 \pm 2.13$ \\
+MRPC & C & 2 & $91.32 \pm 0.04$ & $0.0430 \pm 0.0109$ & $10.08 \pm 3.47$ \\
+\midrule
+CoLA & A & 2 & $64.09 \pm 1.40$ & $0.3076 \pm 0.0048$ & $43.75 \pm 0.10$ \\
+CoLA & B & 2 & $64.30 \pm 1.11$ & $0.2057 \pm 0.0041$ & $42.38 \pm 0.23$ \\
+CoLA & C & 2 & $63.14 \pm 1.22$ & $0.0334 \pm 0.0208$ & $21.09 \pm 5.63$ \\
+\midrule
+STS-B & A & 2 & $90.80 \pm 0.27$ & $0.3820 \pm 0.0030$ & $43.46 \pm 0.01$ \\
+STS-B & B & 2 & $90.48 \pm 0.13$ & $0.2506 \pm 0.0702$ & $41.96 \pm 0.23$ \\
+STS-B & C & 2 & $90.58 \pm 0.39$ & $0.0679 \pm 0.0128$ & $13.71 \pm 1.36$ \\
+\midrule
+SST-2 & A & 1 & $94.72$ & $0.2820$ & $43.33$ \\
+SST-2 & B & 1 & $94.38$ & $0.2676$ & $40.19$ \\
+SST-2 & C & 1 & $93.69$ & $0.0557$ & $17.21$ \\
+% END GENERATED MIXING SUMMARY
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
 
 \subsection{Complete mixing results}
 \label{app:mixingtable}
@@ -695,9 +768,46 @@ SST-2 & C & 42 & 46310 & 0.9369 & 0.134 & 0.170 & 0.056 & 0.850 & 0.679 & 0.672 
 \end{adjustbox}
 \end{table}
 
-\subsection{Magnitude-matched control: protocol and dose frontier}
+\subsection{Magnitude control: calibration and confirmation}
 \label{app:matchedprotocol}
-The study of Section~\ref{sec:matchedcontrol} was executed prospectively under registered, hash-bound protocols; every run passed an independent whole-run validation (checkpoint reload with exact reproduction of task metrics, spectral diagnostics, and the frozen-head probe) before entering any table. The matching rule was declared before any control run: match the mixing arm's pooled relative Frobenius norm of the total effective delta (insertion offset included) at the fixed endpoint within $\pm5\%$, selecting the smallest absolute relative error with ties toward the lower dose, using validated fixed-step norms only. The initial dose grid was $\beta\in\{0.01,1,100\}$ per task; when no dose satisfied the tolerance, one norms-only refinement round per task was registered before its outcomes were observed (bracketing geometric means plus log-linear-fit-guided points). All tried doses, the immutable selection records, and per-module norm distributions are retained. Every confirmation table reports the per-seed achieved matching error $e_s=|\rho_{\mathrm{NORM},s}/\rho_{\mathrm{MIX},s}-1|$; matching status is measured on the confirmation runs, never inherited from calibration.
+% BEGIN GENERATED FOCUSED CONFIRMATION
+% Generated by scripts/build_focused_tables.py from data/focused_norm/runs.csv.
+\begin{table}[t]
+\centering
+\caption{Confirmation of the calibration-selected norm control across seeds 17, 42, and 123
+(mean$\pm$sample SD, $n=3$), fixed-step endpoints, common protocol of
+Section~\ref{sec:matchedcontrol}. Cross P, LL, and TT are pooled energy percentages; Cross E weights modules equally.
+The probe is masked-token cross-entropy under the frozen original MLM head;
+accuracy is the inner-selection split at the fixed step, scaled by 100. Achieved errors
+$\delta_s=\rho_{\mathrm{NORM},s}/\rho_{\mathrm{MIX},s}-1$ (signed; $e_s=|\delta_s|$) against the declared
+$\pm5\%$ rule, in that seed order: RTE: $+8.0, -5.2, +7.5$\%; MRPC: $+5.5, +6.7, -0.1$\%.
+N is the dimension-only reference, not a run or test of isotropy.}
+\label{tab:matchedconfirmation}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llccccccc}
+\toprule
+Task & Condition & $\rho_F$ & Cross P & Cross E & LL & TT & Probe CE & Acc \\
+\midrule
+RTE & UNREG & $0.2751 \pm 0.0041$ & $43.7 \pm 0.0$ & $43.5 \pm 0.0$ & $45.9 \pm 0.1$ & $10.4 \pm 0.0$ & $2.89 \pm 0.17$ & $72.4 \pm 0.6$ \\
+RTE & MIX & $0.0736 \pm 0.0046$ & $10.0 \pm 0.5$ & $14.9 \pm 0.9$ & $45.2 \pm 0.9$ & $44.8 \pm 1.4$ & $2.94 \pm 0.29$ & $72.6 \pm 3.1$ \\
+RTE & NORM ($\beta=7.5$) & $0.0759 \pm 0.0016$ & $46.2 \pm 0.0$ & $46.3 \pm 0.1$ & $40.7 \pm 0.0$ & $13.1 \pm 0.0$ & $2.61 \pm 0.08$ & $74.6 \pm 0.5$ \\
+\midrule
+MRPC & UNREG & $0.1802 \pm 0.0009$ & $42.4 \pm 0.1$ & $42.2 \pm 0.0$ & $48.0 \pm 0.1$ & $9.6 \pm 0.1$ & $2.75 \pm 0.07$ & $84.9 \pm 0.2$ \\
+MRPC & MIX & $0.0407 \pm 0.0017$ & $4.5 \pm 0.3$ & $5.5 \pm 0.1$ & $69.8 \pm 1.1$ & $25.8 \pm 1.4$ & $2.84 \pm 0.17$ & $84.5 \pm 0.5$ \\
+MRPC & NORM ($\beta=27$) & $0.0423 \pm 0.0005$ & $46.2 \pm 0.1$ & $46.2 \pm 0.1$ & $40.6 \pm 0.2$ & $13.2 \pm 0.1$ & $2.57 \pm 0.11$ & $84.8 \pm 0.2$ \\
+\midrule
+--- & N (dimension only) & --- & $44.4$ & $44.4$ & $44.4$ & $11.1$ & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+% END GENERATED FOCUSED CONFIRMATION
+
+The study of Section~\ref{sec:matchedcontrol} follows registered protocols with file hashes. Each included run passed checkpoint reload and reproduction of task metrics, spectral diagnostics and the frozen-head probe. The common recipe uses sequence length 128, effective batch 32, an inner training/selection split, and fixed endpoints of 5{,}670 steps for RTE and 2{,}760 for MRPC. Calibration uses seed 31415; confirmation uses seeds 17, 42 and 123.
+
+The registered protocol fixes $\lambda_E=\lambda_D=10^{-3}$ on both tasks, the same coefficients as the archived two-sided condition. The matching search varies only NORM's coefficient; it does not select MIX's dose from confirmation outcomes.
+
+The dose-selection rule targets MIX's pooled relative Frobenius norm of the total effective update, including insertion. It selects the smallest absolute relative error, with ties toward the lower dose, using validated fixed-step norms. The target tolerance is $\pm5\%$. The initial grid is $\beta\in\{0.01,1,100\}$ per task. A separately registered norms-only refinement adds bracketing geometric means and log-linear-fit-guided doses. The export retains every tried dose, immutable selection records and per-module norms. For each confirmation seed, the reported error is $e_s=|\rho_{\mathrm{NORM},s}/\rho_{\mathrm{MIX},s}-1|$.
 
 \begin{table}[t]
 \centering
@@ -731,7 +841,626 @@ MRPC & $100$ & $0.0212$ & $48.7$ & $48.6$ & $17.1$ & $2.77$ \\
 \end{adjustbox}
 \end{table}
 
-The calibration-seed comparison of all three arms appears in the main text's confirmation table at seed level; the calibration rows themselves are retained in the released data. The genuine unadapted probe reference (masked-token cross-entropy $2.0956$) was computed inference-only with the frozen original MLM head on the fixed 256-example set; the practical adapter's step-0 state carries a nonzero insertion offset and is never substituted for this reference.
+Calibration and confirmation rows are stored separately. Table~\ref{tab:focusedtasks} reports all fixed and validation-selected confirmation outcomes on the inner-selection split. The original-backbone probe reference, masked-token cross-entropy $2.0956$, uses the frozen original language-model head on a fixed 256-example set. The practical adapter's inserted state is recorded separately.
+
+\begin{table}[t]
+\centering
+\caption{All confirmation task outcomes on the inner-selection split, scaled by 100. Fixed steps are 5{,}670 (RTE) and 2{,}760 (MRPC). Selected checkpoints are secondary, selection-conditioned outcomes on the same split; the main comparisons use fixed endpoints. F1 is shown for MRPC only.}
+\label{tab:focusedtasks}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lllrrrrr}
+\toprule
+Task & Arm & Seed & Fixed acc. & Fixed F1 & Selected step & Selected acc. & Selected F1\\
+\midrule
+% BEGIN GENERATED FOCUSED TASK OUTCOMES
+% Generated by scripts/build_focused_tables.py from data/focused_norm/runs.csv.
+RTE & UNREG & 17 & $71.69$ & --- & 1920 & $73.49$ & --- \\
+RTE & UNREG & 42 & $72.89$ & --- & 1280 & $75.70$ & --- \\
+RTE & UNREG & 123 & $72.49$ & --- & 1152 & $76.10$ & --- \\
+RTE & MIX & 17 & $75.90$ & --- & 4224 & $76.10$ & --- \\
+RTE & MIX & 42 & $71.89$ & --- & 4253 & $73.49$ & --- \\
+RTE & MIX & 123 & $69.88$ & --- & 2816 & $73.69$ & --- \\
+RTE & NORM & 17 & $74.90$ & --- & 1418 & $75.50$ & --- \\
+RTE & NORM & 42 & $74.90$ & --- & 4253 & $75.90$ & --- \\
+RTE & NORM & 123 & $74.10$ & --- & 1408 & $76.51$ & --- \\
+\midrule
+MRPC & UNREG & 17 & $84.74$ & $89.04$ & 2176 & $85.42$ & $89.29$ \\
+MRPC & UNREG & 42 & $85.01$ & $89.26$ & 512 & $85.15$ & $89.11$ \\
+MRPC & UNREG & 123 & $85.01$ & $89.07$ & 2304 & $85.42$ & $89.42$ \\
+MRPC & MIX & 17 & $84.47$ & $88.95$ & 2760 & $84.47$ & $88.95$ \\
+MRPC & MIX & 42 & $84.06$ & $88.45$ & 1280 & $85.29$ & $89.07$ \\
+MRPC & MIX & 123 & $85.01$ & $89.19$ & 2070 & $85.69$ & $89.51$ \\
+MRPC & NORM & 17 & $84.88$ & $89.06$ & 1792 & $85.83$ & $89.60$ \\
+MRPC & NORM & 42 & $84.88$ & $89.06$ & 640 & $85.29$ & $89.18$ \\
+MRPC & NORM & 123 & $84.60$ & $88.78$ & 1152 & $85.56$ & $89.65$ \\
+% END GENERATED FOCUSED TASK OUTCOMES
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/focused_cross_vs_norm.pdf}
+\caption{Interaction share across the tested size-penalty sweep. Filled circles show NORM calibration doses, squares UNREG and diamonds MIX. Open triangles show individual confirmation runs. The horizontal line is the $4/9$ dimension-only reference; the vertical line marks the MIX calibration size. Shrinking the NORM update leaves a large interaction share.}
+\label{fig:crossvsnorm}
+\end{figure}
+
+\subsection{Paired confirmation contrasts}
+\label{app:focusedpaired}
+Table~\ref{tab:focusedpaired} gives each seed difference, its mean and sample SD, and a nominal 95\% paired Student-$t$ interval ($n=3$, two degrees of freedom). The intervals assume independent, approximately normal seed differences and describe variation on the fixed inner-selection split. They are unadjusted for multiple contrasts. For MIX--NORM accuracy, interval half-widths are $6.79$ points on RTE and $1.55$ on MRPC. Appendix~\ref{app:powersensitivity} separately calculates hypothetical power-based effect thresholds. Training seeds provide replication; modules and checkpoints describe each run.
+
+\begin{table}[t]
+\centering
+\caption{Paired fixed-endpoint differences (percentage points), left arm minus right. All three pairwise contrasts are reported for cross-block share and accuracy.}
+\label{tab:focusedpaired}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lllrrrrr}
+\toprule
+Task & Contrast & Metric & Seed 17 & Seed 42 & Seed 123 & Mean$\pm$SD & Nominal 95\% CI\\
+\midrule
+% BEGIN GENERATED FOCUSED PAIRED
+% Generated by scripts/build_focused_tables.py from data/focused_norm/runs.csv.
+RTE & MIX--NORM & Cross & $-36.80$ & $-36.11$ & $-35.78$ & $-36.23 \pm 0.52$ & $[-37.51, -34.95]$ \\
+RTE & MIX--NORM & Accuracy & $1.00$ & $-3.01$ & $-4.22$ & $-2.07 \pm 2.73$ & $[-8.87, 4.72]$ \\
+RTE & MIX--UNREG & Cross & $-34.24$ & $-33.52$ & $-33.33$ & $-33.70 \pm 0.48$ & $[-34.89, -32.51]$ \\
+RTE & MIX--UNREG & Accuracy & $4.22$ & $-1.00$ & $-2.61$ & $0.20 \pm 3.57$ & $[-8.67, 9.07]$ \\
+RTE & NORM--UNREG & Cross & $2.55$ & $2.59$ & $2.45$ & $2.53 \pm 0.07$ & $[2.35, 2.71]$ \\
+RTE & NORM--UNREG & Accuracy & $3.21$ & $2.01$ & $1.61$ & $2.28 \pm 0.84$ & $[0.20, 4.35]$ \\
+\midrule
+MRPC & MIX--NORM & Cross & $-41.55$ & $-41.68$ & $-42.02$ & $-41.75 \pm 0.25$ & $[-42.36, -41.14]$ \\
+MRPC & MIX--NORM & Accuracy & $-0.41$ & $-0.82$ & $0.41$ & $-0.27 \pm 0.62$ & $[-1.82, 1.28]$ \\
+MRPC & MIX--UNREG & Cross & $-37.66$ & $-37.80$ & $-38.24$ & $-37.90 \pm 0.30$ & $[-38.65, -37.15]$ \\
+MRPC & MIX--UNREG & Accuracy & $-0.27$ & $-0.95$ & $0.00$ & $-0.41 \pm 0.49$ & $[-1.63, 0.81]$ \\
+MRPC & NORM--UNREG & Cross & $3.89$ & $3.88$ & $3.79$ & $3.85 \pm 0.06$ & $[3.71, 3.99]$ \\
+MRPC & NORM--UNREG & Accuracy & $0.14$ & $-0.14$ & $-0.41$ & $-0.14 \pm 0.27$ & $[-0.81, 0.54]$ \\
+% END GENERATED FOCUSED PAIRED
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Module norms under pooled matching}
+\label{app:focusedmodules}
+For module $\ell$, let $r_{a,\ell}=\|\Delta_{a,\ell}\|_F/\|W_{\pre,\ell}\|_F$. Table~\ref{tab:focusedmodules} compares the same 48 modules within each seed. Its rescaled check compares $(r_{\mathrm{NORM},\ell}/\rho_{\mathrm{NORM}})/(r_{\mathrm{MIX},\ell}/\rho_{\mathrm{MIX}})$ with one, removing the residual global norm ratio descriptively without changing or retraining either arm. At most two modules per pair satisfy a 5\% tolerance after this rescaling. Figure~\ref{fig:focusedmodules} shows where norms differ: RTE MIX concentrates its largest relative norms in output projections, notably layers 7 and 11, while many other modules have very small updates. The $10^{-6}$ threshold is a descriptive reporting threshold, not a training gate. Ratios against these near-zero updates can be arbitrarily large, so we show module norms directly. Absolute squared norms independently quantify energy concentration (Figure~\ref{fig:moduleenergy}). For MRPC, the three largest modules carry $35.7$--$50.1\%$ of MIX total energy versus $17.5$--$19.5\%$ for NORM. These descriptive order statistics are accompanied by the complete cumulative curves; module counts are not additional experimental replicates.
+
+\begin{table}[t]
+\centering
+\caption{Signed pooled error $\delta_s=\rho_{\mathrm{NORM},s}/\rho_{\mathrm{MIX},s}-1$ and module-relative norms. The two within-5\% columns count matched module norms before and after global rescaling. The last column counts module norms below $10^{-6}$ for MIX/NORM. Modules describe heterogeneity within each seed.}
+\label{tab:focusedmodules}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+Task & Seed & $\delta_s$ (\%) & Median MIX & Median NORM & Within 5\% & Rescaled & Small MIX/NORM\\
+\midrule
+% BEGIN GENERATED FOCUSED MODULES
+% Generated by scripts/build_focused_tables.py from data/focused_norm/runs.csv.
+RTE & 17 & $+8.0$ & $0.0228$ & $0.0788$ & 1/48 & 0/48 & 14/0 \\
+RTE & 42 & $-5.2$ & $0.0209$ & $0.0764$ & 0/48 & 0/48 & 15/0 \\
+RTE & 123 & $+7.5$ & $0.0126$ & $0.0746$ & 0/48 & 0/48 & 12/0 \\
+\midrule
+MRPC & 17 & $+5.5$ & $0.0234$ & $0.0430$ & 4/48 & 2/48 & 0/0 \\
+MRPC & 42 & $+6.7$ & $0.0277$ & $0.0426$ & 1/48 & 1/48 & 1/0 \\
+MRPC & 123 & $-0.1$ & $0.0273$ & $0.0420$ & 2/48 & 2/48 & 1/0 \\
+% END GENERATED FOCUSED MODULES
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=.84\linewidth]{figures/focused_module_norms.pdf}
+\caption{Module-relative update norms, median across three confirmation seeds for each module. All panels use the same logarithmic scale; ``$<$'' marks medians below the displayed $10^{-6}$ floor. This heatmap displays medians only; it does not show per-module seed dispersion. No zero-update energy fractions are inferred from these norms.}
+\label{fig:focusedmodules}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/focused_module_energy.pdf}
+\caption{Cumulative absolute squared update norm across all 48 modules, sorted separately within each run. Each curve is one confirmation seed. The left panels include insertion; the right panels subtract it before computing energies. Steeper early accumulation indicates more concentrated adaptation. Sorting describes concentration, not correspondence of module identities across arms.}
+\label{fig:moduleenergy}
+\end{figure}
+
+\subsection{Learned placement after subtracting insertion}
+\label{app:learnedplacement}
+We evaluate $\Delta_{\mathrm{learned}}=W_{\mathrm{eff}}(T)-W_{\mathrm{eff}}(0)$ directly, before squaring or normalizing. Subtracting initial energy from final energy would omit the cross term and is not this calculation. Every row is tied to the same fixed checkpoint and validation hash as the total-update report. The exported absolute energies of all 864 module records (18 runs, 48 modules each) independently reproduce pooled fractions, equal-module fractions and pooled relative norms to within $10^{-12}$.
+
+Table~\ref{tab:learnedplacement} distinguishes total and learned allocation. After subtracting insertion, MIX's pooled leading share changes from $69.8\%$ to $65.5\%$ on MRPC and stays at $45.2\%$ on RTE. Equal-module learned leading shares are $67.3\%$ and $64.7\%$, respectively. The task contrast therefore depends on whether modules are weighted by energy or equally. Initialization matters most for small final updates: the largest per-seed change in an equal-module block fraction is $6.6$ points on RTE and $13.4$ on MRPC. Learned displacement includes any cancellation of the inserted contribution.
+
+\begin{table}[t]
+\centering
+\caption{Total and learned-since-insertion energy percentages at fixed endpoints, mean$\pm$sample SD over three seeds. Cross combines LT and TL. Both normalizations use the same module energies; pooled weighting emphasizes modules with larger updates.}
+\label{tab:learnedplacement}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lllrrrrrr}
+\toprule
+&&&\multicolumn{3}{c}{Pooled energy}&\multicolumn{3}{c}{Equal module}\\
+Task & Arm & Delta & LL & Cross & TT & LL & Cross & TT\\
+\midrule
+% BEGIN GENERATED LEARNED SUMMARY
+% Generated by scripts/analyze_final_evidence.py.
+RTE & UNREG & Total & $45.9 \pm 0.1$ & $43.7 \pm 0.0$ & $10.4 \pm 0.0$ & $46.2 \pm 0.1$ & $43.5 \pm 0.0$ & $10.3 \pm 0.1$ \\
+RTE & UNREG & Learned & $45.9 \pm 0.1$ & $43.7 \pm 0.0$ & $10.4 \pm 0.0$ & $46.2 \pm 0.1$ & $43.5 \pm 0.0$ & $10.3 \pm 0.1$ \\
+RTE & MIX & Total & $45.2 \pm 0.9$ & $10.0 \pm 0.5$ & $44.8 \pm 1.4$ & $61.5 \pm 2.1$ & $14.9 \pm 0.9$ & $23.6 \pm 1.8$ \\
+RTE & MIX & Learned & $45.2 \pm 0.9$ & $10.0 \pm 0.5$ & $44.8 \pm 1.4$ & $67.3 \pm 3.0$ & $10.0 \pm 1.4$ & $22.6 \pm 2.0$ \\
+RTE & NORM & Total & $40.7 \pm 0.0$ & $46.2 \pm 0.0$ & $13.1 \pm 0.0$ & $40.5 \pm 0.2$ & $46.3 \pm 0.1$ & $13.2 \pm 0.1$ \\
+RTE & NORM & Learned & $40.7 \pm 0.0$ & $46.2 \pm 0.0$ & $13.1 \pm 0.0$ & $40.5 \pm 0.2$ & $46.3 \pm 0.1$ & $13.2 \pm 0.1$ \\
+\midrule
+MRPC & UNREG & Total & $48.0 \pm 0.1$ & $42.4 \pm 0.1$ & $9.6 \pm 0.1$ & $48.2 \pm 0.0$ & $42.2 \pm 0.0$ & $9.6 \pm 0.0$ \\
+MRPC & UNREG & Learned & $47.9 \pm 0.1$ & $42.5 \pm 0.0$ & $9.7 \pm 0.1$ & $48.1 \pm 0.0$ & $42.4 \pm 0.0$ & $9.6 \pm 0.0$ \\
+MRPC & MIX & Total & $69.8 \pm 1.1$ & $4.5 \pm 0.3$ & $25.8 \pm 1.4$ & $76.2 \pm 0.5$ & $5.5 \pm 0.1$ & $18.3 \pm 0.6$ \\
+MRPC & MIX & Learned & $65.5 \pm 1.1$ & $5.1 \pm 0.4$ & $29.4 \pm 1.5$ & $64.7 \pm 2.7$ & $7.7 \pm 0.8$ & $27.6 \pm 2.7$ \\
+MRPC & NORM & Total & $40.6 \pm 0.2$ & $46.2 \pm 0.1$ & $13.2 \pm 0.1$ & $40.5 \pm 0.3$ & $46.2 \pm 0.1$ & $13.3 \pm 0.2$ \\
+MRPC & NORM & Learned & $41.3 \pm 0.2$ & $45.7 \pm 0.1$ & $13.0 \pm 0.1$ & $42.0 \pm 0.2$ & $45.1 \pm 0.0$ & $13.0 \pm 0.2$ \\
+% END GENERATED LEARNED SUMMARY
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Every confirmation seed's learned-since-insertion block percentages. Fixed endpoints and validation identities agree with Table~\ref{tab:focusedtasks}. All four blocks are retained; rounding may affect displayed sums.}
+\label{tab:learnedseeds}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lllrrrrrrrr}
+\toprule
+&&&\multicolumn{4}{c}{Pooled energy}&\multicolumn{4}{c}{Equal module}\\
+Task & Arm & Seed & LL & LT & TL & TT & LL & LT & TL & TT\\
+\midrule
+% BEGIN GENERATED LEARNED SEEDS
+% Generated by scripts/analyze_final_evidence.py.
+RTE & UNREG & 17 & $45.92$ & $22.48$ & $21.17$ & $10.43$ & $46.09$ & $22.36$ & $21.20$ & $10.35$ \\
+RTE & UNREG & 42 & $46.02$ & $22.25$ & $21.37$ & $10.36$ & $46.26$ & $22.17$ & $21.32$ & $10.25$ \\
+RTE & UNREG & 123 & $45.87$ & $22.41$ & $21.29$ & $10.43$ & $46.12$ & $22.29$ & $21.27$ & $10.32$ \\
+RTE & MIX & 17 & $44.41$ & $4.53$ & $4.87$ & $46.19$ & $69.14$ & $4.71$ & $3.87$ & $22.27$ \\
+RTE & MIX & 42 & $45.09$ & $4.69$ & $5.40$ & $44.82$ & $63.85$ & $6.40$ & $4.91$ & $24.83$ \\
+RTE & MIX & 123 & $46.17$ & $5.29$ & $5.08$ & $43.47$ & $68.96$ & $5.84$ & $4.37$ & $20.83$ \\
+RTE & NORM & 17 & $40.63$ & $23.24$ & $22.95$ & $13.17$ & $40.35$ & $23.25$ & $23.11$ & $13.29$ \\
+RTE & NORM & 42 & $40.67$ & $23.12$ & $23.09$ & $13.13$ & $40.39$ & $23.13$ & $23.15$ & $13.32$ \\
+RTE & NORM & 123 & $40.72$ & $23.33$ & $22.82$ & $13.13$ & $40.76$ & $23.28$ & $22.83$ & $13.14$ \\
+\midrule
+MRPC & UNREG & 17 & $47.77$ & $21.85$ & $20.67$ & $9.71$ & $48.02$ & $21.72$ & $20.67$ & $9.59$ \\
+MRPC & UNREG & 42 & $47.97$ & $21.86$ & $20.57$ & $9.60$ & $48.09$ & $21.80$ & $20.57$ & $9.54$ \\
+MRPC & UNREG & 123 & $47.87$ & $21.70$ & $20.74$ & $9.69$ & $48.07$ & $21.58$ & $20.75$ & $9.60$ \\
+MRPC & MIX & 17 & $66.12$ & $2.66$ & $2.74$ & $28.47$ & $63.19$ & $3.99$ & $4.60$ & $28.21$ \\
+MRPC & MIX & 42 & $66.23$ & $2.51$ & $2.72$ & $28.54$ & $67.79$ & $3.27$ & $4.23$ & $24.72$ \\
+MRPC & MIX & 123 & $64.22$ & $2.23$ & $2.43$ & $31.12$ & $63.01$ & $3.06$ & $3.92$ & $30.01$ \\
+MRPC & NORM & 17 & $41.08$ & $22.82$ & $22.97$ & $13.13$ & $41.80$ & $22.68$ & $22.35$ & $13.17$ \\
+MRPC & NORM & 42 & $41.35$ & $22.76$ & $22.89$ & $12.99$ & $42.01$ & $22.44$ & $22.64$ & $12.91$ \\
+MRPC & NORM & 123 & $41.48$ & $22.55$ & $23.06$ & $12.91$ & $42.12$ & $22.34$ & $22.73$ & $12.81$ \\
+% END GENERATED LEARNED SEEDS
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Executed fresh-protocol settings and input validation}
+\label{app:freshrecipe}
+The fresh study uses the pinned RoBERTa-base checkpoint \texttt{e2da8e2f811d1448a5b465c236feacd80ffbac7b} and GLUE dataset revision \texttt{bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c}. A fixed 20\% inner-selection split is drawn from the training data with seed 271828; the official RTE and MRPC validation sets (277 and 408 examples) were held aside throughout training and selection, then evaluated once after the 18 checkpoints were frozen (Appendix~\ref{app:heldaside}). Inspecting tokenization parity on held-aside input text is not a task-score evaluation. No model or checkpoint was selected using those held-aside labels.
+
+Executed manifests specify float32 training, microbatch 8 with four accumulation steps (effective batch 32), maximum sequence length 128, gradient-norm clipping at 1, and zero weight decay. AdamW uses separate adapter and task-head groups with linear learning-rate decay to zero and no warmup. The adapter rate is $10^{-2}$ on both tasks; head rates are $5\times10^{-4}$ on RTE and $10^{-3}$ on MRPC. Fixed endpoints are 5{,}670 and 2{,}760 optimizer steps, respectively. The practical adapter initializes both ambient scalers and tail coefficients at $0.01$ for RTE and $0.1$ for MRPC, with an identity leading block and no rotations. These initialization values belong to the practical study, not the strict-band branch. Task evaluation uses batches of 16; probe evaluation uses batches of 8. The secondary checkpoint maximizes inner-selection accuracy, excludes step 0, and breaks ties toward the earliest step. Candidates occur every 128 steps and at the registered fractions $\{0,.01,.05,.1,.25,.5,.75,1\}$ of the budget. The fixed endpoint remains primary regardless of the selected score.
+
+Before calibration, a 32-example, 200-step overfit gate required training accuracy at least $0.95$; a 600-step unregularized learning gate required inner accuracy at least three points above the majority baseline. RTE passed at the adopted rates. On MRPC, the historical adapter rate $0.05$ reached the majority baseline ($0.6744$) and failed the second gate; the adopted common rate $0.01$ reached $0.8474$. This change preceded the comparisons and applied to every fresh MRPC arm. It does not revise the historical results.
+
+The tokenizer repair explicitly restores the BPE model type omitted from its upstream serialization. An independent byte-level BPE implementation exactly reproduced input IDs and attention masks for 181 examples across both tasks and all prepared splits, including 51 truncated examples. Both durable invalidation records are enforced during extraction: all 39 runs from the corrupted-input campaigns are excluded. Run manifests bind source files, inputs, recipes and validation reports; an exported validation hash identifies the report, while independent reaggregation here audits the export rather than rerunning training.
+
+The frozen-head probe contains 256 sampled examples from WikiText-2-raw-v1's test split~\citep{merity2017pointer}, corpus revision \texttt{b08601e04326c79dfdd32d625aee71d232d685c3}. Sampling seed 271828 and masking seed 161803 fix the examples and 15\% masking procedure. Summing per-example loss numerators and dividing by the 4{,}001 scored tokens gives original-backbone cross-entropy $2.095626$. This reference uses CPU float32; adapted probes use GPU float32. The corpus is held out from task adaptation, but is not guaranteed unseen during pretraining. The probe measures behavior under fixed examples and masks, not preserved knowledge in general.
+
+\subsection{Identity alignment of the learned leading block}
+\label{app:reviewidentity}
+For each module, project $C_{LL}$ onto its own identity matrix as in~\eqref{eq:identityalignment}. Table~\ref{tab:reviewidentity} reports the fraction of summed leading energy explained by these module-wise projections, $\eta_{I,\mathrm{pool}}=1-\sum_\ell\|C_{LL,\ell}-(\operatorname{tr}C_{LL,\ell}/k)I_k\|_F^2/\sum_\ell\|C_{LL,\ell}\|_F^2$. This permits a different fitted scalar in each module; it does not fit one scalar to the whole network. We also report the equal-module mean of $\eta_I$ and the non-identity leading residual divided by total delta energy. All quantities use exported checkpoint diagnostics, not a fit to the rounded block fractions.
+
+MIX's learned leading energy is mostly aligned with the identity component. Its non-identity leading residual is about $6.9\%$ of total learned energy on both tasks. Learned cross shares are $10.0\%$ and $5.1\%$, so the endpoint retains departures from the constant-scaler limit, which has exactly zero cross energy. Identity alignment describes the leading block; centered-scaler measurements and random-projector controls would distinguish the factor mechanisms that produce it.
+
+\begin{table}[t]
+\centering
+\caption{Identity alignment and residual leading structure (percentages, mean$\pm$sample SD, three seeds). The first two columns weight modules by leading-block energy; the third weights modules equally. The final column uses all learned delta energy as denominator.}
+\label{tab:reviewidentity}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrr}
+\toprule
+Task & Arm & Total $\eta_{I,\mathrm{pool}}$ & Learned $\eta_{I,\mathrm{pool}}$ & Learned $\eta_{I,\mathrm{eqm}}$ & Non-identity LL / learned total\\
+\midrule
+% BEGIN GENERATED REVIEW IDENTITY
+% Generated by scripts/analyze_review_v2.py.
+RTE & UNREG & $0.00 \pm 0.00$ & $0.00 \pm 0.00$ & $0.00 \pm 0.00$ & $45.94 \pm 0.08$ \\
+RTE & MIX & $84.67 \pm 1.04$ & $84.67 \pm 1.05$ & $79.67 \pm 2.01$ & $6.94 \pm 0.60$ \\
+RTE & NORM & $0.00 \pm 0.00$ & $0.00 \pm 0.00$ & $0.00 \pm 0.00$ & $40.67 \pm 0.04$ \\
+MRPC & UNREG & $0.81 \pm 0.07$ & $0.29 \pm 0.04$ & $0.29 \pm 0.05$ & $47.73 \pm 0.10$ \\
+MRPC & MIX & $91.38 \pm 0.45$ & $89.50 \pm 0.61$ & $79.23 \pm 3.45$ & $6.89 \pm 0.51$ \\
+MRPC & NORM & $0.05 \pm 0.01$ & $2.76 \pm 0.13$ & $5.94 \pm 0.37$ & $40.16 \pm 0.21$ \\
+% END GENERATED REVIEW IDENTITY
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Sensitivity to modules with small updates}
+\label{app:reviewsensitivity}
+This descriptive sensitivity analysis was specified after inspecting the original outcomes. For each task and seed, retain the same named modules in MIX and NORM only if both total-update relative norms are at least the stated floor. Apply that identical subset to total and learned diagnostics, then average module cross fractions. The two floors, $10^{-6}$ and $10^{-3}$, are reporting choices, not training gates or preregistered hypotheses. Counts and all seed differences are retained in the analysis data; the seed remains the unit of replication.
+
+Table~\ref{tab:reviewsensitivity} shows that the gap survives both restrictions. We recompute each retained module's fraction directly, including small nonzero updates. The restriction conditions on attained norms, a post-treatment variable. It is a descriptive check of averaging sensitivity; matching module energy during training would be a different intervention.
+
+\begin{table}[t]
+\centering
+\caption{Equal-module cross shares and paired NORM--MIX differences (percentage points), mean$\pm$sample SD over three seeds. Counts are retained modules in seed order 17, 42, 123; each seed starts with 48.}
+\label{tab:reviewsensitivity}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lllrrrr}
+\toprule
+Task & Norm floor & Delta & Counts & MIX & NORM & NORM--MIX\\
+\midrule
+% BEGIN GENERATED REVIEW SENSITIVITY
+% Generated by scripts/analyze_review_v2.py.
+RTE & $1e-06$ & Total & 34,33,36 & $14.68 \pm 1.80$ & $46.72 \pm 0.13$ & $32.04 \pm 1.71$ \\
+RTE & $1e-06$ & Learned & 34,33,36 & $14.06 \pm 2.21$ & $46.72 \pm 0.13$ & $32.66 \pm 2.10$ \\
+RTE & $0.001$ & Total & 30,32,30 & $15.19 \pm 1.84$ & $46.76 \pm 0.18$ & $31.57 \pm 1.83$ \\
+RTE & $0.001$ & Learned & 30,32,30 & $15.19 \pm 1.86$ & $46.76 \pm 0.18$ & $31.57 \pm 1.84$ \\
+MRPC & $1e-06$ & Total & 48,47,47 & $5.46 \pm 0.25$ & $46.24 \pm 0.04$ & $40.78 \pm 0.21$ \\
+MRPC & $1e-06$ & Learned & 48,47,47 & $7.79 \pm 0.74$ & $45.14 \pm 0.09$ & $37.35 \pm 0.83$ \\
+MRPC & $0.001$ & Total & 47,44,46 & $5.63 \pm 0.38$ & $46.26 \pm 0.03$ & $40.63 \pm 0.38$ \\
+MRPC & $0.001$ & Learned & 47,44,46 & $8.08 \pm 0.75$ & $45.23 \pm 0.09$ & $37.15 \pm 0.84$ \\
+% END GENERATED REVIEW SENSITIVITY
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{One-time evaluation on held-aside task splits}
+\label{app:heldaside}
+After freezing all 18 fixed-endpoint confirmation checkpoints, we evaluated them once on the official RTE (277 examples) and MRPC (408 examples) validation sets. The frozen recipes, doses and checkpoints were retained throughout. CPU loading reproduced inner-selection accuracy and MRPC F1 exactly, with task loss agreeing within the recorded numerical tolerance. Exported per-example IDs, labels, predictions and losses reproduce the held-out metrics. Checkpoint hashes and validation-report identities link every row to the frozen population.
+
+Held-out accuracies for UNREG/MIX/NORM are $71.72\pm1.50/71.36\pm1.63/71.24\pm1.63$ on RTE and $86.19\pm0.93/85.46\pm1.02/85.78\pm0.65$ on MRPC. MRPC F1 is $90.12\pm0.65/89.68\pm0.62/89.87\pm0.46$. Table~\ref{tab:heldasideseeds} gives every endpoint; Table~\ref{tab:heldasidepaired} gives every paired contrast. Intervals use the three-seed assumptions in Appendix~\ref{app:focusedpaired} and are unadjusted for multiple contrasts.
+
+\begin{table}[t]
+\centering
+\caption{All frozen confirmation endpoints on the held-aside official splits. Accuracy and F1 are percentages; loss is task cross-entropy. These scores were not used for selection.}
+\label{tab:heldasideseeds}
+\begin{tabular}{lllrrr}
+\toprule
+Task & Arm & Seed & Accuracy & F1 & Loss\\
+\midrule
+% BEGIN GENERATED HELD ASIDE SEEDS
+% Generated by scripts/analyze_review_v2.py.
+RTE & UNREG & 17 & 70.04 & --- & 2.347 \\
+RTE & UNREG & 42 & 72.20 & --- & 2.461 \\
+RTE & UNREG & 123 & 72.92 & --- & 2.478 \\
+RTE & MIX & 17 & 69.68 & --- & 1.330 \\
+RTE & MIX & 42 & 71.48 & --- & 1.192 \\
+RTE & MIX & 123 & 72.92 & --- & 1.165 \\
+RTE & NORM & 17 & 69.68 & --- & 2.567 \\
+RTE & NORM & 42 & 72.92 & --- & 1.956 \\
+RTE & NORM & 123 & 71.12 & --- & 2.057 \\
+MRPC & UNREG & 17 & 85.78 & 89.75 & 0.872 \\
+MRPC & UNREG & 42 & 85.54 & 89.74 & 0.938 \\
+MRPC & UNREG & 123 & 87.25 & 90.88 & 0.802 \\
+MRPC & MIX & 17 & 84.31 & 88.97 & 0.425 \\
+MRPC & MIX & 42 & 85.78 & 89.97 & 0.370 \\
+MRPC & MIX & 123 & 86.27 & 90.11 & 0.388 \\
+MRPC & NORM & 17 & 86.27 & 90.24 & 0.719 \\
+MRPC & NORM & 42 & 85.05 & 89.35 & 0.829 \\
+MRPC & NORM & 123 & 86.03 & 90.02 & 0.718 \\
+% END GENERATED HELD ASIDE SEEDS
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Paired held-aside differences (percentage points), left minus right; all contrasts retained. Nominal 95\% intervals are descriptive, not multiplicity-adjusted findings.}
+\label{tab:heldasidepaired}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lllrrrrr}
+\toprule
+Task & Contrast & Metric & Seed 17 & Seed 42 & Seed 123 & Mean$\pm$SD & Nominal 95\% CI\\
+\midrule
+% BEGIN GENERATED HELD ASIDE PAIRED
+% Generated by scripts/analyze_review_v2.py.
+RTE & MIX--NORM & accuracy & $0.00$ & $-1.44$ & $1.81$ & $0.12 \pm 1.63$ & $[-3.92,4.16]$ \\
+RTE & MIX--UNREG & accuracy & $-0.36$ & $-0.72$ & $0.00$ & $-0.36 \pm 0.36$ & $[-1.26,0.54]$ \\
+RTE & NORM--UNREG & accuracy & $-0.36$ & $0.72$ & $-1.81$ & $-0.48 \pm 1.27$ & $[-3.63,2.67]$ \\
+MRPC & MIX--NORM & accuracy & $-1.96$ & $0.74$ & $0.25$ & $-0.33 \pm 1.44$ & $[-3.89,3.24]$ \\
+MRPC & MIX--NORM & f1 & $-1.28$ & $0.61$ & $0.09$ & $-0.19 \pm 0.98$ & $[-2.62,2.23]$ \\
+MRPC & MIX--UNREG & accuracy & $-1.47$ & $0.25$ & $-0.98$ & $-0.74 \pm 0.88$ & $[-2.93,1.46]$ \\
+MRPC & MIX--UNREG & f1 & $-0.79$ & $0.23$ & $-0.77$ & $-0.44 \pm 0.58$ & $[-1.89,1.00]$ \\
+MRPC & NORM--UNREG & accuracy & $0.49$ & $-0.49$ & $-1.23$ & $-0.41 \pm 0.86$ & $[-2.55,1.73]$ \\
+MRPC & NORM--UNREG & f1 & $0.49$ & $-0.38$ & $-0.86$ & $-0.25 \pm 0.69$ & $[-1.95,1.45]$ \\
+% END GENERATED HELD ASIDE PAIRED
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Across the three confirmation seeds, MIX's norm coefficients of variation are about $6.2\%$ on RTE and $4.2\%$ on MRPC. This variation is comparable to the calibration rule's $5\%$ tolerance. The confirmation report therefore retains every achieved error alongside the original doses and tolerance. Using several calibration seeds is a direct extension of this protocol.
+
+\subsection{Held-aside loss and confidence calibration}
+\label{app:heldloss}
+Task negative log likelihood (NLL) is the cross-entropy column in Table~\ref{tab:heldasideseeds}. UNREG/MIX/NORM mean NLL is $2.429/1.229/2.193$ nats on RTE and $0.871/0.395/0.755$ on MRPC. MIX has lower loss in every paired seed, and its three-seed range is below both comparator ranges within each task. Table~\ref{tab:heldlosspaired} reports all contrasts. We identified this ordering after inspecting the completed evaluation.
+
+NLL depends on the probabilities assigned to labels. Changing logit scale can change NLL while preserving the predicted class. Temperature scaling~\citep{guo2017calibration} tests this explanation by fitting a positive temperature on inner-selection logits, freezing it, and then measuring held-out loss and calibration. The required inner-selection logits are absent from the current export, so the reported values are the models' original losses. This comparison tests the complete regularization intervention, including its effects on scale and update allocation.
+
+\begin{table}[t]
+\centering
+\caption{Paired held-aside task NLL differences in nats, left minus right. Sample SD uses the $n-1$ divisor, $n=3$. Intervals follow Appendix~\ref{app:focusedpaired}; negative values favor the left arm on this loss only.}
+\label{tab:heldlosspaired}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrr}
+\toprule
+Task & Contrast & Seed 17 & Seed 42 & Seed 123 & Mean$\pm$SD & Nominal 95\% CI\\
+\midrule
+% BEGIN GENERATED REVIEW V3 LOSS
+% Generated by scripts/analyze_review_v3.py.
+RTE & MIX--NORM & -1.236 & -0.764 & -0.892 & $-0.964 \pm 0.244$ & $[-1.571,-0.357]$ \\
+RTE & MIX--UNREG & -1.017 & -1.269 & -1.313 & $-1.199 \pm 0.160$ & $[-1.596,-0.803]$ \\
+RTE & NORM--UNREG & +0.220 & -0.505 & -0.421 & $-0.235 \pm 0.396$ & $[-1.219,0.749]$ \\
+MRPC & MIX--NORM & -0.293 & -0.459 & -0.330 & $-0.361 \pm 0.087$ & $[-0.578,-0.144]$ \\
+MRPC & MIX--UNREG & -0.447 & -0.568 & -0.414 & $-0.476 \pm 0.081$ & $[-0.677,-0.276]$ \\
+MRPC & NORM--UNREG & -0.154 & -0.108 & -0.084 & $-0.115 \pm 0.035$ & $[-0.203,-0.028]$ \\
+% END GENERATED REVIEW V3 LOSS
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Descriptive sensitivity along the magnitude frontier}
+\label{app:frontiersensitivity}
+For each task, we fit $p_\cross^{(\%)}=a+b\log\rho_F$ by ordinary least squares to all seven NORM calibration doses (seed 31415). Table~\ref{tab:frontiersensitivity} reports the slope, maximum fitted residual and illustrative change $|b|\log(1.08)$. The latter is about $0.22$ points, compared with the observed $36$--$42$ point confirmation contrast. At signed norm error $\delta_s$, the corresponding fitted change is $b\log(1+\delta_s)$; all six values are in the analysis export. This is an interpolation of one observed frontier per task. It describes sensitivity within the measured range rather than bounding an exactly matched or unobserved experiment.
+
+\begin{table}[t]
+\centering
+\caption{Single-calibration-seed NORM frontier. Cross shares and fitted changes are percentage points. The norm range is computed within each task, not across tasks. The illustrative shift is a fitted sensitivity, not a causal bound.}
+\label{tab:frontiersensitivity}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lrrrrr}
+\toprule
+Task & Norm max/min & Cross range & $b$ (per log norm) & 8\% shift & Max residual\\
+\midrule
+% BEGIN GENERATED REVIEW V3 FRONTIER
+% Generated by scripts/analyze_review_v3.py.
+RTE & 12.10 & 43.66--50.91 & -2.905 & 0.224 & 0.878 \\
+MRPC & 8.47 & 42.41--48.60 & -2.900 & 0.223 & 0.301 \\
+% END GENERATED REVIEW V3 FRONTIER
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Power sensitivity under explicit variance assumptions}
+\label{app:powersensitivity}
+The nominal intervals describe uncertainty; their half-widths are not minimum detectable effects. To make the small-seed limitation quantitative, consider a hypothetical two-sided paired $t$ test with $n=3$, independent Gaussian seed differences, significance level $0.05$, and fixed true difference SD $\sigma$. Its power at a mean difference $\delta$ is
+\begin{equation}
+\Pr\!\left\{|T_{2,\sqrt3\delta/\sigma}|>t_{0.975,2}\right\}.
+\end{equation}
+Here $T_{\nu,\lambda}$ is noncentral Student $t$. Solving for 80\% power gives $|\delta|\simeq3.26\sigma$. Table~\ref{tab:powersensitivity} substitutes each observed paired sample SD as an uncertain variance scenario, including all task-score, task-NLL and probe contrasts. These are post hoc design sensitivities, not achieved power, effects excluded by the experiment, or an equivalence margin. At three seeds the variance itself is poorly estimated; all entries scale linearly with the assumed $\sigma$ and condition on the fixed evaluation examples.
+
+\begin{table}[t]
+\centering
+\caption{Effect magnitude for 80\% power in the stated hypothetical Gaussian paired test, using the observed SD as a variance scenario. This is a planning calculation, not a new test of the reported contrasts. pp: percentage points.}
+\label{tab:powersensitivity}
+\begin{tabular}{lllrr}
+\toprule
+Task & Contrast & Metric & Paired SD & 80\%-power effect\\
+\midrule
+% BEGIN GENERATED REVIEW V3 POWER
+% Generated by scripts/analyze_review_v3.py.
+RTE & MIX--NORM & Accuracy (pp) & 1.628 & 5.313 \\
+RTE & MIX--NORM & Task NLL (nat) & 0.244 & 0.798 \\
+RTE & MIX--NORM & Probe CE (nat) & 0.262 & 0.854 \\
+RTE & MIX--UNREG & Accuracy (pp) & 0.361 & 1.178 \\
+RTE & MIX--UNREG & Task NLL (nat) & 0.160 & 0.521 \\
+RTE & MIX--UNREG & Probe CE (nat) & 0.313 & 1.021 \\
+RTE & NORM--UNREG & Accuracy (pp) & 1.268 & 4.138 \\
+RTE & NORM--UNREG & Task NLL (nat) & 0.396 & 1.293 \\
+RTE & NORM--UNREG & Probe CE (nat) & 0.099 & 0.324 \\
+MRPC & MIX--NORM & Accuracy (pp) & 1.436 & 4.688 \\
+MRPC & MIX--NORM & F1 (pp) & 0.976 & 3.185 \\
+MRPC & MIX--NORM & Task NLL (nat) & 0.087 & 0.285 \\
+MRPC & MIX--NORM & Probe CE (nat) & 0.249 & 0.812 \\
+MRPC & MIX--UNREG & Accuracy (pp) & 0.884 & 2.884 \\
+MRPC & MIX--UNREG & F1 (pp) & 0.581 & 1.895 \\
+MRPC & MIX--UNREG & Task NLL (nat) & 0.081 & 0.264 \\
+MRPC & MIX--UNREG & Probe CE (nat) & 0.234 & 0.764 \\
+MRPC & NORM--UNREG & Accuracy (pp) & 0.861 & 2.810 \\
+MRPC & NORM--UNREG & F1 (pp) & 0.685 & 2.237 \\
+MRPC & NORM--UNREG & Task NLL (nat) & 0.035 & 0.115 \\
+MRPC & NORM--UNREG & Probe CE (nat) & 0.113 & 0.369 \\
+% END GENERATED REVIEW V3 POWER
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Strictly confined adaptation: complete RTE results}
+\label{app:bandstudy}
+
+\paragraph{Training and evaluation protocol.} We use the pretrained RoBERTa-base encoder and a newly initialized two-layer classification head that maps its sentence-pair representation to two label scores. Softmax converts these scores to probabilities. All conditions train this head; only adapter conditions also train coefficients and, where enabled, rotations. The original encoder weights remain frozen. A fixed 20\% split of RTE's training set, drawn with seed 271828, supplies the inner-selection examples; training uses the remaining 80\%. Conditions share the head initialization and data order within each seed. All train for 5{,}670 AdamW steps with effective batch size 32, adapter learning rate $10^{-2}$, head learning rate $5\times10^{-4}$, linear decay, no warmup, no weight decay, and no interaction penalty. Other input and optimizer settings follow Appendix~\ref{app:freshrecipe}; the zero-update initialization below replaces the practical adapter's initialization. We report accuracy and cross-entropy on the inner-selection split at the fixed final step, not the best-scoring checkpoint. The official RTE validation set has not been evaluated for this study.
+
+The separate RTE study crosses three 256-direction bands with diagonal coefficients or rotations in the last 64 directions, plus an original-backbone head-only reference. Leading, middle and tail bands are $[0,256)$, $[256,512)$ and $[512,768)$. All 48 attention updates use $\Delta=U_BHV_B^\top$, start at zero, and omit the ambient scalers and leading-identity contribution. Three seeds (17, 42, 123) give 21 registered confirmations. Two seed-31415 timing pilots are recorded separately. Off-band energy is structurally zero, with a $10^{-8}$ float32 layer-test bound.
+
+Each rotation uses PyTorch 2.5.1's \texttt{nn.utils.parametrizations.orthogonal} with \texttt{orthogonal\_map="matrix\_exp"} and the default \texttt{use\_trivialization=True}. Its square weight is initialized to the identity before registration. The matrix exponential maps a skew-symmetric parameter matrix to an orthogonal output throughout optimization. Each pair stores $2q^2$ trainable entries, while its two orthogonal outputs have $q(q-1)$ combined degrees of freedom (Appendix~\ref{app:cost}).
+
+The final export contains all 21 confirmation outcomes and the two timing pilots. Table~\ref{tab:bandcomplete} summarizes every arm; Table~\ref{tab:bandpaired} reports all 18 registered paired contrasts; Table~\ref{tab:bandavailable} gives every individual endpoint. All scores are inner-selection results. The freeze ledger joins all 21 fixed checkpoints to their validation hashes and the same registered protocol. Although repository revisions differ across launches, their experiment-source trees are identical; the supplement verifies all 46 recorded source-file fingerprints against a saved source snapshot. Within-band off-diagonal energy is computed directly from compact cores, with signed floating-point residuals retained in the raw export for diagonal arms.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/band_confirmation.pdf}
+\caption{All three seeds for each band and flexibility level, at the fixed inner-selection endpoint. Left: diagonal and rotated outcomes are joined within seed; horizontal lines show head-only references. Right: every paired rotation-minus-diagonal difference, with mean and sample SD. Rotations create additional within-band interaction without a consistent accuracy improvement; the loss panels show the accompanying confidence-sensitive behavior.}
+\label{fig:bandcomplete}
+\end{figure}
+
+% BEGIN GENERATED STORY BAND SUMMARY
+% Generated by scripts/build_tail_story_tables.py.
+\begin{table}[t]
+\centering
+\caption{Complete RTE band comparison, mean$\pm$sample SD, three seeds per row. Accuracy and loss use the inner-selection split. Off-diagonal energy is a percentage within the selected band, computed directly from the compact trained cores; diagonal residuals are float32 roundoff. The head-only backbone update is zero, so its energy fraction is undefined. All nonzero updates have structural off-band zero.}
+\label{tab:bandcomplete}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+Condition & Accuracy (\%) & Task loss (nat) & Within-band off-diag. (\%) & $\rho_F$\\
+\midrule
+Head only & $59.77 \pm 0.65$ & $0.654 \pm 0.002$ & --- & $0$ \\
+Leading / diagonal & $71.75 \pm 1.71$ & $1.785 \pm 0.083$ & $0.00 \pm 0.00$ & $0.3283 \pm 0.0009$ \\
+Leading / rotation & $72.22 \pm 1.01$ & $2.075 \pm 0.118$ & $11.36 \pm 0.41$ & $0.3090 \pm 0.0006$ \\
+Middle / diagonal & $71.02 \pm 1.21$ & $1.759 \pm 0.027$ & $0.00 \pm 0.00$ & $0.3287 \pm 0.0025$ \\
+Middle / rotation & $72.22 \pm 1.21$ & $1.958 \pm 0.044$ & $10.16 \pm 0.29$ & $0.3201 \pm 0.0030$ \\
+Tail / diagonal & $70.01 \pm 0.23$ & $2.001 \pm 0.141$ & $0.00 \pm 0.00$ & $0.2560 \pm 0.0017$ \\
+Tail / rotation & $71.02 \pm 3.30$ & $2.111 \pm 0.268$ & $7.88 \pm 0.31$ & $0.2720 \pm 0.0085$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+% END GENERATED STORY BAND SUMMARY
+
+% BEGIN GENERATED STORY BAND CONTRASTS
+% Generated by scripts/build_tail_story_tables.py.
+\begin{table}[t]
+\centering
+\caption{All registered paired RTE contrasts at the fixed endpoint on inner-selection examples. Entries are mean$\pm$sample SD of the three seed differences and nominal 95\% paired $t$ intervals (two degrees of freedom). Rotation-gain differences compare rotation-minus-diagonal changes between bands. Intervals are descriptive and unadjusted for multiple comparisons.}
+\label{tab:bandpaired}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lcccc}
+\toprule
+Contrast & Accuracy (pp) & Interval & Task loss (nat) & Interval\\
+\midrule
+Leading / diagonal -- head & $11.98 \pm 1.71$ & $[7.74,16.22]$ & $1.130 \pm 0.085$ & $[0.920,1.341]$ \\
+Leading / rotation -- head & $12.45 \pm 0.53$ & $[11.13,13.77]$ & $1.421 \pm 0.117$ & $[1.131,1.711]$ \\
+Middle / diagonal -- head & $11.24 \pm 1.84$ & $[6.67,15.82]$ & $1.105 \pm 0.027$ & $[1.038,1.171]$ \\
+Middle / rotation -- head & $12.45 \pm 1.41$ & $[8.96,15.94]$ & $1.304 \pm 0.044$ & $[1.194,1.413]$ \\
+Tail / diagonal -- head & $10.24 \pm 0.53$ & $[8.92,11.56]$ & $1.347 \pm 0.140$ & $[1.000,1.693]$ \\
+Tail / rotation -- head & $11.24 \pm 2.70$ & $[4.53,17.96]$ & $1.457 \pm 0.266$ & $[0.796,2.118]$ \\
+LEAD rotation -- diagonal & $0.47 \pm 1.34$ & $[-2.85,3.79]$ & $0.290 \pm 0.169$ & $[-0.130,0.711]$ \\
+MID rotation -- diagonal & $1.20 \pm 1.41$ & $[-2.29,4.70]$ & $0.199 \pm 0.071$ & $[0.023,0.375]$ \\
+TAIL rotation -- diagonal & $1.00 \pm 3.23$ & $[-7.02,9.03]$ & $0.110 \pm 0.150$ & $[-0.263,0.483]$ \\
+MID -- LEAD / diagonal & $-0.74 \pm 2.49$ & $[-6.93,5.46]$ & $-0.026 \pm 0.093$ & $[-0.256,0.204]$ \\
+MID -- LEAD / rotation & $-0.00 \pm 1.94$ & $[-4.81,4.81]$ & $-0.117 \pm 0.081$ & $[-0.317,0.083]$ \\
+Rotation gain: MID -- LEAD & $0.74 \pm 0.61$ & $[-0.79,2.26]$ & $-0.091 \pm 0.144$ & $[-0.448,0.265]$ \\
+TAIL -- LEAD / diagonal & $-1.74 \pm 1.51$ & $[-5.48,2.00]$ & $0.216 \pm 0.200$ & $[-0.280,0.713]$ \\
+TAIL -- LEAD / rotation & $-1.20 \pm 2.72$ & $[-7.95,5.54]$ & $0.036 \pm 0.183$ & $[-0.418,0.491]$ \\
+Rotation gain: TAIL -- LEAD & $0.54 \pm 2.40$ & $[-5.42,6.49]$ & $-0.180 \pm 0.084$ & $[-0.390,0.030]$ \\
+TAIL -- MID / diagonal & $-1.00 \pm 1.41$ & $[-4.50,2.49]$ & $0.242 \pm 0.160$ & $[-0.156,0.640]$ \\
+TAIL -- MID / rotation & $-1.20 \pm 3.19$ & $[-9.12,6.71]$ & $0.153 \pm 0.249$ & $[-0.466,0.772]$ \\
+Rotation gain: TAIL -- MID & $-0.20 \pm 1.92$ & $[-4.96,4.56]$ & $-0.089 \pm 0.162$ & $[-0.492,0.314]$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+% END GENERATED STORY BAND CONTRASTS
+
+% BEGIN GENERATED STORY BAND SNAPSHOT
+% Generated by scripts/build_tail_story_tables.py.
+\begin{table}[t]
+\centering
+\caption{All 21 strict-band/head confirmations and two timing pilots. Scores use fixed endpoints on the inner-selection split; each row is one run. Pilots are excluded from every confirmation summary. Adapter counts exclude the common 592,130-parameter trained head. Band updates remain inside their selected pretrained span by construction.}
+\label{tab:bandavailable}
+\begin{tabular}{llllrrr}
+\toprule
+Task & Band & Core & Seed & Acc. (\%) & Task loss & Adapter params\\
+\midrule
+\multicolumn{7}{l}{\textit{All 21 confirmation endpoints}} \\
+RTE & Lead & Diagonal & 17 & 71.69 & 1.738 & 12,288 \\
+RTE & Lead & Diagonal & 42 & 73.49 & 1.736 & 12,288 \\
+RTE & Lead & Diagonal & 123 & 70.08 & 1.881 & 12,288 \\
+RTE & Lead & Rotated 64 & 17 & 71.29 & 2.210 & 405,504 \\
+RTE & Lead & Rotated 64 & 42 & 73.29 & 1.996 & 405,504 \\
+RTE & Lead & Rotated 64 & 123 & 72.09 & 2.019 & 405,504 \\
+RTE & Mid & Diagonal & 17 & 72.29 & 1.736 & 12,288 \\
+RTE & Mid & Diagonal & 42 & 69.88 & 1.788 & 12,288 \\
+RTE & Mid & Diagonal & 123 & 70.88 & 1.753 & 12,288 \\
+RTE & Mid & Rotated 64 & 17 & 72.09 & 2.001 & 405,504 \\
+RTE & Mid & Rotated 64 & 42 & 71.08 & 1.913 & 405,504 \\
+RTE & Mid & Rotated 64 & 123 & 73.49 & 1.960 & 405,504 \\
+RTE & Tail & Diagonal & 17 & 69.88 & 2.163 & 12,288 \\
+RTE & Tail & Diagonal & 42 & 70.28 & 1.932 & 12,288 \\
+RTE & Tail & Diagonal & 123 & 69.88 & 1.908 & 12,288 \\
+RTE & Tail & Rotated 64 & 17 & 67.27 & 2.382 & 405,504 \\
+RTE & Tail & Rotated 64 & 42 & 72.29 & 2.104 & 405,504 \\
+RTE & Tail & Rotated 64 & 123 & 73.49 & 1.847 & 405,504 \\
+RTE & Head only & --- & 17 & 59.04 & 0.656 & 0 \\
+RTE & Head only & --- & 42 & 60.24 & 0.655 & 0 \\
+RTE & Head only & --- & 123 & 60.04 & 0.652 & 0 \\
+\midrule
+\multicolumn{7}{l}{\textit{Timing pilots (excluded from confirmations)}} \\
+RTE & Tail & Diagonal & 31415 & 70.28 & 1.884 & 12,288 \\
+RTE & Tail & Rotated 64 & 31415 & 70.48 & 2.104 & 405,504 \\
+\bottomrule
+\end{tabular}
+\end{table}
+% END GENERATED STORY BAND SNAPSHOT
+
+The tail-capacity contrast compares tail-only and head-only training at the same fixed endpoint, with common initial heads and data order. The flexibility contrast compares rotated and diagonal adapters at the same band width and training budget. Leading and middle bands provide location controls. Row order and these contrasts were fixed before confirmation inspection, after disclosure of the tail pilot. The later emphasis on the tail question leaves the full registered population intact.
+
+Rotated updates place $11.36\%$, $10.16\%$ and $7.88\%$ of their energy off the diagonal within the leading, middle and tail bands, respectively. The rotations therefore change the trained core in every band. Mean accuracy changes relative to diagonal adapters are $+0.47$, $+1.20$ and $+1.00$ points; all paired intervals include zero. Mean prediction loss increases by $0.290$, $0.199$ and $0.110$ nats. The diagonal tail's accuracy gain over head-only training occurs in all three seeds, together with a mean loss increase of $1.347$ nats. These results separate the ability to learn useful classifications from improvements in the probabilities assigned to them.
+
+The export contains endpoints rather than complete training curves, so we make no convergence-rate claim. A zero-initialized core gives zero rotation gradients at insertion; the final nonzero within-band off-diagonal energy shows that training leaves the diagonal family. Rotations add trainable parameters, so the comparison holds spectral support and training budget fixed while varying flexibility.
+
+\subsection{Archived block allocation and factor asymmetry}
+\label{app:legacyplacement}
+The aggregate off-tail ratio combines direct leading adaptation and cross interaction. To separate them, we reconstruct the four energy fractions from the saved per-matrix diagnostics, square before averaging, and retain equal weighting of modules within each run. Figure~\ref{fig:allocation} shows the resulting leading, cross, and tail allocation. Appendix~\ref{app:blockallocation} gives all four blocks and accounts for the small finite-precision difference between the recorded coordinate and ambient norms.
+
+\begin{figure}[t]
+\centering
+% BEGIN GENERATED BLOCK FIGURE
+\begin{minipage}[t]{0.19\linewidth}
+\centering\small RTE ($n=2$)\par\smallskip
+\allocationbar{A}{0.4638846}{0.4340701}{0.1020454}\par\smallskip
+\allocationbar{B}{0.4363037}{0.4355409}{0.1281555}\par\smallskip
+\allocationbar{C}{0.4430157}{0.2745369}{0.2824474}\par\smallskip
+\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.19\linewidth}
+\centering\small MRPC ($n=2$)\par\smallskip
+\allocationbar{A}{0.4656407}{0.4324835}{0.1018758}\par\smallskip
+\allocationbar{B}{0.4962905}{0.4031637}{0.1005458}\par\smallskip
+\allocationbar{C}{0.6364850}{0.1008374}{0.2626776}\par\smallskip
+\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.19\linewidth}
+\centering\small CoLA ($n=2$)\par\smallskip
+\allocationbar{A}{0.4574255}{0.4374997}{0.1050748}\par\smallskip
+\allocationbar{B}{0.4561447}{0.4238463}{0.1200090}\par\smallskip
+\allocationbar{C}{0.5698152}{0.2108519}{0.2193329}\par\smallskip
+\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.19\linewidth}
+\centering\small STS-B ($n=2$)\par\smallskip
+\allocationbar{A}{0.4625905}{0.4346104}{0.1027991}\par\smallskip
+\allocationbar{B}{0.4634592}{0.4196426}{0.1168983}\par\smallskip
+\allocationbar{C}{0.5226626}{0.1371491}{0.3401883}\par\smallskip
+\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.19\linewidth}
+\centering\small SST-2 ($n=1$)\par\smallskip
+\allocationbar{A}{0.4651930}{0.4333157}{0.1014913}\par\smallskip
+\allocationbar{B}{0.4875879}{0.4019357}{0.1104764}\par\smallskip
+\allocationbar{C}{0.5573737}{0.1720633}{0.2705630}\par\smallskip
+\allocationbar{N}{0.4444444}{0.4444444}{0.1111112}\par\smallskip
+\end{minipage}
+% END GENERATED BLOCK FIGURE
+\par\smallskip
+{\small\textcolor{black!80}{\rule{1em}{1ex}} Leading--leading\quad
+\textcolor{black!45}{\rule{1em}{1ex}} Cross\quad
+\textcolor{black!15}{\rule{1em}{1ex}} Tail--tail}
+\caption{Leading/cross/tail allocation, averaged over modules then $n$ seeds. A: no penalty; B: left-only; C: two-sided. N is the dimension-only reference $(4/9,4/9,1/9)$, not a training run. C reduces cross share but retains a leading block; Table~\ref{tab:mixingmain} supplies magnitude and dispersion, and Appendix~\ref{app:blockallocation} supplies each seed's four fractions.}
+\label{fig:allocation}
+\end{figure}
+
+Without regularization, cross blocks contain approximately 43\% of update energy, the leading block 46\%, and the tail 10\%. Under C, cross share is 10--27\%, tail share 22--34\%, and leading share 44--64\%; the latter rises in four task means. The retained leading block agrees with the structure in Proposition~\ref{prop:mixing}. These are fractions of the total update, which includes insertion. Appendix~\ref{app:offset} calculates the prescribed initial contribution, and the fresh study separately measures learned displacement and leading identity alignment.
+
+Appendix~\ref{app:blockallocation} gives each run's mean block fractions; the supplementary archive contains all module records.
+
+\paragraph{One-sided control and factor asymmetry.}
+B has the highest mean score on RTE, MRPC and CoLA while its cross shares remain about 40--44\% (Table~\ref{tab:mixingmain}). The score ordering therefore differs from the interaction ordering. In all nine A/B pairs, $\mu_E$ falls and $\nu_D$ rises. Reciprocal rescaling of the two factors can also produce this asymmetry, as shown in Appendix~\ref{app:factorscale}; the effective update is needed to interpret the factor measurements.
+
+\paragraph{Interpreting normalized geometry.}
+The archived intervention changes normalized block allocation. Uniformly rescaling a fixed trained matrix would preserve those fractions. A size penalty during training acts through the adapter factors and can change them, which motivates the separate controlled experiment in Section~\ref{sec:matchedcontrol}. The archived measurements describe the selected endpoints.
+
+An isotropically oriented perturbation has expected leading/cross/tail fractions $k^2/d^2$, $2kr/d^2$, and $r^2/d^2$ (Appendix~\ref{app:dimension}). Figure~\ref{fig:allocation} makes this dimension-only reference explicit. A lies nearby, but agreement of three aggregate fractions is not a test of isotropy or evidence that pretrained structure is unused. Equal-dimensional random-frame controls and measurements of other adapters are needed to distinguish those interpretations.
 
 \subsection{Reconstructing four-block allocation}
 \label{app:blockallocation}
@@ -741,7 +1470,7 @@ The 27 run summaries are accompanied by 1,296 module-level records: 48 adapted m
 \widehat p_{TT}=1-q^2.
 \label{eq:recordedallocation}
 \end{equation}
-For exact orthogonal bases these agree with Section~\ref{sec:coordinates}. With saved finite-precision bases, the inferred discrepancy $\left|(\ell_{LL}^2+\ell_{LT}^2+\ell_{TL}^2)/q^2-1\right|$ is at most $2.64\cdot10^{-4}$ across the archive. The normalization makes the four recorded fractions sum to one without assuming perfect numerical orthogonality. Diagnostic denominators also include a $10^{-12}$ numerical stabilizer. We square each matrix's ratios before averaging, never a task-mean ratio.
+For exact orthogonal bases these agree with the fractions defined in Section~\ref{sec:measurement}. With saved finite-precision bases, the inferred discrepancy $\left|(\ell_{LL}^2+\ell_{LT}^2+\ell_{TL}^2)/q^2-1\right|$ is at most $2.64\cdot10^{-4}$ across the archive. The normalization makes the four recorded fractions sum to one without assuming perfect numerical orthogonality. Diagnostic denominators also include a $10^{-12}$ numerical stabilizer. We square each matrix's ratios before averaging, never a task-mean ratio.
 
 \begin{table}[ht]
 \centering
@@ -792,7 +1521,7 @@ The analysis script reconciles every shared summary metric with the mean of its 
 
 \subsection{A reusable spectral report}
 \label{app:reportcard}
-Use a fixed pretrained checkpoint, adapted module list, and declared cutoff for all methods. The primary cutoff here follows the adapter tail dimension, not a measured spectral gap. For each saved effective matrix, record both $\Delta_{\mathrm{total}}=W_{\mathrm{eff}}-W_0$ and $\Delta_{\mathrm{learned}}=W_{\mathrm{eff}}-W_{\mathrm{eff}}(0)$; report zero-update fractions as undefined. The report comprises absolute Frobenius block energies, their fractions, $\rho_F$, operator norm, stable rank, and the dimension-only fractions. Normalize per module before averaging when reproducing our tables; separately label any pooled-energy statistic.
+Use a fixed pretrained checkpoint, adapted module list, and declared cutoff for all methods. The primary cutoff here follows the adapter tail dimension, not a measured spectral gap. For each saved effective matrix, record both $\Delta_{\mathrm{total}}=W_{\mathrm{eff}}-W_0$ and $\Delta_{\mathrm{learned}}=W_{\mathrm{eff}}-W_{\mathrm{eff}}(0)$; report zero-update fractions as undefined. The report comprises absolute Frobenius block energies, their fractions, $\rho_F$, operator norm, stable rank, and the dimension-only fractions. Add leading identity alignment $\eta_I$ and absolute non-identity residual energy under both delta definitions. Export each module's norm and absolute block energies, the cumulative energy curve, and threshold-count curves; a cumulative energy curve alone cannot recover relative-norm thresholds. We report $10^{-6}$ for small-norm counts and both $10^{-6},10^{-3}$ for sensitivity subsets. Future comparisons must declare thresholds before inspection and retain the underlying values. Use the aggregation specified by each table: the focused headline pools squared energies, while equal-module summaries normalize before averaging. This report is diagnostic, not a preservation pass/fail criterion.
 
 Let $P,P'$ be rank-$k$ left projectors before and after adaptation, and $m=\min(k,d-k)$. Supplement the largest-angle sine with
 \begin{equation}
@@ -803,7 +1532,7 @@ d_{\mathrm{ch}}^2=\frac{k}{m}(1-o).
 \end{equation}
 Here $d_{\mathrm{ch}}^2$ averages squared sines over the $m$ potentially nonzero angles, including any zeros within them; $o$ is normalized overlap, with random-independent-subspace expectation $k/d$. Apply the same definitions on the right. Report the boundary values $\sigma_k,\sigma_{k+1}$, their gap, and a prespecified cutoff sweep, such as $k\in\{16,64,128,256,512\}$. Singular-subspace perturbation bounds require separation conditions~\citep{wedin1972perturbation}; a norm/gap quotient is not an unconditional prediction of drift. A boundary tie is flagged, not presented as uniquely defined ranked stability.
 
-Pair these measurements with validation and untouched-test performance, and one frozen-pretraining-head behavior probe on the same checkpoints when retention is studied. Store per-seed values at both a fixed training step and the selected checkpoint; log diagnostics separately from optimization costs. The archived study supplies total-delta allocation and maximum-angle drift, but not the full initialization-corrected or chordal report. Those fields require checkpoint evaluation, not imputation from the current ratios.
+Pair these measurements with validation and untouched-test performance, and one frozen-pretraining-head behavior probe on the same checkpoints when retention is studied. Store per-seed values at both a fixed training step and the selected checkpoint; log diagnostics separately from optimization costs. Full ranked-subspace diagnostics require dense SVDs, $O(d^3)$ for square matrices; a truncated or randomized approximation must report its rank, residual tolerance and convergence checks, particularly near cutoff ties. The archived study supplies total-delta allocation and maximum-angle drift, but not the full initialization-corrected or chordal report. Those fields require checkpoint evaluation, not imputation from the current ratios.
 
 \subsection{Assets and compute reporting}
 \label{app:loggedcost}
@@ -869,19 +1598,21 @@ Fixed-tail coefficients require $r$ trainable entries. Two dense $q\times q$ rot
 \paragraph{Forward computation.}
 Applying a diagonal tail update through its thin factors costs $O(bdr)$; ambient scaling adds only $O(bd)$. If partial rotations are materialized into the basis first, the two basis products add $O(dq^2)$ per reconstruction, in addition to the orthogonal-map construction cost. Dense $q\times q$ maps can incur $O(q^3)$ arithmetic. A dense tail core applied between thin basis products instead costs $O(bdr+br^2)$.
 
-The practical forward path concatenates the leading and tail factors and applies two full-basis products. Its adapter branch therefore costs $O(bd^2)$ even when $q=0$, plus rotation construction when enabled. This is additional to the $O(bd^2)$ base projection. A rank-$\ell$ LoRA branch costs $O(bd\ell)$, so a smaller trainable count need not mean a cheaper forward pass. Backpropagation also differentiates through the adapter operations, and end-to-end peak memory depends on retained activations, dtype, optimizer state, and checkpointing. The arithmetic counts alone do not establish a measured throughput ratio.
+The practical forward path applies leading and tail basis products separately; together they span the complete bases. Its adapter branch therefore costs $O(bd^2)$ even when $q=0$, plus rotation construction when enabled. This is additional to the $O(bd^2)$ base projection. A rank-$\ell$ LoRA branch costs $O(bd\ell)$, so a smaller trainable count need not mean a cheaper forward pass. Backpropagation also differentiates through the adapter operations, and end-to-end peak memory depends on retained activations, dtype, optimizer state, and checkpointing. The arithmetic counts alone do not establish a measured throughput ratio.
+
+At two bytes per entry, the full frozen bases cost 2.25, 4, and 64 MiB per matrix at widths $d=768,1024,4096$, respectively. Each is twice the storage of the corresponding base projection, and the two basis products add approximately twice its matrix-product arithmetic before rotations or penalties. Across the 48 RoBERTa-base projections, 56.6M basis entries are about 45\% of a 125M-parameter backbone's weight storage at equal dtype; the fresh float32 runs require twice the two-byte figures. No measured usable-width limit is established beyond the tested backbones. At larger widths this quadratic storage and cubic SVD setup favor thin selected-band implementations where the update family permits them, or measuring conventional adapters after training. A strict tail-only branch at $r=d/3$ reduces basis storage by threefold; zeroing a leading core in the existing full-basis path does not realize that saving.
 
 \paragraph{Regularization and diagnostics.}
-Directly forming $M_E=U_L^\top E U_T$ and $M_D=V_L^\top D V_T$ costs $O(dkr)$ for a leading dimension $k=d-r$; evaluating their squared Frobenius penalties then costs $O(kr)$. These operations and their gradients are additional training work when the penalty is enabled. They do not require an SVD of the adapted weight. By contrast, exact ranked-subspace diagnostics use a new dense SVD of $W_0+\Delta$ and can cost $O(d^3)$ per measured layer/checkpoint. Diagnostic time should be reported separately from optimization time and should not be charged only to the spectral methods in a controlled comparison.
+Directly forming $M_E=U_L^\top E U_T$ and $M_D=V_L^\top D V_T$ costs $O(dkr)$ for a leading dimension $k=d-r$; evaluating their squared Frobenius penalties then costs $O(kr)$. The fresh runs instead cache the two leading projectors and use the equivalent commutator formula~\eqref{eq:commutator}. This requires $O(d^2k)$ setup and $O(d^2)$ extra storage per layer, followed by $O(d^2)$ work per step. Raw mixing is measured in every arm; gradients through it are computed only when it is penalized. Neither form requires an SVD of the adapted weight. By contrast, exact ranked-subspace diagnostics use a new dense SVD of $W_0+\Delta$ and can cost $O(d^3)$ per measured layer/checkpoint. Diagnostic time should be reported separately from optimization time and should not be charged only to the spectral methods in a controlled comparison.
 
 \paragraph{Merging and deployment.}
-At evaluation with dropout disabled, the additive update can be materialized and merged into $W_0$. A thin diagonal-tail construction costs $O(d^2r)$ to materialize, whereas the current full-basis product costs $O(d^3)$, plus the rotation and scaler operations; dense materialization requires $O(d^2)$ output storage. After merging and removing the adapter branch, the linear layer has the base model's shape and inference-time matrix multiplication. This removes the extra branch at deployment, not the preceding SVD, training, or merge costs.
+At evaluation with dropout disabled, the additive update can be materialized and merged into $W_0$. A thin diagonal-tail construction costs $O(d^2r)$ to materialize, whereas the current full-basis product costs $O(d^3)$, plus the rotation and scaler operations; dense materialization requires $O(d^2)$ output storage. After merging and removing the adapter branch, the linear layer has the base model's shape and inference-time matrix multiplication. This removes the extra branch at deployment, not the preceding SVD, training, or merge costs. In multi-adapter serving, frozen pretrained bases can be shared across tasks; their quadratic storage need not be duplicated per adapter. Keeping branches permits task switching with additional arithmetic, whereas caching separately merged weights requires a dense weight copy per task. The 192-fold branch-arithmetic comparison is not a 192-fold trainable-adapter storage ratio.
 \section{Supporting downstream evaluations}
 \label{app:downstream}
 \subsection{Generation}
 \label{app:generation}
 
-Table~\ref{tab:gpt2_generation_appendix} reports GPT-2 Medium~\citep{radford2019language} on E2E data-to-text generation~\citep{novikova2017e2e}. Fixed-core and partially rotated constructions attain BLEU 68.7 and 68.8, respectively. This extends task-learning evidence beyond classification/regression, without block measurements or a mixing intervention. The imported LoRA and FourierFT entries average three final-epoch runs~\citep{gao2024parameter}; source-reported uncertainties are not a common inferential comparison.
+Table~\ref{tab:gpt2_generation_appendix} reports GPT-2 Medium~\citep{radford2019language} on E2E data-to-text generation~\citep{novikova2017e2e}. Fixed-core and partially rotated constructions attain BLEU 68.7 and 68.8, respectively. This extends task-learning evidence beyond classification/regression, without block measurements or a mixing intervention. The imported LoRA and FourierFT entries average three final-epoch runs~\citep{gao2024parameter}; source-reported uncertainties are not a common inferential comparison. The available records do not establish matched training and decoding protocols across these rows, so the table provides historical context rather than a controlled ranking.
 \begin{table}[ht]
 \centering
 \caption{Supporting GPT-2 Medium E2E results. Non-UI values are from \citet{gao2024parameter}, including their imported full-fine-tuning and adapter results; $L$ and $H$ denote Lin-style and Houlsby-style adapters. Uncertainties retain source conventions. Trainable counts exclude frozen-basis storage; these scores do not measure spectral mixing.}
@@ -906,5 +1637,5 @@ UILinLoRA     & 0.078M  & 68.7$_{\pm.1}$ & 8.732$_{\pm.1}$ & 46.52$_{\pm.3}$ & 7
 
 \section{Scope of functional-retention evidence}
 \label{app:retention}
-Earlier Gemma/Llama retention sweeps lack verified configuration selection, matched adaptation, and checkpoint-level spectral diagnostics. We exclude them from the evidence. Establishing a functional link requires held-out adaptation and non-trained-example retention on the same geometrically measured checkpoints, with matched tuning and replicated seeds.
+The excluded retention table displayed 40 adapted model--method--capacity--task conditions: 20 rows across Gemma-3-12B-it and Llama-3.2-3B-it, each reporting TriviaQA and HotpotQA. These displayed conditions are not a verified count of training runs. Outcomes had already appeared in an earlier draft, so exclusion was retrospective, not an outcome-blind preregistered decision. The records lack verified sweep selection, matched adaptation and checkpoint-level spectral diagnostics; no reliable full run inventory is available. Displayed outcomes had mixed orderings across settings. The original table remains in the audit archive and contributes to none of this paper's empirical conclusions. Establishing a functional link requires held-out adaptation and non-trained-example retention on the same geometrically measured checkpoints, with matched tuning and replicated seeds.
 \end{document}

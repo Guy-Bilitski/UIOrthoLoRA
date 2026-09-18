@@ -96,7 +96,15 @@ def glue_rows():
                 cell = record[task + '_mean'] + r'{\scriptsize$\pm$' + record[task + '_sd'] + '}'
                 cells.append(cell)
             avg6 = sum(Decimal(record[t + '_mean']) for t in ('sst2', 'mrpc', 'cola', 'qnli', 'rte', 'stsb')) / 6
-            cells.append(f'{avg6:.2f}')
+            # Preserve Avg6 in the source CSV, but do not display a cross-protocol aggregate.
+            if record['source'] != 'manuscript':
+                cells.append(record['reported_params'])
+            else:
+                # Configuration-derived adapter entries, not historical run inventories.
+                modules, width = (48,768) if backbone=='base' else (96,1024)
+                q=64 if record['method']=='UIOrthoLoRA' else 0
+                count=modules*(256+2*width+2*q*q)
+                cells.append(f'{count/1e6:.3f}M'+r'$^{\dagger}$')
             rows.append(' & '.join(cells) + r' \\')
     return '\n'.join(rows) + '\n'
 

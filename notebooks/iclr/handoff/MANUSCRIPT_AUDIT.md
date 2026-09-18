@@ -1,6 +1,151 @@
+> **Current preparation status — 19 September 2026:** Start with
+> `EXPERIMENT_PREPARATION_HANDOFF_20260919.md` and
+> `review_feedback/20260919/assessment.md`. The author confirmed **two GPUs**.
+> All 18 practical and 21 RTE band/head confirmations are complete; their
+> protocols and immutable evidence remain unchanged. Prepare the remaining
+> checkpoint evaluations and proposed controls/decoder pilot. New training
+> proposals require the agreed scope and budget; older queue, title, completion
+> and four-GPU statements below are historical. The approved abstract and
+> introduction remain unchanged. This update does not change live server jobs.
+
 # Manuscript audit — review-panel revision, 2026-09-14
 
+## Current section-by-section writing revision — 2026-09-16
+
+The subsequent abstract revision states adapter ownership explicitly and replaces
+the detailed seed/calibration/block-percentage passage with a plain-language
+comparison. The introduction is aligned with this contribution statement.
+Current validation build: `../build/plain_abstract_20260916/neurips_2026.pdf`.
+The earlier section-wide validation below remains applicable to unchanged content.
+
+The title is **Controlling Interaction in Spectral Fine-Tuning**. The author's
+latest instruction centers every section on the completed interaction-versus-size
+comparison, expressed in simple language. The main experiment leads with held-out
+prediction loss and accuracy, followed by the size sweep, update allocation and
+probe behavior. The strict-tail experiment remains separately documented in the
+appendix. `SECTION_READTHROUGH_20260916.md` maps every section to its purpose.
+
+All source/data/algebra/figure audits pass. The final PDF has 35 pages total,
+nine main pages and the complete historical GLUE table on page 8. References are
+resolved; no overflow or missing-glyph errors were found. All main pages were
+rendered and visually inspected. The new grayscale outcome plot shows every
+training seed, verifies its CSV against the frozen manifest, and reproduces
+exactly from its generator. All displayed equations, aligned equations and
+numeric tabular bodies remain byte-identical to the preceding manuscript.
+Raw and derived evidence files are unchanged.
+
+Validation build: `../build/interaction_story_20260916/neurips_2026.pdf`.
+The refreshed standalone archive passes its analysis suite and, after fresh
+extraction, every distributed file hash. Its manuscript equals the current source.
+No new task evaluation, experiment, shared implementation change or GPU action
+occurred. Earlier revision descriptions below are historical.
+
+
+## Current author-directed tail-adaptation refactor — 2026-09-16
+
+The abstract was subsequently revised at the author's request to state the
+completed finding directly. Independent recomputation from all 18 frozen
+held-aside rows gives MIX versus NORM mean-loss reductions of 43.9603% (RTE)
+and 47.7679% (MRPC), with mean accuracy differences +0.1203 and -0.3268 points.
+The abstract rounds these to 44%/48% and +0.12/-0.33 points and explicitly places
+them in the practical leading-plus-tail experiment. It makes no strict-tail,
+rotation, accuracy-equivalence or calibrated-loss claim. The pending comparisons
+and mechanism qualifications remain in the main text. Only the abstract changed
+in the manuscript; the new PDF and refreshed supplementary archive pass their
+checks. Current validation build: `../build/abstract_results_20260916/`.
+
+The active title is **Adapting in the Spectral Tail**. The author explicitly
+reopened writing and recentered it on strict tail capacity, within-tail rotations,
+and the behavior of controlled leading–tail interaction. Adapters precede
+diagnostics; a new main table leads with held-aside loss/accuracy. Existing data
+and proof content remain, while the full bounds and detailed inner-selection
+table move to the appendix. `TAIL_ADAPTATION_EVIDENCE_HANDOFF_20260916.md` records
+the revised priorities and the central missing export: paired tail/head/rotation
+confirmations and learning curves. Neither the narrative refactor nor a clean
+compile establishes those empirical results. Historical status notes follow.
+
+Validation completed for this refactor: 36 PDF pages, nine main pages, historical
+GLUE on page 8, 98 unique labels and 31 cited keys. All required source/algebra/data
+audits and the new behavior/band-snapshot generator pass. The PDF has no undefined
+references, overflow or missing-glyph errors and retains grayscale text. Main
+pages 1, 2, 5, 6, 8 and 9 were rendered and visually inspected. The regenerated
+sanitized archive passes every hash and analysis check after extraction to a
+fresh directory without Git history. Raw experimental exports are unchanged.
+
 Internal author document. Scope: Overleaf project `6aa54397e58b10444b0fa2aa` only. This is not an anonymous submission artifact.
+
+## Current review-v3 update — 2026-09-16
+
+Supersedes presentation details in the dated notes below. The current title is
+**Magnitude and Mixing in Spectral Fine-Tuning**. REVIEW_PANEL_V3_RESPONSE.md maps
+all roadmap items and corrects overstatements in the simulated review. The paper
+separates penalty-only predictions from finite task-trained endpoints and reports
+the one-seed magnitude frontier explicitly. New analysis reports all held-aside
+NLL contrasts, within-task frontier fits, and hypothetical paired-t power
+sensitivities with an independent numerical check. PSOFT coordinates, conditional
+parameter counts, notation and the metric specification are clarified. No new
+training or held-aside fitting is performed; requested inner-selection logits
+are documented in REVIEW_V3_EVIDENCE_HANDOFF_20260916.md. The refreshed analysis
+supplement must accompany the PDF in the next reviewer handoff.
+
+## Current review-v2 update — 2026-09-16
+
+This section supersedes dated experiment-availability statements below. See
+`REVIEW_PANEL_V2_RESPONSE.md` for every MUST/SHOULD disposition and corrections to
+the simulated panel's algebra/statistics; see `PAPER_FINALIZATION_STATUS_20260916.md`
+for the current handoff. New evidence at `a63b1f2` supplies all 18 frozen held-aside
+evaluations and an eight-checkpoint band freeze ledger. Held-aside predictions,
+labels, metrics, loading records, checkpoint identities and file hashes reproduce.
+The older band outcome CSV still contains three confirmations and two pilots;
+freeze coverage is not a substitute for missing outcome rows.
+
+The revised paper reports signed norm errors, total/learned equal-module cross,
+identity alignment and matched-subset small-norm sensitivity. MIX's learned leading
+identity fractions are 84.67% RTE / 89.50% MRPC. They qualify a directional mechanism,
+not demonstrate scaler homogenization. Held-aside MIX–NORM accuracy differences
+are +0.12 / -0.33 pp with wide nominal paired intervals; neither task benefit nor
+equivalence is established. The historical six-task table stays in main text with
+all task means/SDs; its unmatched Avg6 display is removed. Incomplete band numerical
+tables are withheld pending the complete registered block. Theory/prior-method
+coordinates, costs, citations and retrospective retention exclusion are clarified.
+
+Current compile: 32 total pages, nine main pages, full historical GLUE on page 8.
+All required source/data/algebra/PDF audits pass, including the new review analyzer.
+A sanitized standalone analysis supplement is prepared and tested separately from
+the private archive. Centered scaler exports and the full historical retention
+sweep inventory remain requested; complete block B and actual supplementary
+attachment/hosting remain outstanding. No training or shared implementation changes.
+The Overleaf compiler on the current project head remains canonical.
+
+## Historical status notes (superseded where noted above)
+
+## Current analysis update — 2026-09-16, final export integration
+
+The export at `5510161` resolves the earlier learned-delta and protocol handoff
+requests. `scripts/analyze_final_evidence.py` independently joins all 18 fixed
+confirmation checkpoints/validation hashes and reaggregates their 864 module
+records. All three views (initial, total and learned-since-insertion), both
+weightings, and pooled norms agree to a maximum absolute error of 7.22e-16.
+Both invalidation records exclude all 39 corrupted-campaign IDs. The original
+probe CE recomputes to 2.095626057818126 over 4,001 masked tokens. Tokenizer parity
+reports 181 exact examples; this session checked the record, not tokenization again.
+
+The manuscript now reports learned leading allocation and absolute module-energy
+concentration. Pooled MIX leading fractions are 45.2% RTE and 65.5% MRPC after
+subtracting insertion; equal-module fractions are 67.3% and 64.7%. The latter
+prevents a blanket task-dependent-placement claim. Equal-module initialization
+corrections can reach 6.6 and 13.4 pp; initialization is not called negligible.
+
+Band presentation was fixed before confirmation inspection, after disclosure of
+the tail pilot. The new appendix includes 3/21 confirmations and two separate
+pilots at the 07:04 UTC export, all planned contrasts and pending cells. No band,
+rotation or head comparison is claimed complete. Official splits remain untouched;
+`LOCKED_EVALUATION_REQUEST_20260916.md` specifies the separate frozen evaluation.
+
+See `PAPER_FINALIZATION_STATUS_20260916.md` for current readiness. The September 14
+verdict and detailed review history below are retained as historical records,
+not current experiment availability. The canonical PDF is Overleaf's compilation;
+local PDFs are validation builds. No GPU job or shared research source changed.
 
 ## Verdict
 
