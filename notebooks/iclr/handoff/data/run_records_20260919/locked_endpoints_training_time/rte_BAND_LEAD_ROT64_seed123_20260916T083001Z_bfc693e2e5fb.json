@@ -1,0 +1,24 @@
+{
+  "best_validation_checkpoint": {
+    "checkpoint_path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_confirmation_v1/runs/iclr_6aa54397/BAND_LEAD_ROT64/rte/seed_123/20260916T083001Z_bfc693e2e5fb/engine/checkpoints/step_00001024",
+    "checkpoint_sha256": "59c5f11a372511792c544d28dc25b6f2a1e663cb2a59c1b34c6c2f2289d45738",
+    "metrics": {
+      "accuracy": 0.7436823104693141,
+      "examples": 277,
+      "split_fingerprint": "318634818b79732816b5486404489d25dfd9d3de37aa4c111831dc9be070a3a8",
+      "task_loss": 0.8731549231584321
+    },
+    "step": 1024
+  },
+  "fixed_step_checkpoint": {
+    "checkpoint_path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_confirmation_v1/runs/iclr_6aa54397/BAND_LEAD_ROT64/rte/seed_123/20260916T083001Z_bfc693e2e5fb/engine/checkpoints/step_00005670",
+    "checkpoint_sha256": "825207e26f22b1b0007606b09e8c7c5120cc7cf03c55ea093bd2373fe292474e",
+    "metrics": {
+      "accuracy": 0.740072202166065,
+      "examples": 277,
+      "split_fingerprint": "318634818b79732816b5486404489d25dfd9d3de37aa4c111831dc9be070a3a8",
+      "task_loss": 1.7197220237246489
+    },
+    "step": 5670
+  }
+}

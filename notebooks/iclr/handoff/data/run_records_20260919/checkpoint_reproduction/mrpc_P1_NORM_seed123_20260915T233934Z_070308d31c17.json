@@ -1,0 +1,16 @@
+{
+  "atol": 1e-06,
+  "checkpoint_path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_confirmation_v1/runs/iclr_6aa54397/P1_NORM/mrpc/seed_123/20260915T233934Z_070308d31c17/engine/checkpoints/step_00002760/state.pt",
+  "checkpoint_reload_passed": true,
+  "checkpoint_sha256": "cad46f69774114b75533670948f0eb05eefeb387abb5bcd18b67690ca2a588da",
+  "diagnostics_reproduced": true,
+  "metrics_reproduced": true,
+  "observation_sha256": "602cfb2a6155f6d7f8b202ee1c41881dc409d6754326a430820659156e8ce98f",
+  "probe_reproduced": true,
+  "reference_sha256": "6076ed36ab18909f804468b26fa6a50abb8322e6df2b732c5f0fb788bfe5f965",
+  "rtol": 1e-05,
+  "run_id": "20260915T233934Z_070308d31c17",
+  "step": 2760,
+  "validated_utc": "2026-09-16T00:25:45.082471+00:00",
+  "validation_scope": "checkpoint"
+}

@@ -1,0 +1,230 @@
+{
+ "purpose": "gpt2_e2e_provenance_inventory",
+ "source_tree": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/E2E",
+ "read_only": true,
+ "counts": {
+  "result_directories": 32,
+  "with_scores": 29,
+  "with_run_metadata": 7,
+  "lora_results": 0
+ },
+ "paper_rows": {
+  "UIOrthoLoRA": {
+   "BLEU": 68.8,
+   "NIST": 8.729,
+   "METEOR": 46.71,
+   "ROUGE_L": 71.6,
+   "CIDEr": 2.47,
+   "trainable": "0.35M",
+   "uncertainty": "BLEU \u00b1.1, NIST \u00b1.06, METEOR \u00b1.3, ROUGE-L \u00b1.02, CIDEr \u00b1.01"
+  },
+  "UILinLoRA": {
+   "BLEU": 68.7,
+   "NIST": 8.732,
+   "METEOR": 46.52,
+   "ROUGE_L": 71.45,
+   "CIDEr": 2.46,
+   "trainable": "0.078M",
+   "uncertainty": "BLEU \u00b1.1, NIST \u00b1.1, METEOR \u00b1.3, ROUGE-L \u00b1.01, CIDEr \u00b1.02"
+  }
+ },
+ "archived_files_reproducing_each_paper_row_after_rounding": {
+  "UIOrthoLoRA": [
+   "lr_0.05_svalues_256_svectors_30_seed_17_init_sigma_0.1_init_scaler_0.1"
+  ],
+  "UILinLoRA": []
+ },
+ "seeds_present_by_configuration": {
+  "lr_0.03_svalues_256_svectors_0_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "2",
+    "BLEU": 0.6934,
+    "directory": "2lr_0.03_svalues_256_svectors_0_seed_17_init_sigma_0.1_init_scaler_0.1"
+   },
+   {
+    "seed": "1054",
+    "prefix": "phase1_",
+    "BLEU": 0.6484,
+    "directory": "phase1_lr_0.03_svalues_256_svectors_0_seed_1054_init_sigma_0.1_init_scaler_0.1"
+   },
+   {
+    "seed": "2021",
+    "prefix": "phase1_",
+    "BLEU": 0.6798,
+    "directory": "phase1_lr_0.03_svalues_256_svectors_0_seed_2021_init_sigma_0.1_init_scaler_0.1"
+   },
+   {
+    "seed": "31415",
+    "prefix": "phase1_",
+    "BLEU": 0.6686,
+    "directory": "phase1_lr_0.03_svalues_256_svectors_0_seed_31415_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.05_svalues_256_svectors_0_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "2",
+    "BLEU": 0.6904,
+    "directory": "2lr_0.05_svalues_256_svectors_0_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.05_svalues_256_svectors_15_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "2",
+    "BLEU": 0.6846,
+    "directory": "2lr_0.05_svalues_256_svectors_15_seed_17_init_sigma_0.1_init_scaler_0.1"
+   },
+   {
+    "seed": "17",
+    "prefix": "",
+    "BLEU": 0.6846,
+    "directory": "lr_0.05_svalues_256_svectors_15_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.05_svalues_256_svectors_30_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "2",
+    "BLEU": 0.6829,
+    "directory": "2lr_0.05_svalues_256_svectors_30_seed_17_init_sigma_0.1_init_scaler_0.1"
+   },
+   {
+    "seed": "17",
+    "prefix": "",
+    "BLEU": 0.6877,
+    "directory": "lr_0.05_svalues_256_svectors_30_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.07_svalues_256_svectors_0_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "2",
+    "BLEU": 0.6797,
+    "directory": "2lr_0.07_svalues_256_svectors_0_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.07_svalues_256_svectors_15_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "2",
+    "BLEU": 0.6849,
+    "directory": "2lr_0.07_svalues_256_svectors_15_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.07_svalues_256_svectors_30_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "2",
+    "BLEU": 0.6845,
+    "directory": "2lr_0.07_svalues_256_svectors_30_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.001_svalues_256_svectors_90_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "31415",
+    "prefix": "",
+    "BLEU": 0.6655,
+    "directory": "lr_0.001_svalues_256_svectors_90_seed_31415_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.05_svalues_128_svectors_120_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "",
+    "BLEU": 0.6661,
+    "directory": "lr_0.05_svalues_128_svectors_120_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.05_svalues_128_svectors_30_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "",
+    "BLEU": 0.6838,
+    "directory": "lr_0.05_svalues_128_svectors_30_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.05_svalues_128_svectors_60_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "",
+    "BLEU": 0.6785,
+    "directory": "lr_0.05_svalues_128_svectors_60_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.05_svalues_256_svectors_60_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "17",
+    "prefix": "",
+    "BLEU": 0.6874,
+    "directory": "lr_0.05_svalues_256_svectors_60_seed_17_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.05_svalues_256_svectors_90_sigma_0.01_scaler_0.1": [
+   {
+    "seed": "1054",
+    "prefix": "",
+    "BLEU": 0.682,
+    "directory": "lr_0.05_svalues_256_svectors_90_seed_1054_init_sigma_0.01_init_scaler_0.1"
+   },
+   {
+    "seed": "17",
+    "prefix": "",
+    "BLEU": 0.6821,
+    "directory": "lr_0.05_svalues_256_svectors_90_seed_17_init_sigma_0.01_init_scaler_0.1"
+   }
+  ],
+  "lr_0.05_svalues_256_svectors_90_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "1054",
+    "prefix": "",
+    "BLEU": 0.682,
+    "directory": "lr_0.05_svalues_256_svectors_90_seed_1054_init_sigma_0.1_init_scaler_0.1"
+   },
+   {
+    "seed": "17",
+    "prefix": "",
+    "BLEU": 0.6821,
+    "directory": "lr_0.05_svalues_256_svectors_90_seed_17_init_sigma_0.1_init_scaler_0.1"
+   },
+   {
+    "seed": "2021",
+    "prefix": "",
+    "BLEU": 0.6767,
+    "directory": "lr_0.05_svalues_256_svectors_90_seed_2021_init_sigma_0.1_init_scaler_0.1"
+   },
+   {
+    "seed": "31415",
+    "prefix": "",
+    "BLEU": 0.6814,
+    "directory": "lr_0.05_svalues_256_svectors_90_seed_31415_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.08_svalues_256_svectors_90_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "31415",
+    "prefix": "",
+    "BLEU": 0.6757,
+    "directory": "lr_0.08_svalues_256_svectors_90_seed_31415_init_sigma_0.1_init_scaler_0.1"
+   }
+  ],
+  "lr_0.1_svalues_256_svectors_90_sigma_0.1_scaler_0.1": [
+   {
+    "seed": "31415",
+    "prefix": "",
+    "BLEU": 0.0,
+    "directory": "lr_0.1_svalues_256_svectors_90_seed_31415_init_sigma_0.1_init_scaler_0.1"
+   }
+  ]
+ },
+ "finding": "Only single-run score files are archived; run_metadata.json exists for a minority of runs (the later phase1/smart screens). No archived file records an aggregation over seeds for the two UI rows, so their \u00b1uncertainties cannot be bound to a run population from these files. Where exactly one archived single run reproduces a row's rounded scores, that row is consistent with a single-run report; this is a provenance observation, not proof the row is wrong.",
+ "scripts_present": [
+  "E2e_training2.py",
+  "e2e_evaluation.py",
+  "training_manager.py",
+  "archive/e2e_full_training.py",
+  "archive/e2e_training.py"
+ ],
+ "note": "No historical score was modified and no replacement experiment was launched; any correction/removal is a separate author decision."
+}

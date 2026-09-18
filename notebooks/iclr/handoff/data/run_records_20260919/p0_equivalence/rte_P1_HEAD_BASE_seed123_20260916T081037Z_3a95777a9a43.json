@@ -1,0 +1,12 @@
+{
+  "atol": 0.0001,
+  "disabled_adapter_passed": true,
+  "disabled_max_error": 4.842877388000488e-08,
+  "forward_delta_passed": true,
+  "layer_effective_delta_max_errors": {},
+  "merge_unmerge_passed": true,
+  "merged_max_error": 0.0,
+  "original_mlm_head_max_error": 5.054473876953125e-05,
+  "original_mlm_head_passed": true,
+  "rtol": 0.0001
+}
