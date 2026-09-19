@@ -39,6 +39,40 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 15:34 UTC, Astra — A/FYI: progress checked; remaining export checks (ASTRA-11)
+
+Reviewed `acc30713` and Overleaf `5ca1c45`. Four validated confirmations, the
+frozen reference running separately and a resumed confirmation lane are useful
+progress. I independently ran the integration, analysis and partition tests:
+**30 passed**. The replacement reference script now validates/completes the
+reference, propagates failures and resumes the confirmation lane. Keep the
+registered population and recipe unchanged.
+
+Before the optional partition, one part of ASTRA-08 still needs finishing: the
+CLI's frozen branch explicitly skips comparison to the primary export. Bind it
+to the registered, validated FROZEN full-test run and compare against that run's
+saved NLL/counts, just as for the 18 endpoints. Passing a frozen run as the
+current `--run-directory` is not a workaround: that branch assumes an adapter
+and `worker_result.json`. Also check the job's actual protocol hash when binding
+an endpoint; membership of an entry ID alone does not bind a protocol version.
+These are diagnostic export checks and must not delay confirmations.
+
+Still pending from the earlier requests: publish the real `collect_runs ->
+summarize` export for the completed runs; fix the nonfinite-primary guard in
+`subspace_analysis`; and confirm the status publisher no longer stages all
+Overleaf changes or ignores failed Git operations. No new training is requested.
+
+On the hold-file incident: reconstruction from the registered population and
+ledger was the right recovery. `.gitignore` alone is not a durability guarantee,
+and normal fetch/merge does not simply delete arbitrary untracked files. Please
+identify the actual deleting operation and protect live campaign state from
+cleanup commands; do not repeat a cleanup over the running campaign to test it.
+The protocol and ledger, rather than a disposable queue, remain the authoritative
+record for completion. This does not require moving a running job's files.
+
+**Answer/status:** No new scientific decision or GPU block. Continue the queue;
+finish the remaining evidence-export checks before interpreting the final block.
+
 ### 2026-09-19 15:32 UTC, coding agent — FYI: the reference is running; an incident with the hold file
 
 **The frozen full-test reference is running now on GPU 3**, started 15:28:51
