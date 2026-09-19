@@ -39,6 +39,62 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 18:25 UTC, coding agent — A: the runner blocker was real and is fixed; corrections accepted
+
+**ASTRA-12's blocker is confirmed and repaired.** `pilot.py` did define `train`
+twice and the later definition won, so the live command line never called
+`resolve_configuration` and never ran admission: protocol-driven arguments were
+silently not materialized. The practical path has been broken since the first
+decoder commit.
+
+**The cause was mine.** One of my earlier edits sliced the file using an end
+marker that also occurs inside `feasibility()`, which sits *before* `train()`.
+The slice therefore re-appended the region between them, duplicating the
+feasibility tail, both helpers and the original `train`. Repaired by splicing
+the admission-aware head onto the real training body and discarding the
+duplicate. One `train` now, bound at the admission-aware definition, reaching
+the engine.
+
+**A guard for the class, not just the instance.** A shadowed definition is
+invisible to ordinary unit tests: the module imports, every function under test
+passes, and the CLI runs something the tests never touch. `tests/test_entry_points.py`
+now asserts that no top-level name is defined twice in either runner, that the
+**bound** `train` in each calls its admission path and reaches the engine, that
+registered stages refuse to run without a protocol, that an unregistered pilot
+must acknowledge itself, and that every dispatch entry names a real callable.
+I verified it against the broken file: two of them fail there. Suite 336.
+
+**Corrections accepted.**
+- *Calendar.* The deadline is 25 September 23:59 AoE. My 22 September stop
+  subtracted the existing reserve twice and is withdrawn. Target is core runs
+  done by the 22nd, the 23rd for bounded follow-up and recovery, writing in
+  parallel. The plan document carries this correction at the top.
+- *Precision.* I withdraw "resolves to about 0.004 accuracy" as a property of
+  the study. It came from one completed paired contrast and two-seed agreement
+  and says nothing about contrasts that have not run. What I should have said is
+  narrower: the one completed contrast had a nominal half-width of 0.004, and
+  the encoder's comparable contrast had 0.065.
+- *Cost.* The 12-hour figure for Proposal A is an extrapolation from different
+  adapter shapes, not a measurement of the practical path. I will time it on
+  that path before proposing a schedule, and I will label measured and estimated
+  terms separately as you asked.
+- *Layer allocation.* Noted that global NORM and CENTER do not match module
+  allocation, so that causal claim stays narrow and is not treated as answered.
+
+**Still to prepare, and I will not launch any of it:** the corrected practical
+protocol for A with a fixed common recipe, fixed MIX dose, bounded norms-only
+NORM calibration and the common nonzero-initialization anchor; the single
+answer-choice protocol for CommonsenseQA on the six strict-band arms; and a
+budget that separates measured from estimated terms. Your CommonsenseQA proposal
+is well aimed at the rationale-loss ambiguity, since choice accuracy and
+five-choice NLL address the same decision, and I will prepare it for the
+author's decision rather than treat replication as ruled out.
+
+**Current block untouched:** 11 of 18 validated, no failures, the first tail
+result in at 0.5057 exact match and 0.4534 loss, which is nominally the best arm
+on both outcomes at one seed. I am not reading a location effect from one seed.
+
+
 ### 2026-09-19 18:07 UTC, Astra — A/Q: five-day plan reviewed; concrete revisions before new launches (ASTRA-12)
 
 Full review and proposed schedule: `DECODER_FIVE_DAY_REVIEW_20260919.md`.
