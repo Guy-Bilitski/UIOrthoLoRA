@@ -123,32 +123,43 @@ attempt is retained in the ledger as evidence.
 |---|---|---:|---:|---|
 | TAIL_DIAG | 4 x 4 | 1.033 s | 22.53 GiB | complete |
 | TAIL_ROT128 | 4 x 4 | 1.611 s | 21.28 GiB | **CUDA OOM at step 24** |
-| TAIL_DIAG | 2 x 8 | see final record | see final record | complete |
-| TAIL_ROT128 | 2 x 8 | see final record | see final record | complete |
+| TAIL_DIAG | 2 x 8 | 1.169 s | 15.86 GiB | complete, validated |
+| TAIL_ROT128 | 2 x 8 | 3.252 s | 16.31 GiB | complete, validated |
+
+Both revised runs pass every whole-run check: P0 equivalence, exact zero
+insertion, fixed-endpoint reload reproducing the recorded selection NLL, band
+confinement and the registered decode. The rotation family costs 2.8x the
+diagonal family per optimizer step at these settings, and both now leave about
+8 GiB of headroom.
 
 Memory, not step time, is the binding constraint on a 24 GiB card. The
 151,936-token vocabulary at length 640 dominates: the logits and their gradient
 are the largest single allocations, which is why halving the microbatch is what
 made the rotation family fit.
 
-Other measurements from the completed TAIL_DIAG run at 100 steps: setup 25.9 s,
-one full inner-selection evaluation over 747 examples 21.1 s, decoding 128
-examples 50.1 s at generation batch 32 and a 320-token cap, 3,443 tokens/s, and
-417 s end to end.
+Other measurements at the revised settings, per 100-step run: setup 30 s; one
+full inner-selection evaluation over 747 examples 21.5 s (DIAG) and 41.0 s
+(ROT128); decoding the 128-example audit subset 86.4 s and 79.6 s at generation
+batch 16; 3,048 and 1,142 tokens/s; 478 s and 826 s end to end.
 
-Correctness on real weights, not only on the synthetic fixture: zero insertion
-exact, P0 forward/delta/merge/disable agreement, fixed-endpoint reload
-reproducing the recorded selection NLL, pooled off-band energy fraction
-2.5e-12 and within-band off-diagonal fraction 8.3e-12 for a DIAG arm, and a
-pooled relative Frobenius update norm of 0.012 after 100 steps. Trainable
+Correctness on real weights, not only on the synthetic fixture. Trainable
 parameters were 28,672 for DIAG and 1,863,680 for ROT128, matching the plan.
+Pooled off-band energy fraction was 2.5e-12 for both families, so the update
+stayed strictly inside its band; that is an enforcement check, not a finding.
+The families separate exactly where they should: within-band off-diagonal energy
+was 8.3e-12 for DIAG and **5.3e-02 for ROT128**, so the rotations are genuinely
+active rather than sitting at their identity initialization, which is the
+precondition for the flexibility contrast to mean anything. Pooled relative
+Frobenius update norms were 0.0120 and 0.0118 after 100 steps.
 
-**Decode cap.** The DIAG timing endpoint hit the 320-token cap on 2 of 128
-audited outputs, a rate of 1.6%, above the plan's 1% threshold. If the full
-prescribed audit reproduces that, the registered rule raises the confirmation
-decode budget to 640 tokens for every arm and for the frozen reference, and the
-measured generation budget must be updated accordingly. Cap hits are counted
-from raw token/EOS boundaries.
+**Decode cap.** Both revised endpoints exceeded the plan's 1% threshold on the
+128-example audit subset: 2.3% for DIAG and 1.6% for ROT128, counted from raw
+token/EOS boundaries rather than the answer parser. Mean generated length was
+about 146 tokens, so the cap binds on a long tail rather than typically. Unless
+the remaining prescribed audit states pull the pooled rate under 1%, the
+registered rule raises the confirmation decode budget to 640 tokens for every
+arm and for the frozen reference, and the cost projection below already carries
+that budget.
 
 **Not a result.** These are implementation and cost measurements at a
 100-step endpoint on the tail band only. They say nothing about band ordering,
@@ -213,6 +224,45 @@ CUDA_VISIBLE_DEVICES= $PLAN register-confirmation --resources $RES \
   --authorization "<author's words>" --output $ROOT/protocols/confirmation.json
 CUDA_VISIBLE_DEVICES=$UUID $RUN reference --resources $RES --gpu <GPU> --protocol $ROOT/protocols/confirmation.json
 ```
+
+## 6b. Projected cost and schedule from the measured step times
+
+Measured at the revised settings: DIAG 1.293 s and ROT128 2.666 s per optimizer
+step. The full population is 36 training runs of 842 steps plus the two 100-step
+pilots, so the training term is fixed once those two numbers are known.
+
+Measured: DIAG 1.169 s and ROT128 3.252 s per optimizer step.
+
+| Term | Value |
+|---|---:|
+| Training, family-aware (9 + 9 runs per family) | 18.6 GPU-h |
+| Training, conservative (slower family for every step) | 27.6 GPU-h |
+| Full test generation, 19 states at 1,300 s | 6.9 GPU-h |
+| Other overhead (setup, selection evaluations, reloads, dense geometry) | 6 GPU-h |
+| **Registered projection with the 25% contingency** | **50.5 GPU-h** |
+| DIAG-only fallback, for comparison | 29.4 GPU-h |
+| Wall clock on two GPUs | 15 to 18 h |
+
+The registered figure is the conservative one written by `scope-decision`
+(`decisions/scope.json`), which charges the slower family's step time to every
+step. It is 50.5 GPU-hours against the 96-hour ceiling, so **the reduction rule
+retains all six arms**; the predeclared DIAG-only fallback is not needed and is
+not being used. A family-aware projection is about 37 GPU-hours.
+
+Sequenced on two GPUs, one independent run per card:
+
+| Stage | Runs | Wall on two GPUs |
+|---|---:|---:|
+| Timing pilots | 4 executed, 3 validated, 1 retained OOM failure | done, 0.2 GPU-h |
+| Tuning | 18 | about 5 h |
+| Selection decode audit at the six selected-rate endpoints | 6 | about 0.5 h |
+| Confirmations | 18 | about 9 h |
+| Frozen reference | 1 | about 0.3 h |
+| Evidence export and analysis | CPU | about 1 h |
+
+That is roughly 15 hours of two-GPU wall clock from the moment tuning starts,
+against a training cutoff on the morning of 24 September. The schedule has
+multiple days of margin, which is why no scope reduction is proposed.
 
 ## 7. Resource record
 
