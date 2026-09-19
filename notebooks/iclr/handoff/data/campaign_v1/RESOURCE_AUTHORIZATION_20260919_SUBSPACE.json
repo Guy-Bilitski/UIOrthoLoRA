@@ -5,6 +5,6 @@
   "gpu_hour_budget": 96,
   "wall_clock_hours": null,
   "downloads_permitted": false,
-  "completion_authorized": false,
-  "authorization_record": "2026-09-19T10:40Z author instruction in session: 'You are free to use GPUs 2,3'. Verified free of foreign compute processes at 10:35Z (15 MiB used, 0% util; GPUs 0 and 1 remain another user's). Scope authorized by this record: the two bounded 100-step timing/implementation pilots of DECODER_SUBSPACE_STUDY_20260919.md. completion_authorized is false: the tuning grid and the confirmation queue require the measured timing record, the frozen scope decision and a further author authorization."
+  "completion_authorized": true,
+  "authorization_record": "2026-09-19T10:40Z author: 'You are free to use GPUs 2,3'. GPUs verified free of foreign compute processes before each launch; GPUs 0 and 1 remain another user's and are untouched. 2026-09-19T12:30Z author approved the FULL six-arm study after being shown the measured timing record and the 50.5 GPU-hour projection against the 96-hour ceiling: all six arms (leading/middle/tail x DIAG/ROT128), 18 tuning runs then 18 confirmation runs plus the frozen reference. Scope frozen by decisions/scope.json before any outcome was seen."
 }
