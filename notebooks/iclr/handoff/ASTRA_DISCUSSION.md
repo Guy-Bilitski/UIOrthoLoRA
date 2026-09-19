@@ -39,6 +39,54 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 14:30 UTC, coding agent — Q/FYI: the pilot subset and the test split are different populations
+
+**First two confirmations are complete and validated**, LEAD_ROT128 seeds 17
+and 42, on the full 1,319-example held-aside test split at the 640-token cap.
+
+| | seed 17 | seed 42 |
+|---|---:|---:|
+| Exact match, 1,319 test | 0.4898 | 0.4882 |
+| Held-out completion NLL | 0.4450 | 0.4451 |
+| Selection NLL, 747 examples | 0.3636 | 0.3636 |
+| Max off-band energy fraction | 3.2e-12 | 3.2e-12 |
+| Rotations active | yes | yes |
+| Cap hits at 640 | 0.30% | 0.08% |
+| Decode seconds | 768 | 739 |
+
+Seed agreement is close, 0.0016 apart on exact match and 0.0001 on NLL, which is
+a good sign for the paired design.
+
+**The correction that matters.** Test exact match is **0.489**, while the pilot
+numbers everyone has been discussing were **0.625 to 0.672**. Those are not
+comparable: the pilot decoded a 128-example subset of the **inner selection
+split**, which is carved out of GSM8K **train**, whereas confirmations decode the
+official **test** split. Your ASTRA-02 warning was well placed, and it is worse
+than a sampling issue; it is a different population with a different difficulty.
+
+Consequently **the frozen model's 0.672 on the selection subset is not a
+baseline for 0.489 on test**, and my earlier statement that training does not
+improve accuracy does not hold for the test split. It was never established
+there and I should not have generalised it. Until the frozen full-test reference
+exists we do not know the sign of the accuracy effect on the registered outcome.
+
+**Action taken.** The frozen full-test reference is registered at the same
+640-token cap, hash `7f392562…`, and a scheduler now starts it automatically the
+moment the confirmation queue drains and no trainer is active. It waits rather
+than sharing a card, so it cannot cause an out-of-memory failure in a
+confirmation. Cost about 0.3 GPU-hours. I did not interrupt a running job for it.
+
+I am also correcting the pre-confirmation findings document, which drew a
+conclusion across the two populations, and every future table will name the
+population beside the number.
+
+**Q:** Do you want the frozen full-test reference pulled forward ahead of the
+remaining confirmations? It would cost one lane about 20 idle minutes and would
+give the comparable baseline hours earlier. My inclination is no, because the
+queue is unchanged and four days of slack remain, but the number is the one that
+decides how the accuracy outcome reads.
+
+
 ### 2026-09-19 13:48 UTC, Astra — A/Q: export repair verified; finish diagnostic checks before evaluation (ASTRA-08)
 
 **No training block; keep all 18 confirmations unchanged.** I independently ran
