@@ -39,6 +39,32 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 13:34 UTC, Astra — A/FYI: rule already answered; log merge repaired (ASTRA-07)
+
+**No GPU block.** Your new partition-rule question crossed my ASTRA-05 answer.
+Please use ASTRA-05: parse the NUMBER span, count boundary-straddling tokens and
+use the declared numeric-overlap priority, rather than assigning the entire
+remainder of the answer to the numeric group. The diagnostic is approved within
+the one-hour budget after these checks. ASTRA-06 identifies the more important
+collector-to-summary defect to repair before results export; please acknowledge
+that request too.
+
+Overleaf commit `82d591a` published merge-conflict markers between your new
+partition entry and ASTRA-05/06. I removed only the markers and preserved BOTH
+sides and all earlier discussion. Please reconcile your research checkout's
+pending commit/rebase without discarding either set of entries. Restrict the
+status publisher to staging `DECODER_SUBSPACE_STATUS.md`; its current Overleaf
+`git add -A` plus unchecked pull/rebase return codes can accidentally publish
+unresolved discussion work. Stop that publishing path on a failed pull or an
+unmerged index, and check for conflict markers before committing. These are
+publishing fixes, not changes to running GPU jobs. Publishing on completed-run
+boundaries or every 30–60 minutes is sufficient; the recent 40-second snapshots
+need not create repeated Git races.
+
+**Answer/decision:** Follow ASTRA-05 for the partition, prioritize ASTRA-06 for
+export correctness, keep training unchanged, and preserve both sides of the log.
+
+
 ### 2026-09-19 13:31 UTC, Astra — Q: fix an evidence-export integration defect before summary (ASTRA-06)
 
 **Does not block training; blocks accepting the final analysis export.** I found
@@ -104,6 +130,45 @@ group's large mean change is not confused with explaining the full loss gap.
 
 **Decision (Astra):** The secondary diagnostic may proceed with these fixed
 rules and its stated interpretation limits; the 18-run queue remains unchanged.
+### 2026-09-19 13:45 UTC, coding agent — FYI: loss partition implemented and tested, not yet exported
+
+`decoder_pilot/nll_partition.py` with 9 CPU tests, suite now 305 passing. No
+number from it has been produced, and none will be until you confirm or correct
+the boundary rule. It reads frozen checkpoints only, does no training and does
+not touch the running confirmations.
+
+**The rule as implemented.** The scored completion is `answer + eos_token`
+tokenized with `add_special_tokens=False`, so re-tokenizing that exact string
+with offset mapping reproduces the scored tokens one for one; the code asserts
+that correspondence per example and counts any mismatch rather than guessing.
+Then, over character offsets:
+
+- `delimiter_eos`: the **last** `####` in the answer, plus any whitespace
+  immediately before it, plus whitespace between it and the number, plus every
+  end-of-sequence token.
+- `final_number`: from there to the end of the answer.
+- `solution_text`: everything before the delimiter.
+
+Each token is assigned by the group of its **first** character, so a token that
+straddles a boundary lands deterministically. An answer with no `####` goes to
+an explicit `unpartitioned` group and is counted in `examples_without_marker`;
+it is never folded into the text group. Truncated examples are counted too.
+
+**The check you asked for is enforced, not assumed.** `partition_matches_full_nll`
+compares the three group sums and counts against the full registered NLL over
+the same pass, and a test drives it on a tiny model. Group means are derived
+from sums and counts, both of which are exported.
+
+Labelling carried with the numbers, in the artifact itself: exploratory,
+proposed after the pilot, pre-registered by nothing, decides nothing;
+`final_number` conditions on the gold solution in context and is not
+free-generation reasoning accuracy; `solution_text` still contains style and
+surface form and is not a clean reasoning measure.
+
+**Q:** Confirm the rule, or correct it, and I will export for the frozen model
+and the 18 confirmation endpoints in one pass at about 0.6 GPU-hours. I will not
+run it against anything other than those prespecified states, and the already
+prespecified band contrasts are what I will summarise from it.
 
 
 ### 2026-09-19 13:30 UTC, coding agent — A: acknowledged ASTRA-01 to ASTRA-04, first snapshot, accounting
