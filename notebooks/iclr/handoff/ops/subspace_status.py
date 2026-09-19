@@ -6,6 +6,7 @@ file. Makes no decision and touches no GPU.
 """
 
 import json
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -158,20 +159,46 @@ def main():
     target.write_text(header + markdown(state) + "\n" + body)
     print(json.dumps({k: v for k, v in state.items() if not k.endswith("_runs")}, indent=1))
     if "--push" in sys.argv:
-        for repo, files in ((Path("/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914"), ["notebooks/iclr/handoff/DECODER_SUBSPACE_STATUS.md"]),):
-            subprocess.run(["git", "add", *files], cwd=repo, check=True)
-            subprocess.run(["git", "-c", "user.name=Guy Bilitski", "commit", "-q", "-m",
-                            f"Status snapshot {state['snapshot_utc']}: {state['completed_validated']}/{state['population']} confirmations validated\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"], cwd=repo)
-            subprocess.run(["git", "pull", "--rebase", "-q", "origin", "ortho_new"], cwd=repo)
-            subprocess.run(["git", "push", "-q", "origin", "ortho_new"], cwd=repo)
-        overleaf = Path("/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/overleaf-6aa54397")
-        subprocess.run(["git", "pull", "--rebase", "-q"], cwd=overleaf)
-        subprocess.run(["cp", str(target), str(overleaf / "DECODER_SUBSPACE_STATUS.md")], check=True)
-        subprocess.run(["git", "add", "-A"], cwd=overleaf, check=True)
-        subprocess.run(["git", "-c", "user.name=Guy Bilitski", "commit", "-q", "-m",
-                        f"Status snapshot {state['snapshot_utc']}\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"], cwd=overleaf)
-        subprocess.run(["git", "push", "-q"], cwd=overleaf)
-        print("pushed to both repositories")
+        publish(state, target)
+
+
+NAME = "Guy Bilitski"
+RESEARCH = Path("/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914")
+OVERLEAF = Path("/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/overleaf-6aa54397")
+STATUS_FILE = "DECODER_SUBSPACE_STATUS.md"
+
+
+def run_git(arguments, cwd, *, allow_empty=False):
+    """Run one git command and report its failure. Never silently continue past a failed operation.
+
+    ``allow_empty`` tolerates the "nothing to commit" exit, which is the one expected non-zero status:
+    two snapshots in a row can be byte-identical when no run has changed state.
+    """
+    result = subprocess.run(["git", *arguments], cwd=cwd, capture_output=True, text=True)
+    if result.returncode == 0:
+        return True
+    combined = (result.stdout + result.stderr).lower()
+    if allow_empty and ("nothing to commit" in combined or "no changes added" in combined):
+        return True
+    raise RuntimeError(f"git {' '.join(arguments)} in {cwd} failed ({result.returncode}): {(result.stderr or result.stdout).strip()[:300]}")
+
+
+def publish(state, target):
+    """Commit and push only the status file in each repository, and fail loudly if git does."""
+    message = (f"Status snapshot {state['snapshot_utc']}: "
+               f"{state['completed_validated']}/{state['population']} confirmations validated\n\n"
+               "Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>")
+    run_git(["add", "--", f"notebooks/iclr/handoff/{STATUS_FILE}"], RESEARCH)
+    run_git(["-c", f"user.name={NAME}", "commit", "-q", "-m", message], RESEARCH, allow_empty=True)
+    run_git(["pull", "--rebase", "-q", "origin", "ortho_new"], RESEARCH)
+    run_git(["push", "-q", "origin", "ortho_new"], RESEARCH)
+    run_git(["pull", "--rebase", "-q"], OVERLEAF)
+    shutil.copyfile(target, OVERLEAF / STATUS_FILE)
+    # Stage ONLY the status file: `git add -A` here would sweep up unrelated edits in the paper repository.
+    run_git(["add", "--", STATUS_FILE], OVERLEAF)
+    run_git(["-c", f"user.name={NAME}", "commit", "-q", "-m", message], OVERLEAF, allow_empty=True)
+    run_git(["push", "-q"], OVERLEAF)
+    print("published the status snapshot to both repositories")
 
 
 if __name__ == "__main__":

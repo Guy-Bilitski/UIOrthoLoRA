@@ -300,3 +300,32 @@ def test_a_missing_primary_export_is_reported_not_assumed(tmp_path):
     run_dir.mkdir()
     agree = part.compare_with_primary_export(run_dir, "held_aside_test", dict(nll_sum=1.0, token_count=1))
     assert agree["compared"] is False and "no primary per-example export" in agree["reason"]
+
+
+def test_entry_membership_alone_does_not_bind_a_protocol_version(tmp_path):
+    """A run admitted under a different revision of the same entry must be refused."""
+    protocol_path = tmp_path / "protocol.json"
+    protocol = dict(entries=[dict(entry_id="confirmation/LEAD_DIAG/seed_17")])
+    protocol_path.write_text(json.dumps(protocol))
+    run_dir, ledger = _endpoint(tmp_path, "confirmation/LEAD_DIAG/seed_17", "stale")
+    job = json.loads((run_dir / "job.json").read_text())
+    job["phase_protocol_sha256"] = "d" * 64
+    (run_dir / "job.json").write_text(json.dumps(job))
+    with pytest.raises(ValueError, match="was admitted under protocol"):
+        part.bind_to_registered_endpoint(run_dir, protocol, ledger, protocol_path)
+    # the same run passes once its recorded hash matches the protocol in use
+    from notebooks.iclr.campaign.artifacts import sha256
+    job["phase_protocol_sha256"] = sha256(protocol_path)
+    (run_dir / "job.json").write_text(json.dumps(job))
+    bound, _ = part.bind_to_registered_endpoint(run_dir, protocol, ledger, protocol_path)
+    assert bound["run_id"] == "stale"
+
+
+def test_the_frozen_reference_is_bindable_like_any_endpoint(tmp_path):
+    protocol = dict(entries=[], reference_entry=dict(entry_id="reference/FROZEN/held_aside_test"))
+    run_dir, ledger = _endpoint(tmp_path, "reference/FROZEN/held_aside_test", "frozenrun")
+    job = json.loads((run_dir / "job.json").read_text())
+    job["stage"] = "reference"
+    (run_dir / "job.json").write_text(json.dumps(job))
+    bound, report = part.bind_to_registered_endpoint(run_dir, protocol, ledger)
+    assert bound["stage"] == "reference" and report["run_id"] == "frozenrun"

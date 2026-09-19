@@ -1,0 +1,108 @@
+{
+  "authorization_record": "2026-09-19T10:40Z author: 'You are free to use GPUs 2,3'. Bounded 100-step timing/implementation pilots only.",
+  "confirmation_authorized": false,
+  "dataset_source_sha256": "f07a73b99e81a13d136678c06d5aa2607a70ee0bab8508a91a2c9181679dc935",
+  "design": {
+    "accumulation_steps": 4,
+    "arms_included": [
+      "LEAD_DIAG",
+      "LEAD_ROT128",
+      "MID_DIAG",
+      "MID_ROT128",
+      "TAIL_DIAG",
+      "TAIL_ROT128"
+    ],
+    "band_size": 512,
+    "bands": {
+      "LEAD": 0,
+      "MID": 512,
+      "TAIL": 1024
+    },
+    "batch_size": 4,
+    "effective_batch": 16,
+    "families": [
+      "DIAG",
+      "ROT128"
+    ],
+    "frozen_reference": "The starting instruction-tuned checkpoint is scored once with identical prompts, decoding and scorer as an inference-only reference row.",
+    "generation": {
+      "batch_size": 32,
+      "decoding": "greedy",
+      "max_new_tokens": 320,
+      "precision": "bfloat16",
+      "system_prompt": "Solve the math word problem. Show your reasoning briefly, then give the final numeric answer on the last line as '#### <number>'."
+    },
+    "gradient_checkpointing": false,
+    "learning_rates": [
+      0.0003,
+      0.001,
+      0.003
+    ],
+    "max_gradient_norm": 1.0,
+    "max_length": 640,
+    "not_established": "This is a bounded 1.5B decoder extension, not evidence at 7B+ scale. The SVD is of the starting instruction-tuned checkpoint, not a raw pretraining-only checkpoint. Split isolation does not establish absence of prior GSM8K exposure. The scope is q_proj/o_proj only and justifies no claim about other projections or all model weights. The rotation family has more parameters than DIAG, so that contrast tests added flexibility, not parameter efficiency.",
+    "optimizer_steps": 842,
+    "outcome_policy": "Both generated-answer exact match on the 1,319 held-aside GSM8K test examples and completion-token mean NLL of the reference solutions are primary outcomes at the fixed 842-step endpoint. They are reported together and neither is a substitute for the other: reference-solution NLL is not calibration of the final answer and does not establish improved reasoning. Leading minus tail within each family is the primary location contrast for both outcomes. Paired n=3 intervals are nominal and exploratory; similar means with wide intervals do not establish equivalence, and an inactive adapter cannot support a rotation claim.",
+    "pilot_subset": {
+      "seed": 271828,
+      "size": 128,
+      "split": "selection"
+    },
+    "precision": "bfloat16",
+    "primary_outcomes": [
+      "generated_answer_exact_match",
+      "completion_token_mean_nll"
+    ],
+    "projections": [
+      "q_proj",
+      "o_proj"
+    ],
+    "reduction_rule": "Frozen from measured cost before any confirmation outcome. If the measured projection fits the smaller of the 96 GPU-hour ceiling and the time left before the training cutoff, keep all six arms. Otherwise retain the three DIAG bands x three seeds = 9 confirmations and the three rates x three DIAG bands = 9 tuning runs, keeping the same training length and the full test evaluation: the location question is kept and the secondary flexibility question is dropped. Seeds are never replaced by one-seed coverage and the test set is never cut. Both completed timing pilots are charged to the reduced budget.",
+    "rotation_size": 128,
+    "schema_version": 1,
+    "scope_provenance": "DECODER_SUBSPACE_STUDY_20260919.md (reviewed plan, 19 September 2026) and CODING_AGENT_PROMPT_20260919.md. Bands are the equal thirds [0,512), [512,1024), [1024,1536) of each 1536x1536 q_proj/o_proj of the starting Qwen2.5-1.5B-Instruct checkpoint; q=128 preserves the earlier rotated fraction 64/256. Arm scope is provisional until the measured scope decision freezes it.",
+    "selection_eval_steps": [
+      0,
+      211,
+      421,
+      632,
+      842
+    ],
+    "selection_rule": "One shared learning rate per family, chosen at tuning seed 31415 on the ARITHMETIC MEAN over that family's three bands of inner-selection token-mean completion NLL at the fixed 842-step endpoint. Exact ties choose the smaller rate. The complete band x rate grid of a family must be validated first. No test score, generated answer, geometry or norm enters this decision, and a band-specific preferred rate is reported as sensitivity, never silently substituted. Because one rate is shared, confirmations estimate performance under a balanced common recipe, not the best attainable capacity of each band.",
+    "study": "decoder_subspace",
+    "update_family": "Delta = U_B H V_B^T; diagonal H (DIAG) or last-q rotated block (ROT128); no ambient scalers, no leading identity core, zero coefficients and identity rotations at insertion",
+    "warmup_steps": 0,
+    "weight_decay": 0.0
+  },
+  "entries": [
+    {
+      "arm": "TAIL_DIAG",
+      "entry_id": "timing/TAIL_DIAG/100",
+      "generation_mode": "selection_subset",
+      "learning_rate": 0.001,
+      "max_steps": 100,
+      "seed": 31415,
+      "selection_allowed": false
+    },
+    {
+      "arm": "TAIL_ROT128",
+      "entry_id": "timing/TAIL_ROT128/100",
+      "generation_mode": "selection_subset",
+      "learning_rate": 0.001,
+      "max_steps": 100,
+      "seed": 31415,
+      "selection_allowed": false
+    }
+  ],
+  "model_source_sha256": "9d742c2122aa74b8c1bcdd29755b9ad88856454c34cff5df2855239017533f1a",
+  "prepared_inputs": {
+    "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_v1/inputs/prepared.json",
+    "sha256": "92db5d92e1ea6732d60e44e488628486277e9bb89c75029ff8a51e3233ffbbc7"
+  },
+  "purpose": "decoder_subspace_timing",
+  "registered": true,
+  "registered_utc": "2026-09-19T07:39:49.472415+00:00",
+  "schema_version": 1,
+  "scope": "Timing/implementation pilots only: TAIL_DIAG and TAIL_ROT128 for 100 steps at seed 31415 and LR 1e-3, with the prescribed selection-subset decode. They measure the whole pipeline, including setup, evaluation, generation and reload. They select no band and no learning rate and supply no confirmation evidence.",
+  "svd_reference_sha256": "140057fbd37f83532315754980de8996935c05801436f1d381649586f5e07da0"
+}

@@ -187,3 +187,17 @@ def test_paired_contrast_survives_the_real_path(tmp_path, prepared, record):
     assert contrast["paired_seeds"] == [17, 42, 123]
     loss = result["band_contrasts"]["DIAG/LEAD_minus_TAIL/held_out_completion_nll"]
     assert loss["mean_difference"] == pytest.approx(0.02)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), None, "0.5", True])
+def test_a_nonfinite_or_nonnumeric_primary_outcome_is_refused(tmp_path, prepared, record, bad):
+    """A NaN must not pass as a present outcome: the earlier guard only tested for None."""
+    protocol, protocol_path = _confirmation_protocol(tmp_path, prepared, record)
+    entry = protocol["entries"][0]
+    run_id, run_dir = _fabricate_confirmation_run(tmp_path, protocol, protocol_path, entry,
+                                                  exact_match=0.62, held_out_nll=0.38)
+    _complete(ledger := tmp_path / "run_ledger.jsonl", run_id, run_dir, protocol_path)
+    rows = sp.collect_runs(ledger, protocol_path, purpose=sp.CONFIRMATION_PURPOSE)
+    rows[0]["held_out_completion_nll"] = bad
+    with pytest.raises(ValueError, match="missing a registered primary outcome"):
+        analysis.summarize(rows, dict(protocol, _sha256=sha256(protocol_path)))

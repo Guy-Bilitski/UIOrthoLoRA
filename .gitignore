@@ -217,3 +217,11 @@ notebooks/catastrophic forgetting/results/geo_drift/base_svd/
 
 # External reference clone (upstream LLM-Adapters), not part of this repo
 notebooks/catastrophic forgetting/repro/LLM-Adapters/
+
+# Live campaign state. Nothing here is tracked, and leaving it merely "untracked" exposed the
+# sealed protocols, decision records and the run ledger to any command that removes untracked
+# files. A backgrounded `git stash --include-untracked` did exactly that on 2026-09-19 at
+# 15:16:58 UTC (reflog: "reset: moving to HEAD"), deleting a queue hold file. Ignored files are
+# skipped by `git stash -u` and by `git clean` without `-x`, so this rule is the protection.
+# Durable copies of the ledger, protocols and decisions live under notebooks/iclr/handoff/data/.
+campaign_outputs_*/

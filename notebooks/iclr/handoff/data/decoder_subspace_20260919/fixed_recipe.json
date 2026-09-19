@@ -1,0 +1,101 @@
+{
+  "authorization_record": "2026-09-19T09:10Z author approved running the 18 confirmations after being shown DECODER_PRECONFIRMATION_FINDINGS_20260919.md, including that exact match does not improve over the untrained model.",
+  "families": {
+    "DIAG": 0.001,
+    "ROT128": 0.001
+  },
+  "learning_checks": {
+    "LEAD_DIAG": {
+      "max_off_band_fraction": 2.656827765211185e-12,
+      "optimizer_steps": 100,
+      "pooled_relative_frobenius": 0.012720732685894012,
+      "report": {
+        "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_subspace_v1/runs/LEAD_DIAG/seed_31415/20260919T084517Z_1b10270209ee/validation_report.json",
+        "sha256": "c5d0bacda7973d22bf44873c93916edce703e075936ef0073bbd85347a4db895"
+      },
+      "rotation_active": false,
+      "run_id": "20260919T084517Z_1b10270209ee",
+      "selection_token_mean_nll": 0.4487131773314411,
+      "stage": "timing",
+      "within_band_off_diagonal_fraction": 4.6145455441617296e-12
+    },
+    "LEAD_ROT128": {
+      "max_off_band_fraction": 3.2286308744506978e-12,
+      "optimizer_steps": 842,
+      "pooled_relative_frobenius": 0.03729426127980254,
+      "report": {
+        "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_subspace_v1/runs/LEAD_ROT128/seed_31415/20260919T080540Z_ff223e3130ca/validation_report.json",
+        "sha256": "18fa6915b361c8e8ff5126279ff85c723bd71ab7c7393d77a0a5d2eae0a0d062"
+      },
+      "rotation_active": true,
+      "run_id": "20260919T080540Z_ff223e3130ca",
+      "selection_token_mean_nll": 0.36338175490939295,
+      "stage": "tuning",
+      "within_band_off_diagonal_fraction": 0.32663211535267694
+    },
+    "MID_DIAG": {
+      "max_off_band_fraction": 3.1809708166316565e-12,
+      "optimizer_steps": 100,
+      "pooled_relative_frobenius": 0.012803207905509213,
+      "report": {
+        "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_subspace_v1/runs/MID_DIAG/seed_31415/20260919T085324Z_9f3803e74c42/validation_report.json",
+        "sha256": "2ba61b3740f4f1ff62a068cb317852f6ab11f0d8d704f5300d76e219d91ab3e0"
+      },
+      "rotation_active": false,
+      "run_id": "20260919T085324Z_9f3803e74c42",
+      "selection_token_mean_nll": 0.4427256258418609,
+      "stage": "timing",
+      "within_band_off_diagonal_fraction": 7.257560401690017e-12
+    },
+    "MID_ROT128": {
+      "max_off_band_fraction": 3.2171202691106664e-12,
+      "optimizer_steps": 100,
+      "pooled_relative_frobenius": 0.013097485000908047,
+      "report": {
+        "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_subspace_v1/runs/MID_ROT128/seed_31415/20260919T083105Z_546532a0a680/validation_report.json",
+        "sha256": "099e7640aad05afe67746fe91410e5cbabdd7e484b24260988421a92bab02ea9"
+      },
+      "rotation_active": true,
+      "run_id": "20260919T083105Z_546532a0a680",
+      "selection_token_mean_nll": 0.4123359573831399,
+      "stage": "timing",
+      "within_band_off_diagonal_fraction": 0.06548783105612585
+    },
+    "TAIL_DIAG": {
+      "max_off_band_fraction": 3.274557997165402e-12,
+      "optimizer_steps": 100,
+      "pooled_relative_frobenius": 0.01199949398340341,
+      "report": {
+        "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_subspace_v1/runs/TAIL_DIAG/seed_31415/20260919T074831Z_16871c57f2c7/validation_report.json",
+        "sha256": "0568728299bc459c86f808f562f6feb5fb078debcc12a490c879b81efdb3ad37"
+      },
+      "rotation_active": false,
+      "run_id": "20260919T074831Z_16871c57f2c7",
+      "selection_token_mean_nll": 0.4267848217586415,
+      "stage": "timing",
+      "within_band_off_diagonal_fraction": 8.260863127063682e-12
+    },
+    "TAIL_ROT128": {
+      "max_off_band_fraction": 3.2347111989857424e-12,
+      "optimizer_steps": 100,
+      "pooled_relative_frobenius": 0.011834545530756302,
+      "report": {
+        "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_subspace_v1/runs/TAIL_ROT128/seed_31415/20260919T074524Z_3d657d91fa43/validation_report.json",
+        "sha256": "4f9ec4cb8cac360eef8daf88e4e0cbda51fcc938e9d34e954d325c64726d9088"
+      },
+      "rotation_active": true,
+      "run_id": "20260919T074524Z_3d657d91fa43",
+      "selection_token_mean_nll": 0.3990509987694918,
+      "stage": "timing",
+      "within_band_off_diagonal_fraction": 0.05274976208204214
+    }
+  },
+  "learning_rate": 0.001,
+  "not_established": "This rate is a declared common setting, not a tuned or best-of-grid rate. It has not been shown optimal for any band, and every conclusion is conditional on it, on the support size and on the step budget. Flat curves or uniformly weak adaptation must limit any conclusion about a null band effect rather than be reported as equivalence.",
+  "provenance": "DECODER_SCOPE_REVIEW_20260919.md: 'use LR 1e-3 for every band and both families, the already exercised timing-pilot rate'. Declared design choice, not selected from a grid; not established as optimal for any band.",
+  "purpose": "decoder_subspace_fixed_recipe",
+  "registered": true,
+  "registered_utc": "2026-09-19T13:15:00.474536+00:00",
+  "rule": "One common learning rate for every band and both families, declared in advance as a DESIGN CHOICE and not selected from a grid. It is the rate already exercised by the timing pilots; it is not established as optimal for any band, and the conclusions are conditional on it. This record forges no tuning completion and contains no best-of-grid selection. Each registered arm must carry a short learning check at this rate and the tuning seed showing finite loss, a nonzero update, and active rotations where the family has them. A check may NOT demand an accuracy gain, and no outcome, band ranking or unfavourable result may change the rate. A common rate also removes the earlier per-family rate difference from the secondary rotation comparison, though the larger rotation parameter count remains.",
+  "schema_version": 1
+}

@@ -39,6 +39,70 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 15:55 UTC, coding agent — A: ASTRA-11 items done, including the deleting operation
+
+**I found the deleting operation, and it was mine.** The reflog shows
+`reset: moving to HEAD` at 15:16:58 UTC, 41 seconds after the hold file was
+created. That is the signature of `git stash --include-untracked`, which records
+untracked files and then resets the tree, removing them. It came from a compound
+command of mine that had exceeded its foreground timeout and completed in the
+background, so it ran minutes after I issued it and long after I had stopped
+thinking about it. You were right that fetch and merge do not delete untracked
+files; nothing in the campaign did this, I did.
+
+**The real exposure was much larger than a queue file.** Twenty files under the
+campaign root were untracked-but-not-ignored, including `run_ledger.jsonl` and
+every sealed record: `fixed_recipe.json`, `generation_audit.json`, `scope.json`,
+`timing_record.json` and the protocols. Any command that removes untracked files
+would have taken the authoritative completion record with them. Only `**/runs/`
+and `**/*.txt` happened to be ignored, which is why the hold was the file that
+actually went.
+
+**Two protections, not one.** `campaign_outputs_*/` is now in `.gitignore`, so
+the live state is skipped by `git stash -u` and by `git clean` without `-x`;
+exposure is zero files. And because ignoring is a convention rather than a
+guarantee, the ledger, all protocols and all decision records are now copied
+into the tracked tree at `notebooks/iclr/handoff/data/decoder_subspace_20260919/`
+and refreshed as they change, so the authoritative record survives regardless of
+what happens to the working directory. I did not run any cleanup to test this
+and did not move a running job's files.
+
+**The remaining ASTRA-11 items are done.**
+- *Frozen branch comparison.* `bind_to_registered_endpoint` now takes the
+  protocol path and compares the job's recorded `phase_protocol_sha256`, so
+  entry-ID membership no longer implies a protocol version; a run admitted under
+  another revision is refused by name. The frozen path no longer assumes an
+  adapter or `worker_result.json`: a registered FROZEN run directory is bound,
+  labelled `frozen_reference_endpoint`, and cross-checked against its own saved
+  per-example NLL and counts exactly like the 18 endpoints.
+- *Nonfinite guard.* The earlier check tested only for `None`, so a NaN would
+  have passed as a present outcome. It now rejects `None`, booleans, non-numbers
+  and nonfinite values, covered by a parametrised test over NaN, infinity,
+  `None`, a string and `True`.
+- *Status publisher.* It no longer runs `git add -A` in the paper repository,
+  which could have swept up unrelated edits; it stages only the status file in
+  each repository. Every git call goes through a helper that raises on failure,
+  with the single expected exception of an empty commit when two snapshots are
+  identical.
+
+**The real export is published, not just tested.** `collect_runs -> summarize`
+run against the live ledger:
+`data/decoder_subspace_20260919/analysis_partial_20260919T1550Z.json`, 4 of 18
+completed, 32 learning-curve rows, both outcomes finite throughout.
+
+| Arm | Seeds | Exact match, 1,319 test | Held-out NLL |
+|---|---|---:|---:|
+| LEAD_ROT128 | 17, 42, 123 | 0.4905, sd 0.0027 | 0.4450 |
+| MID_ROT128 | 17 | 0.4973 | 0.4438 |
+
+The other four arms correctly report no completed seeds rather than an empty
+row, contrasts are formed only where both sides exist, and the frozen reference
+row is `null` because that run is still decoding. Maximum off-band energy across
+all completed runs is 3.2e-12.
+
+Suite 327 passing. Nothing here changed the population, recipe or stopping rule.
+
+
 ### 2026-09-19 15:34 UTC, Astra — A/FYI: progress checked; remaining export checks (ASTRA-11)
 
 Reviewed `acc30713` and Overleaf `5ca1c45`. Four validated confirmations, the

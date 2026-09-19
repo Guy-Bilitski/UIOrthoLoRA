@@ -1,0 +1,58 @@
+{
+  "arms_included": [
+    "LEAD_DIAG",
+    "LEAD_ROT128",
+    "MID_DIAG",
+    "MID_ROT128",
+    "TAIL_DIAG",
+    "TAIL_ROT128"
+  ],
+  "authorization_record": "2026-09-19T12:00Z measured scope decision from the completed v2 timing pilots (DIAG 1.169 s/step, ROT128 3.252 s/step, both fitting in 16.3 GiB). Generation budgeted at 1300 s per full 1,319-example test state, allowing for the 640-token cap the decode audit indicates. Frozen before any tuning or confirmation outcome.",
+  "ceiling_gpu_hours": 96.0,
+  "created_utc": "2026-09-19T08:00:13.721256+00:00",
+  "effective_budget_gpu_hours": 96.0,
+  "full_scope_fits": true,
+  "hours_available_on_two_gpus": 60.0,
+  "note": "Frozen from measured cost before any confirmation outcome was seen. Training length, seeds and the full test evaluation are unchanged in both scopes; only the secondary flexibility question is dropped in the reduced scope. Both timing pilots are charged to whichever budget applies.",
+  "obstruction": null,
+  "projections": {
+    "diag_only": {
+      "arms": 3,
+      "confirmation_runs": 9,
+      "contingency": 0.25,
+      "full_test_generation_states": 10,
+      "generation_gpu_hours": 3.611111111111111,
+      "other_overhead_gpu_hours": 6.0,
+      "step_seconds": 3.251887993887067,
+      "subtotal_gpu_hours": 23.4822200094805,
+      "timing_runs": 2,
+      "total_gpu_hours": 29.352775011850625,
+      "total_optimizer_steps": 15356,
+      "training_gpu_hours": 13.871108898369389,
+      "tuning_runs": 9
+    },
+    "full": {
+      "arms": 6,
+      "confirmation_runs": 18,
+      "contingency": 0.25,
+      "full_test_generation_states": 19,
+      "generation_gpu_hours": 6.861111111111111,
+      "other_overhead_gpu_hours": 6.0,
+      "step_seconds": 3.251887993887067,
+      "subtotal_gpu_hours": 40.422668463745055,
+      "timing_runs": 2,
+      "total_gpu_hours": 50.52833557968132,
+      "total_optimizer_steps": 30512,
+      "training_gpu_hours": 27.56155735263394,
+      "tuning_runs": 18
+    }
+  },
+  "purpose": "decoder_subspace_scope_decision",
+  "reduced_scope_fits": true,
+  "rule": "Frozen from measured cost before any confirmation outcome. If the measured projection fits the smaller of the 96 GPU-hour ceiling and the time left before the training cutoff, keep all six arms. Otherwise retain the three DIAG bands x three seeds = 9 confirmations and the three rates x three DIAG bands = 9 tuning runs, keeping the same training length and the full test evaluation: the location question is kept and the secondary flexibility question is dropped. Seeds are never replaced by one-seed coverage and the test set is never cut. Both completed timing pilots are charged to the reduced budget.",
+  "schema_version": 1,
+  "timing_record": {
+    "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_subspace_v1/decisions/timing_record.json",
+    "sha256": "1e4704e736f51ae30912a4c618c5d7bb8f221f7fec0016def2e8daed8654268f"
+  }
+}

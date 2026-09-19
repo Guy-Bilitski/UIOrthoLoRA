@@ -237,11 +237,13 @@ def cli_summary(payload):
     return {key: payload[key] for key in SUMMARY_KEYS}
 
 
-def bind_to_registered_endpoint(run_directory, protocol, ledger_path):
-    """Refuse anything that is not a validated, registered endpoint of this study.
+def bind_to_registered_endpoint(run_directory, protocol, ledger_path, protocol_path=None):
+    """Refuse anything that is not a validated, registered endpoint of THIS protocol version.
 
-    A directory is not a confirmation endpoint merely because it contains a ``job.json``: the entry must be
-    registered in this protocol, and the ledger must record that run as completed with a validation report.
+    A directory is not an endpoint merely because it contains a ``job.json``: the entry must be registered
+    here, the ledger must record that run as completed with a validation report, and the job's recorded
+    protocol hash must match the protocol in use. Entry-ID membership alone does not bind a version, so a
+    run admitted under an earlier revision of the same entry would otherwise be accepted.
     """
     job = json.loads((Path(run_directory) / "job.json").read_text())
     entry_ids = {entry["entry_id"] for entry in protocol.get("entries", [])}
@@ -250,6 +252,11 @@ def bind_to_registered_endpoint(run_directory, protocol, ledger_path):
         entry_ids.add(reference["entry_id"])
     if job.get("entry_id") not in entry_ids:
         raise ValueError(f"{job.get('entry_id')} is not a registered endpoint of this protocol")
+    if protocol_path is not None and job.get("phase_protocol_sha256") != sha256(protocol_path):
+        raise ValueError(
+            f"Run {job.get('run_id')} was admitted under protocol "
+            f"{str(job.get('phase_protocol_sha256'))[:12]}, not the one in use ({sha256(protocol_path)[:12]})"
+        )
     status, validation = None, None
     for line in Path(ledger_path).read_text().splitlines():
         if not line.strip():
@@ -299,7 +306,8 @@ def main():
     parser.add_argument("--resources", type=Path, required=True)
     parser.add_argument("--gpu", type=int, required=True)
     parser.add_argument("--protocol", type=Path, required=True)
-    parser.add_argument("--run-directory", type=Path, default=None, help="a finished run; omit for the frozen model")
+    parser.add_argument("--run-directory", type=Path, default=None,
+                        help="a registered, validated endpoint: a confirmation run or the FROZEN full-test reference")
     parser.add_argument("--split", default="held_aside_test")
     parser.add_argument("--eval-batch-size", type=int, default=4)
     parser.add_argument("--output", type=Path, required=True)
@@ -319,9 +327,11 @@ def main():
     encoded, raw, _ = encode_splits(tokenizer, prepared["dataset"], record["max_length"])
     ledger = Path(resources.output_root) / "run_ledger.jsonl"
     identity = dict(state="frozen")
+    bound_job = bound_report = None
     if args.run_directory is not None:
-        bound_job, bound_report = bind_to_registered_endpoint(args.run_directory, protocol, ledger)
-        job = json.loads((args.run_directory / "job.json").read_text())
+        bound_job, bound_report = bind_to_registered_endpoint(args.run_directory, protocol, ledger, args.protocol)
+    if args.run_directory is not None and bound_job.get("stage") != "reference":
+        job = bound_job
         from . import adapters as adapter_module
 
         references, _ = adapter_module.load_references(prepared["svd_reference_cache"], model, tuple(record["projections"]))
@@ -339,8 +349,14 @@ def main():
                         bound_validation_report=bound_report.get("run_id"),
                         bound_held_out_nll=bound_report.get("held_out_completion_nll"))
     else:
+        # Frozen branch: no adapter is inserted and there is no worker_result.json. A registered FROZEN run
+        # directory is still bound above and cross-checked against its own primary export below.
         model.requires_grad_(False)
         model.to(device)
+        if bound_job is not None:
+            identity = dict(state="frozen_reference_endpoint", run_id=bound_job["run_id"],
+                            entry_id=bound_job["entry_id"], arm=bound_job.get("arm"),
+                            bound_validation_report=bound_report.get("run_id"))
     model.eval()
     rows, mask_validation = validate_population(tokenizer, encoded[args.split], raw[args.split])
     print("mask validation before any model loss:", json.dumps(mask_validation, indent=1))
@@ -349,7 +365,7 @@ def main():
     result["primary_export_agreement"] = (
         compare_with_primary_export(args.run_directory, args.split, result["full"])
         if args.run_directory is not None
-        else dict(compared=False, reason="frozen model has no trained-run primary export on this path")
+        else dict(compared=False, reason="no run directory supplied, so there is no primary export to compare")
     )
     payload = dict(
         schema_version=1,

@@ -1,0 +1,279 @@
+{
+  "arms": {
+    "LEAD_DIAG": {
+      "band": "LEAD",
+      "diagnostics": {
+        "any_rotation_active": [],
+        "length_limit_rate": [],
+        "max_off_band_fraction": [],
+        "pooled_in_band_off_diagonal_fraction": [],
+        "pooled_relative_frobenius": []
+      },
+      "family": "DIAG",
+      "missing_seeds": [
+        17,
+        42,
+        123
+      ],
+      "outcomes": {
+        "exact_match": {
+          "mean": null,
+          "n": 0,
+          "sd": null,
+          "values": []
+        },
+        "held_out_completion_nll": {
+          "mean": null,
+          "n": 0,
+          "sd": null,
+          "values": []
+        }
+      },
+      "seeds_completed": []
+    },
+    "LEAD_ROT128": {
+      "band": "LEAD",
+      "diagnostics": {
+        "any_rotation_active": [
+          true,
+          true,
+          true
+        ],
+        "length_limit_rate": [
+          0.003032600454890068,
+          0.000758150113722517,
+          0.001516300227445034
+        ],
+        "max_off_band_fraction": [
+          3.2361820773781714e-12,
+          3.210529167266226e-12,
+          3.1917874178065355e-12
+        ],
+        "pooled_in_band_off_diagonal_fraction": [
+          0.3270680775993781,
+          0.3257755975035442,
+          0.3253506529639067
+        ],
+        "pooled_relative_frobenius": [
+          0.036940346308660284,
+          0.037216976263589566,
+          0.03726183734362435
+        ]
+      },
+      "family": "ROT128",
+      "missing_seeds": [],
+      "outcomes": {
+        "exact_match": {
+          "mean": 0.49052312357846856,
+          "n": 3,
+          "sd": 0.0027335491095254036,
+          "values": [
+            0.489764973464746,
+            0.488248673237301,
+            0.4935557240333586
+          ]
+        },
+        "held_out_completion_nll": {
+          "mean": 0.44499604364715567,
+          "n": 3,
+          "sd": 6.607589631325061e-05,
+          "values": [
+            0.4449814926975062,
+            0.4450681822584435,
+            0.44493845598551746
+          ]
+        }
+      },
+      "seeds_completed": [
+        17,
+        42,
+        123
+      ]
+    },
+    "MID_DIAG": {
+      "band": "MID",
+      "diagnostics": {
+        "any_rotation_active": [],
+        "length_limit_rate": [],
+        "max_off_band_fraction": [],
+        "pooled_in_band_off_diagonal_fraction": [],
+        "pooled_relative_frobenius": []
+      },
+      "family": "DIAG",
+      "missing_seeds": [
+        17,
+        42,
+        123
+      ],
+      "outcomes": {
+        "exact_match": {
+          "mean": null,
+          "n": 0,
+          "sd": null,
+          "values": []
+        },
+        "held_out_completion_nll": {
+          "mean": null,
+          "n": 0,
+          "sd": null,
+          "values": []
+        }
+      },
+      "seeds_completed": []
+    },
+    "MID_ROT128": {
+      "band": "MID",
+      "diagnostics": {
+        "any_rotation_active": [
+          true
+        ],
+        "length_limit_rate": [
+          0.002274450341167551
+        ],
+        "max_off_band_fraction": [
+          3.245443287469631e-12
+        ],
+        "pooled_in_band_off_diagonal_fraction": [
+          0.3063855804584989
+        ],
+        "pooled_relative_frobenius": [
+          0.034971698637110464
+        ]
+      },
+      "family": "ROT128",
+      "missing_seeds": [
+        42,
+        123
+      ],
+      "outcomes": {
+        "exact_match": {
+          "mean": 0.4973464746019712,
+          "n": 1,
+          "sd": null,
+          "values": [
+            0.4973464746019712
+          ]
+        },
+        "held_out_completion_nll": {
+          "mean": 0.4438369324385543,
+          "n": 1,
+          "sd": null,
+          "values": [
+            0.4438369324385543
+          ]
+        }
+      },
+      "seeds_completed": [
+        17
+      ]
+    },
+    "TAIL_DIAG": {
+      "band": "TAIL",
+      "diagnostics": {
+        "any_rotation_active": [],
+        "length_limit_rate": [],
+        "max_off_band_fraction": [],
+        "pooled_in_band_off_diagonal_fraction": [],
+        "pooled_relative_frobenius": []
+      },
+      "family": "DIAG",
+      "missing_seeds": [
+        17,
+        42,
+        123
+      ],
+      "outcomes": {
+        "exact_match": {
+          "mean": null,
+          "n": 0,
+          "sd": null,
+          "values": []
+        },
+        "held_out_completion_nll": {
+          "mean": null,
+          "n": 0,
+          "sd": null,
+          "values": []
+        }
+      },
+      "seeds_completed": []
+    },
+    "TAIL_ROT128": {
+      "band": "TAIL",
+      "diagnostics": {
+        "any_rotation_active": [],
+        "length_limit_rate": [],
+        "max_off_band_fraction": [],
+        "pooled_in_band_off_diagonal_fraction": [],
+        "pooled_relative_frobenius": []
+      },
+      "family": "ROT128",
+      "missing_seeds": [
+        17,
+        42,
+        123
+      ],
+      "outcomes": {
+        "exact_match": {
+          "mean": null,
+          "n": 0,
+          "sd": null,
+          "values": []
+        },
+        "held_out_completion_nll": {
+          "mean": null,
+          "n": 0,
+          "sd": null,
+          "values": []
+        }
+      },
+      "seeds_completed": []
+    }
+  },
+  "band_contrasts": {
+    "ROT128/LEAD_minus_MID/exact_match": {
+      "family": "ROT128",
+      "higher_band": "LEAD",
+      "lower_band": "MID",
+      "outcome": "exact_match",
+      "paired_seeds": [
+        17
+      ],
+      "primary": false,
+      "status": "insufficient_paired_seeds"
+    },
+    "ROT128/LEAD_minus_MID/held_out_completion_nll": {
+      "family": "ROT128",
+      "higher_band": "LEAD",
+      "lower_band": "MID",
+      "outcome": "held_out_completion_nll",
+      "paired_seeds": [
+        17
+      ],
+      "primary": false,
+      "status": "insufficient_paired_seeds"
+    }
+  },
+  "completeness": {
+    "complete": false,
+    "completed_runs": 4,
+    "expected_runs": 18,
+    "note": "Incomplete paired location sets are reported as incomplete; no arm is dropped to balance a table."
+  },
+  "confirmation_protocol_sha256": "2083c69c211e3fadbe23d391abfeac2b9ba446c62533db46dff34464959c49ab",
+  "created_utc": "2026-09-19T15:47:36.077696+00:00",
+  "enforcement_checks": {
+    "max_off_band_fraction_over_all_runs": 3.245443287469631e-12,
+    "note": "Off-band energy near zero is an enforcement check that the update stayed in its band, not a discovery. If a ROT128 arm never made a meaningful within-band off-diagonal update, the rotation contrast cannot support an empirical claim about effective rotation."
+  },
+  "frozen_reference": null,
+  "interpretation_limits": "This is a bounded 1.5B decoder extension, not evidence at 7B+ scale. The SVD is of the starting instruction-tuned checkpoint, not a raw pretraining-only checkpoint. Split isolation does not establish absence of prior GSM8K exposure. The scope is q_proj/o_proj only and justifies no claim about other projections or all model weights. The rotation family has more parameters than DIAG, so that contrast tests added flexibility, not parameter efficiency.",
+  "outcome_policy": "Both generated-answer exact match on the 1,319 held-aside GSM8K test examples and completion-token mean NLL of the reference solutions are primary outcomes at the fixed 842-step endpoint. They are reported together and neither is a substitute for the other: reference-solution NLL is not calibration of the final answer and does not establish improved reasoning. Leading minus tail within each family is the primary location contrast for both outcomes. Paired n=3 intervals are nominal and exploratory; similar means with wide intervals do not establish equivalence, and an inactive adapter cannot support a rotation claim.",
+  "primary_outcomes": [
+    "generated_answer_exact_match",
+    "completion_token_mean_nll"
+  ],
+  "purpose": "decoder_subspace_analysis",
+  "rotation_contrasts": {},
+  "schema_version": 1
+}

@@ -1,0 +1,50 @@
+{
+  "complete": true,
+  "created_utc": "2026-09-19T07:59:56.486760+00:00",
+  "frozen_memory_settings": {
+    "accumulation_steps": 8,
+    "batch_size": 2,
+    "gradient_checkpointing": false,
+    "max_length": 640,
+    "precision": "bfloat16"
+  },
+  "measured": {
+    "timing/TAIL_DIAG/100": {
+      "arm": "TAIL_DIAG",
+      "evaluation_seconds": 21.510453051887453,
+      "generation_examples": 128,
+      "generation_seconds": 86.37598545663059,
+      "length_limit_rate": 0.0234375,
+      "run_id": "20260919T074831Z_16871c57f2c7",
+      "setup_seconds": 30.23911727964878,
+      "step_seconds_median": 1.169102197047323,
+      "steps": 100,
+      "tokens_per_second": 3047.5321848642484,
+      "training_peak_allocated": 14728061952,
+      "training_peak_reserved": 17033068544
+    },
+    "timing/TAIL_ROT128/100": {
+      "arm": "TAIL_ROT128",
+      "evaluation_seconds": 41.00442075356841,
+      "generation_examples": 128,
+      "generation_seconds": 79.59913690946996,
+      "length_limit_rate": 0.015625,
+      "run_id": "20260919T074524Z_3d657d91fa43",
+      "setup_seconds": 31.61642217915505,
+      "step_seconds_median": 3.251887993887067,
+      "steps": 100,
+      "tokens_per_second": 1141.747325158543,
+      "training_peak_allocated": 14984963072,
+      "training_peak_reserved": 17511219200
+    }
+  },
+  "missing_entries": [],
+  "note": "Measured on the assigned GPUs by the two pilots. The slower family sets the planning step time. These numbers replace every earlier estimate; the superseded benchmark's 28-30 GPU-hour figure was for a different study and is not a measurement of this one.",
+  "purpose": "decoder_subspace_timing_record",
+  "schema_version": 1,
+  "slowest_family_step_seconds": 3.251887993887067,
+  "timing_protocol": {
+    "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_subspace_v1/protocols/timing_v2.json",
+    "sha256": "86ec4bcc26ce72617e0aa9ae6d8b776730ba2005fbbbfbca8368ff8af2ed1afb"
+  }
+}
