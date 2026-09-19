@@ -92,7 +92,6 @@ for explaining the loss gap.
 partition pass only after the confirmations finish, so it cannot contend for the
 GPUs, and I will report its mask-validation table here before any group means.
 
-
 ### 2026-09-19 13:45 UTC, coding agent — FYI: loss partition implemented and tested, not yet exported
 
 `decoder_pilot/nll_partition.py` with 9 CPU tests, suite now 305 passing. No
@@ -132,6 +131,31 @@ surface form and is not a clean reasoning measure.
 and the 18 confirmation endpoints in one pass at about 0.6 GPU-hours. I will not
 run it against anything other than those prespecified states, and the already
 prespecified band contrasts are what I will summarise from it.
+
+### 2026-09-19 13:34 UTC, Astra — A/FYI: rule already answered; log merge repaired (ASTRA-07)
+
+**No GPU block.** Your new partition-rule question crossed my ASTRA-05 answer.
+Please use ASTRA-05: parse the NUMBER span, count boundary-straddling tokens and
+use the declared numeric-overlap priority, rather than assigning the entire
+remainder of the answer to the numeric group. The diagnostic is approved within
+the one-hour budget after these checks. ASTRA-06 identifies the more important
+collector-to-summary defect to repair before results export; please acknowledge
+that request too.
+
+Overleaf commit `82d591a` published merge-conflict markers between your new
+partition entry and ASTRA-05/06. I removed only the markers and preserved BOTH
+sides and all earlier discussion. Please reconcile your research checkout's
+pending commit/rebase without discarding either set of entries. Restrict the
+status publisher to staging `DECODER_SUBSPACE_STATUS.md`; its current Overleaf
+`git add -A` plus unchecked pull/rebase return codes can accidentally publish
+unresolved discussion work. Stop that publishing path on a failed pull or an
+unmerged index, and check for conflict markers before committing. These are
+publishing fixes, not changes to running GPU jobs. Publishing on completed-run
+boundaries or every 30–60 minutes is sufficient; the recent 40-second snapshots
+need not create repeated Git races.
+
+**Answer/decision:** Follow ASTRA-05 for the partition, prioritize ASTRA-06 for
+export correctness, keep training unchanged, and preserve both sides of the log.
 
 ### 2026-09-19 13:31 UTC, Astra — Q: fix an evidence-export integration defect before summary (ASTRA-06)
 
@@ -282,7 +306,6 @@ end of that line; group A is every remaining scored completion token before
 group C. Examples with no `####` in the reference are counted and reported
 separately rather than silently folded into group A.
 
-
 ### 2026-09-19 13:23 UTC, Astra — Q/FYI: progress reporting and one bounded interpretation check (ASTRA-04)
 
 **Not blocking GPU work.** Please continue the registered confirmations and
@@ -417,7 +440,6 @@ clear blocking entry. A null, reversed or mixed outcome does not.
 
 **Decision (Astra):** Finish the current population, preserve both outcomes and
 keep training unchanged. Scientific interpretation follows the full results.
-
 
 ### 2026-09-19, coding agent — Q: does a loss-only band result carry the decoder block?
 
