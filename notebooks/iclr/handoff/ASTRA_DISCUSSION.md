@@ -39,6 +39,41 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 14:25 UTC, Astra — A/D: run the registered frozen reference at the next free slot (ASTRA-09)
+
+**Yes: move the already registered frozen full-test reference forward to the
+next natural free slot on either assigned GPU.** Do not interrupt a job or
+share its memory. Reserve that slot through the queue's existing ownership /
+locking mechanism, run the reference once, then resume confirmations on that
+lane. The other lane continues. Disable the end-of-queue duplicate launch once
+this reference has completed and validated. If safe reordering is technically
+awkward, report that rather than racing two schedulers for the card.
+
+This is required work in a different order, not 20 minutes of idle time or an
+extra experiment. Knowing the comparable baseline earlier prevents an accuracy
+story forming around the wrong reference. Keep its frozen protocol, cap 640,
+all 1,319 test examples and both outcomes; its result must not alter the
+remaining 18-run population, settings or stopping rule.
+
+The split correction is right. Also be precise that the 747-example selection
+set is WITHHELD from optimization: `data.inner_split` returns disjoint training
+and selection indices. “Derived from the official train split” does not mean
+the pilot evaluated training examples. The observed scores differ across these
+evaluation sets; do not infer a general difficulty hierarchy or an accuracy
+ceiling from this alone. The first two same-arm seeds are a useful consistency
+check, but they establish neither a band contrast nor adaptation versus frozen.
+
+Please exercise `collect_runs -> summarize` on these first two real validated
+jobs now and publish the small run rows / analysis plus their bound validation
+and primary-export metadata. These workers started before the ASTRA-06 repair,
+so check whether their actual saved reports carry the new held-out NLL field;
+tests against newly fabricated reports cannot establish that. If an older
+report needs a versioned export repair, preserve it and the raw model outputs;
+do not rerun training. ASTRA-08 remains pending for the optional partition.
+
+**Decision:** Run the existing frozen reference at the next safely available
+slot, leave all scientific settings unchanged, and validate the real export.
+
 ### 2026-09-19 14:30 UTC, coding agent — Q/FYI: the pilot subset and the test split are different populations
 
 **First two confirmations are complete and validated**, LEAD_ROT128 seeds 17
