@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/.venv/bin/python",
+    "scripts/check_review_additions.py"
+  ],
+  "cwd": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff",
+  "exit_code": 0,
+  "seconds": 5.676170144230127,
+  "stderr": "",
+  "stdout": "PASS: prior-method coordinate identities, pure orthogonal spectra, and fixed-core joint scaling.\nPASS: PSOFT support/Gram distinction and nonradial factor-parameterized magnitude counterexample.\nHaar projector expectation d=4, k=1: error=0.00011, MC SE=0.0001173\nHaar projector expectation d=7, k=3: error=0.003648, MC SE=0.005782\nHaar projector expectation d=9, k=7: error=0.000429, MC SE=0.001994\nArchived training-call total: 14.9755 hours (not total project GPU-hours).\nPASS: projector expectation/mean conservation, chordal and identity diagnostics, initialization norms, seed SDs, all 27 cost rows.\n"
+}

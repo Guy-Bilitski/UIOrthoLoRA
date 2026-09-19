@@ -1,0 +1,11 @@
+{
+  "_comment": "TEMPLATE, not an authorization. Copy to RESOURCE_AUTHORIZATION_20260919_DECODER.json once two GPUs are actually free of foreign processes; fill assigned_gpu_ids with those two physical indices and quote the author's words in authorization_record, then delete this _comment key (protocol.Resources rejects unknown fields). The decoder study is the first GPU priority per DECODER_FIRST_PRIORITY_20260919.md; CENTER waits.",
+  "assigned_gpu_ids": ["<the two physical GPU indices that are free of other users' processes>"],
+  "output_root": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_v1",
+  "storage_allowance_gib": 80,
+  "gpu_hour_budget": 34,
+  "wall_clock_hours": null,
+  "downloads_permitted": false,
+  "completion_authorized": false,
+  "authorization_record": "<date/time UTC and the author's exact authorization text for the decoder study: two GPUs, existing output root campaign_outputs_decoder_v1 with its sealed inputs, 80 GiB cap, no downloads (Qwen2.5-1.5B-Instruct rev 989aa798 and GSM8K rev 740312ad are already sealed under inputs/), scope = 1 bounded GPU pilot FIRST and its measured cost reported back before tuning, calibration and the 15 confirmations are launched>"
+}

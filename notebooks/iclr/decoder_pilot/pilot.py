@@ -9,6 +9,7 @@ reproduce its recorded selection NLL.
 """
 
 import argparse
+import copy
 from dataclasses import asdict
 import hashlib
 import json
@@ -28,7 +29,7 @@ from notebooks.iclr.campaign.protocol import Resources, owned_path
 from notebooks.iclr.campaign.regularizers import CachedRegularizer
 from notebooks.iclr.campaign.spectral import SpectralConfig
 
-from . import adapters, geometry
+from . import adapters, geometry, plan
 from .data import SYSTEM_PROMPT, EncodedExamples, encode_example, inner_split, read_gsm8k
 from .engine import AdapterStore, DecoderTrainSettings, evaluate_nll, run_steps, validate_reload
 from .evaluate import generate_answers, summarize, write_generation_export
@@ -222,6 +223,177 @@ def make_regularizer(arm, layers, coefficient, device):
     return lambda: (zero, {})
 
 
+PROTOCOL_CONTROLLED = (
+    "arm", "seed", "lr", "steps", "coefficient", "tail_size", "initial_scaler", "initial_coefficient",
+    "rank", "batch_size", "accumulation_steps", "eval_every_steps", "warmup_steps", "precision",
+    "max_length", "max_new_tokens", "generation_batch_size", "generation_split",
+)
+PILOT_DEFAULTS = dict(
+    coefficient=0.0, tail_size=DEFAULT_TAIL, initial_scaler=0.01, initial_coefficient=0.01, rank=8,
+    batch_size=4, accumulation_steps=4, eval_every_steps=100, warmup_steps=0, precision="bfloat16",
+    max_length=DEFAULT_MAX_LENGTH, max_new_tokens=320, generation_batch_size=32, generation_split="selection",
+)
+STAGE_OF_PURPOSE = {
+    plan.TUNING_PURPOSE: "tuning",
+    plan.CALIBRATION_PURPOSE: "calibration",
+    plan.CONFIRMATION_PURPOSE: "confirmation",
+}
+
+
+def resolve_configuration(args):
+    """Either a registered protocol entry decides every scientific field, or the run is an acknowledged pilot.
+
+    With ``--protocol`` the scientific flags must be absent: the entry is materialized by
+    ``plan.materialize`` and written onto ``args``, so the command line cannot silently differ from the
+    sealed configuration. Without a protocol only ``--stage pilot`` is possible, the run is marked
+    ``selection_allowed=False`` and no selection or decision function will ever read it.
+    """
+    given = [name for name in PROTOCOL_CONTROLLED if getattr(args, name) is not None]
+    alpha_given = args.alpha != "unset"
+    if args.protocol is None:
+        if args.stage != "pilot":
+            raise ValueError("Stages tuning/calibration/confirmation require --protocol and --entry-id")
+        if not args.acknowledge_unregistered:
+            raise ValueError("An unregistered pilot run must pass --acknowledge-unregistered; it can decide nothing")
+        for name in ("arm", "seed", "lr", "steps"):
+            if getattr(args, name) is None:
+                raise ValueError("Unregistered pilot runs must state --" + name.replace("_", "-"))
+        for name, value in PILOT_DEFAULTS.items():
+            if getattr(args, name) is None:
+                setattr(args, name, value)
+        args.alpha = float(args.alpha) if alpha_given else None
+        return None, None, dict(stage="pilot", entry_id=None, selection_allowed=False)
+    if args.entry_id is None:
+        raise ValueError("--protocol requires the registered --entry-id it admits")
+    if given or alpha_given:
+        raise ValueError("A registered entry fixes these fields; remove: " + ", ".join(sorted(given + (["alpha"] if alpha_given else []))))
+    protocol = json.loads(args.protocol.read_text())
+    stage = STAGE_OF_PURPOSE.get(protocol.get("purpose"))
+    if stage is None:
+        raise ValueError("Unknown or unregistered protocol purpose: " + str(protocol.get("purpose")))
+    if args.stage != stage:
+        raise ValueError(f"--stage {args.stage} does not match the {protocol['purpose']} protocol")
+    entries = [row for row in protocol["entries"] if row["entry_id"] == args.entry_id]
+    if len(entries) != 1:
+        raise ValueError("Unknown registered entry: " + str(args.entry_id))
+    entry = entries[0]
+    expected = plan.materialize(
+        protocol["design"], stage=stage, arm=entry["arm"], seed=entry["seed"],
+        learning_rate=entry["learning_rate"], coefficient=entry["regularization_coefficient"],
+        entry_id=entry["entry_id"], split=entry["generation_split"],
+    )
+    settings, spectral = expected["settings"], expected["spectral_config"]
+    args.arm, args.seed, args.stage = expected["arm"], expected["seed"], stage
+    args.lr, args.steps = settings["learning_rate"], settings["max_steps"]
+    args.warmup_steps, args.batch_size = settings["warmup_steps"], settings["batch_size"]
+    args.accumulation_steps, args.eval_every_steps = settings["accumulation_steps"], settings["eval_every_steps"]
+    args.precision, args.max_length = settings["precision"], settings["max_length"]
+    args.coefficient = expected["regularization_coefficient"]
+    args.rank, args.alpha = expected["rank"], expected["alpha"]
+    args.tail_size = spectral["tail_size"] if spectral else DEFAULT_TAIL
+    args.initial_scaler = spectral["initial_scaler"] if spectral else 0.01
+    args.initial_coefficient = spectral["initial_coefficient"] if spectral else 0.01
+    args.generation_split = expected["generation"]["split"]
+    args.max_new_tokens = expected["generation"]["max_new_tokens"]
+    args.generation_batch_size = expected["generation"]["batch_size"]
+    if expected["projections"] != list(adapters.SQUARE_SCOPE):
+        raise ValueError("The sealed SVD cache covers " + ",".join(adapters.SQUARE_SCOPE) + "; re-run prepare for the registered projection scope")
+    return protocol, expected, dict(stage=stage, entry_id=entry["entry_id"], selection_allowed=True)
+
+
+def train(args):
+    resources = Resources(**json.loads(args.resources.read_text()))
+    resources.validate_training()
+    if args.gpu not in resources.assigned_gpu_ids:
+        raise ValueError("GPU is not explicitly assigned")
+    uuid = subprocess.check_output(["nvidia-smi", "-i", str(args.gpu), "--query-gpu=uuid", "--format=csv,noheader"], text=True).strip()
+    if os.environ.get("CUDA_VISIBLE_DEVICES") != uuid or torch.cuda.device_count() != 1:
+        raise ValueError("Set CUDA_VISIBLE_DEVICES to the assigned GPU's UUID so exactly one device is visible")
+    device = torch.device("cuda:0")
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    protocol, expected, admission = resolve_configuration(args)
+    prepared = json.loads((Path(resources.output_root) / "inputs/prepared.json").read_text())
+    settings = DecoderTrainSettings(seed=args.seed, max_steps=args.steps, learning_rate=args.lr, weight_decay=0.0, warmup_steps=args.warmup_steps, batch_size=args.batch_size, accumulation_steps=args.accumulation_steps, eval_every_steps=args.eval_every_steps, max_gradient_norm=1.0, precision=args.precision, max_length=args.max_length)
+    settings.validate()
+    spectral_config = SpectralConfig(tail_size=args.tail_size, rotation_size=0, use_scalers=True, leading_identity=True, initial_scaler=args.initial_scaler, initial_coefficient=args.initial_coefficient) if args.arm in adapters.SPECTRAL_ARMS else None
+    ledger = Path(resources.output_root) / "run_ledger.jsonl"
+    run_id = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + "_" + hashlib.sha256(os.urandom(16)).hexdigest()[:12]
+    run_dir = owned_path(resources.output_root, Path(resources.output_root) / "runs" / args.arm / f"seed_{args.seed}" / run_id)
+    job = dict(
+        schema_version=1, run_id=run_id, stage=args.stage, arm=args.arm, seed=args.seed, settings=asdict(settings), spectral_config=None if spectral_config is None else asdict(spectral_config),
+        regularization_coefficient=args.coefficient, rank=args.rank, alpha=args.alpha, projections=list(adapters.SQUARE_SCOPE), cutoff=None,
+        generation=dict(split=args.generation_split, max_new_tokens=args.max_new_tokens, batch_size=args.generation_batch_size, system_prompt=SYSTEM_PROMPT, decoding="greedy"),
+        model_source_sha256=prepared["model_source_sha256"], dataset_source_sha256=prepared["dataset_source_sha256"], svd_reference_sha256=prepared["svd_reference_sha256"],
+        physical_gpu=args.gpu, gpu_uuid=uuid, source_revision=git_revision(), decoder_pilot_source_sha256=source_hashes(), resource_authorization_sha256=sha256(args.resources),
+        torch=torch.__version__, python=platform.python_version(), created_utc=utc_now(), gradient_checkpointing=args.gradient_checkpointing,
+        entry_id=admission["entry_id"], selection_allowed=admission["selection_allowed"],
+    )
+    if protocol is not None:
+        job["phase_protocol_path"] = str(args.protocol.resolve())
+        job["phase_protocol_sha256"] = sha256(args.protocol)
+        if any(job.get(key) != value for key, value in expected.items()):
+            raise ValueError("Assembled job differs from its registered entry")
+        plan.validate_admission(job, protocol)
+    run_dir.mkdir(parents=True, exist_ok=False)
+    started = time.perf_counter()
+    model, tokenizer = load_model_and_tokenizer(prepared["model"])
+    load_seconds = time.perf_counter() - started
+    rss_after_load = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+    encoded, raw, stats = encode_splits(tokenizer, prepared["dataset"], args.max_length)
+    modules = adapters.attention_modules(model, ("q_proj", "k_proj", "v_proj", "o_proj"))
+    shapes = {name: list(m.weight.shape) for name, m in list(modules.items())[:4]}
+    references, meta = adapters.load_references(prepared["svd_reference_cache"], model)
+    sample_prompt = encoded["selection"].rows[0]
+    decoded_prompt = tokenizer.decode(sample_prompt["input_ids"][: sample_prompt["prompt_length"]])
+    decoded_completion = tokenizer.decode([t for t in sample_prompt["labels"] if t != -100])
+    model.eval()
+    with torch.no_grad():
+        batch = encoded["selection"].batch(torch.arange(2), "cpu")
+        labels = batch.pop("labels")
+        t0 = time.perf_counter()
+        logits = model(**batch).logits
+        forward_seconds = time.perf_counter() - t0
+        from .data import completion_nll
+
+        sums, counts = completion_nll(logits, labels)
+    report = dict(
+        model=dict(source=MODEL_SOURCE.__dict__, hidden_size=model.config.hidden_size, layers=model.config.num_hidden_layers, heads=model.config.num_attention_heads, kv_heads=model.config.num_key_value_heads, vocab=model.config.vocab_size, parameters=sum(p.numel() for p in model.parameters()), dtype="float32 master", load_seconds=load_seconds, peak_rss_bytes_after_load=rss_after_load),
+        projections=dict(example_shapes=shapes, square_scope=list(adapters.SQUARE_SCOPE), scoped_module_count=len(references), kv_rectangular_excluded_by_first_scope=True),
+        svd_cache=meta,
+        tokenizer=dict(pad_token=tokenizer.pad_token, eos_token=tokenizer.eos_token, chat_template_present=bool(getattr(tokenizer, "chat_template", None)), sample_prompt_tail=decoded_prompt[-300:], sample_completion_head=decoded_completion[:200]),
+        splits=stats,
+        pretrained_completion_nll_two_examples=dict(token_mean=(sums.sum() / counts.sum()).item(), cpu_forward_seconds=forward_seconds),
+        memory_estimate_bytes=dict(
+            float32_master_weights=sum(p.numel() for p in model.parameters()) * 4,
+            svd_reference_buffers=sum(r["u_ref"].numel() + r["v_ref"].numel() + r["s_ref"].numel() + r["w_pre"].numel() for r in references.values()) * 4,
+            note="activations/optimizer states measured on GPU by the pilot run, not estimated here",
+        ),
+        python=platform.python_version(),
+        torch=torch.__version__,
+        source_revision=git_revision(),
+        decoder_pilot_source_sha256=source_hashes(),
+        created_utc=utc_now(),
+    )
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    write_json_new(args.out, report)
+    print(json.dumps({k: report[k] for k in ("splits", "pretrained_completion_nll_two_examples", "memory_estimate_bytes")}, indent=1))
+
+
+def build_arm(model, arm, references, spectral_config, rank, alpha):
+    return adapters.insert_adapters(model, arm, references, spectral_config=spectral_config, rank=rank, alpha=alpha)
+
+
+def make_regularizer(arm, layers, coefficient, device):
+    if arm in adapters.SPECTRAL_ARMS:
+        penalty = CachedRegularizer(layers, adapters.SPECTRAL_ARMS[arm], coefficient)
+        return lambda: penalty()
+    if coefficient != 0:
+        raise ValueError("LoRA/PiSSA arms take no penalty coefficient")
+    zero = torch.zeros((), device=device)
+    return lambda: (zero, {})
+
+
 def train(args):
     resources = Resources(**json.loads(args.resources.read_text()))
     resources.validate_training()
@@ -259,6 +431,8 @@ def train(args):
     layers = build_arm(model, args.arm, references, spectral_config, args.rank, args.alpha)
     job["inventory"] = adapters.parameter_inventory(model, layers)
     write_json_new(run_dir / "job.json", job)
+    plan.append_event(ledger, dict(run_id=run_id, status="planned", run_directory=str(run_dir), job_sha256=sha256(run_dir / "job.json"), stage=job["stage"], entry_id=job["entry_id"], arm=job["arm"], seed=job["seed"]))
+    plan.append_event(ledger, dict(run_id=run_id, status="running"))
     frozen_fingerprint = hashlib.sha256(json.dumps(dict(model=prepared["model_source_sha256"], arm=args.arm, spectral=job["spectral_config"], rank=args.rank, alpha=args.alpha, projections=job["projections"]), sort_keys=True).encode()).hexdigest()
     if args.gradient_checkpointing:
         model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
@@ -289,6 +463,7 @@ def train(args):
     write_json_new(run_dir / "costs.json", costs)
     if result["status"] != "awaiting_validation":
         write_json_new(run_dir / "worker_result.json", dict(status="interrupted", engine_result=result, ended_utc=utc_now()))
+        plan.append_event(ledger, dict(run_id=run_id, status="interrupted", reason="engine did not reach the registered fixed endpoint"))
         print("interrupted", run_dir)
         return
 
@@ -314,8 +489,66 @@ def train(args):
     with torch.no_grad():
         final_geometry = geometry.diagnose(layers, references, cutoff)
     write_json_new(run_dir / "final_geometry.json", final_geometry)
+    plan.append_event(ledger, dict(run_id=run_id, status="awaiting_validation"))
     write_json_new(run_dir / "worker_result.json", dict(status="awaiting_whole_run_review", engine_result=result, reload_validation=reloads, generation_summary=summarize(outputs), generation_seconds=gen_seconds, held_out_completion_nll={k: v for k, v in nll.items() if not k.startswith("per_example")}, pooled_geometry=final_geometry["pooled"], elapsed_seconds=time.perf_counter() - started, ended_utc=utc_now()))
     print(json.dumps(dict(run_id=run_id, run_dir=str(run_dir), costs=costs, generation=summarize(outputs), nll=nll["token_mean_nll"], pooled_relative_frobenius=final_geometry["pooled"]["pooled_relative_frobenius"], cross_share=final_geometry["pooled"]["pooled_cross_share"]), indent=1))
+
+
+def reference(args):
+    """Decode the sealed pretrained model with no adapter: the inference-only reference row."""
+    resources = Resources(**json.loads(args.resources.read_text()))
+    resources.validate_training()
+    if args.gpu not in resources.assigned_gpu_ids:
+        raise ValueError("GPU is not explicitly assigned")
+    uuid = subprocess.check_output(["nvidia-smi", "-i", str(args.gpu), "--query-gpu=uuid", "--format=csv,noheader"], text=True).strip()
+    if os.environ.get("CUDA_VISIBLE_DEVICES") != uuid or torch.cuda.device_count() != 1:
+        raise ValueError("Set CUDA_VISIBLE_DEVICES to the assigned GPU's UUID so exactly one device is visible")
+    device = torch.device("cuda:0")
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    protocol = json.loads(args.protocol.read_text())
+    entry = plan.reference_entry(protocol["design"])
+    if args.split not in entry["generation_splits"]:
+        raise ValueError("Split is not one of the registered reference splits")
+    prepared = json.loads((Path(resources.output_root) / "inputs/prepared.json").read_text())
+    ledger = Path(resources.output_root) / "run_ledger.jsonl"
+    run_id = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + "_" + hashlib.sha256(os.urandom(16)).hexdigest()[:12]
+    run_dir = owned_path(resources.output_root, Path(resources.output_root) / "runs" / plan.REFERENCE_ARM / args.split / run_id)
+    job = dict(
+        schema_version=1, run_id=run_id, stage="reference", arm=plan.REFERENCE_ARM, seed=None, trains=False,
+        entry_id=entry["entry_id"], selection_allowed=False, spectral_config=None, regularization_coefficient=0.0,
+        settings=dict(max_length=entry["max_length"]), generation=dict(split=args.split, **copy.deepcopy(entry["generation"])),
+        model_source_sha256=prepared["model_source_sha256"], dataset_source_sha256=prepared["dataset_source_sha256"], svd_reference_sha256=prepared["svd_reference_sha256"],
+        phase_protocol_path=str(args.protocol.resolve()), phase_protocol_sha256=sha256(args.protocol),
+        physical_gpu=args.gpu, gpu_uuid=uuid, source_revision=git_revision(), decoder_pilot_source_sha256=source_hashes(),
+        resource_authorization_sha256=sha256(args.resources), torch=torch.__version__, python=platform.python_version(), created_utc=utc_now(),
+    )
+    plan.validate_admission(job, protocol)
+    run_dir.mkdir(parents=True, exist_ok=False)
+    started = time.perf_counter()
+    model, tokenizer = load_model_and_tokenizer(prepared["model"])
+    encoded, raw, stats = encode_splits(tokenizer, prepared["dataset"], entry["max_length"])
+    job["split_stats"] = stats
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    for parameter in model.parameters():
+        parameter.requires_grad_(False)
+    write_json_new(run_dir / "job.json", job)
+    plan.append_event(ledger, dict(run_id=run_id, status="planned", run_directory=str(run_dir), job_sha256=sha256(run_dir / "job.json"), stage="reference", entry_id=job["entry_id"], arm=job["arm"], seed=None))
+    plan.append_event(ledger, dict(run_id=run_id, status="running"))
+    model.to(device)
+    model.eval()
+    nll = evaluate_nll(model, encoded[args.split], device, args.eval_batch_size, "bfloat16")
+    outputs, gen_seconds = generate_answers(model, tokenizer, [dict(r, gold=e["gold"]) for r, e in zip(raw[args.split], encoded[args.split].rows)], device, max_new_tokens=entry["generation"]["max_new_tokens"], batch_size=entry["generation"]["batch_size"], system_prompt=SYSTEM_PROMPT, merge_layers=[])
+    write_generation_export(run_dir / "evaluation", args.split, outputs, nll, gen_seconds, job["generation"])
+    write_json_new(
+        run_dir / "reference_result.json",
+        dict(status="awaiting_whole_run_review", adapters_inserted=False, trainable_parameters=0, trainable_parameters_before_freeze=trainable,
+             generation_summary=summarize(outputs), generation_seconds=gen_seconds,
+             held_out_completion_nll={k: v for k, v in nll.items() if not k.startswith("per_example")},
+             peak_allocated=torch.cuda.max_memory_allocated(device), elapsed_seconds=time.perf_counter() - started, ended_utc=utc_now()),
+    )
+    plan.append_event(ledger, dict(run_id=run_id, status="awaiting_validation"))
+    print(json.dumps(dict(run_id=run_id, run_dir=str(run_dir), split=args.split, generation=summarize(outputs), nll=nll["token_mean_nll"]), indent=1))
 
 
 def main():
@@ -330,37 +563,46 @@ def main():
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--max-length", type=int, default=DEFAULT_MAX_LENGTH)
     p.add_argument("--threads", type=int, default=8)
-    p = sub.add_parser("train")
+    p = sub.add_parser("train", description="A registered protocol entry decides every scientific field; only --stage pilot may run unregistered.")
     p.add_argument("--resources", type=Path, required=True)
     p.add_argument("--gpu", type=int, required=True)
-    p.add_argument("--arm", choices=adapters.ARMS, required=True)
     p.add_argument("--stage", choices=("pilot", "tuning", "calibration", "confirmation"), required=True)
-    p.add_argument("--seed", type=int, required=True)
-    p.add_argument("--lr", type=float, required=True)
-    p.add_argument("--steps", type=int, required=True)
-    p.add_argument("--coefficient", type=float, default=0.0)
-    p.add_argument("--tail-size", type=int, default=DEFAULT_TAIL)
-    p.add_argument("--initial-scaler", type=float, default=0.01)
-    p.add_argument("--initial-coefficient", type=float, default=0.01)
-    p.add_argument("--rank", type=int, default=8)
-    p.add_argument("--alpha", type=float, default=None)
-    p.add_argument("--batch-size", type=int, default=4)
-    p.add_argument("--accumulation-steps", type=int, default=4)
-    p.add_argument("--eval-every-steps", type=int, default=100)
+    p.add_argument("--protocol", type=Path, default=None, help="registered protocol sealed by plan.py")
+    p.add_argument("--entry-id", default=None, help="the registered entry this run executes")
+    p.add_argument("--acknowledge-unregistered", action="store_true", help="only for --stage pilot; the run decides nothing")
+    p.add_argument("--arm", choices=adapters.ARMS, default=None)
+    p.add_argument("--seed", type=int, default=None)
+    p.add_argument("--lr", type=float, default=None)
+    p.add_argument("--steps", type=int, default=None)
+    p.add_argument("--coefficient", type=float, default=None)
+    p.add_argument("--tail-size", type=int, default=None)
+    p.add_argument("--initial-scaler", type=float, default=None)
+    p.add_argument("--initial-coefficient", type=float, default=None)
+    p.add_argument("--rank", type=int, default=None)
+    p.add_argument("--alpha", default="unset")
+    p.add_argument("--batch-size", type=int, default=None)
+    p.add_argument("--accumulation-steps", type=int, default=None)
+    p.add_argument("--eval-every-steps", type=int, default=None)
     p.add_argument("--eval-batch-size", type=int, default=8)
-    p.add_argument("--warmup-steps", type=int, default=0)
-    p.add_argument("--precision", choices=("float32", "bfloat16"), default="bfloat16")
-    p.add_argument("--max-length", type=int, default=DEFAULT_MAX_LENGTH)
-    p.add_argument("--max-new-tokens", type=int, default=320)
-    p.add_argument("--generation-batch-size", type=int, default=32)
-    p.add_argument("--generation-split", choices=("selection", "held_aside_test"), default="selection")
+    p.add_argument("--warmup-steps", type=int, default=None)
+    p.add_argument("--precision", choices=("float32", "bfloat16"), default=None)
+    p.add_argument("--max-length", type=int, default=None)
+    p.add_argument("--max-new-tokens", type=int, default=None)
+    p.add_argument("--generation-batch-size", type=int, default=None)
+    p.add_argument("--generation-split", choices=("selection", "held_aside_test"), default=None)
     p.add_argument("--gradient-checkpointing", action="store_true")
     p.add_argument("--p0-atol", type=float, default=5e-4)
     p.add_argument("--p0-rtol", type=float, default=1e-4)
     p.add_argument("--reload-atol", type=float, default=1e-5)
     p.add_argument("--reload-rtol", type=float, default=1e-5)
+    p = sub.add_parser("reference", description="Decode the sealed pretrained model with no adapter (inference-only reference row).")
+    p.add_argument("--resources", type=Path, required=True)
+    p.add_argument("--gpu", type=int, required=True)
+    p.add_argument("--protocol", type=Path, required=True, help="registered confirmation protocol")
+    p.add_argument("--split", choices=("selection", "held_aside_test"), required=True)
+    p.add_argument("--eval-batch-size", type=int, default=8)
     args = parser.parse_args()
-    {"prepare": prepare, "feasibility": feasibility, "train": train}[args.command](args)
+    {"prepare": prepare, "feasibility": feasibility, "train": train, "reference": reference}[args.command](args)
 
 
 if __name__ == "__main__":
