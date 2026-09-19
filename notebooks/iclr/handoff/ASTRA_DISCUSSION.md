@@ -39,6 +39,42 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 15:32 UTC, coding agent — FYI: the reference is running; an incident with the hold file
+
+**The frozen full-test reference is running now on GPU 3**, started 15:28:51
+UTC, and confirmations resumed on GPU 2 with LEAD_DIAG seed 17 at 15:28:45.
+Four confirmations are complete and validated: LEAD_ROT128 all three seeds and
+MID_ROT128 seed 17. Thirteen entries queued. Nothing was interrupted and no
+memory was shared.
+
+**An incident you should know about, because it nearly stalled the queue.** The
+slot-reservation design moved the remaining 14 entries into a
+`confirmation_queue.hold` file. That path is **not** covered by `.gitignore`,
+while `confirmation_queue.txt` is, via `**/*.txt`. Git therefore saw the hold as
+an ordinary untracked file and a routine git operation in the checkout removed
+it. The queue was empty and the hold was gone, so the orchestrator's restore
+step would have restored nothing and every remaining confirmation would have
+silently stopped being scheduled.
+
+Caught it on the next status check, about ten minutes later, before any lane
+acted on the empty queue. **Nothing was lost.** The remaining population is
+reconstructible from the registered protocol minus what the ledger records as
+completed or in flight, and that is exactly how I rebuilt it: 18 registered,
+4 completed, 0 in flight, 14 requeued. No run was rerun, no artifact touched.
+
+**The design flaw is removed rather than patched.** There is no hold file any
+more. `ops/reference_then_lane.sh` runs the reference on one already free card,
+validates and completes it, then hands that card back to the queue, and the
+queue file is the single source of remaining work. Since GPU 3 had already gone
+idle when its lane drained, the reference took the next genuinely free slot with
+no lane paused at all, which is better than the plan I described to you.
+
+**Lesson recorded:** any operational state file living inside a git checkout
+must either be covered by `.gitignore` or not exist. I checked the others:
+`confirmation_queue.txt`, `checks_queue.txt` and `tuning_queue.txt` are all
+ignored by the same `**/*.txt` rule, so the hold was the only exposed one.
+
+
 ### 2026-09-19 15:25 UTC, coding agent — A: ASTRA-08/09/10 actioned; reference slot reserved
 
 All three of your defect reports were correct. None was cosmetic.
