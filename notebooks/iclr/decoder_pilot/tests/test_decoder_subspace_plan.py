@@ -497,3 +497,46 @@ def test_reference_protocol_can_score_the_selection_subset_early(tmp_path, prepa
     sp.validate_admission(job, protocol)
     with pytest.raises(ValueError):
         sp.validate_admission({**job, "trains": True}, protocol)
+
+
+# --------------------------------------------------------------------------- bounded rate sensitivity
+
+
+def test_the_sensitivity_check_is_six_arms_at_one_rate_and_one_seed(tmp_path, prepared, record):
+    protocol, path = _confirmation(tmp_path, prepared, record)
+    check = sp.register_sensitivity(path, 3e-4, 17, "test",
+                                    "Proposed after the original held-out outcomes were seen.")
+    assert len(check["entries"]) == 6
+    assert {e["seed"] for e in check["entries"]} == {17}
+    assert {e["learning_rate"] for e in check["entries"]} == {3e-4}
+    assert {e["arm"] for e in check["entries"]} == set(subspace.ARMS)
+    assert "cannot replace the registered results" in check["rule"]
+    assert check["confirmation_max_new_tokens"] == protocol["confirmation_max_new_tokens"]
+
+
+def test_the_sensitivity_rate_must_differ_from_the_registered_rate(tmp_path, prepared, record):
+    protocol, path = _confirmation(tmp_path, prepared, record)
+    registered = list(protocol["learning_rates"].values())[0]
+    with pytest.raises(ValueError, match="one of the registered rates"):
+        sp.register_sensitivity(path, registered, 17, "test", "Proposed after the outcomes were seen.")
+
+
+def test_the_sensitivity_protocol_must_disclose_it_was_proposed_after_the_fact(tmp_path, prepared, record):
+    _protocol, path = _confirmation(tmp_path, prepared, record)
+    with pytest.raises(ValueError, match="proposed after"):
+        sp.register_sensitivity(path, 3e-4, 17, "test", "A routine robustness study.")
+
+
+def test_sensitivity_admission_accepts_its_entries_and_rejects_a_registered_rate(tmp_path, prepared, record):
+    _protocol, path = _confirmation(tmp_path, prepared, record)
+    check = sp.register_sensitivity(path, 3e-4, 17, "test", "Proposed after the original outcomes were seen.")
+    check_path = tmp_path / "sensitivity.json"
+    write_json_new(check_path, check)
+    for entry in check["entries"]:
+        job = _job(check, sp.materialize_sensitivity_entry(check, entry), prepared)
+        sp.validate_admission(job, check)
+    entry = check["entries"][0]
+    job = _job(check, sp.materialize_sensitivity_entry(check, entry), prepared)
+    job["settings"]["learning_rate"] = 1e-3
+    with pytest.raises(ValueError):
+        sp.validate_admission(job, check)

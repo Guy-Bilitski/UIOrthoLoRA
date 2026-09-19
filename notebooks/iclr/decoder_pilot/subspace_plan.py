@@ -51,6 +51,7 @@ TUNING_PURPOSE = "decoder_subspace_tuning"
 LR_SELECTION_PURPOSE = "decoder_subspace_lr_selection"
 CONFIRMATION_PURPOSE = "decoder_subspace_confirmation"
 SCOPE_DECISION_PURPOSE = "decoder_subspace_scope_decision"
+SENSITIVITY_PURPOSE = "decoder_subspace_rate_sensitivity"
 FIXED_RECIPE_PURPOSE = "decoder_subspace_fixed_recipe"
 REFERENCE_PURPOSE = "decoder_subspace_reference"
 GENERATION_AUDIT_PURPOSE = "decoder_subspace_generation_audit"
@@ -1086,6 +1087,92 @@ def register_reference(prepared_path, record, mode, max_new_tokens, authorizatio
     )
 
 
+# --------------------------------------------------------------------------- bounded rate-sensitivity check
+
+
+SENSITIVITY_RULE = (
+    "A bounded, disclosed follow-up at ONE alternate learning rate and ONE seed, paired to the existing "
+    "confirmations at the same arms and seed. It was proposed AFTER the original held-out outcomes were seen, "
+    "which is recorded in the protocol itself. It cannot replace the registered results, cannot become a "
+    "search, and one seed at one rate cannot establish general robustness or that any particular rate is "
+    "correct. Both rates are reported together; no winner is selected. An accuracy decline at the registered "
+    "rate does not by itself demonstrate an excessive rate, overfitting, or that formatting caused a loss of "
+    "reasoning, and this check cannot establish those either."
+)
+
+
+def sensitivity_entries(record, learning_rate, seed, max_new_tokens):
+    rows = []
+    for arm in record["arms_included"]:
+        band, family = subspace.parse_arm(arm)
+        rows.append(dict(entry_id=f"sensitivity/{arm}/seed_{seed}/{_rate_id(learning_rate)}", arm=arm, band=band,
+                         family=family, seed=int(seed), learning_rate=float(learning_rate),
+                         generation_mode=HELD_ASIDE_SPLIT, max_new_tokens=int(max_new_tokens)))
+    if len({row["entry_id"] for row in rows}) != len(rows):
+        raise ValueError("Duplicate sensitivity entry")
+    return rows
+
+
+def register_sensitivity(confirmation_protocol_path, learning_rate, seed, authorization, disclosure):
+    """Seal the bounded alternate-rate check against the registered confirmation protocol it pairs with."""
+    confirmation = json.loads(Path(confirmation_protocol_path).read_text())
+    if confirmation.get("purpose") != CONFIRMATION_PURPOSE or confirmation.get("registered") is not True:
+        raise ValueError("The sensitivity check pairs with the registered confirmation protocol")
+    record = confirmation["design"]
+    rate = _positive_float(learning_rate, "learning_rate")
+    # The registered rates live on the confirmation protocol, not the design; a check at the same rate
+    # would be a re-run, not a sensitivity analysis.
+    registered = set(confirmation.get("learning_rates", {}).values())
+    if rate in registered:
+        raise ValueError(f"The sensitivity rate {rate} is one of the registered rates {sorted(registered)}")
+    if int(seed) not in CONFIRMATION_SEEDS:
+        raise ValueError("Pair the check to a seed that the confirmations actually used")
+    if not isinstance(disclosure, str) or "after" not in disclosure.lower():
+        raise ValueError("The protocol must state that this was proposed after the original outcomes were seen")
+    max_new_tokens = confirmation["confirmation_max_new_tokens"]
+    return _base_protocol(
+        confirmation["prepared_inputs"]["path"], record, SENSITIVITY_PURPOSE, authorization,
+        paired_confirmation=_bind(confirmation_protocol_path),
+        learning_rate=rate, seed=int(seed), confirmation_max_new_tokens=max_new_tokens,
+        entries=sensitivity_entries(record, rate, seed, max_new_tokens),
+        rule=SENSITIVITY_RULE, disclosure=disclosure,
+        primary_outcomes=list(PRIMARY_OUTCOMES), outcome_policy=OUTCOME_POLICY,
+        confirmation_authorized=False,
+        scope=("Bounded rate sensitivity only: the registered arms at one alternate rate and one seed, paired to "
+               "the existing confirmations, decoded on the same held-aside split at the same cap. It changes "
+               "nothing about the registered population, recipe or stopping rule."),
+    )
+
+
+def materialize_sensitivity_entry(protocol, entry):
+    return materialize(protocol["design"], stage="sensitivity", arm=entry["arm"], seed=entry["seed"],
+                       learning_rate=entry["learning_rate"], entry_id=entry["entry_id"],
+                       generation_mode=entry["generation_mode"], max_new_tokens=entry["max_new_tokens"])
+
+
+def validate_sensitivity_admission(job, protocol):
+    if protocol.get("purpose") != SENSITIVITY_PURPOSE or protocol.get("registered") is not True:
+        raise ValueError("Require the registered sensitivity protocol")
+    record, prepared = _check_common(protocol)
+    paired = _check_bound(protocol.get("paired_confirmation", {}), "paired_confirmation")
+    if paired.get("purpose") != CONFIRMATION_PURPOSE or paired.get("design") != record:
+        raise ValueError("The sensitivity check must pair with its registered confirmation protocol and design")
+    if protocol.get("rule") != SENSITIVITY_RULE:
+        raise ValueError("The sensitivity protocol must carry the bounded-check rule")
+    if protocol.get("entries") != sensitivity_entries(record, protocol["learning_rate"], protocol["seed"],
+                                                      protocol["confirmation_max_new_tokens"]):
+        raise ValueError("Registered sensitivity entries differ from the authoritative construction")
+    selected = [row for row in protocol["entries"] if row["entry_id"] == job.get("entry_id")]
+    if len(selected) != 1:
+        raise ValueError("Unknown sensitivity entry")
+    if job.get("settings", {}).get("learning_rate") in set(paired.get("learning_rates", {}).values()):
+        raise ValueError("A sensitivity run must not silently reuse a registered rate")
+    expected = materialize_sensitivity_entry(protocol, selected[0])
+    if any(job.get(key) != value for key, value in expected.items()):
+        raise ValueError("Sensitivity job differs from its registered configuration")
+    _check_job_inputs(job, prepared)
+
+
 # --------------------------------------------------------------------------- stage 3: confirmation and reference
 
 
@@ -1274,6 +1361,7 @@ def validate_admission(job, protocol):
         "timing": (TIMING_PURPOSE, validate_timing_admission),
         "tuning": (TUNING_PURPOSE, validate_tuning_admission),
         "confirmation": (CONFIRMATION_PURPOSE, validate_confirmation_admission),
+        "sensitivity": (SENSITIVITY_PURPOSE, validate_sensitivity_admission),
     }
     if stage not in dispatch:
         raise ValueError("Unknown decoder subspace stage: " + str(stage))
