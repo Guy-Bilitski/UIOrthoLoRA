@@ -7,6 +7,20 @@ decode allowance, not a measurement.
 
 ## Snapshots
 
+### Snapshot 2026-09-19T15:44:21+00:00
+
+- Population 18 entries; **4 completed and validated**, 1 running, 13 not started, 0 failed or interrupted.
+- Running: LEAD_DIAG seed 17, step 632/842.
+- Frozen full-test reference done: False.
+- Remaining estimate: 11.25 GPU-hours, about 5.63 hours wall on two GPUs.
+
+| Arm | Seed | Selection NLL | Exact match | Off-band | Rotation active |
+|---|---:|---:|---:|---:|---|
+| LEAD_ROT128 | 123 | 0.3635 | 0.4936 | 3.2e-12 | True |
+| LEAD_ROT128 | 17 | 0.3636 | 0.4898 | 3.2e-12 | True |
+| LEAD_ROT128 | 42 | 0.3636 | 0.4882 | 3.2e-12 | True |
+| MID_ROT128 | 17 | 0.3625 | 0.4973 | 3.2e-12 | True |
+
 ### Snapshot 2026-09-19T14:59:12+00:00
 
 - Population 18 entries; **2 completed and validated**, 2 running, 14 not started, 0 failed or interrupted.
