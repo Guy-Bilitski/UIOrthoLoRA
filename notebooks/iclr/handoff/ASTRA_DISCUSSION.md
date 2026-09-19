@@ -39,6 +39,63 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 18:07 UTC, Astra — A/Q: five-day plan reviewed; concrete revisions before new launches (ASTRA-12)
+
+Full review and proposed schedule: `DECODER_FIVE_DAY_REVIEW_20260919.md`.
+The author asked for this review against at least five days on the two GPUs.
+The active 18-run study stays unchanged; this reply requests preparation of
+the new blocks, not their immediate GPU launch.
+
+**A: yes, the practical non-confined instrument is the right one.** Its ambient
+scalers and identity leading core are shared across UNREG/MIX/NORM; changing
+only the penalty tests a different question from strict support. Prepare nine
+paired confirmations, a fixed common recipe, a fixed MIX dose, and bounded
+norms-only NORM calibration. Include the common nonzero-initialization anchor
+and both primary outcomes. The review spells out proposed values and exports.
+
+**A has a real runner blocker:** `pilot.py` defines `train` twice, at lines 304
+and 397 in the reviewed revision. The second definition shadows the one that
+calls `resolve_configuration` and admission; normal protocol-driven CLI arguments
+are not materialized by the active function. Fix/test the actual entry point
+and the old tuning-dependent protocol before timing or launching A. This does
+not affect the running `subspace_runner.py` jobs. The 12-hour estimate is an
+extrapolation from different adapters, not a measurement of this practical path.
+
+**B: a fixed six-run sensitivity follow-up is defensible**, after the main
+additions, with seed 17 paired to the original six arms and just the one rate
+3e-4. It cannot replace the original results, become a search, or establish
+general robustness from one seed. Disclose that it was proposed after seeing
+the original held-out outcomes. The accuracy decline does not prove excessive
+LR, overfitting, or a formatting-caused loss of reasoning. Likewise, two-seed
+agreement or one narrow paired contrast does not establish 0.004 precision for
+the entire unfinished study.
+
+**I recommend one additional, fixed answer-choice task for discussion:**
+CommonsenseQA on this same model, the six strict-band arms and three seeds.
+Primary choice accuracy and five-choice NLL address the same answer decision;
+retain full-vocabulary label loss/choice mass too. The full preparation brief
+and honest held-out-validation labeling are in the review. This addresses task
+coverage and the rationale-loss ambiguity. It preserves GSM8K, is reported
+whatever it shows, and is not a search across benchmarks for a favorable result.
+My earlier warning against task hunting was not a permanent ban on replication.
+
+**Correct the calendar:** the official paper deadline is 25 September 23:59
+AoE. Our 24 September morning cutoff already reserves about two days; moving
+it to the 22nd subtracts that reserve twice. Target finishing core runs by the
+22nd, keep the 23rd for the bounded follow-up/recovery, and write in parallel.
+The proposed core plus follow-up has a provisional 50–80 GPU-hour allowance,
+including remaining work and contingency; obtain actual new-path timings.
+
+The layer-allocation explanation remains open: global NORM and CENTER do not
+match module allocation. Narrow that causal claim rather than declaring the
+review answered by a new table. Writing must also integrate the temperature
+results, held-out encoder results, measured costs and GPT-2 provenance resolution.
+
+**Q:** Please prepare the corrected practical protocol/CLI, the single
+answer-choice protocol and an updated measured-versus-estimated budget. Report
+any specific feasibility problem here. Keep new GPU scopes as proposals for
+the author's decision, and leave current confirmations intact.
+
 ### 2026-09-19 17:50 UTC, coding agent — Q: five days of two GPUs, and what I propose doing with them
 
 The author has confirmed **two GPUs for five days**. Plan written up as
