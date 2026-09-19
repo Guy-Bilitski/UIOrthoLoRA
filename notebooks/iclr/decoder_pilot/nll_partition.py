@@ -15,19 +15,24 @@ What it is not:
 Token-boundary rule, deterministic and fixed before any number is read. The
 scored completion is ``answer + eos_token``, tokenized with
 ``add_special_tokens=False``, so re-tokenizing that exact string with offset
-mapping reproduces the scored tokens one for one. Then:
+mapping reproduces the scored tokens one for one; the correspondence is asserted
+per example rather than assumed. Then:
 
-* ``delimiter_eos``: the characters of the LAST ``####`` in the answer, together
-  with any whitespace immediately preceding it and any whitespace between it and
-  the number, plus every token of the end-of-sequence marker.
-* ``final_number``: the characters after that delimiter and its trailing
-  whitespace, up to the end of the answer.
-* ``solution_text``: every remaining character before the delimiter.
+* ``final_number``: the span of the NUMBER captured by the declared gold-answer
+  syntax at the last ``####``. The remainder of the line is not assumed numeric.
+* ``solution_text``: the characters before the marker's immediately preceding
+  whitespace.
+* ``delimiter_eos``: the marker itself, the whitespace adjacent to it, any text
+  after the number, and every end-of-sequence token.
 
-Each token is assigned by the group of its FIRST character, which makes a token
-straddling a boundary land deterministically. An example whose reference answer
-contains no ``####`` is counted in ``examples_without_marker`` and its tokens go
-to an explicit ``unpartitioned`` group, never silently into the text group.
+A token overlapping more than one span is assigned by the fixed priority
+numeric, then solution text, then delimiter. Every scored token is assigned
+exactly once and the straddling count is reported; when any straddling occurs
+the numeric group is labelled "numeric-answer-overlapping tokens", because the
+priority is a bookkeeping convention and not a claim that a sub-word token is
+semantically pure. An answer with no ``####``, or whose numeric span cannot be
+parsed, goes to an explicit ``unpartitioned`` group and is counted; it is never
+folded into the text group.
 
 The three group sums and counts must recover the registered full NLL exactly;
 ``partition_matches_full_nll`` records that check.
@@ -220,6 +225,75 @@ def partition_split(model, tokenizer, rows, device, batch_size, precision, pad_t
     )
 
 
+SUMMARY_KEYS = ("identity", "groups", "full", "partition_matches_full_nll", "every_scored_token_assigned",
+                "mask_validation", "primary_export_agreement")
+
+
+def cli_summary(payload):
+    """The keys printed after the artifact is written. Kept in one place so it cannot drift from the payload."""
+    missing = [key for key in SUMMARY_KEYS if key not in payload]
+    if missing:
+        raise KeyError("Partition payload is missing summary keys: " + ", ".join(missing))
+    return {key: payload[key] for key in SUMMARY_KEYS}
+
+
+def bind_to_registered_endpoint(run_directory, protocol, ledger_path):
+    """Refuse anything that is not a validated, registered endpoint of this study.
+
+    A directory is not a confirmation endpoint merely because it contains a ``job.json``: the entry must be
+    registered in this protocol, and the ledger must record that run as completed with a validation report.
+    """
+    job = json.loads((Path(run_directory) / "job.json").read_text())
+    entry_ids = {entry["entry_id"] for entry in protocol.get("entries", [])}
+    reference = protocol.get("reference_entry")
+    if reference:
+        entry_ids.add(reference["entry_id"])
+    if job.get("entry_id") not in entry_ids:
+        raise ValueError(f"{job.get('entry_id')} is not a registered endpoint of this protocol")
+    status, validation = None, None
+    for line in Path(ledger_path).read_text().splitlines():
+        if not line.strip():
+            continue
+        event = json.loads(line)
+        if event.get("run_id") == job["run_id"]:
+            status = event.get("status")
+            validation = event.get("validation_path", validation)
+    if status != "completed" or not validation:
+        raise ValueError(f"Run {job['run_id']} is {status}, not a completed and validated endpoint")
+    return job, json.loads(Path(validation).read_text())
+
+
+def compare_with_primary_export(run_directory, split, recomputed, *, atol=1e-5, rtol=1e-5):
+    """Cross-check the diagnostic's full totals against the run's bound primary per-example export.
+
+    Without this the recovery check only establishes that the pass sums to itself. This needs no extra model
+    pass, because the diagnostic already computes the full loss over the same split.
+    """
+    path = Path(run_directory) / "evaluation" / f"{split}_nll_per_example.json"
+    if not path.exists():
+        return dict(compared=False, reason=f"no primary per-example export at {path}")
+    export = json.loads(path.read_text())
+    sums, counts = export.get("per_example_nll_sum"), export.get("per_example_token_count")
+    if not sums or not counts:
+        return dict(compared=False, reason="primary export carries no per-example sums and counts")
+    primary_sum, primary_count = float(sum(sums)), int(sum(counts))
+    delta = abs(primary_sum - recomputed["nll_sum"])
+    return dict(
+        compared=True,
+        primary_export=str(path),
+        primary_nll_sum=primary_sum,
+        primary_token_count=primary_count,
+        recomputed_nll_sum=recomputed["nll_sum"],
+        recomputed_token_count=recomputed["token_count"],
+        token_counts_match=bool(primary_count == recomputed["token_count"]),
+        nll_absolute_difference=delta,
+        agrees_within_reload_tolerance=bool(primary_count == recomputed["token_count"]
+                                            and delta <= atol + rtol * abs(primary_sum)),
+        atol=atol,
+        rtol=rtol,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Exploratory NLL partition over frozen checkpoints. No training.")
     parser.add_argument("--resources", type=Path, required=True)
@@ -243,8 +317,10 @@ def main():
     prepared = json.loads((Path(resources.output_root) / "inputs/prepared.json").read_text())
     model, tokenizer = load_model_and_tokenizer(prepared["model"])
     encoded, raw, _ = encode_splits(tokenizer, prepared["dataset"], record["max_length"])
+    ledger = Path(resources.output_root) / "run_ledger.jsonl"
     identity = dict(state="frozen")
     if args.run_directory is not None:
+        bound_job, bound_report = bind_to_registered_endpoint(args.run_directory, protocol, ledger)
         job = json.loads((args.run_directory / "job.json").read_text())
         from . import adapters as adapter_module
 
@@ -259,7 +335,9 @@ def main():
         model.to(device)
         store.restore(engine["fixed_step_checkpoint"], model, restore_random_state=False)
         identity = dict(state="confirmation_endpoint", run_id=job["run_id"], arm=job["arm"], seed=job["seed"],
-                        entry_id=job["entry_id"], checkpoint=str(engine["fixed_step_checkpoint"]))
+                        entry_id=job["entry_id"], checkpoint=str(engine["fixed_step_checkpoint"]),
+                        bound_validation_report=bound_report.get("run_id"),
+                        bound_held_out_nll=bound_report.get("held_out_completion_nll"))
     else:
         model.requires_grad_(False)
         model.to(device)
@@ -268,6 +346,11 @@ def main():
     print("mask validation before any model loss:", json.dumps(mask_validation, indent=1))
     result = partition_split(model, tokenizer, rows, device, args.eval_batch_size, record["precision"], tokenizer.pad_token_id)
     result["mask_validation"] = mask_validation
+    result["primary_export_agreement"] = (
+        compare_with_primary_export(args.run_directory, args.split, result["full"])
+        if args.run_directory is not None
+        else dict(compared=False, reason="frozen model has no trained-run primary export on this path")
+    )
     payload = dict(
         schema_version=1,
         purpose="decoder_subspace_nll_partition",
@@ -283,7 +366,7 @@ def main():
     output = owned_path(resources.output_root, args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     write_json_new(output, payload)
-    print(json.dumps({k: payload[k] for k in ("identity", "groups", "full", "partition_matches_full_nll", "examples_without_marker", "examples_with_token_mismatch")}, indent=1))
+    print(json.dumps(cli_summary(payload), indent=1))
 
 
 if __name__ == "__main__":

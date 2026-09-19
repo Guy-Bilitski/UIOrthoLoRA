@@ -1,5 +1,7 @@
 """Tests for the exploratory NLL partition. CPU only, tiny synthetic model."""
 
+import json
+
 import pytest
 import torch
 from transformers import Qwen2Config, Qwen2ForCausalLM
@@ -208,3 +210,93 @@ def test_each_group_reports_its_share_of_the_total_loss():
     for group in result["groups"].values():
         if group["token_count"]:
             assert group["share_of_tokens"] is not None
+
+
+# --------------------------------------------------------------------------- CLI payload and endpoint binding
+
+
+def _payload(**overrides):
+    base = dict(identity={}, groups={}, full={}, partition_matches_full_nll=True,
+                every_scored_token_assigned=True, mask_validation={}, primary_export_agreement={})
+    base.update(overrides)
+    return base
+
+
+def test_the_cli_summary_only_reads_keys_the_payload_carries():
+    """The printed summary used to read removed keys and raised AFTER the artifact was written."""
+    summary = part.cli_summary(_payload())
+    assert set(summary) == set(part.SUMMARY_KEYS)
+    incomplete = _payload()
+    del incomplete["mask_validation"]
+    with pytest.raises(KeyError, match="mask_validation"):
+        part.cli_summary(incomplete)
+
+
+def test_the_exported_boundary_rule_describes_the_rule_actually_used():
+    assert "NUMBER captured by the declared gold-answer" in part.__doc__
+    assert "numeric, then solution text, then delimiter" in part.__doc__
+    assert "FIRST character" not in part.__doc__
+
+
+def _endpoint(tmp_path, entry_id, run_id, status="completed", with_validation=True):
+    run_dir = tmp_path / run_id
+    run_dir.mkdir()
+    (run_dir / "job.json").write_text(json.dumps(dict(entry_id=entry_id, run_id=run_id, arm="LEAD_DIAG", seed=17)))
+    ledger = tmp_path / "run_ledger.jsonl"
+    report = tmp_path / f"{run_id}_report.json"
+    report.write_text(json.dumps(dict(run_id=run_id, held_out_completion_nll=0.44)))
+    event = dict(run_id=run_id, status=status)
+    if with_validation and status == "completed":
+        event["validation_path"] = str(report)
+    with ledger.open("a") as handle:
+        handle.write(json.dumps(dict(run_id=run_id, status="planned")) + "\n")
+        handle.write(json.dumps(event) + "\n")
+    return run_dir, ledger
+
+
+def test_only_a_registered_validated_endpoint_is_accepted(tmp_path):
+    protocol = dict(entries=[dict(entry_id="confirmation/LEAD_DIAG/seed_17")],
+                    reference_entry=dict(entry_id="reference/FROZEN/held_aside_test"))
+    run_dir, ledger = _endpoint(tmp_path, "confirmation/LEAD_DIAG/seed_17", "good")
+    job, report = part.bind_to_registered_endpoint(run_dir, protocol, ledger)
+    assert job["run_id"] == "good" and report["held_out_completion_nll"] == 0.44
+
+
+def test_a_pilot_directory_is_not_a_confirmation_endpoint(tmp_path):
+    """Having a job.json is not enough; the entry must be registered in this protocol."""
+    protocol = dict(entries=[dict(entry_id="confirmation/LEAD_DIAG/seed_17")])
+    run_dir, ledger = _endpoint(tmp_path, "timing/TAIL_DIAG/100", "pilot")
+    with pytest.raises(ValueError, match="not a registered endpoint"):
+        part.bind_to_registered_endpoint(run_dir, protocol, ledger)
+
+
+def test_an_unvalidated_run_is_refused(tmp_path):
+    protocol = dict(entries=[dict(entry_id="confirmation/LEAD_DIAG/seed_17")])
+    run_dir, ledger = _endpoint(tmp_path, "confirmation/LEAD_DIAG/seed_17", "running", status="running")
+    with pytest.raises(ValueError, match="not a completed and validated endpoint"):
+        part.bind_to_registered_endpoint(run_dir, protocol, ledger)
+
+
+def test_the_full_loss_is_cross_checked_against_the_primary_export(tmp_path):
+    run_dir = tmp_path / "run"
+    (run_dir / "evaluation").mkdir(parents=True)
+    (run_dir / "evaluation" / "held_aside_test_nll_per_example.json").write_text(json.dumps(
+        dict(per_example_nll_sum=[10.0, 20.0, 30.5], per_example_token_count=[100, 200, 305])))
+    agree = part.compare_with_primary_export(run_dir, "held_aside_test", dict(nll_sum=60.5, token_count=605))
+    assert agree["compared"] is True
+    assert agree["token_counts_match"] is True
+    assert agree["agrees_within_reload_tolerance"] is True
+
+    drifted = part.compare_with_primary_export(run_dir, "held_aside_test", dict(nll_sum=61.9, token_count=605))
+    assert drifted["agrees_within_reload_tolerance"] is False
+
+    miscounted = part.compare_with_primary_export(run_dir, "held_aside_test", dict(nll_sum=60.5, token_count=604))
+    assert miscounted["token_counts_match"] is False
+    assert miscounted["agrees_within_reload_tolerance"] is False
+
+
+def test_a_missing_primary_export_is_reported_not_assumed(tmp_path):
+    run_dir = tmp_path / "bare"
+    run_dir.mkdir()
+    agree = part.compare_with_primary_export(run_dir, "held_aside_test", dict(nll_sum=1.0, token_count=1))
+    assert agree["compared"] is False and "no primary per-example export" in agree["reason"]

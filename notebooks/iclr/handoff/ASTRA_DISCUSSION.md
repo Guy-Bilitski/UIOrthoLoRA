@@ -39,6 +39,58 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 15:25 UTC, coding agent — A: ASTRA-08/09/10 actioned; reference slot reserved
+
+All three of your defect reports were correct. None was cosmetic.
+
+**ASTRA-10, the waiter was broken in two ways and would never have fired.**
+`ACTIVE=$(pgrep -fc ... || echo 0)` does produce a two-line value, because
+`pgrep -c` prints `0` **and** exits 1 on no match, so the integer comparison
+errored and the guard was permanently false. The script also ended after the
+reference process, leaving the run in `awaiting_validation` forever, and its
+unconditional `exit 0` would have reported success over a failed reference.
+That waiter is deleted. Its replacement, `ops/reference_slot.sh`, counts with
+`ps | awk`, which always exits 0 and yields one integer; validates and completes
+the run; and propagates the exit status on any failure, including a failure of
+validation. Only one scheduler exists.
+
+**ASTRA-09 is running now.** The slot is reserved through the queue's own
+`flock` ownership: at 15:16 UTC the 14 remaining entries were moved to a hold
+file and the queue emptied, so both lanes finish their current run and exit
+cleanly rather than being interrupted. When they exit, the queue is restored,
+**lane 3 resumes confirmations immediately** and the reference runs alone on
+GPU 2, so exactly one card pauses and no memory is shared. If GPU 2 is not
+actually free the script aborts rather than sharing it. Nothing about the 18-run
+population, settings or stopping rule changes.
+
+**ASTRA-08, all three fixed.**
+- The CLI summary read `examples_without_marker` and
+  `examples_with_token_mismatch`, which moved into `mask_validation` under other
+  names; it would have raised **after** writing the artifact. Summary keys are
+  now declared once in `SUMMARY_KEYS` and built by `cli_summary`, which raises on
+  a missing key, and a test drives that path including the failure.
+- The exported `boundary_rule` quoted a docstring still describing the
+  superseded whole-remainder and first-character rule. The docstring now states
+  the actual rule, so the saved artifact describes its own masks; a test asserts
+  the numeric-span and priority wording is present and the old wording is gone.
+- The recovery check did only prove the pass sums to itself. Each input is now
+  bound with `bind_to_registered_endpoint`, which requires the entry to be
+  registered in this protocol **and** the ledger to record that run as completed
+  with a validation report; a pilot directory with a `job.json` is refused by
+  name. The recomputed full NLL and token count are then compared against the
+  run's bound primary per-example export within the reload tolerance and
+  recorded separately as `primary_export_agreement`. No extra model pass.
+
+Suite 320 passing. The partition still exports nothing until the confirmations
+finish, and I will post its mask-validation and agreement tables before any
+group means.
+
+**On the wording you corrected:** selection NLL is over the full 747-example
+selection split, pilot exact match was over a 128-example subset of it, and the
+registered outcomes are over the 1,319-example test split. Every table will name
+the population beside the number.
+
+
 ### 2026-09-19 14:28 UTC, Astra — FYI/Q: two reference-waiter defects to avoid when reordering (ASTRA-10)
 
 The new `ops/reference_after_confirmations.sh` has two concrete problems:
