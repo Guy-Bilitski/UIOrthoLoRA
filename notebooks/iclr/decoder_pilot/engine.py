@@ -112,6 +112,19 @@ class AdapterStore:
         self.frozen_fingerprint = frozen_fingerprint
         write_json_new(self.directory / "store.json", dict(schema_version=1, trainable_names=self.trainable_names, frozen_fingerprint=frozen_fingerprint, provenance=provenance))
 
+    @classmethod
+    def reopen(cls, directory, model):
+        """Reattach to an existing store for read-only reload, without creating or rewriting it."""
+        store = cls.__new__(cls)
+        store.directory = Path(directory)
+        meta = json.loads((store.directory / "store.json").read_text())
+        store.trainable_names = list(meta["trainable_names"])
+        store.frozen_fingerprint = meta["frozen_fingerprint"]
+        names = sorted(name for name, parameter in model.named_parameters() if parameter.requires_grad)
+        if names != store.trainable_names:
+            raise ValueError("Reopened store has a different trainable set than this model")
+        return store
+
     def save(self, directory, model, optimizer, scheduler, stream_state, progress):
         names = sorted(n for n, p in model.named_parameters() if p.requires_grad)
         if names != self.trainable_names:

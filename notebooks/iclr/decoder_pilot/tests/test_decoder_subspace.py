@@ -276,3 +276,26 @@ def test_unknown_arm_is_refused():
         subspace.arm_config("LEAD_ROT64")
     with pytest.raises(ValueError):
         subspace.parse_arm("P1_MIX")
+
+
+def test_store_reopen_reattaches_without_rewriting(references, tmp_path):
+    """The selection-decode audit reloads a finished run's endpoint through an existing store."""
+    model = tiny_model()
+    layers, config = insert(model, "MID_ROT128", references)
+    inventory = subspace.trainable_inventory(model, layers, config)
+    fingerprint = _fingerprint("MID_ROT128", config, inventory)
+    store = AdapterStore(tmp_path / "reference", model, fingerprint, dict(test=True))
+    optimizer, scheduler = _train_one_step(model, layers)
+    store.save(tmp_path / "step_1", model, optimizer, scheduler, dict(), dict(step=1))
+    trained = {name: layer.delta_total().detach().clone() for name, layer in layers.items()}
+    fresh = tiny_model()
+    fresh_layers, _ = insert(fresh, "MID_ROT128", references)
+    reopened = AdapterStore.reopen(tmp_path / "reference", fresh)
+    assert reopened.frozen_fingerprint == fingerprint
+    reopened.restore(tmp_path / "step_1", fresh, restore_random_state=False)
+    for name, layer in fresh_layers.items():
+        torch.testing.assert_close(layer.delta_total(), trained[name], atol=1e-6, rtol=1e-6)
+    other = tiny_model()
+    insert(other, "MID_DIAG", references)
+    with pytest.raises(ValueError, match="different trainable set"):
+        AdapterStore.reopen(tmp_path / "reference", other)

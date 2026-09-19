@@ -323,6 +323,55 @@ def reference(args):
     print(json.dumps(dict(run_id=run_id, run_dir=str(run_dir), split=split, generation=summarize(outputs), nll=nll["token_mean_nll"]), indent=1))
 
 
+def audit(args):
+    """Decode the prescribed 128-example inner-selection subset at a finished run's fixed endpoint.
+
+    The plan's decode audit covers the frozen model, the two timing endpoints and the six endpoints at the
+    selected family learning rates. Tuning runs train with generation disabled, so this mode reloads such a
+    run's fixed-endpoint checkpoint and decodes the shared subset. It reads the inner selection split only,
+    never the held-aside test split, and it feeds the cap audit and the accuracy-signal check, not selection.
+    """
+    resources, uuid = _device_from_authorization(args)
+    device = torch.device("cuda:0")
+    run_dir = Path(args.run_directory).resolve()
+    job = json.loads((run_dir / "job.json").read_text())
+    protocol = json.loads(args.protocol.read_text())
+    if job.get("phase_protocol_sha256") != sha256(args.protocol):
+        raise ValueError("Run was not admitted under this protocol")
+    subspace_plan.validate_admission(job, protocol)
+    record = protocol["design"]
+    worker = json.loads((run_dir / "worker_result.json").read_text())
+    engine = worker["engine_result"]
+    if engine.get("status") != "awaiting_validation":
+        raise ValueError("Audit requires a run that reached its registered fixed endpoint")
+    out = run_dir / "evaluation"
+    if (out / "selection_generation.json").exists():
+        raise FileExistsError("This run already carries a selection decode audit")
+    prepared = json.loads((Path(resources.output_root) / "inputs/prepared.json").read_text())
+    started = time.perf_counter()
+    model, tokenizer = load_model_and_tokenizer(prepared["model"])
+    encoded, raw, _ = encode_splits(tokenizer, prepared["dataset"], job["settings"]["max_length"])
+    from . import adapters as adapter_module
+
+    references, _ = adapter_module.load_references(prepared["svd_reference_cache"], model, tuple(record["projections"]))
+    torch.manual_seed(job["seed"])
+    layers, config = subspace.insert_band_adapters(model, job["arm"], references, projections=tuple(record["projections"]), band_size=record["band_size"], rotation_size=record["rotation_size"])
+    model.to(device)
+    store = AdapterStore.reopen(run_dir / "reference", model)
+    if store.frozen_fingerprint != job["frozen_fingerprint"]:
+        raise ValueError("Stored fingerprint does not match this run's job record")
+    store.restore(engine["fixed_step_checkpoint"], model, restore_random_state=False)
+    model.eval()
+    plan = subspace_plan.generation_plan(record, "selection_subset", args.max_new_tokens)
+    indices = selection_subset(encoded["selection"], raw["selection"], plan["subset_size"], plan["subset_seed"])
+    rows = [dict(raw["selection"][i], gold=encoded["selection"].rows[i]["gold"]) for i in indices]
+    nll = evaluate_nll(model, encoded["selection"], device, args.eval_batch_size, record["precision"])
+    outputs, seconds = generate_answers(model, tokenizer, rows, device, max_new_tokens=plan["max_new_tokens"], batch_size=plan["batch_size"], system_prompt=SYSTEM_PROMPT, merge_layers=list(layers.values()), precision=plan["precision"])
+    write_generation_export(out, "selection", outputs, nll, seconds, plan)
+    write_json_new(run_dir / "selection_audit.json", dict(purpose="decoder_subspace_selection_decode_audit", run_id=job["run_id"], arm=job["arm"], seed=job["seed"], learning_rate=job["settings"]["learning_rate"], subset=plan, summary=summarize(outputs), generation_seconds=seconds, elapsed_seconds=time.perf_counter() - started, audited_utc=utc_now(), note="Inner-selection subset only; never the held-aside test split. Feeds the cap audit and the accuracy-signal check, not any selection decision."))
+    print(json.dumps(dict(run_id=job["run_id"], arm=job["arm"], summary=summarize(outputs), seconds=seconds), indent=1))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -341,8 +390,15 @@ def main():
     p.add_argument("--gpu", type=int, required=True)
     p.add_argument("--protocol", type=Path, required=True)
     p.add_argument("--eval-batch-size", type=int, default=8)
+    p = sub.add_parser("audit", description="Decode the prescribed inner-selection subset at a finished run's fixed endpoint.")
+    p.add_argument("--resources", type=Path, required=True)
+    p.add_argument("--gpu", type=int, required=True)
+    p.add_argument("--protocol", type=Path, required=True)
+    p.add_argument("--run-directory", type=Path, required=True)
+    p.add_argument("--max-new-tokens", type=int, default=None)
+    p.add_argument("--eval-batch-size", type=int, default=4)
     args = parser.parse_args()
-    {"train": train, "reference": reference}[args.command](args)
+    {"train": train, "reference": reference, "audit": audit}[args.command](args)
 
 
 if __name__ == "__main__":
