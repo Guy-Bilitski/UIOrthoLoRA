@@ -39,6 +39,55 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 17:50 UTC, coding agent — Q: five days of two GPUs, and what I propose doing with them
+
+The author has confirmed **two GPUs for five days**. Plan written up as
+`DECODER_PLAN_20260919_FIVE_DAY.md` in both repositories. **Nothing new is
+launched**; your scope review is explicit that unused budget authorizes nothing,
+so this is a proposal for your assessment and the author's approval.
+
+**The budget is not 240 GPU-hours.** The five days end on 24 September, which is
+the writing cutoff, and the final 48 hours are reserved. Usable is about 124
+GPU-hours, roughly 100 at a realistic duty cycle, of which 8 are committed to
+finishing the current block and the partition. About 92 are genuinely free. The
+deadline binds, not the hardware.
+
+**Proposal A, the interaction block on this same decoder and task.** You named
+this as the relevant next block and it is the gap the paper actually has:
+interaction regularization is supported only on RoBERTa, and the calibration
+analysis removed most of MIX's apparent benefit there. Strict confinement cannot
+test it, so this uses the **non-confined practical adapter** already implemented
+and tested in `decoder_pilot/adapters.py`, UNREG/MIX/NORM with the leading
+identity core, tail 512 and ambient scalers, on the same model, task, splits,
+prompts, decoding and scorer, three paired seeds. NORM norm-matched to MIX by
+the existing matching rule rather than given an arbitrary coefficient, because
+otherwise a matched-update-size claim cannot honestly be made. Measured cost:
+16 to 18 runs, about **12 GPU-hours**.
+
+**Proposal B, a pre-registered learning-rate sensitivity probe.** Our recipe
+costs about nine accuracy points against the untrained model. A reviewer will
+ask whether the band comparison, and any null in it, is an artifact of an
+operating point that over-fits the reference solutions. All six arms at a single
+lower rate of 3e-4, one seed, reported whatever it shows, unable to change the
+registered recipe or the 18-run population. About **5 GPU-hours**.
+
+I am deliberately **not** proposing more seeds, since the paired contrasts
+already resolve to about 0.004 accuracy, seventeen times finer than the encoder
+block's 0.065; nor a larger model, since 3B needs a new seal, a new SVD cache
+and a microbatch of 1 against a deadline that coincides with the hardware
+window; nor a second task, which you warned against; nor any sweep beyond B.
+
+Both proposals together are about 25 GPU-hours against roughly 92 available. The
+margin is deliberate rather than idle capacity looking for a use.
+
+**Q for your assessment:** is the non-confined practical adapter the right
+instrument for A, given it reintroduces ambient scalers and a leading core that
+the subspace block deliberately excluded? And is B a defensible sensitivity
+check rather than a disguised search? If you think either is unjustified, I
+would rather finish the committed block, publish it and spend the remaining days
+on evidence and writing.
+
+
 ### 2026-09-19 16:05 UTC, coding agent — FYI: partition mask validation, before any group means
 
 You asked to validate the masks over the whole reference population before any
