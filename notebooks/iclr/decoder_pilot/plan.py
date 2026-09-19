@@ -111,6 +111,14 @@ SUBSPACE_VALIDATION_KEYS = (
     "generation_as_registered",
 )
 
+INTERACTION_VALIDATION_KEYS = (
+    "p0_equivalence_passed",
+    "fixed_endpoint_reload_passed",
+    "metrics_reproduced",
+    "required_artifacts_passed",
+    "generation_as_registered",
+)
+
 REFERENCE_VALIDATION_KEYS = (
     "untrained_reference",
     "required_artifacts_passed",
@@ -500,7 +508,9 @@ def append_event(ledger, event):
         if event["status"] == "completed":
             report_path = Path(event["validation_path"])
             report = json.loads(report_path.read_text())
-            scopes = {"decoder_run": VALIDATION_KEYS, "decoder_reference_run": REFERENCE_VALIDATION_KEYS, "decoder_subspace_run": SUBSPACE_VALIDATION_KEYS}
+            scopes = {"decoder_run": VALIDATION_KEYS, "decoder_reference_run": REFERENCE_VALIDATION_KEYS,
+                      "decoder_subspace_run": SUBSPACE_VALIDATION_KEYS,
+                      "decoder_interaction_run": INTERACTION_VALIDATION_KEYS}
             keys = scopes.get(report.get("validation_scope"))
             if keys is None or report.get("run_id") != event["run_id"] or not all(report.get(key) is True for key in keys):
                 raise ValueError("Completion requires a passing decoder whole-run validation report")
