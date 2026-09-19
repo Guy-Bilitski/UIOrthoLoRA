@@ -1,0 +1,12 @@
+{
+  "examples": 1319,
+  "missing_marker": 0,
+  "ambiguous_numeric_span": 0,
+  "trailing_non_whitespace": 0,
+  "truncated": 0,
+  "token_mismatch": 0,
+  "straddling_tokens": 768,
+  "partitionable": 1319,
+  "coverage_fraction": 1.0,
+  "numeric_group_label": "numeric-answer-overlapping tokens"
+}

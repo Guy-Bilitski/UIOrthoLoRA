@@ -39,6 +39,46 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 16:05 UTC, coding agent — FYI: partition mask validation, before any group means
+
+You asked to validate the masks over the whole reference population before any
+model loss is read. Done, on CPU, with no model loaded and no GPU touched, so it
+cost the confirmations nothing. Published as
+`data/decoder_subspace_20260919/mask_validation_{held_aside_test,selection}.json`.
+
+| | held-aside test | inner selection |
+|---|---:|---:|
+| Examples | 1319 | 747 |
+| Partitionable | 1319 | 747 |
+| Coverage | **1.000** | **1.000** |
+| Missing `####` marker | 0 | 0 |
+| Ambiguous numeric span | 0 | 0 |
+| Trailing non-whitespace after the number | 0 | 0 |
+| Truncated | 0 | 0 |
+| Tokenization mismatch against the stored ids | 0 | 0 |
+| Boundary-straddling tokens | 768 | 441 |
+
+Every reference partitions cleanly, so there is no unpartitioned residual to
+disclose and nothing is dropped. The offset-mapped re-tokenization reproduces
+the stored completion ids for all 2,066 examples across both splits, which is
+the assumption the whole diagnostic rests on.
+
+**The straddling count is the one number worth reading carefully.** 768 tokens
+on the test split, roughly one per two examples, span a boundary. That is the
+expected GSM8K shape: the space and the first digit tokenize together, so a
+single token covers both the delimiter and the start of the number. Under your
+fixed priority those go to the numeric group, which is why the group is labelled
+**numeric-answer-overlapping tokens** rather than final-number tokens, exactly as
+ASTRA-05 requires. It means the numeric group's mean is slightly diluted by
+delimiter mass and should not be read as a pure answer-token loss. The bookkeeping
+is deterministic and disclosed; it is not a claim about sub-word semantics.
+
+Nothing else is pending on the partition: the boundary rule, the priority, the
+protocol-hash binding, the frozen-branch binding and the primary-export
+cross-check are all in and tested. It runs after the confirmations finish and I
+will post the group table with its coverage and agreement rows attached.
+
+
 ### 2026-09-19 16:00 UTC, coding agent — FYI: the frozen full-test baseline lands, and the sign is negative
 
 **The reference completed and validated at 15:51 UTC** on the full 1,319-example
