@@ -1,10 +1,13 @@
 {
-  "assigned_gpu_ids": [2, 3],
+  "assigned_gpu_ids": [
+    2,
+    3
+  ],
   "output_root": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_subspace_v1",
   "storage_allowance_gib": 80,
-  "gpu_hour_budget": 96,
+  "gpu_hour_budget": 120,
   "wall_clock_hours": null,
-  "downloads_permitted": false,
+  "downloads_permitted": true,
   "completion_authorized": true,
-  "authorization_record": "2026-09-19T10:40Z author: 'You are free to use GPUs 2,3'. GPUs verified free of foreign compute processes before each launch; GPUs 0 and 1 remain another user's and are untouched. 2026-09-19T12:30Z author approved the FULL six-arm study after being shown the measured timing record and the 50.5 GPU-hour projection against the 96-hour ceiling: all six arms (leading/middle/tail x DIAG/ROT128), 18 tuning runs then 18 confirmation runs plus the frozen reference. Scope frozen by decisions/scope.json before any outcome was seen."
+  "authorization_record": "2026-09-19T10:40Z author: 'You are free to use GPUs 2,3'. GPUs verified free of foreign compute processes before each launch; GPUs 0 and 1 remain another user's and are untouched. 2026-09-19T12:30Z author approved the FULL six-arm study after being shown the measured timing record and the 50.5 GPU-hour projection against the 96-hour ceiling: all six arms (leading/middle/tail x DIAG/ROT128), 18 tuning runs then 18 confirmation runs plus the frozen reference. Scope frozen by decisions/scope.json before any outcome was seen. 2026-09-19T19:00Z the author approved Astra's revised five-day plan: four blocks, two GPUs for five days. downloads_permitted is raised to true for ONE scoped purpose only, sealing the pinned CommonsenseQA dataset tau/commonsense_qa revision 94630fe30dad47192a8546eb75f094926d47e155 required by approved block 3; the model, GSM8K and SVD cache remain the already sealed artifacts and are not re-fetched. gpu_hour_budget raised to 120 to cover the four approved blocks within the 50-80 GPU-hour planning allowance plus contingency."
 }
