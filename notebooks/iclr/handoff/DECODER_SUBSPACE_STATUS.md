@@ -7,6 +7,32 @@ decode allowance, not a measurement.
 
 ## Snapshots
 
+### Snapshot 2026-09-19T14:59:12+00:00
+
+- Population 18 entries; **2 completed and validated**, 2 running, 14 not started, 0 failed or interrupted.
+- Running: LEAD_ROT128 seed 123, step 632/842.
+- Running: MID_ROT128 seed 17, step 613/842.
+- Frozen full-test reference done: False.
+- Remaining estimate: 12.63 GPU-hours, about 6.32 hours wall on two GPUs.
+
+| Arm | Seed | Selection NLL | Exact match | Off-band | Rotation active |
+|---|---:|---:|---:|---:|---|
+| LEAD_ROT128 | 17 | 0.3636 | 0.4898 | 3.2e-12 | True |
+| LEAD_ROT128 | 42 | 0.3636 | 0.4882 | 3.2e-12 | True |
+
+### Snapshot 2026-09-19T14:25:40+00:00
+
+- Population 18 entries; **2 completed and validated**, 2 running, 14 not started, 0 failed or interrupted.
+- Running: LEAD_ROT128 seed 123, step 43/842.
+- Running: MID_ROT128 seed 17, step 43/842.
+- Frozen full-test reference done: False.
+- Remaining estimate: 13.68 GPU-hours, about 6.84 hours wall on two GPUs.
+
+| Arm | Seed | Selection NLL | Exact match | Off-band | Rotation active |
+|---|---:|---:|---:|---:|---|
+| LEAD_ROT128 | 17 | 0.3636 | 0.4898 | 3.2e-12 | True |
+| LEAD_ROT128 | 42 | 0.3636 | 0.4882 | 3.2e-12 | True |
+
 ### Snapshot 2026-09-19T14:14:05+00:00
 
 - Population 18 entries; **0 completed and validated**, 2 running, 16 not started, 0 failed or interrupted.
