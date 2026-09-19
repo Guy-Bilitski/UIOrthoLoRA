@@ -1,0 +1,19 @@
+{
+  "projections": ["q_proj", "o_proj"],
+  "band_size": 512,
+  "rotation_size": 128,
+  "arms_included": ["LEAD_DIAG", "LEAD_ROT128", "MID_DIAG", "MID_ROT128", "TAIL_DIAG", "TAIL_ROT128"],
+  "optimizer_steps": 842,
+  "max_length": 640,
+  "batch_size": 4,
+  "accumulation_steps": 4,
+  "precision": "bfloat16",
+  "gradient_checkpointing": false,
+  "learning_rates": [0.0003, 0.001, 0.003],
+  "selection_eval_steps": [0, 211, 421, 632, 842],
+  "generation_max_new_tokens": 320,
+  "generation_batch_size": 32,
+  "pilot_subset_size": 128,
+  "pilot_subset_seed": 271828,
+  "scope_provenance": "DECODER_SUBSPACE_STUDY_20260919.md (reviewed plan, 19 September 2026) and CODING_AGENT_PROMPT_20260919.md. Bands are the equal thirds [0,512), [512,1024), [1024,1536) of each 1536x1536 q_proj/o_proj of the starting Qwen2.5-1.5B-Instruct checkpoint; q=128 preserves the earlier rotated fraction 64/256. Arm scope is provisional until the measured scope decision freezes it."
+}
