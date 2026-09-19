@@ -6,6 +6,14 @@
 
 # Decoder subspace study — implementation, registries and launch (19 September 2026)
 
+> **Superseded in part on 19 September by `DECODER_SCOPE_REVIEW_20260919.md`.**
+> The 18-run learning-rate sweep described below is NOT being run. The recipe is
+> a declared common rate of 1e-3 for every band and both families, with one
+> short 100-step learning check per arm. See
+> `DECODER_RECONCILED_QUEUE_20260919.md` for the actual ledger, the reconciled
+> plan and the frozen-model reference finding. The implementation, hazard fixes,
+> measured timings and memory revision below all remain current.
+
 Operator companion to `DECODER_SUBSPACE_STUDY_20260919.md` (design) and
 `CODING_AGENT_PROMPT_20260919.md` (brief). It supersedes
 `DECODER_EXECUTION_PROTOCOL_20260919.md` and the five-arm benchmark it drove;
@@ -100,10 +108,14 @@ Sealed design `campaign_outputs_decoder_subspace_v1/design_20260919.json`
 (sha256 `9649dd84…`) from
 `data/campaign_v1/DECODER_SUBSPACE_DECISIONS_20260919.json`.
 
+Superseded row counts for the sweep are kept for the record; the live plan
+replaces the tuning row with per-arm learning checks.
+
 | Stage | Full scope | Reduced (DIAG-only) fallback |
 |---|---:|---:|
 | Timing pilots (100 steps) | 2 | 2 (charged to the reduced budget) |
-| Tuning (3 rates x bands x families, seed 31415) | 18 | 9 |
+| ~~Tuning (3 rates x bands x families, seed 31415)~~ superseded | ~~18~~ | ~~9~~ |
+| Learning checks, 100 steps, one per uncovered arm | 3 | up to 3 |
 | Confirmations (arms x seeds 17/42/123) | 18 | 9 |
 | Frozen reference (inference only) | 1 | 1 |
 | Optimizer steps total | 30,512 | 15,356 |
@@ -170,6 +182,24 @@ that budget.
 **Not a result.** These are implementation and cost measurements at a
 100-step endpoint on the tail band only. They say nothing about band ordering,
 and no tuning or confirmation run has been launched.
+
+## 4c. Live recipe after the scope review
+
+One common learning rate, **1e-3**, for every band and both families, declared
+as a design choice and not searched. It is the rate the timing pilots already
+used; it is not established as optimal for any band, and every conclusion is
+conditional on it. `subspace_plan.py register-fixed-recipe` seals this with its
+own provenance and refuses to proceed unless each registered arm carries a
+learning check at that rate and the tuning seed showing finite loss, a nonzero
+update, band confinement, a reproducing reload and, for the rotation family,
+rotations that actually moved. A check may not demand an accuracy gain, and no
+outcome may change the rate.
+
+The decode budget is raised to **640 tokens** for every arm and for the frozen
+reference. The pooled cap-hit rate across the audited decodes is 3.9%, above the
+1% threshold, driven mostly by the untrained reference at 10.2% against 1.6 to
+2.3% for trained arms. A cap that truncates the reference far more than the arms
+it anchors is not a fair common budget.
 
 ## 5. Timing worksheet
 
