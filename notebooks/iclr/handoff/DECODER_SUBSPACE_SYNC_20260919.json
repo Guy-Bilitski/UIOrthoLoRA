@@ -1,0 +1,62 @@
+{
+  "overleaf_commit": "cb449aced2f23f5bc620dc9a4b015ac1948fb477",
+  "scope": "Reviewed decoder subspace design and coding-agent prompt; documentation only. No implementation, scientific manuscript, measured data or GPU jobs changed.",
+  "files": {
+    "AGENTS.md": {
+      "overleaf_sha256": "d5f99144c3abbcda8c05b9dc4c33b3a56d469cda14eadd0211c31e3727a73218",
+      "research_sha256": "5b6c4764b0b4a83fa623ff02bf41d7f95350e78cd3ee078d70806b25bdf98da7"
+    },
+    "CENTER_PROTOCOL_20260919.md": {
+      "overleaf_sha256": "09e17a33e4c4ab872770e1351fad9306903f91220ba01a617992eefdf9911811",
+      "research_sha256": "09e17a33e4c4ab872770e1351fad9306903f91220ba01a617992eefdf9911811"
+    },
+    "CODING_AGENT_PROMPT_20260919.md": {
+      "overleaf_sha256": "efe533bbd5609bf6eb30bb73d440c8a719ea2e948142acbf9f260aa03522ec3f",
+      "research_sha256": "efe533bbd5609bf6eb30bb73d440c8a719ea2e948142acbf9f260aa03522ec3f"
+    },
+    "DECODER_EXECUTION_PROTOCOL_20260919.md": {
+      "overleaf_sha256": "fddd81642bd5f3ba0c1599c67dbcd8f36c99819129229b44d7c6cfa08c781690",
+      "research_sha256": "fddd81642bd5f3ba0c1599c67dbcd8f36c99819129229b44d7c6cfa08c781690"
+    },
+    "DECODER_FIRST_PRIORITY_20260919.md": {
+      "overleaf_sha256": "da66fe4acc9e427df626ff7bd56c863441ab44e892f95ad21a21ac7f73daefe2",
+      "research_sha256": "da66fe4acc9e427df626ff7bd56c863441ab44e892f95ad21a21ac7f73daefe2"
+    },
+    "DECODER_PILOT_DESIGN_20260919.md": {
+      "overleaf_sha256": "f1136af07ecf523195db2bdbede20c69458ca03eeb5815cc9d6bce95ea836e72",
+      "research_sha256": "f1136af07ecf523195db2bdbede20c69458ca03eeb5815cc9d6bce95ea836e72"
+    },
+    "DECODER_SUBSPACE_STUDY_20260919.md": {
+      "overleaf_sha256": "ae970481aa41e38b8990c0b2c9294e01b37f12db5857eedb952ae6f14b58b378",
+      "research_sha256": "ae970481aa41e38b8990c0b2c9294e01b37f12db5857eedb952ae6f14b58b378"
+    },
+    "EXPERIMENTS_REQUIRED.md": {
+      "overleaf_sha256": "d9eb0f946aad6f39617077b3dbfd9f3ce821deaca2d75089688f3a4d39cda56d",
+      "research_sha256": "d9eb0f946aad6f39617077b3dbfd9f3ce821deaca2d75089688f3a4d39cda56d"
+    },
+    "EXPERIMENT_PREPARATION_HANDOFF_20260919.md": {
+      "overleaf_sha256": "e11e497771e36c0c3739b718b4aadb6adb820428e13519564cc6ed85c8e83900",
+      "research_sha256": "e11e497771e36c0c3739b718b4aadb6adb820428e13519564cc6ed85c8e83900"
+    },
+    "EXPERIMENT_PREPARATION_STATUS_20260919.md": {
+      "overleaf_sha256": "22470e90b4598ef6793d48960d3f25c249388f3c4fbf29934510ddd268b4fe4f",
+      "research_sha256": "22470e90b4598ef6793d48960d3f25c249388f3c4fbf29934510ddd268b4fe4f"
+    },
+    "GPU_HANDOFF.md": {
+      "overleaf_sha256": "107c63831bc454080e6787a685a933cb304cbb3f086453efe7b5b9227571c154",
+      "research_sha256": "107c63831bc454080e6787a685a933cb304cbb3f086453efe7b5b9227571c154"
+    },
+    "README.md": {
+      "overleaf_sha256": "df73da0e7db0f714353ae7bde8a7fd5d1f39d6d731b847854245da3e680cfb5e",
+      "research_sha256": "df73da0e7db0f714353ae7bde8a7fd5d1f39d6d731b847854245da3e680cfb5e"
+    },
+    "review_feedback/20260919/assessment.md": {
+      "overleaf_sha256": "1dcf8d2e66b6eb25f7cc10d4fde29328f1b9508b3833650a73c0738b11b48ff9",
+      "research_sha256": "1dcf8d2e66b6eb25f7cc10d4fde29328f1b9508b3833650a73c0738b11b48ff9"
+    },
+    "review_feedback/20260919/manifest.json": {
+      "overleaf_sha256": "f406c2f282d2636ec05475d898f6cc9708cdf44b7bafde1b24d483b69ebac3a2",
+      "research_sha256": "f406c2f282d2636ec05475d898f6cc9708cdf44b7bafde1b24d483b69ebac3a2"
+    }
+  }
+}

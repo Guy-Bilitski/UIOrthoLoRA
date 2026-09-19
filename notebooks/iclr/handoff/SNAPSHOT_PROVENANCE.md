@@ -1,3 +1,10 @@
+Latest scoped subspace-design update: Overleaf `cb449aced2f23f5bc620dc9a4b015ac1948fb477`. See
+`DECODER_SUBSPACE_STUDY_20260919.md` and `DECODER_SUBSPACE_SYNC_20260919.json`.
+This delivery preserves the intervening coding-agent commit `0fddf62e` and
+Overleaf `56e4e6a`; their old benchmark registration must be adapted to the
+current subspace question. It changes planning documents only, not implementation,
+measured data, approved manuscript or existing PDF/supplement contents.
+
 Latest scoped priority update: Overleaf `070bcefd173cbfe0a3f4455a7da360ea174008f2`. See
 `DECODER_FIRST_PRIORITY_20260919.md` and `DECODER_PRIORITY_SYNC_20260919.json`.
 The original full-snapshot manifest below records its earlier delivery, not a

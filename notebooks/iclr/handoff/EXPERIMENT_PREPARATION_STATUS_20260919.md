@@ -1,3 +1,10 @@
+> **Current decoder plan — reviewed 19 September:** Read
+> `DECODER_SUBSPACE_STUDY_20260919.md` and `CODING_AGENT_PROMPT_20260919.md`.
+> Test leading/middle/tail support with our strict DIAG/ROT128 adapters; no
+> LoRA/PiSSA comparison or new penalty sweep. The plan includes bounded balanced
+> tuning, a two-GPU timing budget and a predeclared DIAG-only fallback. Older
+> decoder commands, matrices and costs below are historical and superseded.
+
 > **Latest author priority — modern decoder first:** Read
 > `DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder pilot,
 > tuning/calibration and confirmation runs on the two assigned GPUs. Defer

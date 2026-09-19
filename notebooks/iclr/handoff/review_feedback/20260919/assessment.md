@@ -1,3 +1,9 @@
+> **Current experiment plan:** The author narrowed the new work to the decoder
+> subspace question. See `../../DECODER_SUBSPACE_STUDY_20260919.md` for the
+> reviewed design and budget; adapter benchmarking and new controls below are
+> historical proposals, not the active queue. Existing scientific observations
+> in this assessment should be read with the subsequently delivered exports.
+
 > **Latest author priority — modern decoder first:** Read
 > `DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder pilot,
 > tuning/calibration and confirmation runs on the two assigned GPUs. Defer

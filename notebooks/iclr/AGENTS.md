@@ -1,3 +1,12 @@
+> **Current reviewed scope — 19 September:** Start with
+> `handoff/DECODER_SUBSPACE_STUDY_20260919.md` and
+> `handoff/CODING_AGENT_PROMPT_20260919.md`. Prepare the strict leading/middle/tail
+> decoder study with DIAG/ROT128, balanced tuning and both accuracy/loss outcomes.
+> LoRA/PiSSA, new penalty sweeps and CENTER are outside the active queue. Reuse
+> the latest registration code, but replace its old matrix and selection rules.
+> The plan fixes a measured two-GPU budget and DIAG-only fallback. Older launch
+> commands/decision templates below and in the handoff are superseded.
+
 > **Latest author priority:** modern decoder results first. Follow
 > `handoff/DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder
 > pilot and full study; defer CENTER and additional encoder controls. The
