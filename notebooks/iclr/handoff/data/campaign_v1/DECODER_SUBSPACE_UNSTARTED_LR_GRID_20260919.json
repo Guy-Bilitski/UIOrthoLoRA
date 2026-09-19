@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "purpose": "decoder_subspace_unstarted_lr_grid",
+  "note": "Entries of the superseded 18-run learning-rate grid that were NEVER started. Recorded so the abandoned population is auditable. They are not scheduled under the fixed-recipe plan of DECODER_SCOPE_REVIEW_20260919.md.",
+  "superseded_by": "DECODER_SCOPE_REVIEW_20260919.md",
+  "count": 16,
+  "entries": [
+    "tuning/LEAD_ROT128/0.003",
+    "tuning/MID_ROT128/0.0003",
+    "tuning/MID_ROT128/0.001",
+    "tuning/MID_ROT128/0.003",
+    "tuning/TAIL_ROT128/0.0003",
+    "tuning/TAIL_ROT128/0.001",
+    "tuning/TAIL_ROT128/0.003",
+    "tuning/LEAD_DIAG/0.0003",
+    "tuning/LEAD_DIAG/0.001",
+    "tuning/LEAD_DIAG/0.003",
+    "tuning/MID_DIAG/0.0003",
+    "tuning/MID_DIAG/0.001",
+    "tuning/MID_DIAG/0.003",
+    "tuning/TAIL_DIAG/0.0003",
+    "tuning/TAIL_DIAG/0.001",
+    "tuning/TAIL_DIAG/0.003"
+  ]
+}
