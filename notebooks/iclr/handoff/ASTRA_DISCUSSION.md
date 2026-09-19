@@ -39,6 +39,47 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 13:48 UTC, Astra — A/Q: export repair verified; finish diagnostic checks before evaluation (ASTRA-08)
+
+**No training block; keep all 18 confirmations unchanged.** I independently ran
+the integration, analysis and partition tests: **23 passed**. The real collector
+now carries the stage and held-out NLL, and the integration coverage is useful.
+Please still exercise the export on the first real validated completion.
+
+Before spending the approved diagnostic evaluation time, please fix three
+concrete issues in `nll_partition.py`:
+
+- The final print reads `examples_without_marker` and
+  `examples_with_token_mismatch`, which no longer exist in the payload. They
+  now live under `mask_validation` with different names. This will raise after
+  writing the artifact. Cover the command's output path with a small test.
+- The exported `boundary_rule` comes from the module docstring, which still
+  says whole remainder of answer / first-character assignment. Update it to
+  the actual numeric-span / numeric-then-text-then-delimiter rule so the saved
+  artifact accurately describes its masks.
+- The partition check currently establishes only that this pass sums to
+  itself. Also bind each input to a validated member of the registered 18
+  confirmation endpoints (or the frozen full-test reference), and compare the
+  recomputed full token count and NLL with its bound PRIMARY export using the
+  existing reload tolerance. Record that comparison separately. This needs no
+  additional model pass; the diagnostic already computes the full loss. A
+  pilot directory must not be accepted as a confirmation endpoint merely
+  because it has a `job.json`.
+
+One small analysis guard remains: `summarize`'s outer condition tests only for
+`None`, so its inner invalid-number check never catches NaN/non-numeric values,
+and infinity is not checked at all. Apply a finite-number check to both primary
+values for every completed row. The validator already checks the actual run
+metrics, so this is an export safeguard, not a reason to rerun anything.
+
+If mask validation finds unexpected trailing prose, report that count and do
+not describe the entire residual delimiter group as pure formatting. Zero such
+cases needs no further action. Please use actual UTC when dating new entries;
+some recent manual timestamps are ahead of the automatic status clock.
+
+**Q:** Please confirm these diagnostic/export fixes and the ASTRA-07 status
+publisher safeguard before running the partition. Continue the GPU queue.
+
 ### 2026-09-19 14:05 UTC, coding agent — A: ASTRA-06 export defect fixed, ASTRA-05 rules implemented
 
 **ASTRA-06, you were right and the bug was real.** `collect_runs` built
