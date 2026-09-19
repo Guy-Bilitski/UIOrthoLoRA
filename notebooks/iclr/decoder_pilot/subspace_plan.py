@@ -577,6 +577,8 @@ def validate_run(run_directory, protocol_path):
     if job.get("phase_protocol_sha256") != sha256(protocol_path):
         raise ValueError("Run was not admitted under this protocol")
     validate_admission(job, protocol)
+    if job.get("stage") == "reference":
+        return _validate_reference_run(run_directory, job, protocol_path)
     worker = json.loads((run_directory / "worker_result.json").read_text())
     if worker.get("status") != "awaiting_whole_run_review":
         raise ValueError("Run did not reach whole-run review: " + str(worker.get("status")))
@@ -652,12 +654,44 @@ def validate_run(run_directory, protocol_path):
     )
 
 
+def _validate_reference_run(run_directory, job, protocol_path):
+    """The frozen reference trains nothing, so it has no checkpoint, reload or band geometry to validate."""
+    result = json.loads((run_directory / "reference_result.json").read_text())
+    split = job["generation"]["split"]
+    evaluation = run_directory / "evaluation" / f"{split}_generation.json"
+    artifacts = [run_directory / "job.json", run_directory / "reference_result.json", evaluation,
+                 run_directory / "evaluation" / f"{split}_generations.jsonl",
+                 run_directory / "evaluation" / f"{split}_nll_per_example.json"]
+    missing = [str(path) for path in artifacts if not path.exists()]
+    return dict(
+        validation_scope="decoder_reference_run",
+        run_id=job["run_id"],
+        run_directory=str(run_directory),
+        stage="reference",
+        arm=job["arm"],
+        seed=None,
+        entry_id=job["entry_id"],
+        phase_protocol_path=str(Path(protocol_path).resolve()),
+        phase_protocol_sha256=job["phase_protocol_sha256"],
+        untrained_reference=job.get("trains") is False and result.get("trainable_parameters") == 0 and result.get("adapters_inserted") is False,
+        required_artifacts_passed=not missing,
+        generation_split_as_registered=json.loads(evaluation.read_text()).get("split") == split if evaluation.exists() else False,
+        missing_artifacts=missing,
+        checkpoint_path=None,
+        checkpoint_sha256=None,
+        generation_summary=result.get("generation_summary"),
+        held_out_completion_nll=result.get("held_out_completion_nll"),
+        artifacts_sha256={str(path): sha256(path) for path in artifacts if path.exists()},
+        validated_utc=utc_now(),
+    )
+
+
 def collect_runs(ledger_path, protocol_path, *, purpose, synthetic_cpu_test=False):
     """Hash-verified rows for one registered subspace protocol; only completed+validated rows carry metrics."""
     protocol, digest = json.loads(Path(protocol_path).read_text()), sha256(protocol_path)
     if protocol.get("purpose") != purpose or protocol.get("registered") is not True:
         raise ValueError("Require a registered subspace protocol of purpose " + purpose)
-    known = {entry["entry_id"]: entry for entry in protocol["entries"]}
+    known = {entry["entry_id"]: entry for entry in protocol.get("entries", [])}
     if not Path(ledger_path).exists():
         return []
     invalidation = Path(ledger_path).parent / "INVALIDATED_RUNS.json"
@@ -686,9 +720,18 @@ def collect_runs(ledger_path, protocol_path, *, purpose, synthetic_cpu_test=Fals
             raise ValueError("Job record changed after its ledger admission: " + run_id)
         if job.get("synthetic_cpu_test", False) is not synthetic_cpu_test:
             raise ValueError("Synthetic and pretrained provenance cannot be mixed: " + run_id)
-        if job.get("entry_id") not in known:
+        reference = protocol.get("reference_entry")
+        is_reference = job.get("stage") == "reference" and reference is not None and job.get("entry_id") == reference["entry_id"]
+        if job.get("entry_id") not in known and not is_reference:
             raise ValueError("Run is absent from the registered protocol: " + str(job.get("entry_id")))
         validate_admission(job, protocol)
+        if is_reference:
+            row = dict(entry_id=job["entry_id"], run_id=run_id, stage="reference", arm="FROZEN", status=event["status"], job_path=str(job_path.resolve()), job_sha256=sha256(job_path))
+            if event["status"] == "completed":
+                report = json.loads(Path(event["validation_path"]).read_text())
+                row.update(validated=True, generation_summary=report.get("generation_summary"), held_out_completion_nll=report.get("held_out_completion_nll"))
+            rows.append(row)
+            continue
         row = dict(entry_id=job["entry_id"], run_id=run_id, status=event["status"], retry_of=first[run_id].get("retry_of"), arm=job["arm"], band=job["band"], family=job["family"], seed=job["seed"], learning_rate=job["settings"]["learning_rate"], job_path=str(job_path.resolve()), job_sha256=sha256(job_path))
         if event["status"] != "completed":
             row["terminal_or_current_event"] = event
@@ -1326,7 +1369,7 @@ def main():
     p = sub.add_parser("status", help="print the ledger rows of one registered protocol")
     p.add_argument("--resources", type=Path, required=True)
     p.add_argument("--protocol", type=Path, required=True)
-    p.add_argument("--purpose", choices=(TIMING_PURPOSE, TUNING_PURPOSE, CONFIRMATION_PURPOSE), required=True)
+    p.add_argument("--purpose", choices=(TIMING_PURPOSE, TUNING_PURPOSE, CONFIRMATION_PURPOSE, REFERENCE_PURPOSE), required=True)
     args = parser.parse_args()
     resources = _resources(args.resources) if args.command != "design" else None
     ledger = Path(resources.output_root) / "run_ledger.jsonl" if resources else None
@@ -1373,7 +1416,8 @@ def main():
         output = output or Path(args.run_directory) / "validation_report.json"
         from .plan import SUBSPACE_VALIDATION_KEYS
 
-        summary = {k: payload[k] for k in SUBSPACE_VALIDATION_KEYS + ("run_id", "entry_id", "selection_token_mean_nll", "max_off_band_fraction")}
+        keys = ("untrained_reference", "required_artifacts_passed", "generation_split_as_registered") if payload["validation_scope"] == "decoder_reference_run" else SUBSPACE_VALIDATION_KEYS + ("selection_token_mean_nll", "max_off_band_fraction")
+        summary = {k: payload[k] for k in keys + ("run_id", "entry_id")}
     elif args.command == "complete":
         report = json.loads(args.validation_report.read_text())
         append_event(ledger, dict(run_id=args.run_id, status="completed", validation_path=str(Path(args.validation_report).resolve()), entry_id=report["entry_id"], stage=report["stage"]))
