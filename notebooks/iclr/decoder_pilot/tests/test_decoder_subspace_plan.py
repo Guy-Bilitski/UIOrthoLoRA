@@ -301,9 +301,10 @@ def _confirmation(tmp_path, prepared, record, max_new_tokens=320):
         write_json_new(path, payload)
     protocol = sp._base_protocol(
         prepared, record, sp.CONFIRMATION_PURPOSE, "test authorization",
-        tuning_protocol=sp._bind(tuning_path), lr_decision_record=sp._bind(lr_path),
+        source_protocol=sp._bind(tuning_path), recipe_record=sp._bind(lr_path),
         scope_decision_record=sp._bind(scope_path), generation_audit_record=sp._bind(audit_path),
         confirmation_authorized=True,
+        recipe_kind=sp.LR_SELECTION_PURPOSE,
         learning_rates={family: decision["selection"][family]["selected_learning_rate"] for family in record["families"]},
         confirmation_max_new_tokens=max_new_tokens,
         entries=sp.confirmation_entries(record, decision, max_new_tokens),
@@ -378,7 +379,7 @@ def test_reference_decode_budget_follows_the_audit(tmp_path, prepared, record):
 
 def test_stages_cannot_borrow_another_stage_protocol(tmp_path, prepared, record):
     confirmation, _ = _confirmation(tmp_path, prepared, record)
-    tuning = json.loads(Path(confirmation["tuning_protocol"]["path"]).read_text())
+    tuning = json.loads(Path(confirmation["source_protocol"]["path"]).read_text())
     tuning_job = _job(tuning, sp.materialize_tuning_entry(tuning, tuning["entries"][0]), prepared)
     with pytest.raises(ValueError):
         sp.validate_admission(tuning_job, confirmation)
@@ -387,3 +388,112 @@ def test_stages_cannot_borrow_another_stage_protocol(tmp_path, prepared, record)
         sp.validate_admission(confirmation_job, tuning)
     with pytest.raises(ValueError):
         sp.validate_admission({**tuning_job, "stage": "pilot"}, tuning)
+
+
+# --------------------------------------------------------------------------- fixed common recipe
+
+
+def _evidence_report(tmp_path, arm, rate=1e-3, *, rotation_active=None, norm=0.012, seed=31415, **overrides):
+    family = subspace.parse_arm(arm)[1]
+    report = dict(
+        validation_scope="decoder_subspace_run", run_id=f"run_{arm}", stage="timing", arm=arm, band=subspace.parse_arm(arm)[0],
+        family=family, seed=seed, entry_id=f"timing/{arm}/100", learning_rate=rate, optimizer_step=100,
+        p0_equivalence_passed=True, zero_insertion_passed=True, band_confinement_passed=True,
+        fixed_endpoint_reload_passed=True, metrics_reproduced=True, required_artifacts_passed=True,
+        generation_as_registered=True, selection_token_mean_nll=0.42, pooled_relative_frobenius=norm,
+        max_off_band_fraction=2.5e-12, pooled_in_band_off_diagonal_fraction=0.05 if family == "ROT128" else 8e-12,
+        any_rotation_active=(family == "ROT128") if rotation_active is None else rotation_active,
+    )
+    report.update(overrides)
+    path = tmp_path / f"evidence_{arm}.json"
+    write_json_new(path, report)
+    return path
+
+
+def _all_evidence(tmp_path, record, **kwargs):
+    return {arm: str(_evidence_report(tmp_path, arm, **kwargs)) for arm in record["arms_included"]}
+
+
+def test_fixed_recipe_declares_one_rate_for_every_family(tmp_path, record):
+    recipe = sp.register_fixed_recipe(record, 1e-3, _all_evidence(tmp_path, record), provenance="DECODER_SCOPE_REVIEW_20260919.md", authorization="test")
+    assert recipe["purpose"] == sp.FIXED_RECIPE_PURPOSE
+    assert recipe["learning_rate"] == 1e-3
+    assert recipe["families"] == {"DIAG": 1e-3, "ROT128": 1e-3}
+    assert set(recipe["learning_checks"]) == set(subspace.ARMS)
+    assert "not a tuned or best-of-grid rate" in recipe["not_established"]
+    assert "may NOT demand an accuracy gain" in recipe["rule"]
+
+
+def test_fixed_recipe_requires_a_check_for_every_arm(tmp_path, record):
+    evidence = _all_evidence(tmp_path, record)
+    evidence.pop("MID_DIAG")
+    with pytest.raises(ValueError, match="MID_DIAG"):
+        sp.register_fixed_recipe(record, 1e-3, evidence, provenance="p", authorization="a")
+
+
+def _evidence_with(tmp_path, record, arm, **overrides):
+    """A full evidence set where one arm's report is replaced, written under its own directory."""
+    evidence = _all_evidence(tmp_path, record)
+    replacement = tmp_path / f"replaced_{arm}"
+    replacement.mkdir()
+    evidence[arm] = str(_evidence_report(replacement, arm, **overrides))
+    return evidence
+
+
+def test_fixed_recipe_rejects_evidence_at_another_rate(tmp_path, record):
+    evidence = _evidence_with(tmp_path, record, "LEAD_DIAG", rate=3e-4)
+    with pytest.raises(ValueError, match="not the declared"):
+        sp.register_fixed_recipe(record, 1e-3, evidence, provenance="p", authorization="a")
+
+
+def test_fixed_recipe_rejects_a_confirmation_seed_as_a_learning_check(tmp_path, record):
+    evidence = _evidence_with(tmp_path, record, "TAIL_DIAG", seed=42)
+    with pytest.raises(ValueError, match="tuning seed"):
+        sp.register_fixed_recipe(record, 1e-3, evidence, provenance="p", authorization="a")
+
+
+def test_fixed_recipe_rejects_a_dead_adapter(tmp_path, record):
+    evidence = _evidence_with(tmp_path, record, "MID_DIAG", norm=0.0)
+    with pytest.raises(ValueError, match="no update at all"):
+        sp.register_fixed_recipe(record, 1e-3, evidence, provenance="p", authorization="a")
+
+
+def test_fixed_recipe_rejects_a_rotation_still_resting_at_identity(tmp_path, record):
+    evidence = _evidence_with(tmp_path, record, "LEAD_ROT128", rotation_active=False)
+    with pytest.raises(ValueError, match="no active rotation"):
+        sp.register_fixed_recipe(record, 1e-3, evidence, provenance="p", authorization="a")
+
+
+def test_fixed_recipe_does_not_demand_an_accuracy_gain(tmp_path, record):
+    """A check that shows movement but no accuracy improvement is still a valid learning check."""
+    evidence = _all_evidence(tmp_path, record, norm=1e-6)
+    recipe = sp.register_fixed_recipe(record, 1e-3, evidence, provenance="p", authorization="a")
+    assert all(check["pooled_relative_frobenius"] == 1e-6 for check in recipe["learning_checks"].values())
+
+
+def test_confirmation_entries_take_the_fixed_rate_for_every_arm(tmp_path, record):
+    recipe = sp.register_fixed_recipe(record, 1e-3, _all_evidence(tmp_path, record), provenance="p", authorization="a")
+    entries = sp.confirmation_entries(record, recipe, 320)
+    assert len(entries) == 18
+    assert {entry["learning_rate"] for entry in entries} == {1e-3}
+
+
+# --------------------------------------------------------------------------- standalone frozen reference
+
+
+def test_reference_protocol_can_score_the_selection_subset_early(tmp_path, prepared, record):
+    protocol = sp.register_reference(prepared, record, "selection", 320, "test")
+    assert protocol["purpose"] == sp.REFERENCE_PURPOSE
+    entry = protocol["reference_entry"]
+    assert entry["entry_id"] == "reference/FROZEN/selection_subset"
+    assert entry["generation"]["subset_size"] == 128 and entry["generation"]["split"] == "selection"
+    prepared_record = json.loads(Path(prepared).read_text())
+    job = dict(
+        stage="reference", arm="FROZEN", seed=None, trains=False, entry_id=entry["entry_id"],
+        band_start=None, band_size=None, rotation_size=None, generation=dict(entry["generation"]),
+        model_source_sha256=prepared_record["model_source_sha256"], dataset_source_sha256=prepared_record["dataset_source_sha256"],
+        svd_reference_sha256=prepared_record["svd_reference_sha256"],
+    )
+    sp.validate_admission(job, protocol)
+    with pytest.raises(ValueError):
+        sp.validate_admission({**job, "trains": True}, protocol)

@@ -171,15 +171,22 @@ def module_band_report(name, layer, *, band_size=BAND_SIZE):
 
 @torch.no_grad()
 def rotation_activity(layer):
-    """How far each rotation has moved from the identity it was initialized to."""
+    """How far each rotation has moved from the identity it was initialized to.
+
+    Reports the Frobenius distance from the identity and the mean diagonal, which are well defined for a
+    q x q rotation with many independent planes. An earlier version also reported
+    ``acos((trace(R) - (q - 2)) / 2)`` as a "principal angle"; that formula only describes a single rotation
+    plane and is misleading or saturates at pi for q = 128, so it was removed. Whether rotations are active
+    is read from the distance from identity and from within-band off-diagonal energy, which are sufficient.
+    """
     out = {}
     for side, module in (("left", layer.left_rotation), ("right", layer.right_rotation)):
         weight = module.weight.detach().double()
-        identity = torch.eye(weight.shape[0], dtype=weight.dtype, device=weight.device)
-        difference = float((weight - identity).norm())
-        cosine = (float(weight.diagonal().sum()) - (weight.shape[0] - 2)) / 2.0
-        out[f"{side}_rotation_distance_from_identity"] = difference
-        out[f"{side}_rotation_principal_angle_radians"] = math.acos(max(-1.0, min(1.0, cosine)))
+        size = weight.shape[0]
+        identity = torch.eye(size, dtype=weight.dtype, device=weight.device)
+        out[f"{side}_rotation_distance_from_identity"] = float((weight - identity).norm())
+        out[f"{side}_rotation_mean_diagonal"] = float(weight.diagonal().mean())
+        out[f"{side}_rotation_size"] = size
     out["rotation_active"] = any(value > 0 for key, value in out.items() if key.endswith("distance_from_identity"))
     return out
 

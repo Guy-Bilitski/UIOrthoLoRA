@@ -51,6 +51,8 @@ TUNING_PURPOSE = "decoder_subspace_tuning"
 LR_SELECTION_PURPOSE = "decoder_subspace_lr_selection"
 CONFIRMATION_PURPOSE = "decoder_subspace_confirmation"
 SCOPE_DECISION_PURPOSE = "decoder_subspace_scope_decision"
+FIXED_RECIPE_PURPOSE = "decoder_subspace_fixed_recipe"
+REFERENCE_PURPOSE = "decoder_subspace_reference"
 GENERATION_AUDIT_PURPOSE = "decoder_subspace_generation_audit"
 
 CONFIRMATION_SEEDS = (17, 42, 123)
@@ -82,6 +84,17 @@ LR_SELECTION_RULE = (
     "reported as sensitivity, never silently substituted. Because one rate is shared, confirmations estimate "
     "performance under a balanced common recipe, not the best attainable capacity of each band."
 )
+FIXED_RECIPE_RULE = (
+    "One common learning rate for every band and both families, declared in advance as a DESIGN CHOICE and "
+    "not selected from a grid. It is the rate already exercised by the timing pilots; it is not established "
+    "as optimal for any band, and the conclusions are conditional on it. This record forges no tuning "
+    "completion and contains no best-of-grid selection. Each registered arm must carry a short learning check "
+    "at this rate and the tuning seed showing finite loss, a nonzero update, and active rotations where the "
+    "family has them. A check may NOT demand an accuracy gain, and no outcome, band ranking or unfavourable "
+    "result may change the rate. A common rate also removes the earlier per-family rate difference from the "
+    "secondary rotation comparison, though the larger rotation parameter count remains."
+)
+
 REDUCTION_RULE = (
     "Frozen from measured cost before any confirmation outcome. If the measured projection fits the smaller "
     "of the 96 GPU-hour ceiling and the time left before the training cutoff, keep all six arms. Otherwise "
@@ -340,10 +353,15 @@ def _check_job_inputs(job, prepared):
 # --------------------------------------------------------------------------- stage 1: timing pilots
 
 
-def timing_entries(record):
+def timing_entries(record, arms=None):
+    """Short 100-step checks. Defaults to the two tail pilots; ``arms`` names the missing arms to check."""
     rows = []
-    for arm in TIMING_ARMS:
+    explicit = arms is not None
+    for arm in (tuple(arms) if explicit else TIMING_ARMS):
         if arm not in record["arms_included"]:
+            # The default tail pair is intersected with the registered scope; a named arm must be in it.
+            if explicit:
+                raise ValueError("Check arm is outside the registered scope: " + arm)
             continue
         rows.append(
             dict(
@@ -358,13 +376,17 @@ def timing_entries(record):
         )
     if not rows:
         raise ValueError("At least one timing arm must be inside the registered scope")
+    if len({row["entry_id"] for row in rows}) != len(rows):
+        raise ValueError("Duplicate timing entry")
     return rows
 
 
-def register_timing(prepared_path, record, authorization):
+def register_timing(prepared_path, record, authorization, arms=None):
+    rows = timing_entries(record, arms)  # pass ``arms`` through so the default still intersects the scope
     return _base_protocol(
         prepared_path, record, TIMING_PURPOSE, authorization,
-        entries=timing_entries(record),
+        check_arms=[row["arm"] for row in rows],
+        entries=rows,
         confirmation_authorized=False,
         scope=(
             "Timing/implementation pilots only: TAIL_DIAG and TAIL_ROT128 for 100 steps at seed 31415 and "
@@ -387,7 +409,9 @@ def validate_timing_admission(job, protocol):
     if protocol.get("purpose") != TIMING_PURPOSE or protocol.get("registered") is not True:
         raise ValueError("Require the registered timing protocol")
     record, prepared = _check_common(protocol)
-    if protocol.get("entries") != timing_entries(record):
+    # Protocols sealed before the learning-check extension carry no check_arms; they were the tail pair.
+    arms = protocol.get("check_arms", list(TIMING_ARMS))
+    if protocol.get("entries") != timing_entries(record, arms):
         raise ValueError("Registered timing entries differ from the authoritative construction")
     selected = [row for row in protocol["entries"] if row["entry_id"] == job.get("entry_id")]
     if len(selected) != 1:
@@ -899,16 +923,127 @@ def audit_generation_cap(summaries, record):
     )
 
 
+# --------------------------------------------------------------------------- fixed common recipe
+
+
+def register_fixed_recipe(record, learning_rate, evidence_reports, *, provenance, authorization):
+    """Declare ONE common learning rate for every band and family as a design choice, not a grid selection.
+
+    ``evidence_reports`` maps each registered arm to the whole-run validation report of a run at this rate
+    and the tuning seed. The check is that the instrument operates: finite loss, a nonzero update, band
+    confinement, a reproducing reload and, for the rotation family, rotations that actually moved. It does
+    NOT require an accuracy gain, and no outcome may change the rate. Nothing here invents a tuning
+    completion or a learning-rate selection record.
+    """
+    rate = _positive_float(learning_rate, "learning_rate")
+    if not isinstance(provenance, str) or not provenance.strip():
+        raise ValueError("A fixed recipe must name the record that chose the rate")
+    checks = {}
+    for arm in record["arms_included"]:
+        path = evidence_reports.get(arm)
+        if not path:
+            raise ValueError("Every registered arm needs a learning check at the common rate: " + arm)
+        report = json.loads(Path(path).read_text())
+        if report.get("validation_scope") != "decoder_subspace_run" or report.get("arm") != arm:
+            raise ValueError("Evidence report does not belong to arm " + arm)
+        if report.get("learning_rate") != rate:
+            raise ValueError(f"Evidence for {arm} is at rate {report.get('learning_rate')}, not the declared {rate}")
+        if report.get("seed") != TUNING_SEED:
+            raise ValueError("Learning checks use the separate tuning seed 31415, never a confirmation seed: " + arm)
+        for key in ("p0_equivalence_passed", "zero_insertion_passed", "band_confinement_passed", "fixed_endpoint_reload_passed", "metrics_reproduced"):
+            if report.get(key) is not True:
+                raise ValueError(f"Learning check for {arm} did not pass {key}")
+        norm = report.get("pooled_relative_frobenius")
+        if not (isinstance(norm, (int, float)) and math.isfinite(norm) and norm > 0):
+            raise ValueError("Learning check for " + arm + " shows no update at all")
+        family = subspace.parse_arm(arm)[1]
+        if family == "ROT128" and report.get("any_rotation_active") is not True:
+            raise ValueError("Rotation arm " + arm + " shows no active rotation, so its flexibility contrast would be empty")
+        checks[arm] = dict(
+            report=_bind(path),
+            run_id=report["run_id"],
+            stage=report["stage"],
+            optimizer_steps=report["optimizer_step"],
+            selection_token_mean_nll=report["selection_token_mean_nll"],
+            pooled_relative_frobenius=norm,
+            within_band_off_diagonal_fraction=report.get("pooled_in_band_off_diagonal_fraction"),
+            rotation_active=report.get("any_rotation_active"),
+            max_off_band_fraction=report.get("max_off_band_fraction"),
+        )
+    return dict(
+        schema_version=1,
+        purpose=FIXED_RECIPE_PURPOSE,
+        registered=True,
+        registered_utc=utc_now(),
+        authorization_record=authorization,
+        learning_rate=rate,
+        families={family: rate for family in record["families"]},
+        rule=FIXED_RECIPE_RULE,
+        provenance=provenance,
+        learning_checks=checks,
+        not_established=(
+            "This rate is a declared common setting, not a tuned or best-of-grid rate. It has not been shown "
+            "optimal for any band, and every conclusion is conditional on it, on the support size and on the "
+            "step budget. Flat curves or uniformly weak adaptation must limit any conclusion about a null "
+            "band effect rather than be reported as equivalence."
+        ),
+    )
+
+
+def _selected_rate(lr_decision, family):
+    entry = lr_decision["selection"].get(family, {})
+    if entry.get("status") != "selected":
+        raise ValueError("No decided learning rate for family " + family)
+    return float(entry["selected_learning_rate"])
+
+
+def _family_rates(recipe, record):
+    """Per-family rate from either a grid selection record or a declared fixed recipe."""
+    purpose = recipe.get("purpose")
+    if purpose == LR_SELECTION_PURPOSE:
+        return {family: _selected_rate(recipe, family) for family in record["families"]}
+    if purpose == FIXED_RECIPE_PURPOSE:
+        rate = recipe["learning_rate"]
+        if set(recipe.get("families", {})) != set(record["families"]) or any(value != rate for value in recipe["families"].values()):
+            raise ValueError("A fixed recipe must declare the same rate for every registered family")
+        if set(recipe.get("learning_checks", {})) != set(record["arms_included"]):
+            raise ValueError("The fixed recipe's learning checks do not cover exactly the registered arms")
+        return dict(recipe["families"])
+    raise ValueError("Unknown recipe record purpose: " + str(purpose))
+
+
+# --------------------------------------------------------------------------- standalone frozen reference
+
+
+def register_reference(prepared_path, record, mode, max_new_tokens, authorization):
+    """Seal a frozen-model reference decode on its own, so the early selection anchor needs no confirmations."""
+    if mode not in (SELECTION_SPLIT, HELD_ASIDE_SPLIT):
+        raise ValueError("Reference mode must be the selection subset or the held-aside test split")
+    plan_mode = "selection_subset" if mode == SELECTION_SPLIT else HELD_ASIDE_SPLIT
+    return _base_protocol(
+        prepared_path, record, REFERENCE_PURPOSE, authorization,
+        mode=plan_mode,
+        max_new_tokens=int(max_new_tokens),
+        reference_entry=reference_entry(record, int(max_new_tokens), plan_mode),
+        confirmation_authorized=False,
+        scope=(
+            "Frozen starting checkpoint only: no adapter, no training, no seed. Identical prompts, completion "
+            "masking, decode budget, precision and scorer as every trained arm. It anchors how much adaptation "
+            "happened and enters no tuning, selection or matching decision. Inference cost only."
+        ),
+    )
+
+
 # --------------------------------------------------------------------------- stage 3: confirmation and reference
 
 
-def confirmation_entries(record, lr_selection, max_new_tokens):
+def confirmation_entries(record, recipe, max_new_tokens):
+    """``recipe`` is either a grid selection record or a declared fixed-recipe record."""
+    rates = _family_rates(recipe, record)
     rows = []
     for arm in record["arms_included"]:
         band, family = subspace.parse_arm(arm)
-        entry = lr_selection["selection"].get(family, {})
-        if entry.get("status") != "selected":
-            raise ValueError("No decided learning rate for family " + family)
+        entry = dict(selected_learning_rate=rates[family])
         for seed in CONFIRMATION_SEEDS:
             rows.append(
                 dict(
@@ -927,15 +1062,19 @@ def confirmation_entries(record, lr_selection, max_new_tokens):
     return rows
 
 
-def reference_entry(record, max_new_tokens):
-    """The frozen starting checkpoint, decoded once. A reference row, not an arm; it enters no decision."""
+def reference_entry(record, max_new_tokens, mode=HELD_ASIDE_SPLIT):
+    """The frozen starting checkpoint, decoded once. A reference row, not an arm; it enters no decision.
+
+    ``mode`` is ``selection_subset`` for the early anchor, which costs inference only and is what makes a
+    trained arm's absolute accuracy interpretable, or ``held_aside_test`` for the final reference row.
+    """
     return dict(
-        entry_id="reference/FROZEN/held_aside_test",
+        entry_id=f"reference/FROZEN/{mode}",
         arm="FROZEN",
         stage="reference",
         trains=False,
         seed=None,
-        generation=generation_plan(record, HELD_ASIDE_SPLIT, max_new_tokens),
+        generation=generation_plan(record, mode, max_new_tokens),
         max_length=record["max_length"],
         note=(
             "Inference only: the sealed starting instruction-tuned checkpoint with no adapter inserted, the "
@@ -945,39 +1084,50 @@ def reference_entry(record, max_new_tokens):
     )
 
 
-def register_confirmation(tuning_protocol_path, lr_decision_path, scope_decision_path, generation_audit_path, tuning_ledger, authorization):
-    """Freeze the per-family rates, the arm scope and the decode budget, then register the confirmations."""
-    tuning = json.loads(Path(tuning_protocol_path).read_text())
-    lr_decision = json.loads(Path(lr_decision_path).read_text())
+SOURCE_PURPOSES = (TIMING_PURPOSE, TUNING_PURPOSE, REFERENCE_PURPOSE)
+
+
+def register_confirmation(source_protocol_path, recipe_path, scope_decision_path, generation_audit_path, ledger, authorization):
+    """Freeze the rates, the arm scope and the decode budget, then register the confirmations.
+
+    ``recipe_path`` is either a grid learning-rate selection record or a declared fixed-recipe record. A grid
+    record is re-derived from the current validated ledger and must still agree; a fixed-recipe record has
+    nothing to re-derive and is bound as the declared design choice it is.
+    """
+    source = json.loads(Path(source_protocol_path).read_text())
+    recipe = json.loads(Path(recipe_path).read_text())
     scope_decision = json.loads(Path(scope_decision_path).read_text())
     audit = json.loads(Path(generation_audit_path).read_text())
-    if tuning.get("purpose") != TUNING_PURPOSE or tuning.get("registered") is not True:
-        raise ValueError("Confirmation must bind the registered tuning protocol")
-    if lr_decision.get("purpose") != LR_SELECTION_PURPOSE or lr_decision.get("tuning_protocol_sha256") != sha256(tuning_protocol_path):
-        raise ValueError("Learning-rate decision does not bind this tuning protocol")
+    if source.get("purpose") not in SOURCE_PURPOSES or source.get("registered") is not True:
+        raise ValueError("Confirmation must inherit its design from a registered protocol of this study")
     if scope_decision.get("purpose") != SCOPE_DECISION_PURPOSE:
         raise ValueError("Confirmation requires the frozen scope decision")
     if audit.get("purpose") != GENERATION_AUDIT_PURPOSE:
         raise ValueError("Confirmation requires the generation cap audit")
-    record = tuning["design"]
+    record = source["design"]
     if scope_decision["arms_included"] != record["arms_included"]:
-        raise ValueError("The tuning design's arm scope differs from the frozen scope decision")
+        raise ValueError("The design's arm scope differs from the frozen scope decision")
     if scope_decision.get("obstruction"):
         raise ValueError("The frozen scope decision reports an obstruction: " + scope_decision["obstruction"])
-    rederived = select_learning_rates(collect_runs(tuning_ledger, tuning_protocol_path, purpose=TUNING_PURPOSE), tuning_protocol_path)
-    if rederived["selection"] != lr_decision["selection"]:
-        raise ValueError("Learning-rate decision disagrees with the current validated tuning ledger")
+    _family_rates(recipe, record)
+    if recipe.get("purpose") == LR_SELECTION_PURPOSE:
+        if source.get("purpose") != TUNING_PURPOSE or recipe.get("tuning_protocol_sha256") != sha256(source_protocol_path):
+            raise ValueError("A grid learning-rate decision must bind its own tuning protocol")
+        rederived = select_learning_rates(collect_runs(ledger, source_protocol_path, purpose=TUNING_PURPOSE), source_protocol_path)
+        if rederived["selection"] != recipe["selection"]:
+            raise ValueError("Learning-rate decision disagrees with the current validated tuning ledger")
     max_new_tokens = audit["confirmation_max_new_tokens"]
     return _base_protocol(
-        tuning["prepared_inputs"]["path"], record, CONFIRMATION_PURPOSE, authorization,
-        tuning_protocol=_bind(tuning_protocol_path),
-        lr_decision_record=_bind(lr_decision_path),
+        source["prepared_inputs"]["path"], record, CONFIRMATION_PURPOSE, authorization,
+        source_protocol=_bind(source_protocol_path),
+        recipe_record=_bind(recipe_path),
         scope_decision_record=_bind(scope_decision_path),
         generation_audit_record=_bind(generation_audit_path),
         confirmation_authorized=True,
-        learning_rates={family: lr_decision["selection"][family]["selected_learning_rate"] for family in record["families"]},
+        recipe_kind=recipe["purpose"],
+        learning_rates=_family_rates(recipe, record),
         confirmation_max_new_tokens=max_new_tokens,
-        entries=confirmation_entries(record, lr_decision, max_new_tokens),
+        entries=confirmation_entries(record, recipe, max_new_tokens),
         reference_entry=reference_entry(record, max_new_tokens),
         primary_outcomes=list(PRIMARY_OUTCOMES),
         outcome_policy=OUTCOME_POLICY,
@@ -1008,11 +1158,15 @@ def validate_confirmation_admission(job, protocol):
     if protocol.get("purpose") != CONFIRMATION_PURPOSE or protocol.get("registered") is not True or protocol.get("confirmation_authorized") is not True:
         raise ValueError("Require the registered, authorized confirmation protocol")
     record, prepared = _check_common(protocol)
-    lr_decision = _check_bound(protocol.get("lr_decision_record", {}), "lr_decision_record")
+    recipe = _check_bound(protocol.get("recipe_record", {}), "recipe_record")
     scope_decision = _check_bound(protocol.get("scope_decision_record", {}), "scope_decision_record")
     audit = _check_bound(protocol.get("generation_audit_record", {}), "generation_audit_record")
-    if lr_decision.get("purpose") != LR_SELECTION_PURPOSE or scope_decision.get("purpose") != SCOPE_DECISION_PURPOSE or audit.get("purpose") != GENERATION_AUDIT_PURPOSE:
+    if recipe.get("purpose") not in (LR_SELECTION_PURPOSE, FIXED_RECIPE_PURPOSE) or scope_decision.get("purpose") != SCOPE_DECISION_PURPOSE or audit.get("purpose") != GENERATION_AUDIT_PURPOSE:
         raise ValueError("Confirmation is not bound to its three frozen decisions")
+    if protocol.get("recipe_kind") != recipe["purpose"]:
+        raise ValueError("Confirmation restates a different kind of recipe record")
+    if protocol.get("learning_rates") != _family_rates(recipe, record):
+        raise ValueError("Confirmation learning rates are not the recipe's per-family rates")
     if scope_decision["arms_included"] != record["arms_included"]:
         raise ValueError("Confirmation arm scope differs from the frozen scope decision")
     if protocol.get("confirmation_max_new_tokens") != audit["confirmation_max_new_tokens"]:
@@ -1021,7 +1175,7 @@ def validate_confirmation_admission(job, protocol):
         raise ValueError("Confirmation must register both exact match and completion NLL as primary outcomes")
     if protocol.get("reference_entry") != reference_entry(record, audit["confirmation_max_new_tokens"]):
         raise ValueError("Registered frozen reference entry differs from the authoritative construction")
-    if protocol.get("entries") != confirmation_entries(record, lr_decision, audit["confirmation_max_new_tokens"]):
+    if protocol.get("entries") != confirmation_entries(record, recipe, audit["confirmation_max_new_tokens"]):
         raise ValueError("Registered confirmation entries differ from the authoritative construction")
     if job.get("seed") not in CONFIRMATION_SEEDS:
         raise ValueError("Confirmations must use a declared confirmation seed")
@@ -1035,13 +1189,18 @@ def validate_confirmation_admission(job, protocol):
 
 
 def validate_reference_admission(job, protocol):
-    if protocol.get("purpose") != CONFIRMATION_PURPOSE or protocol.get("registered") is not True:
-        raise ValueError("The frozen reference is admitted by the registered confirmation protocol")
+    if protocol.get("purpose") not in (CONFIRMATION_PURPOSE, REFERENCE_PURPOSE) or protocol.get("registered") is not True:
+        raise ValueError("The frozen reference is admitted by a registered confirmation or reference protocol")
     record, prepared = _check_common(protocol)
-    audit = _check_bound(protocol.get("generation_audit_record", {}), "generation_audit_record")
-    expected = reference_entry(record, audit["confirmation_max_new_tokens"])
-    if protocol.get("reference_entry") != expected:
+    expected = protocol.get("reference_entry")
+    if protocol["purpose"] == CONFIRMATION_PURPOSE:
+        audit = _check_bound(protocol.get("generation_audit_record", {}), "generation_audit_record")
+        expected_built = reference_entry(record, audit["confirmation_max_new_tokens"])
+    else:
+        expected_built = reference_entry(record, protocol["max_new_tokens"], protocol["mode"])
+    if expected != expected_built:
         raise ValueError("Registered frozen reference entry differs from the authoritative construction")
+    expected = expected_built
     if job.get("entry_id") != expected["entry_id"] or job.get("stage") != "reference":
         raise ValueError("Unknown reference entry")
     if job.get("arm") != "FROZEN" or job.get("trains") is not False or job.get("seed") is not None:
@@ -1093,10 +1252,11 @@ def main():
     p = sub.add_parser("design", help="validate and normalize the sealed design")
     p.add_argument("--decisions", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
-    p = sub.add_parser("register-timing", help="seal the two 100-step timing pilots")
+    p = sub.add_parser("register-timing", help="seal 100-step timing pilots or per-arm learning checks")
     p.add_argument("--resources", type=Path, required=True)
     p.add_argument("--prepared", type=Path, required=True)
     p.add_argument("--design", type=Path, required=True)
+    p.add_argument("--arm", action="append", default=None, help="restrict to these arms (default: the two tail pilots)")
     p.add_argument("--authorization", required=True)
     p.add_argument("--output", type=Path, required=True)
     p = sub.add_parser("timing-record", help="summarize the measured pipeline cost from both pilots")
@@ -1130,10 +1290,26 @@ def main():
     p.add_argument("--design", type=Path, required=True)
     p.add_argument("--generation-export", type=Path, action="append", required=True)
     p.add_argument("--output", type=Path, required=True)
+    p = sub.add_parser("register-fixed-recipe", help="declare one common learning rate as a design choice, with per-arm learning checks")
+    p.add_argument("--resources", type=Path, required=True)
+    p.add_argument("--design", type=Path, required=True)
+    p.add_argument("--learning-rate", type=float, required=True)
+    p.add_argument("--evidence", action="append", required=True, metavar="ARM=REPORT", help="whole-run validation report for that arm's learning check")
+    p.add_argument("--provenance", required=True)
+    p.add_argument("--authorization", required=True)
+    p.add_argument("--output", type=Path, required=True)
+    p = sub.add_parser("register-reference", help="seal a frozen-model reference decode on its own")
+    p.add_argument("--resources", type=Path, required=True)
+    p.add_argument("--prepared", type=Path, required=True)
+    p.add_argument("--design", type=Path, required=True)
+    p.add_argument("--mode", choices=(SELECTION_SPLIT, HELD_ASIDE_SPLIT), required=True)
+    p.add_argument("--max-new-tokens", type=int, required=True)
+    p.add_argument("--authorization", required=True)
+    p.add_argument("--output", type=Path, required=True)
     p = sub.add_parser("register-confirmation", help="register the confirmations at the frozen rates and scope")
     p.add_argument("--resources", type=Path, required=True)
-    p.add_argument("--tuning-protocol", type=Path, required=True)
-    p.add_argument("--lr-decision", type=Path, required=True)
+    p.add_argument("--source-protocol", type=Path, required=True, help="any registered protocol of this study carrying the design")
+    p.add_argument("--recipe", type=Path, required=True, help="a grid learning-rate decision or a declared fixed recipe")
     p.add_argument("--scope-decision", type=Path, required=True)
     p.add_argument("--generation-audit", type=Path, required=True)
     p.add_argument("--authorization", required=True)
@@ -1159,7 +1335,7 @@ def main():
         payload = _design_from_file(args.decisions)
         summary = {k: payload[k] for k in ("arms_included", "families", "bands", "band_size", "rotation_size", "learning_rates", "optimizer_steps")}
     elif args.command == "register-timing":
-        payload = register_timing(args.prepared, _design_from_file(args.design), args.authorization)
+        payload = register_timing(args.prepared, _design_from_file(args.design), args.authorization, arms=args.arm)
         summary = dict(entries=[e["entry_id"] for e in payload["entries"]])
     elif args.command == "timing-record":
         payload = summarize_timing(collect_runs(ledger, args.timing_protocol, purpose=TIMING_PURPOSE), args.timing_protocol)
@@ -1177,9 +1353,21 @@ def main():
         summaries = [json.loads(Path(path).read_text())["summary"] for path in args.generation_export]
         payload = audit_generation_cap(summaries, _design_from_file(args.design))
         summary = {k: payload[k] for k in ("audited_examples", "length_limit_rate", "upgraded", "confirmation_max_new_tokens")}
+    elif args.command == "register-fixed-recipe":
+        evidence = {}
+        for item in args.evidence:
+            if "=" not in item:
+                raise ValueError("--evidence takes ARM=REPORT")
+            arm, path = item.split("=", 1)
+            evidence[arm] = path
+        payload = register_fixed_recipe(_design_from_file(args.design), args.learning_rate, evidence, provenance=args.provenance, authorization=args.authorization)
+        summary = dict(learning_rate=payload["learning_rate"], arms_checked=sorted(payload["learning_checks"]))
+    elif args.command == "register-reference":
+        payload = register_reference(args.prepared, _design_from_file(args.design), args.mode, args.max_new_tokens, args.authorization)
+        summary = dict(entry=payload["reference_entry"]["entry_id"], mode=payload["mode"], max_new_tokens=payload["max_new_tokens"])
     elif args.command == "register-confirmation":
-        payload = register_confirmation(args.tuning_protocol, args.lr_decision, args.scope_decision, args.generation_audit, ledger, args.authorization)
-        summary = dict(entries=len(payload["entries"]), learning_rates=payload["learning_rates"], max_new_tokens=payload["confirmation_max_new_tokens"])
+        payload = register_confirmation(args.source_protocol, args.recipe, args.scope_decision, args.generation_audit, ledger, args.authorization)
+        summary = dict(entries=len(payload["entries"]), recipe_kind=payload["recipe_kind"], learning_rates=payload["learning_rates"], max_new_tokens=payload["confirmation_max_new_tokens"])
     elif args.command == "validate-run":
         payload = validate_run(args.run_directory, args.protocol)
         output = output or Path(args.run_directory) / "validation_report.json"
