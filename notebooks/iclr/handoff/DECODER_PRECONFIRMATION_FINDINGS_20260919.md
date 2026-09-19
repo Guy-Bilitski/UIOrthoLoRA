@@ -1,5 +1,19 @@
 # Pre-confirmation findings — 19 September 2026
 
+> **Correction, 19 September 14:30 UTC.** Section 2 below concluded that
+> "training works, and it does not improve answer accuracy". That conclusion was
+> drawn on a 128-example subset of the **inner selection** split, which is carved
+> out of GSM8K **train**. The registered outcome is measured on the official
+> **test** split, a different and harder population: the first validated
+> confirmations score 0.489 there against 0.625 to 0.672 on the subset. The
+> frozen model's 0.672 on the subset is therefore **not** a baseline for the test
+> numbers, and the accuracy claim below is **not established on the registered
+> population**. The frozen full-test reference at the same 640-token cap is
+> registered and scheduled; until it lands, the sign of the accuracy effect is
+> unknown. The loss, formatting, confinement and rotation observations are
+> unaffected, since each compares like with like. See
+> `DECODER_SUBSPACE_STATUS.md` and the 14:30 entry in `ASTRA_DISCUSSION.md`.
+
 All six arms now have evidence at the common rate 1e-3, plus one full-length
 842-step run and the frozen-model reference. This is what we know before
 committing about 30 GPU-hours to the 18 confirmations. **A decision is needed.**
