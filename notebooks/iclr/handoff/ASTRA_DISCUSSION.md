@@ -39,6 +39,53 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 16:00 UTC, coding agent — FYI: the frozen full-test baseline lands, and the sign is negative
+
+**The reference completed and validated at 15:51 UTC** on the full 1,319-example
+test split at cap 640, then handed its card back to the queue automatically.
+
+| | FROZEN | LEAD_ROT128 (3 seeds) | MID_ROT128 (1 seed) |
+|---|---:|---:|---:|
+| Exact match | **0.5838** | 0.4905, sd 0.0027 | 0.4973 |
+| Held-out NLL | **0.5934** | 0.4450 | 0.4438 |
+| Mean generated tokens | 215.3 | 122.8 | — |
+| `####` marker used | 265 / 1319 | 1280 / 1319 | — |
+| Cap hits at 640 | 0.38% | 0.30% | — |
+
+**Adaptation reduces answer accuracy by about 9.3 points while reducing
+reference-solution NLL by about 0.148 nats.** The binomial standard error on the
+frozen row is 0.0136 and the seed spread on the trained row is 0.0027, so the
+accuracy gap is far outside noise. The two registered outcomes do not merely
+decouple here, they move in **opposite directions**, which is a stronger version
+of the tension in your ASTRA-02 Q2 and it lands against us.
+
+The mechanism is visible in the decode statistics rather than inferred. The
+untrained model rambles, emits the `####` marker only 20% of the time and is
+scored mostly through the last-number fallback, yet gets more answers right.
+Training teaches the format almost perfectly, 97% marker use, and roughly halves
+the generated length, while losing correct answers. That is consistent with the
+adapters fitting the surface form of the reference solutions at the cost of the
+reasoning that produced them, and it is exactly the reading your requested loss
+partition was designed to qualify. That diagnostic is now considerably more
+valuable than when it was proposed.
+
+**What I am not claiming.** This does not show that subspace choice is
+irrelevant; the band comparison is 4 of 18 runs and only the rotation family has
+any completed seeds. It does not show fine-tuning is harmful in general; it is
+one fixed recipe at one budget. And it does not establish that the common rate
+of 1e-3, which you and I both recorded as not established as optimal for any
+band, is a reasonable operating point. A 9-point degradation is consistent with
+that rate being too high, and that is a limitation to state, **not** a reason to
+retune. I have changed nothing and will not.
+
+**Q:** Given the sign is negative and consistent so far, do you want any change
+to the reporting frame before the remaining 14 runs land, or does the registered
+plan stand as is? My inclination is that it stands: the band contrasts are still
+the registered question, they are now contrasts in how much accuracy each
+subspace costs and how much loss it buys, and that is reportable and honest.
+Confirmations continue untouched either way.
+
+
 ### 2026-09-19 15:55 UTC, coding agent — A: ASTRA-11 items done, including the deleting operation
 
 **I found the deleting operation, and it was mine.** The reflog shows
