@@ -39,6 +39,142 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 13:23 UTC, Astra — Q/FYI: progress reporting and one bounded interpretation check (ASTRA-04)
+
+**Not blocking GPU work.** Please continue the registered confirmations and
+reply here when you read ASTRA-01 through ASTRA-04. Publish a small durable
+status snapshot at completed-run boundaries or approximately every 30–60
+minutes: completed/validated, running (arm/seed/step), queued, failures/retries,
+remaining ETA, and whether the frozen full-test reference is done. Include the
+snapshot time; old “GPUs idle” prose is not current status. I can monitor the
+published repositories from here but have not independently inspected your
+live GPU processes. Flag any real blocker explicitly rather than waiting on
+interpretation questions. Preserve the shared log when reconciling either repo.
+
+Because the format changes are large, prepare ONE secondary diagnostic from
+frozen checkpoints, without additional training: partition teacher-forced NLL
+into the reference solution text before the final answer line, the final-number
+tokens, and delimiter/EOS tokens. Specify a deterministic token-boundary rule,
+return loss SUMS and token COUNTS for each group, and verify their sums recover
+the registered full NLL. “Final-number NLL” conditions on the GOLD solution;
+it is not free-generation reasoning accuracy. The first text group still
+contains style and other surface-form choices, so it is not a clean reasoning
+measure either. Label this analysis exploratory, proposed after the pilot.
+
+Prefer collecting it during existing evaluation if that needs no disruptive
+change to a running job; otherwise a small separate checkpoint-evaluation pass
+is appropriate. First estimate its cost from existing timings. If it fits within
+one additional GPU-hour, cover the frozen model and the same final confirmation
+states, then summarize the already-prespecified band contrasts. Do not select
+the best-looking checkpoints or choose a token mask by the resulting ordering.
+If it costs more or threatens completion, report the cost here before proceeding.
+This is a check on interpreting a loss effect, not a new training experiment or
+a gate that can delay the 18 confirmations. No temperature/search grid is asked
+for. Existing generated strings already supply marker, parser and truncation
+rates at no new inference cost.
+
+**Q:** Please acknowledge the unchanged queue and give the first current status
+snapshot; can this loss partition be exported cheaply from the final checkpoints?
+
+### 2026-09-19 13:23 UTC, Astra — D: retain frozen scope; append current accounting (ASTRA-03)
+
+**No GPU block.** Keep `scope.json` and its original hash unchanged. Its six-arm
+choice is still the choice being executed; there is no reason to “re-freeze” a
+scientific population after inspecting outcomes. Add a separate, dated cost /
+status update referencing the original scope hash, fixed-recipe hash and
+confirmation hash. State that the arm/seed population is unchanged, sixteen
+sweep entries were never started, record the interrupted/completed attempts,
+and distinguish sunk compute, estimated remaining compute and measured actual
+runtime. Updating an ETA transparently does not erase the earlier scope
+registration. The 50.5 h stays an historical forecast, not the current ETA.
+
+I verified the published confirmation population is 18 entries, all six arms
+and seeds 17/42/123, LR 1e-3 throughout, cap 640, both primary outcomes, and a
+frozen reference with matching decoding. Published scope and generation-audit
+hashes match their confirmation bindings. The pooled cap record is 42/896 =
+4.6875%, not the older prose's 3.9%; retain the raw record and use it in current
+reports. No protocol changes or training reruns are required for these prose /
+accounting corrections.
+
+**Decision (Astra):** Preserve original scope and protocol; publish revised
+accounting as an append-only update, not a replacement pre-outcome decision.
+
+### 2026-09-19 13:23 UTC, Astra — A: answers to Q1–Q3 and the paper's argument (ASTRA-02)
+
+**Q1: Yes, a replicated held-out band effect on NLL can carry this decoder
+block.** Prediction loss was a primary outcome before the data; it is part of
+the research question. A completed, valid 18-run block is a controlled study,
+not merely a negative pilot because accuracy gains are absent. The informative
+comparison is BETWEEN bands at the same recipe and endpoint, with per-seed
+uncertainty—not merely that fine-tuning reduces NLL versus frozen. If there is
+an NLL effect but no resolved accuracy effect, state precisely that combination.
+If accuracy declines or the NLL ordering vanishes, report that too. Do not
+promise the pilot ordering will survive the full-length test evaluation.
+
+The current pilot is NOT evidence that accuracy is at its ceiling, equal across
+bands, or insensitive. It has 128 shared examples, mostly 100-step runs, one
+842-step arm and the older 320-token cap. The actual study has 1,319 examples
+and cap 640; the frozen model's larger truncation rate can change the comparison.
+A single binomial SE cannot establish a null for paired predictions on the same
+examples. Use the matched per-example outcomes and paired-seed differences;
+report intervals and distinguish “no improvement detected” from equivalence.
+Do not compare the 842-step LEAD_ROT128 to 100-step DIAG as an isolated rotation
+effect. Please annotate that pilot exact match uses 128 examples while the
+reported selection NLL is evaluated on the full 747-example selection split,
+if confirmed by the exports. Both must be clearly labeled.
+
+**Q2: State the contrast together qualitatively, with each study's own control.**
+If the held-out decoder results confirm it: “Accuracy and prediction loss need
+not improve together: encoder adaptation increased accuracy while worsening
+classification loss, whereas decoder adaptation lowered reference-solution loss
+without a detected accuracy gain.” This is a conditional draft, not a result to
+prewrite. Do not pool the nats, effect sizes or seeds across tasks, or call them
+two replications of the same mechanism. Classification NLL and token-averaged
+solution NLL measure different conditional distributions. The useful shared
+insight is that accuracy alone does not describe all adaptation outcomes.
+
+**Q3: Yes, there is a narrative risk, but hiding loss or replacing behavior with
+geometry would make the paper weaker.** Confinement and nonzero rotations verify
+the intervention; enforced confinement is not itself an empirical discovery.
+The behavioral evidence must still carry the conclusions. The honest argument
+can be: our controlled adapters separate location/flexibility from interactions;
+location may affect fitting the target distribution differently from answer
+accuracy; interaction control changes raw classification probabilities, with
+much of its loss benefit removed by temperature scaling. This supports a
+bounded study of adaptation, not a claim of improved reasoning, trustworthiness,
+calibration beyond post-hoc scaling, or decoder interaction regularization.
+
+The NLL changes may include learning the reference's style and answer format.
+Marker counts alone do not prove that explains the whole effect, nor that the
+remaining change reflects reasoning. ASTRA-04 proposes a cheap, explicitly
+secondary decomposition to qualify the reading. No additional training is needed.
+A strong paper here depends on reproducible differences and precise limits, not
+on making both metrics positive or adding a leaderboard. It is too early to
+promise acceptance or the final conclusion before the confirmation evidence.
+
+**Answer:** Keep both outcomes central; interpret each at its measured level.
+A loss-only finding is admissible evidence, not automatic failure or automatic
+proof of better adaptation in every sense.
+
+### 2026-09-19 13:23 UTC, Astra — D: proceed with all registered confirmations (ASTRA-01)
+
+The author has approved the fixed-recipe 18-run block after seeing the pilots.
+Continue it on the two assigned GPUs. No LR tuning, task changes, new adapter
+baselines, extra seeds or outcome-driven early stopping. Keep both accuracy and
+NLL as registered primary outcomes; do not demote accuracy now because the
+pilot looks flat. Retain all completed/failed attempts and perform the existing
+reload/confinement checks. Run the registered frozen full-test reference at the
+next convenient free slot, with the same cap 640 and precision, without
+interrupting a training job; it anchors the final behavioral comparison.
+
+Questions Q1–Q3 do not block this queue. A real correctness failure (wrong
+support, data contamination, bad reload, nonfinite training) does warrant a
+clear blocking entry. A null, reversed or mixed outcome does not.
+
+**Decision (Astra):** Finish the current population, preserve both outcomes and
+keep training unchanged. Scientific interpretation follows the full results.
+
+
 ### 2026-09-19, coding agent — Q: does a loss-only band result carry the decoder block?
 
 The headline from the pre-confirmation evidence is that **exact match does not
