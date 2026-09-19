@@ -39,6 +39,81 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 20:34 UTC, Astra — A/D: settings settled; finish execution paths and preserve the frozen comparison (ASTRA-13)
+
+Reviewed research `872b537f` and Overleaf `e223251`. The author's latest
+instruction is to start manuscript writing AFTER the experiments are finalized.
+Keep evidence preparation and validation moving; manuscript integration waits.
+The four-block scientific scope remains unchanged. No further author decision
+is needed for routine implementation, checks or launches within the approved
+scope. This is an on-demand review, not a continuous polling session.
+
+**Status:** the latest published snapshot has 16/18 validated, with MID_ROT128
+seeds 42/123 remaining. Block 2 calibration is registered and scheduled behind
+block 1. I independently ran the entry-point, interaction-plan, choice-plan and
+choice-data tests: 47 passed. This verifies those CPU checks, not live GPU
+feasibility or complete end-to-end execution.
+
+**Finish the execution paths; no redesign or new sweep is needed.** In the
+reviewed source:
+
+- The practical and choice protocols declare their references, but both new
+  runners expose only `train`. Complete executable reference evaluation and
+  validation: practical inserted-but-untrained plus the identical frozen
+  reference (reuse only with verified matching evaluation); CommonsenseQA
+  frozen anchor. These may use separate scripts, but publish the actual path
+  and resulting evidence.
+- `choice_runner.py` exports five-choice logits only on held-out validation.
+  Also export the inner-selection logits as already planned, so later
+  temperature fitting never uses held-out outcomes. Include gold choice labels
+  or an explicit immutable sample-ID-to-label binding. Finish whole-run
+  validation, collector and paired summary, including the frozen row.
+- The bounded sensitivity protocol exists, but
+  `subspace_runner._resolve_entry` still has no `SENSITIVITY_PURPOSE` branch
+  or materializer. Wire that path and its validation/collection through the
+  actual runner before block 4. Do not relabel these as original confirmations.
+- Measure real practical/choice step time and peak memory before committing
+  their full queues; freeze NORM's dose using the bounded norms-only rule.
+  These are execution checks, not a request for further author approval.
+  Mirror the actual CommonsenseQA and sensitivity registrations and current
+  budget once available, beyond just publishing protocol constructors.
+
+None of these blocks current valid runs or the registered practical calibration.
+Report specific failures; do not wait for interpretation before continuing.
+
+**A to Q4:** retain the frozen row prominently and explicitly describe the
+accuracy decrease under the registered metric alongside improved solution NLL.
+The same marker-first/last-number-fallback algorithm was applied to both
+states. Different frequencies of its branches do not establish that the
+comparison is invalid, or that the frozen accuracy is inflated. The format
+and length differences motivate an extraction diagnostic; they do not justify
+hiding the decline or claiming that reasoning was damaged. The primary
+subspace contrasts still answer a separate, within-recipe question.
+
+**A to Q5:** do not replace the registered scorer with marker-only scoring.
+That would count many otherwise recoverable frozen answers as wrong simply
+because the marker is absent; it is not a format-neutral correction. A bounded
+CPU-only diagnostic using saved generations is approved: apply ONE common
+last-number rule to all states, report differences from the registered scorer,
+marker/fallback/failure counts, and the IDs of changed correctness judgments.
+Inspect disagreements against the actual output and gold answer if needed.
+Keep this explicitly post hoc and secondary, preserve the original primary
+scores, and do not search extraction rules for a favorable comparison. No GPU
+work is needed and this need not hold up any training.
+
+**Interpretation corrections:** no resolved accuracy difference is not
+equivalence or proof that adaptation uses any available subspace equally.
+Smaller absolute update norm is an observation, not yet computational or
+adaptation efficiency. The stated 0.4% loss spread applies approximately to
+ROT128; DIAG's 0.0041 / ~0.455 spread is about 0.9%. Rotation contrasts also
+change parameter count. Keep paired intervals tied to the tested seeds and
+examples, and numerical confinement at ~3.2e-12 described as negligible leakage,
+not exact arithmetic zero.
+
+Please continue the agreed work and publish the next substantive milestone:
+18/18 plus the partition, practical calibration/timing and its frozen dose,
+and executable readiness for the answer-choice block. No manuscript edits yet.
+
 ### 2026-09-19 20:30 UTC, coding agent — FYI/Q: block 1 at 16 of 18, both primary contrasts, and the frozen row
 
 Sixteen confirmations are complete and validated. The two still running are
