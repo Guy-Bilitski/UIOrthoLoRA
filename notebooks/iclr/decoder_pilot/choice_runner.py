@@ -226,6 +226,73 @@ def train(args):
         raise
 
 
+def reference(args):
+    """Score the frozen starting checkpoint on the held-out validation split: no adapter, no training.
+
+    Identical prompt, identical label tokens and identical scorer to every trained arm, so the row says how
+    much adaptation happened rather than how two scoring rules differ. It enters no decision.
+    """
+    resources, uuid = _device_from_authorization(args)
+    device = torch.device("cuda:0")
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    protocol = json.loads(args.protocol.read_text())
+    record = protocol["design"]
+    entry = protocol["reference_entry"]
+    prepared = json.loads((Path(resources.output_root) / "inputs/prepared.json").read_text())
+    dataset = Path(protocol["dataset_source"]["path"]).parent
+    ledger = Path(resources.output_root) / "run_ledger.jsonl"
+    run_id = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + "_" + hashlib.sha256(os.urandom(16)).hexdigest()[:12]
+    run_dir = owned_path(resources.output_root, Path(resources.output_root) / "runs" / "FROZEN" / run_id)
+    job = dict(schema_version=1, run_id=run_id, stage="reference", arm="FROZEN", seed=None, trains=False,
+               entry_id=entry["entry_id"], evaluate_split=entry["evaluate_split"],
+               settings=dict(max_length=entry["max_length"]),
+               model_source_sha256=prepared["model_source_sha256"], svd_reference_sha256=prepared["svd_reference_sha256"],
+               dataset_source_sha256=sha256(dataset / "source.json"),
+               phase_protocol_path=str(args.protocol.resolve()), phase_protocol_sha256=sha256(args.protocol),
+               physical_gpu=args.gpu, gpu_uuid=uuid, source_revision=git_revision(),
+               decoder_pilot_source_sha256=source_hashes(), resource_authorization_sha256=sha256(args.resources),
+               torch=torch.__version__, python=platform.python_version(), created_utc=utc_now())
+    cp.validate_admission(job, protocol)
+    run_dir.mkdir(parents=True, exist_ok=False)
+    started = time.perf_counter()
+    model, tokenizer = load_model_and_tokenizer(prepared["model"])
+    encoded, stats, label_tokens = encode_splits(tokenizer, dataset, entry["max_length"])
+    choice_ids = [label_tokens[l] for l in cd.CHOICE_LABELS]
+    job["split_stats"] = stats
+    job["choice_token_ids"] = choice_ids
+    trainable_before = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    model.requires_grad_(False)
+    write_json_new(run_dir / "job.json", job)
+    cp.append_event(ledger, dict(run_id=run_id, status="planned", run_directory=str(run_dir),
+                                 job_sha256=sha256(run_dir / "job.json"), stage="reference",
+                                 entry_id=job["entry_id"], arm="FROZEN", seed=None))
+    cp.append_event(ledger, dict(run_id=run_id, status="running"))
+    try:
+        model.to(device)
+        model.eval()
+        torch.cuda.reset_peak_memory_stats(device)
+        split = entry["evaluate_split"]
+        summary, per_example = evaluate_choices(model, encoded[split], device, args.eval_batch_size,
+                                                record["precision"], choice_ids)
+        (run_dir / "evaluation").mkdir(exist_ok=True)
+        write_json_new(run_dir / "evaluation" / f"{split}_choices.json",
+                       dict(split=split, summary=summary, choice_token_ids=choice_ids, note=cp.HELD_OUT_NOTE))
+        write_json_new(run_dir / "evaluation" / f"{split}_per_example.json", per_example)
+        write_json_new(run_dir / "reference_result.json",
+                       dict(status="awaiting_whole_run_review", adapters_inserted=False, trainable_parameters=0,
+                            trainable_parameters_before_freeze=trainable_before, summary=summary,
+                            evaluate_split=split, peak_reserved=torch.cuda.max_memory_reserved(device),
+                            elapsed_seconds=time.perf_counter() - started, ended_utc=utc_now()))
+        cp.append_event(ledger, dict(run_id=run_id, status="awaiting_validation"))
+        print(json.dumps(dict(run_id=run_id, run_dir=str(run_dir), split=split, choice=summary), indent=1, default=str))
+    except BaseException as exc:
+        write_json_new(run_dir / "failure.json", dict(error_type=type(exc).__name__, error=str(exc), ended_utc=utc_now()))
+        cp.append_event(ledger, dict(run_id=run_id, status="interrupted" if isinstance(exc, KeyboardInterrupt) else "failed",
+                                     reason=f"{type(exc).__name__}: {exc}"))
+        raise
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -237,8 +304,13 @@ def main():
     p.add_argument("--eval-batch-size", type=int, default=8)
     p.add_argument("--reload-atol", type=float, default=1e-5)
     p.add_argument("--reload-rtol", type=float, default=1e-5)
+    p = sub.add_parser("reference", description="Score the frozen starting checkpoint; trains nothing.")
+    p.add_argument("--resources", type=Path, required=True)
+    p.add_argument("--gpu", type=int, required=True)
+    p.add_argument("--protocol", type=Path, required=True)
+    p.add_argument("--eval-batch-size", type=int, default=8)
     args = parser.parse_args()
-    {"train": train}[args.command](args)
+    {"train": train, "reference": reference}[args.command](args)
 
 
 if __name__ == "__main__":

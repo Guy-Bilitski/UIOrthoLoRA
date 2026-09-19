@@ -73,3 +73,25 @@ def test_every_cli_subcommand_maps_to_a_real_callable():
                 if all(isinstance(v, ast.Name) for v in values) and set(names) <= {"prepare", "feasibility", "train", "reference", "audit"}:
                     for name, value in zip(names, values):
                         assert hasattr(module, value.id), f"{module.__name__} dispatches {name!r} to missing {value.id!r}"
+
+
+@pytest.mark.parametrize("module, admission", [
+    (subspace_runner, "subspace_plan.validate_admission"),
+    (choice_runner, "cp.validate_admission"),
+], ids=lambda x: getattr(x, "__name__", str(x)).rsplit(".", 1)[-1])
+def test_every_bound_reference_runs_admission_and_trains_nothing(module, admission):
+    """The frozen anchor is a registered run too: it is admitted, and it must not train."""
+    source = inspect.getsource(module.reference)
+    assert admission in source, f"{module.__name__}.reference must run admission"
+    assert "run_steps(" not in source, f"{module.__name__}.reference must not train"
+    assert "requires_grad_(False)" in source, f"{module.__name__}.reference must freeze the model"
+
+
+def test_every_plan_module_that_completes_runs_checks_its_validation_keys():
+    """`complete` is the last gate before a run counts as evidence, in every study."""
+    from notebooks.iclr.decoder_pilot import choice_plan, interaction_plan, subspace_plan
+
+    for module in (subspace_plan, interaction_plan, choice_plan):
+        source = Path(inspect.getfile(module)).read_text()
+        assert "did not pass whole-run validation" in source or "VALIDATION_KEYS" in source, \
+            f"{module.__name__} completes runs without checking whole-run validation"

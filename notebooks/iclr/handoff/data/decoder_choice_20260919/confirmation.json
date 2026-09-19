@@ -1,0 +1,255 @@
+{
+  "authorization_record": "Block 3 of the author-approved five-day plan, 2026-09-19T19:00Z: 'Run one CommonsenseQA replication on the same Qwen checkpoint: the six strict-band conditions x three seeds, plus the frozen reference. Reserve the public validation split for final evaluation and label it accurately.' Same two assigned GPUs (2 and 3); GPUs 0 and 1 remain another user's and are untouched. Downloads are now closed: the pinned tau/commonsense_qa revision 94630fe30dad47192a8546eb75f094926d47e155 was fetched under the one scoped permission on 2026-09-19T19:00Z and is sealed by its source record, so nothing is re-fetched. The 20 GPU-hour figure is this block's share of the 120-hour campaign ceiling.",
+  "confirmation_authorized": true,
+  "dataset_source": {
+    "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_choice_v1/inputs/commonsense_qa/source.json",
+    "sha256": "33e4a1563bcc930816a62c35a9e7733f672418b181e7d65f4fd477edf7f07a24"
+  },
+  "design": {
+    "accumulation_steps": 8,
+    "arms_included": [
+      "LEAD_DIAG",
+      "LEAD_ROT128",
+      "MID_DIAG",
+      "MID_ROT128",
+      "TAIL_DIAG",
+      "TAIL_ROT128"
+    ],
+    "band_size": 512,
+    "bands": {
+      "LEAD": 0,
+      "MID": 512,
+      "TAIL": 1024
+    },
+    "batch_size": 2,
+    "choice_labels": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "effective_batch": 16,
+    "families": [
+      "DIAG",
+      "ROT128"
+    ],
+    "gradient_checkpointing": false,
+    "held_out_split": {
+      "examples": 1221,
+      "name": "held_out_validation",
+      "note": "The 1,221-example PUBLIC VALIDATION split is reserved for final evaluation and is called held-out validation. It is not the official test split, whose labels are not public, and must never be described as such.",
+      "source": "public validation"
+    },
+    "inner_split": {
+      "fraction": 0.1,
+      "seed": 271828,
+      "source": "train"
+    },
+    "learning_rate": 0.001,
+    "max_gradient_norm": 1.0,
+    "max_length": 160,
+    "not_established": "One 1.5B decoder and one constrained-choice task. Choice accuracy and choice NLL describe the same decision but not free-generation reasoning, and results here do not transfer to the GSM8K block or to other scales.",
+    "optimizer_steps": 842,
+    "outcome_policy": "Choice accuracy, from the largest of the five choice logits, and choice NLL, of the correct choice after renormalizing over those five, are CO-PRIMARY and describe the same decision. Full-vocabulary label NLL and the probability mass on the five labels are retained alongside so that improved output formatting is not mistaken for improved choice discrimination. Leading minus tail within each family remains the primary location contrast. This is a constrained-choice task and is not a second demonstration of free-generation reasoning; it is reported whatever it shows.",
+    "precision": "bfloat16",
+    "primary_outcomes": [
+      "choice_accuracy",
+      "choice_nll"
+    ],
+    "projections": [
+      "q_proj",
+      "o_proj"
+    ],
+    "provenance": "Block 3 of the author-approved five-day plan (2026-09-19): 'Run one CommonsenseQA replication on the same Qwen checkpoint: the six strict-band conditions x three seeds, plus the frozen reference. Reserve the public validation split for final evaluation and label it accurately.' max_length is measured from the pinned dataset; every other value is block 1's, unchanged.",
+    "rotation_size": 128,
+    "schema_version": 1,
+    "scored_tokens_per_example": 1,
+    "selection_eval_steps": [
+      0,
+      211,
+      421,
+      632,
+      842
+    ],
+    "study": "decoder_subspace_commonsenseqa",
+    "system_prompt": "Answer the multiple-choice question. Reply with the single letter of the correct option and nothing else.",
+    "task": "commonsense_qa",
+    "training_note": "Exactly one token is scored per example, the answer label, with ordinary full-vocabulary cross-entropy. The prompt is masked and no end-of-sequence token is scored. No rationale training and no trainable classification head.",
+    "warmup_steps": 0,
+    "weight_decay": 0.0
+  },
+  "entries": [
+    {
+      "arm": "LEAD_DIAG",
+      "band": "LEAD",
+      "entry_id": "choice/LEAD_DIAG/seed_17",
+      "evaluate_split": "held_out_validation",
+      "family": "DIAG",
+      "seed": 17
+    },
+    {
+      "arm": "LEAD_DIAG",
+      "band": "LEAD",
+      "entry_id": "choice/LEAD_DIAG/seed_42",
+      "evaluate_split": "held_out_validation",
+      "family": "DIAG",
+      "seed": 42
+    },
+    {
+      "arm": "LEAD_DIAG",
+      "band": "LEAD",
+      "entry_id": "choice/LEAD_DIAG/seed_123",
+      "evaluate_split": "held_out_validation",
+      "family": "DIAG",
+      "seed": 123
+    },
+    {
+      "arm": "LEAD_ROT128",
+      "band": "LEAD",
+      "entry_id": "choice/LEAD_ROT128/seed_17",
+      "evaluate_split": "held_out_validation",
+      "family": "ROT128",
+      "seed": 17
+    },
+    {
+      "arm": "LEAD_ROT128",
+      "band": "LEAD",
+      "entry_id": "choice/LEAD_ROT128/seed_42",
+      "evaluate_split": "held_out_validation",
+      "family": "ROT128",
+      "seed": 42
+    },
+    {
+      "arm": "LEAD_ROT128",
+      "band": "LEAD",
+      "entry_id": "choice/LEAD_ROT128/seed_123",
+      "evaluate_split": "held_out_validation",
+      "family": "ROT128",
+      "seed": 123
+    },
+    {
+      "arm": "MID_DIAG",
+      "band": "MID",
+      "entry_id": "choice/MID_DIAG/seed_17",
+      "evaluate_split": "held_out_validation",
+      "family": "DIAG",
+      "seed": 17
+    },
+    {
+      "arm": "MID_DIAG",
+      "band": "MID",
+      "entry_id": "choice/MID_DIAG/seed_42",
+      "evaluate_split": "held_out_validation",
+      "family": "DIAG",
+      "seed": 42
+    },
+    {
+      "arm": "MID_DIAG",
+      "band": "MID",
+      "entry_id": "choice/MID_DIAG/seed_123",
+      "evaluate_split": "held_out_validation",
+      "family": "DIAG",
+      "seed": 123
+    },
+    {
+      "arm": "MID_ROT128",
+      "band": "MID",
+      "entry_id": "choice/MID_ROT128/seed_17",
+      "evaluate_split": "held_out_validation",
+      "family": "ROT128",
+      "seed": 17
+    },
+    {
+      "arm": "MID_ROT128",
+      "band": "MID",
+      "entry_id": "choice/MID_ROT128/seed_42",
+      "evaluate_split": "held_out_validation",
+      "family": "ROT128",
+      "seed": 42
+    },
+    {
+      "arm": "MID_ROT128",
+      "band": "MID",
+      "entry_id": "choice/MID_ROT128/seed_123",
+      "evaluate_split": "held_out_validation",
+      "family": "ROT128",
+      "seed": 123
+    },
+    {
+      "arm": "TAIL_DIAG",
+      "band": "TAIL",
+      "entry_id": "choice/TAIL_DIAG/seed_17",
+      "evaluate_split": "held_out_validation",
+      "family": "DIAG",
+      "seed": 17
+    },
+    {
+      "arm": "TAIL_DIAG",
+      "band": "TAIL",
+      "entry_id": "choice/TAIL_DIAG/seed_42",
+      "evaluate_split": "held_out_validation",
+      "family": "DIAG",
+      "seed": 42
+    },
+    {
+      "arm": "TAIL_DIAG",
+      "band": "TAIL",
+      "entry_id": "choice/TAIL_DIAG/seed_123",
+      "evaluate_split": "held_out_validation",
+      "family": "DIAG",
+      "seed": 123
+    },
+    {
+      "arm": "TAIL_ROT128",
+      "band": "TAIL",
+      "entry_id": "choice/TAIL_ROT128/seed_17",
+      "evaluate_split": "held_out_validation",
+      "family": "ROT128",
+      "seed": 17
+    },
+    {
+      "arm": "TAIL_ROT128",
+      "band": "TAIL",
+      "entry_id": "choice/TAIL_ROT128/seed_42",
+      "evaluate_split": "held_out_validation",
+      "family": "ROT128",
+      "seed": 42
+    },
+    {
+      "arm": "TAIL_ROT128",
+      "band": "TAIL",
+      "entry_id": "choice/TAIL_ROT128/seed_123",
+      "evaluate_split": "held_out_validation",
+      "family": "ROT128",
+      "seed": 123
+    }
+  ],
+  "model_source_sha256": "9d742c2122aa74b8c1bcdd29755b9ad88856454c34cff5df2855239017533f1a",
+  "outcome_policy": "Choice accuracy, from the largest of the five choice logits, and choice NLL, of the correct choice after renormalizing over those five, are CO-PRIMARY and describe the same decision. Full-vocabulary label NLL and the probability mass on the five labels are retained alongside so that improved output formatting is not mistaken for improved choice discrimination. Leading minus tail within each family remains the primary location contrast. This is a constrained-choice task and is not a second demonstration of free-generation reasoning; it is reported whatever it shows.",
+  "prepared_inputs": {
+    "path": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_choice_v1/inputs/prepared.json",
+    "sha256": "88e766bc159981d4efc3f9250ba47808194b943249eeae501ab3438f98807fc4"
+  },
+  "primary_outcomes": [
+    "choice_accuracy",
+    "choice_nll"
+  ],
+  "purpose": "decoder_choice_confirmation",
+  "reference_entry": {
+    "arm": "FROZEN",
+    "entry_id": "choice/reference/FROZEN",
+    "evaluate_split": "held_out_validation",
+    "max_length": 160,
+    "note": "The sealed starting checkpoint with no adapter, scored on the same split with the same prompt, labels and scorer. It anchors how much adaptation happened and enters no decision.",
+    "seed": null,
+    "stage": "reference",
+    "trains": false
+  },
+  "registered": true,
+  "registered_utc": "2026-09-19T20:28:15.801543+00:00",
+  "reporting_policy": "Report every seed with means and sample SDs for BOTH co-primary outcomes, plus full-vocabulary label NLL and choice probability mass. Leading minus tail within each family is the primary location contrast. The 1,221-example PUBLIC VALIDATION split is reserved for final evaluation and is called held-out validation. It is not the official test split, whose labels are not public, and must never be described as such.",
+  "schema_version": 1,
+  "scope": "CommonsenseQA replication only: the registered strict-band arms x seeds (17, 42, 123) at the fixed recipe, evaluated once on the 1,221-example held-out validation split. No tuning, no calibration, no generation.",
+  "svd_reference_sha256": "140057fbd37f83532315754980de8996935c05801436f1d381649586f5e07da0"
+}

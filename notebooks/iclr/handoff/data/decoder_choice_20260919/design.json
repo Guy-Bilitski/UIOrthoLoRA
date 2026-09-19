@@ -1,0 +1,74 @@
+{
+  "accumulation_steps": 8,
+  "arms_included": [
+    "LEAD_DIAG",
+    "LEAD_ROT128",
+    "MID_DIAG",
+    "MID_ROT128",
+    "TAIL_DIAG",
+    "TAIL_ROT128"
+  ],
+  "band_size": 512,
+  "bands": {
+    "LEAD": 0,
+    "MID": 512,
+    "TAIL": 1024
+  },
+  "batch_size": 2,
+  "choice_labels": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E"
+  ],
+  "effective_batch": 16,
+  "families": [
+    "DIAG",
+    "ROT128"
+  ],
+  "gradient_checkpointing": false,
+  "held_out_split": {
+    "examples": 1221,
+    "name": "held_out_validation",
+    "note": "The 1,221-example PUBLIC VALIDATION split is reserved for final evaluation and is called held-out validation. It is not the official test split, whose labels are not public, and must never be described as such.",
+    "source": "public validation"
+  },
+  "inner_split": {
+    "fraction": 0.1,
+    "seed": 271828,
+    "source": "train"
+  },
+  "learning_rate": 0.001,
+  "max_gradient_norm": 1.0,
+  "max_length": 160,
+  "not_established": "One 1.5B decoder and one constrained-choice task. Choice accuracy and choice NLL describe the same decision but not free-generation reasoning, and results here do not transfer to the GSM8K block or to other scales.",
+  "optimizer_steps": 842,
+  "outcome_policy": "Choice accuracy, from the largest of the five choice logits, and choice NLL, of the correct choice after renormalizing over those five, are CO-PRIMARY and describe the same decision. Full-vocabulary label NLL and the probability mass on the five labels are retained alongside so that improved output formatting is not mistaken for improved choice discrimination. Leading minus tail within each family remains the primary location contrast. This is a constrained-choice task and is not a second demonstration of free-generation reasoning; it is reported whatever it shows.",
+  "precision": "bfloat16",
+  "primary_outcomes": [
+    "choice_accuracy",
+    "choice_nll"
+  ],
+  "projections": [
+    "q_proj",
+    "o_proj"
+  ],
+  "provenance": "Block 3 of the author-approved five-day plan (2026-09-19): 'Run one CommonsenseQA replication on the same Qwen checkpoint: the six strict-band conditions x three seeds, plus the frozen reference. Reserve the public validation split for final evaluation and label it accurately.' max_length is measured from the pinned dataset; every other value is block 1's, unchanged.",
+  "rotation_size": 128,
+  "schema_version": 1,
+  "scored_tokens_per_example": 1,
+  "selection_eval_steps": [
+    0,
+    211,
+    421,
+    632,
+    842
+  ],
+  "study": "decoder_subspace_commonsenseqa",
+  "system_prompt": "Answer the multiple-choice question. Reply with the single letter of the correct option and nothing else.",
+  "task": "commonsense_qa",
+  "training_note": "Exactly one token is scored per example, the answer label, with ordinary full-vocabulary cross-entropy. The prompt is masked and no end-of-sequence token is scored. No rationale training and no trainable classification head.",
+  "warmup_steps": 0,
+  "weight_decay": 0.0
+}

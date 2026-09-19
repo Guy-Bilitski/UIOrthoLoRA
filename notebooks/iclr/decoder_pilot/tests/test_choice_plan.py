@@ -131,3 +131,75 @@ def test_a_protocol_whose_dataset_binding_changed_is_refused(tmp_path, sealed, r
     job = _job(protocol, cp.materialize_confirmation_entry(protocol, protocol["entries"][0]), sealed[0])
     with pytest.raises(ValueError, match="changed or is unbound"):
         cp.validate_admission(job, broken)
+
+
+# --------------------------------------------------------------------------- whole-run validation
+
+
+def _completed_ledger(tmp_path, protocol, path, report_overrides=None):
+    """A ledger holding one completed run, with a validation report the test can corrupt."""
+    entry = protocol["entries"][0]
+    expected = cp.materialize_confirmation_entry(protocol, entry)
+    prepared = json.loads(Path(protocol["prepared_inputs"]["path"]).read_text())
+    run_directory = tmp_path / "runs" / entry["arm"] / "seed_17" / "r1"
+    run_directory.mkdir(parents=True)
+    job = dict(expected, run_id="r1", model_source_sha256=prepared["model_source_sha256"],
+               svd_reference_sha256=prepared["svd_reference_sha256"],
+               phase_protocol_sha256=sha256(path))
+    write_json_new(run_directory / "job.json", job)
+    report = dict(validation_scope="decoder_choice_run", run_id="r1", entry_id=entry["entry_id"],
+                  stage="confirmation", choice_summary=dict(accuracy=0.5), artifacts_sha256={},
+                  selection_token_mean_nll=0.4, **{k: True for k in cp.VALIDATION_KEYS})
+    report.update(report_overrides or {})
+    report_path = run_directory / "validation_report.json"
+    write_json_new(report_path, report)
+    ledger = tmp_path / "run_ledger.jsonl"
+    ledger.write_text("\n".join([
+        json.dumps(dict(run_id="r1", status="planned", run_directory=str(run_directory),
+                        job_sha256=sha256(run_directory / "job.json"), stage="confirmation",
+                        entry_id=entry["entry_id"])),
+        json.dumps(dict(run_id="r1", status="completed", validation_path=str(report_path),
+                        entry_id=entry["entry_id"], stage="confirmation")),
+    ]) + "\n")
+    return ledger
+
+
+def test_a_completed_run_reports_its_outcomes(tmp_path, sealed, record):
+    protocol, path = _protocol(tmp_path, sealed, record)
+    ledger = _completed_ledger(tmp_path, protocol, path)
+    rows = cp.collect_runs(ledger, path)
+    assert len(rows) == 1 and rows[0]["validated"] is True
+    assert rows[0]["choice_accuracy"] == 0.5 and rows[0]["status"] == "completed"
+
+
+def test_a_completed_run_that_failed_a_validation_check_is_refused(tmp_path, sealed, record):
+    """A run must not become evidence because someone appended a completed event to the ledger."""
+    protocol, path = _protocol(tmp_path, sealed, record)
+    ledger = _completed_ledger(tmp_path, protocol, path, dict(zero_insertion_passed=False))
+    with pytest.raises(ValueError, match="Missing whole-run choice validation"):
+        cp.collect_runs(ledger, path)
+
+
+def test_a_run_from_another_protocol_version_is_not_collected(tmp_path, sealed, record):
+    protocol, path = _protocol(tmp_path, sealed, record)
+    ledger = _completed_ledger(tmp_path, protocol, path)
+    other = tmp_path / "other_protocol.json"
+    write_json_new(other, dict(protocol, authorization_record="a different authorization"))
+    assert cp.collect_runs(ledger, other) == []
+
+
+def test_validation_refuses_a_run_admitted_under_another_protocol(tmp_path, sealed, record):
+    protocol, path = _protocol(tmp_path, sealed, record)
+    ledger = _completed_ledger(tmp_path, protocol, path)
+    run_directory = json.loads(ledger.read_text().splitlines()[0])["run_directory"]
+    other = tmp_path / "other_protocol.json"
+    write_json_new(other, dict(protocol, authorization_record="a different authorization"))
+    with pytest.raises(ValueError, match="not admitted under this protocol"):
+        cp.validate_run(run_directory, other)
+
+
+def test_the_reference_and_the_trained_runs_are_checked_by_different_keys():
+    """A reference trains nothing, so demanding a reload check of it would be vacuous or wrong."""
+    assert "zero_insertion_passed" in cp.VALIDATION_KEYS
+    assert "zero_insertion_passed" not in cp.REFERENCE_VALIDATION_KEYS
+    assert "untrained_reference" in cp.REFERENCE_VALIDATION_KEYS
