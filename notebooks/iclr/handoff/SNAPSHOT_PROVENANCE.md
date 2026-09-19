@@ -1,3 +1,8 @@
+Latest scoped priority update: Overleaf `070bcefd173cbfe0a3f4455a7da360ea174008f2`. See
+`DECODER_FIRST_PRIORITY_20260919.md` and `DECODER_PRIORITY_SYNC_20260919.json`.
+The original full-snapshot manifest below records its earlier delivery, not a
+promise that later coding-session exports and status documents are unchanged.
+
 # GitHub delivery provenance — 19 September 2026
 
 The current entry point is `EXPERIMENT_PREPARATION_HANDOFF_20260919.md`.

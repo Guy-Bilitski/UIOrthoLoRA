@@ -1,3 +1,10 @@
+> **Latest author priority — modern decoder first:** Read
+> `DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder pilot,
+> tuning/calibration and confirmation runs on the two assigned GPUs. Defer
+> CENTER and further encoder controls. The coding agent has now delivered the
+> temperature and band held-aside exports; verify/reuse them, do not rerun them.
+> Older schedules below are superseded where they place controls first.
+
 # Experiment preparation status — 19 September 2026 (coding session report)
 
 Companion to `EXPERIMENT_PREPARATION_HANDOFF_20260919.md`, which remains the entry
@@ -203,16 +210,17 @@ GPU work must finish by the morning of 24 September.
 
 | Day | GPU A | GPU B | CPU / writing agent |
 |---|---|---|---|
-| D0 (release day) | CENTER RTE grid (3 runs, ≈3.9 h) | CENTER MRPC grid (3 runs, ≈2.3 h) → decoder GPU pilot (≈0.3 h) | Decide decoder model/task from the pilot numbers; register the decoder protocol |
-| D0 evening → D1 | CENTER RTE refinement doses (0–4, sequential) | CENTER MRPC refinement (0–4) then decoder LR tuning | CENTER decisions (norms only) |
-| D1 → D2 | CENTER RTE confirmations (3) | CENTER MRPC confirmations (3) then decoder calibration | Freeze the six CENTER endpoints; CPU held-aside + logits |
-| D2 → D3 | Decoder confirmations (15 runs across both GPUs, ≈7.5 h) | | Reload validation and geometry are in-run; export |
-| D3 | Buffer for retries / fallback (LoRA+PiSSA on RTE/MRPC if the decoder is infeasible) | | Evidence exports, Overleaf mirror |
+| D0 (release day) | Decoder GPU pilot; verify memory, throughput and learning | Decoder preparation; start declared tuning once the pilot passes | Verify delivered checkpoint analyses; freeze decoder protocol |
+| D0 evening → D1 | Decoder learning-rate tuning | Decoder learning-rate tuning/calibration as dependencies allow | Preserve all calibration attempts and select using inner data only |
+| D1 → D2 | Decoder confirmations | Decoder confirmations | Reload validation, geometry and immutable exports |
+| D3 | Decoder completion/retry buffer; optional controls only after decoder priority is secured | Same | Evidence integration and writing |
 | D4–D5 | — | — | Analysis and writing only |
 
-If the GPUs arrive later than D0 = 21 September, the decoder confirmations are
-the first item to scale down (e.g. three arms UNREG/MIX/LoRA, or two seeds
-reported as such), recorded before any outcome is seen.
+The dates and costs remain conditional on actual device assignment and measured
+pilot throughput. Under the author's latest instruction, defer CENTER and
+optional encoder controls before reducing decoder coverage. Any smaller decoder
+protocol must be agreed and frozen before confirmation outcomes; do not silently
+substitute more RoBERTa experiments for the modern-model study.
 
 ## 10. Unresolved decisions for the author
 

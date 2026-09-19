@@ -1,3 +1,10 @@
+> **Latest author priority — modern decoder first:** Read
+> `DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder pilot,
+> tuning/calibration and confirmation runs on the two assigned GPUs. Defer
+> CENTER and further encoder controls. The coding agent has now delivered the
+> temperature and band held-aside exports; verify/reuse them, do not rerun them.
+> Older schedules below are superseded where they place controls first.
+
 > **Current preparation status — 19 September 2026:** Start with
 > `EXPERIMENT_PREPARATION_HANDOFF_20260919.md` and
 > `review_feedback/20260919/assessment.md`. The author confirmed **two GPUs**.

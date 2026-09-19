@@ -1,3 +1,10 @@
+> **Latest author priority — modern decoder first:** Read
+> `DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder pilot,
+> tuning/calibration and confirmation runs on the two assigned GPUs. Defer
+> CENTER and further encoder controls. The coding agent has now delivered the
+> temperature and band held-aside exports; verify/reuse them, do not rerun them.
+> Older schedules below are superseded where they place controls first.
+
 Assessment of the ICLR LLM feedback — 19 September 2026
 
 My assessment is that this is a credible, carefully documented study with a real contribution, but it still has material acceptance risks. I would not call it a weak paper on the evidence available, and I would not call it scientifically finished. The main risks concern the interpretation, relevance and generality of the results. More runs help only if they answer those particular questions. The previous manuscript cleanup established document consistency; it did not close the outstanding scientific checks.

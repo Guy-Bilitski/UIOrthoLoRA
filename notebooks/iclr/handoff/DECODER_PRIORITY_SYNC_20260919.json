@@ -1,0 +1,54 @@
+{
+  "overleaf_commit": "070bcefd173cbfe0a3f4455a7da360ea174008f2",
+  "scope": "Scoped documentation priority update; code, scientific source and experimental exports unchanged",
+  "files": {
+    "AGENTS.md": {
+      "overleaf_sha256": "7472dea2cae04f47046bafaf1896ce8e2f3a6bf9ae7ad6d80a328845cf7432c7",
+      "research_sha256": "0772a4f2b76c49d719d801bfeaa484faee90bc1fdf19c2a4193da79bda7c5e3a"
+    },
+    "CENTER_PROTOCOL_20260919.md": {
+      "overleaf_sha256": "81c3633aa798611b37f9af62f426b6730825eef1f9e8c918446ab733bed44fc4",
+      "research_sha256": "81c3633aa798611b37f9af62f426b6730825eef1f9e8c918446ab733bed44fc4"
+    },
+    "CODING_AGENT_PROMPT_20260919.md": {
+      "overleaf_sha256": "1da907f62ef3203c7fa001e248a29b288e02cee9b4b750ac2d55ffd7e8895114",
+      "research_sha256": "1da907f62ef3203c7fa001e248a29b288e02cee9b4b750ac2d55ffd7e8895114"
+    },
+    "DECODER_FIRST_PRIORITY_20260919.md": {
+      "overleaf_sha256": "3d9faefc8aaed9bce8ae79b33222c13ddfd7cda4e65d77075e26c57467da5d1e",
+      "research_sha256": "3d9faefc8aaed9bce8ae79b33222c13ddfd7cda4e65d77075e26c57467da5d1e"
+    },
+    "DECODER_PILOT_DESIGN_20260919.md": {
+      "overleaf_sha256": "717a6a1c3ae3eb35d62040f4bc35a2809a16f85c3955689ee2b65d873ca8e162",
+      "research_sha256": "717a6a1c3ae3eb35d62040f4bc35a2809a16f85c3955689ee2b65d873ca8e162"
+    },
+    "EXPERIMENTS_REQUIRED.md": {
+      "overleaf_sha256": "a7b35e326ec3d4f1f133daf4643062b4c9bc0c1e580b3a354d100c5a709d3de6",
+      "research_sha256": "a7b35e326ec3d4f1f133daf4643062b4c9bc0c1e580b3a354d100c5a709d3de6"
+    },
+    "EXPERIMENT_PREPARATION_HANDOFF_20260919.md": {
+      "overleaf_sha256": "61611669807ea5e1ca061b67dcf30cc33cf4358a8d3db086f9e615a570b494c1",
+      "research_sha256": "61611669807ea5e1ca061b67dcf30cc33cf4358a8d3db086f9e615a570b494c1"
+    },
+    "EXPERIMENT_PREPARATION_STATUS_20260919.md": {
+      "overleaf_sha256": "74622075b950668e70de9ba8e6107028545e61c3ce068640bd8e0d3059516394",
+      "research_sha256": "74622075b950668e70de9ba8e6107028545e61c3ce068640bd8e0d3059516394"
+    },
+    "GPU_HANDOFF.md": {
+      "overleaf_sha256": "5d6ae6b45834cb3e40aa27a731b006fc9580209861a758220d716d3e76f2bdf8",
+      "research_sha256": "5d6ae6b45834cb3e40aa27a731b006fc9580209861a758220d716d3e76f2bdf8"
+    },
+    "README.md": {
+      "overleaf_sha256": "5ea8300ffd510d2b84f5d84932597b7fc6a42714dc279bc59be0fa1bc78a5742",
+      "research_sha256": "5ea8300ffd510d2b84f5d84932597b7fc6a42714dc279bc59be0fa1bc78a5742"
+    },
+    "review_feedback/20260919/assessment.md": {
+      "overleaf_sha256": "1ea3be91e9d7d697e1c765daf8995d9aea0741d41cf73a7fa352da026e1befd6",
+      "research_sha256": "1ea3be91e9d7d697e1c765daf8995d9aea0741d41cf73a7fa352da026e1befd6"
+    },
+    "review_feedback/20260919/manifest.json": {
+      "overleaf_sha256": "a2d0b78761e001c63c04c383603394004eed8dd45ed1eef586e8915ce05c870a",
+      "research_sha256": "a2d0b78761e001c63c04c383603394004eed8dd45ed1eef586e8915ce05c870a"
+    }
+  }
+}

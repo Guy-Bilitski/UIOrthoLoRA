@@ -1,3 +1,10 @@
+> **Latest author priority — modern decoder first:** Read
+> `DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder pilot,
+> tuning/calibration and confirmation runs on the two assigned GPUs. Defer
+> CENTER and further encoder controls. The coding agent has now delivered the
+> temperature and band held-aside exports; verify/reuse them, do not rerun them.
+> Older schedules below are superseded where they place controls first.
+
 # ICLR experiment preparation — start here, 19 September 2026
 
 Internal author/coding-agent handoff for Overleaf project **6aa54397e58b10444b0fa2aa**.
@@ -54,8 +61,8 @@ the relevant CPU tests. Existing frozen-checkpoint inference was already
 requested in the September 17 closure document; reconcile the live ledger and
 reuse cached results before carrying it out. Do not duplicate completed scoring.
 
-For **new training**, prepare CENTER and a compact decoder pilot for the author's
-decision. The author explicitly requested discussion of larger changes; the
+For **new training**, prioritize the prepared modern decoder pilot and its
+confirmation study; defer CENTER and additional encoder controls. The author explicitly requested discussion of larger changes; the
 September 19 assessment is a recommendation, not approval of all proposed runs.
 Return exact pilot/campaign commands, selected design choices, validation and a
 two-GPU cost estimate before committing to the new training campaign. Use any
@@ -71,7 +78,7 @@ messaging is requested.
 | Evidence block | Population | Current interpretation |
 |---|---|---|
 | Practical interaction study | RTE/MRPC × UNREG/MIX/NORM × seeds 17,42,123 = 18 fixed confirmations, plus separate calibration | Held-aside evaluation complete, 277 RTE / 408 MRPC examples. Preserve the existing export. |
-| Strict-band study | RTE × leading/middle/tail × DIAG/ROT64 × three seeds, plus three HEAD_BASE = 21 confirmations | All completed, reloaded and frozen. All results are integrated in the paper. Two timing pilots remain separate. Available results are inner-selection scores; held-aside scoring is still absent from the synchronized exports. |
+| Strict-band study | RTE × leading/middle/tail × DIAG/ROT64 × three seeds, plus three HEAD_BASE = 21 confirmations | All completed, reloaded and frozen. All results are integrated in the paper. Two timing pilots remain separate. Both inner-selection and held-aside scores are now exported; keep the two splits separate and retain the prior-scoring disclosure. |
 | Legacy mixing archive | 27 runs, nine paired task/seed groups, 48 modules/run | Separate historical protocol; 1,296 module observations are not independent training replications. |
 | Broad GLUE/GPT-2 tables | Historical reports with imported baselines | Unmatched tuning/provenance limitations. No modern matched decoder comparison yet. |
 
@@ -130,12 +137,16 @@ Checkpoint populations are explicit, not inferred from filenames:
 
 These paths are relative to the Overleaf root or the research handoff root.
 The paper bundle contains measurements/source and checkpoint hashes, not weights.
-Only 13 representative recipe manifests are included; all 39 individual run
-manifests and original reload-validation reports are still requested.
+The original bundle had 13 representative recipe manifests; the coding agent
+has now exported all 39 run records and validation reports under
+`data/run_records_20260919/`.
 
-## 5. First priority: finish frozen-checkpoint evaluation
+## 5. Completed frozen-checkpoint exports: verify and reuse
 
-Follow `FINAL_EXPORT_CLOSURE_REQUEST_20260917.md` exactly.
+The coding agent has completed this request; see
+`EXPERIMENT_PREPARATION_STATUS_20260919.md` and its linked exports. The contract
+below documents the required checks; reuse the completed results rather than
+repeat the inference described in `FINAL_EXPORT_CLOSURE_REQUEST_20260917.md`.
 
 **Temperature scaling:** export both inner-selection and held-aside two-class
 logits for all 18 practical endpoints. Follow the hash-bound schema in
@@ -177,7 +188,7 @@ python3 review_feedback/20260919/calibration_diagnostic.py --paper-root . --out 
 Choose a fresh output path if that file exists. The archived evaluator text is
 included only to verify its hash/loss convention; do not execute that text file.
 
-## 6. Prepare CENTER as the first mechanism control
+## 6. CENTER: prepared and deferred behind decoder results
 
 Reuse the practical family, leading core I, tail size 256, no rotations, same
 48 attention matrices, task/head/data-order seeds and repaired-input recipe.
@@ -208,7 +219,7 @@ module energy profiles, update norms, identity residuals, task/probe outcomes,
 logits and reproducible checkpoint inventories. CENTER does not itself match
 module allocation or establish pretrained-frame specificity.
 
-## 7. Prepare one compact decoder pilot, not a broad benchmark campaign
+## 7. First new GPU priority: the prepared compact decoder study
 
 Preferred candidate for discussion: **Qwen2.5-1.5B-Instruct on GSM8K**. Neither
 this model/task choice nor the full run matrix is frozen. Verify local models,
@@ -244,8 +255,9 @@ Measure SVD setup, reused decomposition storage, steady-state training throughpu
 peak allocated/reserved memory, diagnostics and generation evaluation separately.
 Cache decompositions where valid, preserving identical reference bases. Check
 task feasibility without choosing the benchmark based on favorable MIX outcomes.
-If decoder preparation is too costly, prepare matched LoRA/PiSSA on RTE/MRPC
-instead (12 confirmations plus tuning). Do not execute both expansions by default.
+If the candidate decoder recipe is too costly, propose a narrower informative
+decoder study first. Do not substitute additional RoBERTa controls for the
+author's requested modern-model evidence without discussion.
 
 Module-allocation-matched training, extra dose sensitivity, DoRA/OFT, larger
 models, multiple generative benchmarks and further band replications are

@@ -1,12 +1,17 @@
 # GitHub handoff location
 
-This directory is a portable snapshot under `notebooks/iclr/handoff/`, not the
-live Overleaf checkout. Its enclosing Git remote is GitHub. The current entry
-point is `EXPERIMENT_PREPARATION_HANDOFF_20260919.md`; see
-`SNAPSHOT_PROVENANCE.md` for the source revision and transport-only differences.
-Manuscript changes require reconciliation with the real Overleaf project.
+This is the portable handoff under `notebooks/iclr/handoff/`; the live paper
+is in the separate Overleaf project. The enclosing Git remote is GitHub.
+Read `DECODER_FIRST_PRIORITY_20260919.md` before older schedules.
 
-> **Coding-session report — 19 September 2026 (late):** frozen-checkpoint work is done (`EXPERIMENT_PREPARATION_STATUS_20260919.md`: temperature scaling of the 18 practical endpoints, held-aside evaluation of all 21 band/head endpoints, 39 run records and trajectories). CENTER (`CENTER_PROTOCOL_20260919.md`) and the decoder pilot (`DECODER_PILOT_DESIGN_20260919.md`) are implemented and CPU-tested but NOT launched; they wait for the author's two GPU IDs and scope approval.
+> **Latest author priority — modern decoder first:** Read
+> `DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder pilot,
+> tuning/calibration and confirmation runs on the two assigned GPUs. Defer
+> CENTER and further encoder controls. The coding agent has now delivered the
+> temperature and band held-aside exports; verify/reuse them, do not rerun them.
+> Older schedules below are superseded where they place controls first.
+
+> **Coding-session report — 19 September 2026 (late):** frozen-checkpoint work is done (`EXPERIMENT_PREPARATION_STATUS_20260919.md`: temperature scaling of the 18 practical endpoints, held-aside evaluation of all 21 band/head endpoints, 39 run records and trajectories under `data/`). CENTER (`CENTER_PROTOCOL_20260919.md`) and the decoder pilot (`DECODER_PILOT_DESIGN_20260919.md`) are implemented and CPU-tested but NOT launched; they wait for the author's two GPU IDs and scope approval. The manuscript is unchanged.
 
 > **Current preparation status — 19 September 2026:** Start with
 > `EXPERIMENT_PREPARATION_HANDOFF_20260919.md` and

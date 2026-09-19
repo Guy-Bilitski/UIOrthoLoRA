@@ -1,3 +1,8 @@
+> **Latest author priority:** modern decoder results first. Follow
+> `handoff/DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder
+> pilot and full study; defer CENTER and additional encoder controls. The
+> frozen-checkpoint analyses are already delivered. Two assigned GPUs only.
+
 # ICLR research workspace — current entry point
 
 Work on Overleaf project `6aa54397e58b10444b0fa2aa` only. Start with

@@ -1,3 +1,10 @@
+> **Latest author priority — modern decoder first:** Read
+> `DECODER_FIRST_PRIORITY_20260919.md`. Prioritize the prepared decoder pilot,
+> tuning/calibration and confirmation runs on the two assigned GPUs. Defer
+> CENTER and further encoder controls. The coding agent has now delivered the
+> temperature and band held-aside exports; verify/reuse them, do not rerun them.
+> Older schedules below are superseded where they place controls first.
+
 # Compact decoder pilot — design for discussion (19 September 2026)
 
 Candidate: **Qwen2.5-1.5B-Instruct on GSM8K**. Neither the model/task nor the
