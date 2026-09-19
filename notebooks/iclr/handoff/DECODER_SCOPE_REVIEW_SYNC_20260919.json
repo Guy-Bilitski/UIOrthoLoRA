@@ -1,0 +1,35 @@
+{
+  "overleaf_commit": "54f5c706280863258a3d407d866e06dd38475224",
+  "reviewed_research_commit": "4d7eb8bc",
+  "scope": "Scientific scope and compute review; documentation only. No running queue, implementation, measured artifact or manuscript changed.",
+  "files": {
+    "AGENTS.md": {
+      "overleaf_sha256": "6174fea51711a8ade632218a0ae5d837fc2eb91d6650e56c9e9182714702ce78",
+      "research_sha256": "4bd2bf507bca93d2412498b86408dd6d954e9a70a00b72d400d384377d36f66e"
+    },
+    "CODING_AGENT_PROMPT_20260919.md": {
+      "overleaf_sha256": "d5569be420babbd041f4cc4e3b3dd8c93c98bd4031eb1f476de9353213f9c91e",
+      "research_sha256": "d5569be420babbd041f4cc4e3b3dd8c93c98bd4031eb1f476de9353213f9c91e"
+    },
+    "DECODER_SCOPE_REVIEW_20260919.md": {
+      "overleaf_sha256": "3d79e2065929f8697cf62eb7b274eff061899ec5f21f5ae6d805f951cbfc902d",
+      "research_sha256": "3d79e2065929f8697cf62eb7b274eff061899ec5f21f5ae6d805f951cbfc902d"
+    },
+    "DECODER_SUBSPACE_EXECUTION_20260919.md": {
+      "overleaf_sha256": "7ebfbd58ec4e45a70b5ff906cff5d3dcb06e815dca4ba6241bdf9d9cd3b496e6",
+      "research_sha256": "7ebfbd58ec4e45a70b5ff906cff5d3dcb06e815dca4ba6241bdf9d9cd3b496e6"
+    },
+    "DECODER_SUBSPACE_REVIEW_BRIEF_20260919.md": {
+      "overleaf_sha256": "0c8a53e378d0b97c4ffbea71fc530c1102f3eb30017d5b1be2424d08f32f0d14",
+      "research_sha256": "0c8a53e378d0b97c4ffbea71fc530c1102f3eb30017d5b1be2424d08f32f0d14"
+    },
+    "DECODER_SUBSPACE_STUDY_20260919.md": {
+      "overleaf_sha256": "69a7fe5167821e28ad9fe1377f542824d26ff0a8cee999379b467a79ca1f9ba0",
+      "research_sha256": "69a7fe5167821e28ad9fe1377f542824d26ff0a8cee999379b467a79ca1f9ba0"
+    },
+    "README.md": {
+      "overleaf_sha256": "5fbe7b108aff516b0f055bb7858c93add460fa8b13c0a94b6ba6acc5da5d6033",
+      "research_sha256": "5fbe7b108aff516b0f055bb7858c93add460fa8b13c0a94b6ba6acc5da5d6033"
+    }
+  }
+}

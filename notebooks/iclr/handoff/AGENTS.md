@@ -2,8 +2,14 @@
 
 This is the portable handoff under `notebooks/iclr/handoff/`; the live paper
 is in the separate Overleaf project. The enclosing Git remote is GitHub.
-Read `DECODER_SUBSPACE_STUDY_20260919.md` first. It supersedes older decoder
-matrices, execution commands, tuning rules and budget estimates.
+Read `DECODER_SCOPE_REVIEW_20260919.md` first. The mandatory learning-rate grid
+is superseded for pending work; preserve completed runs and reconcile the ledger.
+
+> **Latest author clarification — avoid LR sweeps:** Read
+> `DECODER_SCOPE_REVIEW_20260919.md`. Keep the six subspace conditions and three
+> seeds; use a reasonable fixed common recipe with brief learning checks.
+> The old 18-run LR grid below is superseded for pending work. Preserve all
+> completed work and reconcile the live ledger before changing the queue.
 
 > **Current decoder plan — reviewed 19 September:** Read
 > `DECODER_SUBSPACE_STUDY_20260919.md` and `CODING_AGENT_PROMPT_20260919.md`.

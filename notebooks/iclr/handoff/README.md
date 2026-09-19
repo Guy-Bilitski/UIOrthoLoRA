@@ -1,3 +1,9 @@
+> **Latest author clarification — avoid LR sweeps:** Read
+> `DECODER_SCOPE_REVIEW_20260919.md`. Keep the six subspace conditions and three
+> seeds; use a reasonable fixed common recipe with brief learning checks.
+> The old 18-run LR grid below is superseded for pending work. Preserve all
+> completed work and reconcile the live ledger before changing the queue.
+
 > **Current decoder plan — reviewed 19 September:** Read
 > `DECODER_SUBSPACE_STUDY_20260919.md` and `CODING_AGENT_PROMPT_20260919.md`.
 > Test leading/middle/tail support with our strict DIAG/ROT128 adapters; no

@@ -1,3 +1,9 @@
+> **Latest author clarification — avoid LR sweeps:** Read
+> `DECODER_SCOPE_REVIEW_20260919.md`. Keep the six subspace conditions and three
+> seeds; use a reasonable fixed common recipe with brief learning checks.
+> The old 18-run LR grid below is superseded for pending work. Preserve all
+> completed work and reconcile the live ledger before changing the queue.
+
 # Decoder subspace study — reviewed plan, 19 September 2026
 
 ## Question and scope

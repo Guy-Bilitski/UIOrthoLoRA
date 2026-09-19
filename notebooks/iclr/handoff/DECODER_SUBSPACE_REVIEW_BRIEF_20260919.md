@@ -1,3 +1,9 @@
+> **Latest author clarification — avoid LR sweeps:** Read
+> `DECODER_SCOPE_REVIEW_20260919.md`. Keep the six subspace conditions and three
+> seeds; use a reasonable fixed common recipe with brief learning checks.
+> The old 18-run LR grid below is superseded for pending work. Preserve all
+> completed work and reconcile the live ledger before changing the queue.
+
 # Review brief: what we are running, what we are not, and why
 
 For review. Written 19 September 2026, while the decoder tuning grid is running
@@ -38,27 +44,31 @@ doing it.
 
 ### What the completed evidence already says
 
-- **The mixing benefit is largely a calibration effect.** Raw held-out negative
+- **Most of the raw NLL gap disappears after temperature scaling.** Raw held-out negative
   log-likelihood favoured MIX over NORM by 0.96 nats on RTE and 0.36 on MRPC.
-  After a single inner-fitted temperature per run the gap is 0.00 on both tasks,
-  within seed noise. MIX trains less over-confidently; after correcting for that
-  the three arms are indistinguishable on likelihood. This weakens the practical
+  After a single inner-fitted temperature per run, MIX-minus-NORM mean NLL
+  differences are about -0.002 on RTE and -0.009 on MRPC, with paired intervals
+  crossing zero. MIX needs less temperature correction; these results do not
+  establish equivalent likelihoods. This weakens the practical
   case for MIX as a probability-quality method. It does not erase the geometric
   intervention, the raw-loss finding, or the difference in how the update is
   allocated across modules, and it says nothing about mechanism. This result is
   preserved as it came out.
 - **The encoder band ordering does not fully carry.** Tail rotation beat tail
-  diagonal on the inner split, but on the held-aside split the difference is
-  -0.008, that is, gone. Band location still separates from the head-only
-  control by about 0.10 accuracy. Accuracy gains coexist with worse likelihood.
+  diagonal on the inner split, but on the held-aside split the mean difference is
+  -0.008, so the positive ordering does not carry. Tail adaptation still improves
+  mean accuracy over the head-only control by about 0.10. Accuracy gains coexist
+  with worse NLL.
 - **A disclosure.** Every band run had computed aggregate scores on the locked
   split at training time and stored them in its validation record. They were
   never exported and never used for any decision, and the CPU re-scoring
   reproduces them exactly, but the provenance is disclosed rather than hidden.
 
-So question B is answered, including a partly negative answer, and question A is
-answered on an encoder. The gap that remains is **A on a modern decoder**, which
-is what the reviewers asked for and what is running now.
+The encoder experiments establish the observed regularization effects and
+provide calibrated follow-up evidence; they do not settle the causal mechanism
+or its generality to decoders. The current extension tests **A on a modern
+decoder**. It addresses part of the review’s architecture concern; decoder
+interaction control remains untested.
 
 ## 3. What is running
 
@@ -79,8 +89,8 @@ everything else frozen including the embeddings and the output head.
 
 Both primary outcomes are registered in advance and reported together:
 **generated-answer exact match** on all 1,319 held-aside test questions, and
-**completion-token mean likelihood** of the reference solutions. Neither
-substitutes for the other, and a lower token loss is not treated as evidence of
+**completion-token mean negative log-likelihood (NLL)** of the reference
+solutions. Neither substitutes for the other, and a lower token loss is not treated as evidence of
 better reasoning.
 
 The measured timing pilots confirmed the instrument does what it claims: updates
@@ -93,9 +103,9 @@ for the flexibility contrast to mean anything at all.
 
 | Not run | Why |
 |---|---|
-| MIX or NORM on the decoder | Strict band confinement makes the cross-band interaction term zero. The penalty would be vacuous, or it would change the intervention and stop answering question A. |
+| MIX or NORM on the confined decoder arms | MIX’s cross-band term is zero. NORM remains an active magnitude penalty, but would add another intervention to the location study. A decoder interaction study requires the separate practical construction. |
 | A bands x families x losses grid | It multiplies cost without separating the two questions, and it does not fit the window. |
-| CENTER, the Haar-expected shrinkage control | Prepared and tested, but it refines question B, which already has its answer. Deferred by the author's priority. |
+| CENTER, the Haar-expected shrinkage control | Prepared and tested; it refines the unresolved mechanism behind question B. Deferred by the author's priority. |
 | LoRA and PiSSA comparisons | A best-adapter claim is not our question. They would add arms without addressing subspace selection. |
 | A second model or a second task | One integration, done properly, inside the window. |
 | Extra penalty sweeps, per-band learning lengths, rank sweeps | Not in the registered budget, and each one is a chance to tune toward a preferred outcome. |
@@ -106,7 +116,7 @@ Every decision rule was sealed before the runs it governs, and each is
 mechanically enforced by the admission layer rather than trusted:
 
 - **Learning rate.** One shared rate per family, chosen on the arithmetic mean
-  across that family's three bands of inner-selection likelihood at the fixed
+  across that family's three bands of inner-selection NLL at the fixed
   endpoint. Choosing on a single band would let the recipe favour one location.
   Ties take the smaller rate. Per-band preferences and any dependence of the
   band ordering on the rate are reported, never silently substituted.
@@ -152,8 +162,9 @@ from outcomes.
 
 - **Uniformly weak adaptation would make a null band difference uninformative.**
   The timing endpoints reached about 63 to 67 per cent exact match after only
-  100 steps, against a frozen model that has not yet been scored, so there is
-  adaptation to measure. The frozen reference run settles how much.
+  100 steps, against a frozen model that has not yet been scored. Improvement
+  or degradation from the starting model is not established until the frozen
+  reference is scored.
 - **Three seeds is three seeds.** Every paired interval is labelled nominal and
   exploratory. Similar means with wide intervals will not be reported as
   equivalence.

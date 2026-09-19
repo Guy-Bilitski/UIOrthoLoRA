@@ -1,3 +1,10 @@
+> **Latest author clarification — avoid unnecessary tuning:** Start with
+> `handoff/DECODER_SCOPE_REVIEW_20260919.md`. Keep all six strict-band decoder
+> arms and three seeds; replace pending mandatory LR-search work with a fixed
+> common recipe and brief learning checks. Preserve completed/in-flight work;
+> reconcile the actual ledger and amend the gate truthfully. The review did
+> not stop GPU queues. Older 18-run grid requirements below are superseded.
+
 > **Current reviewed scope — 19 September:** Start with
 > `handoff/DECODER_SUBSPACE_STUDY_20260919.md` and
 > `handoff/CODING_AGENT_PROMPT_20260919.md`. Prepare the strict leading/middle/tail

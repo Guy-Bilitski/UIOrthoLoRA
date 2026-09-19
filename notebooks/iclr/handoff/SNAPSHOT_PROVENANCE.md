@@ -1,3 +1,9 @@
+Latest scoped review: Overleaf `54f5c706280863258a3d407d866e06dd38475224`; see
+`DECODER_SCOPE_REVIEW_20260919.md` and `DECODER_SCOPE_REVIEW_SYNC_20260919.json`.
+Reviewed coding progress through `4d7eb8bc`; no implementation, measured artifact,
+scientific manuscript or live queue was changed by this review. The prior
+subspace-plan delivery below remains provenance of the superseded tuning plan.
+
 Latest scoped subspace-design update: Overleaf `cb449aced2f23f5bc620dc9a4b015ac1948fb477`. See
 `DECODER_SUBSPACE_STUDY_20260919.md` and `DECODER_SUBSPACE_SYNC_20260919.json`.
 This delivery preserves the intervening coding-agent commit `0fddf62e` and
