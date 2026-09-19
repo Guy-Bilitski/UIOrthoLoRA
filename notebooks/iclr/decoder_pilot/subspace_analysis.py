@@ -73,6 +73,17 @@ def summarize(rows, protocol):
     """Per-arm outcome tables, paired band contrasts and the diagnostics they must be read with."""
     record = protocol["design"]
     completed = [row for row in rows if row.get("status") == "completed" and row.get("stage") == "confirmation"]
+    missing = [
+        f"{row['arm']} seed {row['seed']}: " + ", ".join(
+            name for name, value in (("exact_match", row.get("exact_match")), ("held_out_completion_nll", row.get("held_out_completion_nll")))
+            if value is None or not isinstance(value, (int, float)) or value != value
+        )
+        for row in completed
+        if any(row.get(name) is None for name in ("exact_match", "held_out_completion_nll"))
+    ]
+    if missing:
+        # Refuse rather than return an apparently complete study whose primary outcomes are empty.
+        raise ValueError("Completed confirmations are missing a registered primary outcome: " + "; ".join(missing))
     by_arm = defaultdict(dict)
     diagnostics = defaultdict(dict)
     for row in completed:

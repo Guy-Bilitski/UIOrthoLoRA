@@ -605,13 +605,16 @@ def validate_run(run_directory, protocol_path):
     generation = job["generation"]
     artifacts = [run_directory / name for name in REQUIRED_ARTIFACTS] + [observation_path, checkpoint]
     generation_ok = generation.get("enabled") is False
-    generation_summary, export_path = None, None
+    generation_summary, export_path, held_out_nll = None, None, None
     if generation.get("enabled"):
         export_path = run_directory / "evaluation" / f"{generation['split']}_generation.json"
         artifacts += [export_path, run_directory / "evaluation" / f"{generation['split']}_generations.jsonl", run_directory / "evaluation" / f"{generation['split']}_nll_per_example.json"]
         if export_path.exists():
             export = json.loads(export_path.read_text())
             generation_summary = export.get("summary")
+            # The held-out token-mean NLL is a registered primary outcome and must travel with the report,
+            # from the same bound artifact as the accuracy summary. It is never the selection NLL.
+            held_out_nll = (export.get("held_out_completion_nll") or {}).get("token_mean_nll")
             generation_ok = export.get("split") == generation["split"] and export.get("decoding", {}).get("max_new_tokens") == generation["max_new_tokens"]
     missing = [str(path) for path in artifacts if not path.exists()]
     recorded = observation["selection_metrics"]["token_mean_nll"]
@@ -643,6 +646,8 @@ def validate_run(run_directory, protocol_path):
         observation_path=str(observation_path),
         observation_sha256=sha256(observation_path),
         selection_token_mean_nll=recorded,
+        held_out_completion_nll=held_out_nll,
+        generation_split=generation.get("split"),
         max_off_band_fraction=confinement,
         pooled_relative_frobenius=final_geometry.get("pooled", {}).get("pooled_relative_frobenius"),
         pooled_in_band_off_diagonal_fraction=final_geometry.get("pooled", {}).get("pooled_in_band_off_diagonal_fraction"),
@@ -732,7 +737,9 @@ def collect_runs(ledger_path, protocol_path, *, purpose, synthetic_cpu_test=Fals
                 row.update(validated=True, generation_summary=report.get("generation_summary"), held_out_completion_nll=report.get("held_out_completion_nll"))
             rows.append(row)
             continue
-        row = dict(entry_id=job["entry_id"], run_id=run_id, status=event["status"], retry_of=first[run_id].get("retry_of"), arm=job["arm"], band=job["band"], family=job["family"], seed=job["seed"], learning_rate=job["settings"]["learning_rate"], job_path=str(job_path.resolve()), job_sha256=sha256(job_path))
+        # ``stage`` is what subspace_analysis filters confirmation rows on; omitting it silently emptied
+        # every real analysis while the synthetic tests, which set it by hand, still passed.
+        row = dict(entry_id=job["entry_id"], run_id=run_id, stage=job["stage"], status=event["status"], retry_of=first[run_id].get("retry_of"), arm=job["arm"], band=job["band"], family=job["family"], seed=job["seed"], learning_rate=job["settings"]["learning_rate"], job_path=str(job_path.resolve()), job_sha256=sha256(job_path))
         if event["status"] != "completed":
             row["terminal_or_current_event"] = event
             rows.append(row)
@@ -755,6 +762,8 @@ def collect_runs(ledger_path, protocol_path, *, purpose, synthetic_cpu_test=Fals
             endpoint="fixed_optimizer_step",
             optimizer_step=report["optimizer_step"],
             selection_token_mean_nll=report["selection_token_mean_nll"],
+            held_out_completion_nll=report.get("held_out_completion_nll"),
+            generation_split=report.get("generation_split"),
             pooled_relative_frobenius=report.get("pooled_relative_frobenius"),
             max_off_band_fraction=report.get("max_off_band_fraction"),
             pooled_in_band_off_diagonal_fraction=report.get("pooled_in_band_off_diagonal_fraction"),

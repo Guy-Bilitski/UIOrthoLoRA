@@ -44,48 +44,106 @@ from notebooks.iclr.campaign.protocol import Resources, owned_path
 
 GROUPS = ("solution_text", "final_number", "delimiter_eos", "unpartitioned")
 MARKER = "####"
+PRIORITY = ("final_number", "solution_text", "delimiter_eos")  # fixed bookkeeping order for straddling tokens
 
 
 def character_groups(answer, eos_text):
-    """Character-offset spans for one reference answer. Returns (spans, has_marker).
+    """Character spans for one reference answer over ``answer + eos_text``.
 
-    ``spans`` maps a group name to a list of ``(start, stop)`` half-open character ranges over the
-    completion string ``answer + eos_text``.
+    Returns ``(spans, flags)``. The numeric span is parsed with the declared gold-number syntax rather than
+    assuming the rest of the line is numeric. ``flags`` records every condition that makes an example
+    unpartitionable or unusual, so the population can be validated before any model loss is read.
     """
+    from .data import ANSWER_PATTERN
+
     total = len(answer) + len(eos_text)
     eos_span = (len(answer), total)
+    flags = dict(missing_marker=False, ambiguous_numeric_span=False, trailing_non_whitespace=False)
     index = answer.rfind(MARKER)
     if index < 0:
-        return {"unpartitioned": [(0, len(answer))], "delimiter_eos": [eos_span]}, False
+        flags["missing_marker"] = True
+        return {"unpartitioned": [(0, len(answer))], "delimiter_eos": [eos_span]}, flags
+    match = ANSWER_PATTERN.search(answer, index)
+    if match is None or match.start() != index:
+        flags["ambiguous_numeric_span"] = True
+        return {"unpartitioned": [(0, len(answer))], "delimiter_eos": [eos_span]}, flags
+    number_start, number_end = match.span(1)
     delimiter_start = index
     while delimiter_start > 0 and answer[delimiter_start - 1] in " \t\r\n":
         delimiter_start -= 1
-    number_start = index + len(MARKER)
-    while number_start < len(answer) and answer[number_start] in " \t":
-        number_start += 1
+    trailing = answer[number_end:]
+    if trailing.strip():
+        flags["trailing_non_whitespace"] = True
     spans = {
         "solution_text": [(0, delimiter_start)],
-        "delimiter_eos": [(delimiter_start, number_start), eos_span],
-        "final_number": [(number_start, len(answer))],
+        "final_number": [(number_start, number_end)],
+        "delimiter_eos": [(delimiter_start, number_start), (number_end, len(answer)), eos_span],
     }
-    return spans, True
+    return spans, flags
+
+
+def _overlaps(token_span, ranges):
+    start, stop = token_span
+    if stop <= start:  # zero-width offsets, e.g. added special tokens
+        return any(low <= start < high for low, high in ranges)
+    return any(start < high and low < stop for low, high in ranges)
 
 
 def token_groups(tokenizer, answer, eos_text):
-    """Group index per completion token, plus the token ids, using the tokenizer's offset mapping."""
+    """Group index per completion token, the token ids, and per-example flags.
+
+    A token overlapping more than one span is assigned by the fixed priority numeric, then solution text,
+    then delimiter. That is a bookkeeping convention, not a claim that a sub-word token is semantically pure,
+    and the number of such tokens is counted and reported.
+    """
     completion = answer + eos_text
     encoded = tokenizer(completion, add_special_tokens=False, return_offsets_mapping=True)
     ids, offsets = encoded["input_ids"], encoded["offset_mapping"]
-    spans, has_marker = character_groups(answer, eos_text)
-    lookup = []
-    for start, _ in offsets:
-        assigned = "unpartitioned"
-        for name, ranges in spans.items():
-            if any(low <= start < high for low, high in ranges):
-                assigned = name
-                break
-        lookup.append(GROUPS.index(assigned))
-    return ids, lookup, has_marker
+    spans, flags = character_groups(answer, eos_text)
+    lookup, straddling = [], 0
+    for span in offsets:
+        hits = [name for name in PRIORITY if name in spans and _overlaps(span, spans[name])]
+        if len(hits) > 1:
+            straddling += 1
+        if hits:
+            lookup.append(GROUPS.index(hits[0]))
+        elif "unpartitioned" in spans and _overlaps(span, spans["unpartitioned"]):
+            lookup.append(GROUPS.index("unpartitioned"))
+        else:
+            lookup.append(GROUPS.index("delimiter_eos"))
+    flags = dict(flags, straddling_tokens=straddling)
+    return ids, lookup, flags
+
+
+def validate_population(tokenizer, encoded, raw):
+    """Check every reference mask BEFORE any model loss is computed.
+
+    Counts malformed or missing markers, ambiguous numeric spans, unexpected trailing text, truncation and
+    any disagreement between the offset-mapped tokenization and the stored completion ids. Nothing is
+    dropped: unpartitionable examples keep their loss and counts in an explicit residual group.
+    """
+    eos_text = tokenizer.eos_token
+    rows, report = [], dict(examples=0, missing_marker=0, ambiguous_numeric_span=0, trailing_non_whitespace=0,
+                            truncated=0, token_mismatch=0, straddling_tokens=0, partitionable=0)
+    for encoded_row, raw_row in zip(encoded.rows, raw):
+        ids, lookup, flags = token_groups(tokenizer, raw_row["answer"], eos_text)
+        prompt, length = encoded_row["prompt_length"], len(encoded_row["input_ids"])
+        retained = length - prompt
+        mismatch = list(encoded_row["input_ids"][prompt:]) != list(ids[:retained])
+        report["examples"] += 1
+        report["missing_marker"] += int(flags["missing_marker"])
+        report["ambiguous_numeric_span"] += int(flags["ambiguous_numeric_span"])
+        report["trailing_non_whitespace"] += int(flags["trailing_non_whitespace"])
+        report["truncated"] += int(bool(encoded_row.get("truncated")))
+        report["token_mismatch"] += int(mismatch)
+        report["straddling_tokens"] += flags["straddling_tokens"]
+        report["partitionable"] += int(not (flags["missing_marker"] or flags["ambiguous_numeric_span"] or mismatch))
+        rows.append({**encoded_row, "_partition": (ids, lookup, flags, mismatch)})
+    report["coverage_fraction"] = report["partitionable"] / report["examples"] if report["examples"] else None
+    report["numeric_group_label"] = (
+        "numeric-answer-overlapping tokens" if report["straddling_tokens"] else "final-number tokens"
+    )
+    return rows, report
 
 
 @torch.no_grad()
@@ -96,7 +154,6 @@ def partition_split(model, tokenizer, rows, device, batch_size, precision, pad_t
     sums = torch.zeros(len(GROUPS), dtype=torch.float64)
     counts = torch.zeros(len(GROUPS), dtype=torch.long)
     full_sum, full_count = 0.0, 0
-    without_marker, truncated, mismatched = 0, 0, 0
     for start in range(0, len(rows), batch_size):
         chunk = rows[start : start + batch_size]
         width = max(len(row["input_ids"]) for row in chunk)
@@ -111,12 +168,10 @@ def partition_split(model, tokenizer, rows, device, batch_size, precision, pad_t
             mask[index, :length] = 1
             prompt = row["prompt_length"]
             retained = length - prompt
-            expected, lookup, has_marker = row["_partition"]
-            without_marker += 0 if has_marker else 1
-            if row.get("truncated"):
-                truncated += 1
-            if list(row["input_ids"][prompt:]) != list(expected[:retained]):
-                mismatched += 1
+            expected, lookup, _flags, mismatch = row["_partition"]
+            if mismatch:
+                # Keep its loss in the residual rather than dropping the example from the evaluation.
+                groups[index, prompt : prompt + retained] = GROUPS.index("unpartitioned")
                 continue
             groups[index, prompt : prompt + retained] = torch.tensor(lookup[:retained])
         batch_ids, batch_mask = ids.to(device), mask.to(device)
@@ -140,8 +195,13 @@ def partition_split(model, tokenizer, rows, device, batch_size, precision, pad_t
     grouped_sum, grouped_count = float(sums.sum()), int(counts.sum())
     return dict(
         groups={
-            name: dict(nll_sum=float(sums[index]), token_count=int(counts[index]),
-                       token_mean_nll=(float(sums[index]) / int(counts[index])) if counts[index] else None)
+            name: dict(
+                nll_sum=float(sums[index]),
+                token_count=int(counts[index]),
+                token_mean_nll=(float(sums[index]) / int(counts[index])) if counts[index] else None,
+                share_of_total_nll=(float(sums[index]) / full_sum) if full_sum else None,
+                share_of_tokens=(int(counts[index]) / full_count) if full_count else None,
+            )
             for index, name in enumerate(GROUPS)
         },
         full=dict(nll_sum=full_sum, token_count=full_count, token_mean_nll=full_sum / full_count if full_count else None),
@@ -149,9 +209,7 @@ def partition_split(model, tokenizer, rows, device, batch_size, precision, pad_t
         grouped_nll_sum=grouped_sum,
         grouped_token_count=grouped_count,
         examples=len(rows),
-        examples_without_marker=without_marker,
-        examples_truncated=truncated,
-        examples_with_token_mismatch=mismatched,
+        every_scored_token_assigned=bool(grouped_count == full_count),
         boundary_rule=__doc__.split("Token-boundary rule")[1].split("The three group sums")[0].strip(),
         exploratory=True,
         caveats=(
@@ -160,16 +218,6 @@ def partition_split(model, tokenizer, rows, device, batch_size, precision, pad_t
             "Proposed after the pilot; pre-registered by nothing; decides nothing."
         ),
     )
-
-
-def prepare_rows(tokenizer, encoded, raw):
-    """Attach the partition lookup to each encoded row without changing the encoding."""
-    eos_text = tokenizer.eos_token
-    rows = []
-    for encoded_row, raw_row in zip(encoded.rows, raw):
-        ids, lookup, has_marker = token_groups(tokenizer, raw_row["answer"], eos_text)
-        rows.append({**encoded_row, "_partition": (ids, lookup, has_marker)})
-    return rows
 
 
 def main():
@@ -216,8 +264,10 @@ def main():
         model.requires_grad_(False)
         model.to(device)
     model.eval()
-    rows = prepare_rows(tokenizer, encoded[args.split], raw[args.split])
+    rows, mask_validation = validate_population(tokenizer, encoded[args.split], raw[args.split])
+    print("mask validation before any model loss:", json.dumps(mask_validation, indent=1))
     result = partition_split(model, tokenizer, rows, device, args.eval_batch_size, record["precision"], tokenizer.pad_token_id)
+    result["mask_validation"] = mask_validation
     payload = dict(
         schema_version=1,
         purpose="decoder_subspace_nll_partition",

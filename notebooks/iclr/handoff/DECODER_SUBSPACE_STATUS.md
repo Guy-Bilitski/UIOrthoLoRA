@@ -7,6 +7,14 @@ decode allowance, not a measurement.
 
 ## Snapshots
 
+### Snapshot 2026-09-19T13:37:48+00:00
+
+- Population 18 entries; **0 completed and validated**, 2 running, 16 not started, 0 failed or interrupted.
+- Running: LEAD_ROT128 seed 17, step 335/842.
+- Running: LEAD_ROT128 seed 42, step 343/842.
+- Frozen full-test reference done: False.
+- Remaining estimate: 15.44 GPU-hours, about 7.72 hours wall on two GPUs.
+
 ### Snapshot 2026-09-19T13:28:58+00:00
 
 - Population 18 entries; **0 completed and validated**, 2 running, 16 not started, 0 failed or interrupted.

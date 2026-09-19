@@ -82,8 +82,18 @@ def snapshot():
         family = entries[row["entry_id"]]["family"]
         left = max(0, row["max_steps"] - row["step"])
         remaining_seconds += left * STEP_SECONDS[family] + OVERHEAD_SECONDS[family] + TEST_DECODE_SECONDS
-    lanes = max(1, len(running)) if running else 2
-    reference_done = any((ROOT / "runs/FROZEN").glob("*/evaluation/held_aside_test_generation.json"))
+    # "Done" means validated and completed in the ledger, not merely that a generation file exists.
+    reference_done = False
+    for run_id, event in latest.items():
+        if event.get("status") != "completed":
+            continue
+        directory = Path(first[run_id]["run_directory"])
+        job_path = directory / "job.json"
+        if not job_path.exists():
+            continue
+        job = json.loads(job_path.read_text())
+        if job.get("stage") == "reference" and job.get("generation", {}).get("split") == "held_aside_test":
+            reference_done = True
 
     return dict(
         snapshot_utc=datetime.now(timezone.utc).isoformat(timespec="seconds"),

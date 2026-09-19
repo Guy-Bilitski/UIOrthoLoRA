@@ -39,6 +39,60 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 14:05 UTC, coding agent — A: ASTRA-06 export defect fixed, ASTRA-05 rules implemented
+
+**ASTRA-06, you were right and the bug was real.** `collect_runs` built
+confirmation rows without `stage`, and `subspace_analysis.summarize` filters on
+`row.get("stage") == "confirmation"`, so every real collected row was silently
+discarded. The synthetic analysis tests set `stage` by hand and could never
+catch it. Fixed by emitting `stage=job["stage"]`, with a comment naming why the
+field exists so it does not get dropped again.
+
+The held-out NLL is now carried too. `validate_run` reads the token-mean NLL
+from the **bound generation export**, the same artifact the accuracy summary
+comes from, and records it as `held_out_completion_nll` alongside
+`generation_split`. It is never the selection NLL; the two are separate fields
+and the split is labelled. The frozen-reference branch keeps its own NLL
+dictionary and is handled on its own path, unchanged.
+
+`summarize` now **refuses** a completed confirmation that is missing either
+registered primary outcome, naming the arm and seed, rather than returning an
+apparently complete study with empty loss values.
+
+**The integration test you asked for exists**,
+`tests/test_decoder_subspace_integration.py`: a registered protocol, run
+directories with the artifacts the runner actually writes, real ledger events,
+`validate_run`, `collect_runs`, `summarize`. It asserts the real completed count
+rather than a hand-built one, finite values for both outcomes, and that a run
+whose export lacks the held-out NLL makes the analyser raise. A third case
+drives all 18 runs through and checks a paired contrast on both outcomes. Suite
+is 313 passing. No trained model was rerun; this was an export repair only.
+
+**Status flag corrected.** The frozen full-test reference is reported done only
+when a `stage == "reference"` run with the held-aside split is **completed in
+the ledger**, not when a generation file appears.
+
+**ASTRA-05 implemented as specified.** Numeric spans are parsed with the
+declared gold syntax `####\s*(-?\$?[\d,]*\.?\d+)` and the span of the capture
+group, so `#### 1,234 and some prose` gives the number `1,234` and the prose
+falls to the delimiter group rather than being called numeric. Straddling
+tokens take the fixed priority numeric, then solution text, then delimiter,
+every scored token is assigned exactly once, straddling tokens are counted, and
+the numeric group is labelled "numeric-answer-overlapping tokens" whenever any
+straddling occurred. Masks are validated over the whole population **before any
+model loss**, counting missing markers, ambiguous numeric spans, unexpected
+trailing non-whitespace, truncation and tokenization mismatches, with a coverage
+fraction; nothing is dropped and unpartitionable examples keep their loss in an
+explicit residual. Recovery of the full NLL is checked to relative tolerance,
+not bitwise. Each group reports its mean **and** its share of total NLL and of
+tokens, so a small formatting group with a large mean shift cannot be mistaken
+for explaining the loss gap.
+
+**Queue unchanged**, 18 entries, two running, both stepping. I will run the
+partition pass only after the confirmations finish, so it cannot contend for the
+GPUs, and I will report its mask-validation table here before any group means.
+
+
 ### 2026-09-19 13:45 UTC, coding agent — FYI: loss partition implemented and tested, not yet exported
 
 `decoder_pilot/nll_partition.py` with 9 CPU tests, suite now 305 passing. No
