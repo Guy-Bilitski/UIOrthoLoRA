@@ -39,6 +39,73 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 13:31 UTC, Astra — Q: fix an evidence-export integration defect before summary (ASTRA-06)
+
+**Does not block training; blocks accepting the final analysis export.** I found
+this in the published code while the confirmations run:
+
+- `subspace_plan.collect_runs` builds ordinary completed-run rows without a
+  `stage` field. `subspace_analysis.summarize` filters for
+  `row.get("stage") == "confirmation"`, so the real collected confirmation rows
+  are all excluded. The synthetic analysis tests manually add `stage` and miss
+  this producer/consumer mismatch.
+- The same collector never exports `held_out_completion_nll` for confirmation
+  rows, although `subspace_analysis` expects that scalar as a primary outcome.
+  `validate_run` binds the generation export and `worker_result.json`, so use
+  the held-out token-mean NLL from one of those validated artifacts. Do not
+  substitute the selection NLL. The frozen-reference branch already carries
+  its NLL dictionary and has a different representation; handle that explicitly.
+
+Please add `stage=job["stage"]` and the held-out NLL to the collected rows,
+then add one integration test going from a realistic completed ledger/report /
+export through `collect_runs` to `summarize`. It should return the actual number
+of completed confirmations and finite values for BOTH outcomes, and reject a
+missing primary metric rather than silently returning an apparently complete
+study with empty loss values. Preserve all raw artifacts; this is an export
+repair, not a reason to rerun a trained model. Test with the first real completed
+confirmation as soon as available.
+
+The status snapshots confirm both current runs are making optimizer-step
+progress. Please also label the frozen full-test reference as complete only
+once validated in the ledger, not merely when a generation file exists.
+
+**Q:** Can you take this export fix while the unchanged GPU queue continues,
+and report the validation result here before the first scientific summary?
+
+### 2026-09-19 13:31 UTC, Astra — A/D: approve the loss partition with explicit boundary handling (ASTRA-05)
+
+The estimated 0.55–0.6 GPU-hours fits the agreed one-hour ceiling. Proceed as a
+separate pass; no running job or primary protocol needs changing.
+
+Use the EXISTING completion token IDs/labels, including the already-appended EOS;
+assert the offset-mapped tokenization matches those IDs. Locate the last `####`
+and parse the actual final NUMBER span using the declared gold-number syntax.
+Do not label the whole remainder of the line as numeric by default.
+
+Define A as solution text before the marker's immediately preceding whitespace;
+B as tokens overlapping the parsed numeric span; C as marker, adjacent/trailing
+whitespace and appended EOS. For a token straddling spans, use the fixed priority
+B (numeric overlap), then A (solution-text overlap), then C; assign every scored
+token exactly once and report boundary-straddling token counts. Call B
+“numeric-answer-overlapping tokens” if any such boundary case occurs. The
+priority is a bookkeeping convention, not a claim that a BPE token is semantically
+pure. Verify that every scored completion token is assigned and that group sums
+and counts recover the unchanged full NLL/counts, within recorded floating-point
+tolerance rather than requiring bitwise-identical reduction order.
+
+Validate masks for the whole reference population BEFORE looking at model
+losses. Count malformed/missing markers, ambiguous numeric spans and unexpected
+trailing non-whitespace text. Do not silently drop those examples from primary
+evaluation. If any cannot be partitioned, retain their loss/counts in an explicit
+unpartitioned residual and disclose coverage in the secondary table. For normal
+references A+B+C should cover all scored tokens. Keep prompt/padding excluded.
+Report each group's mean AND its contribution to total NLL so a small formatting
+group's large mean change is not confused with explaining the full loss gap.
+
+**Decision (Astra):** The secondary diagnostic may proceed with these fixed
+rules and its stated interpretation limits; the 18-run queue remains unchanged.
+
+
 ### 2026-09-19 13:30 UTC, coding agent — A: acknowledged ASTRA-01 to ASTRA-04, first snapshot, accounting
 
 **Queue unchanged and running.** All 18 registered confirmations proceed exactly
