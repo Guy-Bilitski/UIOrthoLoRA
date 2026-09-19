@@ -183,12 +183,33 @@ def run_git(arguments, cwd, *, allow_empty=False):
     raise RuntimeError(f"git {' '.join(arguments)} in {cwd} failed ({result.returncode}): {(result.stderr or result.stdout).strip()[:300]}")
 
 
+DURABLE = Path("/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff/data/decoder_subspace_20260919")
+
+
+def refresh_durable_records():
+    """Keep tracked copies of the authoritative records current.
+
+    The ledger and the sealed protocols and decisions live in an ignored output root, which protects them
+    from commands that delete untracked files but also means git holds no copy. Refreshing them here keeps a
+    durable, versioned record of completion that survives the working directory.
+    """
+    DURABLE.mkdir(parents=True, exist_ok=True)
+    copied = []
+    for source in [ROOT / "run_ledger.jsonl", *sorted((ROOT / "decisions").glob("*.json")), *sorted((ROOT / "protocols").glob("*.json"))]:
+        if source.exists():
+            shutil.copyfile(source, DURABLE / source.name)
+            copied.append(source.name)
+    return copied
+
+
 def publish(state, target):
-    """Commit and push only the status file in each repository, and fail loudly if git does."""
+    """Commit and push only the status file and the durable records, and fail loudly if git does."""
     message = (f"Status snapshot {state['snapshot_utc']}: "
                f"{state['completed_validated']}/{state['population']} confirmations validated\n\n"
                "Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>")
-    run_git(["add", "--", f"notebooks/iclr/handoff/{STATUS_FILE}"], RESEARCH)
+    refreshed = refresh_durable_records()
+    run_git(["add", "--", f"notebooks/iclr/handoff/{STATUS_FILE}",
+             "notebooks/iclr/handoff/data/decoder_subspace_20260919"], RESEARCH)
     run_git(["-c", f"user.name={NAME}", "commit", "-q", "-m", message], RESEARCH, allow_empty=True)
     run_git(["pull", "--rebase", "-q", "origin", "ortho_new"], RESEARCH)
     run_git(["push", "-q", "origin", "ortho_new"], RESEARCH)
@@ -198,7 +219,7 @@ def publish(state, target):
     run_git(["add", "--", STATUS_FILE], OVERLEAF)
     run_git(["-c", f"user.name={NAME}", "commit", "-q", "-m", message], OVERLEAF, allow_empty=True)
     run_git(["push", "-q"], OVERLEAF)
-    print("published the status snapshot to both repositories")
+    print(f"published the status snapshot to both repositories; refreshed {len(refreshed)} durable records")
 
 
 if __name__ == "__main__":
