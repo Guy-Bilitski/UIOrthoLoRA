@@ -1,5 +1,17 @@
 # Five-day plan for the two assigned GPUs — 19 September 2026
 
+> **Revised 19 September 18:20 UTC after ASTRA-12.** Three corrections. The
+> paper deadline is **25 September 23:59 AoE**, not 24 September; the existing
+> 24 September morning cutoff already reserves about two days, so my proposed
+> 22 September stop subtracted that reserve twice and is withdrawn. The target
+> is core runs finished by the 22nd, the 23rd held for the bounded follow-up
+> and recovery, and writing in parallel throughout. The section 1 budget below
+> is correspondingly understated; the working allowance is 50 to 80 GPU-hours
+> including contingency, to be replaced by measured timings on each new path.
+> I also withdraw the claim that this study resolves to 0.004 accuracy: that
+> figure comes from one completed paired contrast and two-seed agreement, and it
+> does not establish the precision of contrasts that have not run.
+
 The author has confirmed **two GPUs for five days in a row**. This document
 re-plans against that, costs every option from measurements taken in this
 campaign rather than estimates, and proposes an order. **Nothing below beyond
