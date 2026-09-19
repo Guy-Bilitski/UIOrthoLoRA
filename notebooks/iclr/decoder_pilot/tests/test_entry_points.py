@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pytest
 
-from notebooks.iclr.decoder_pilot import pilot, subspace_runner
+from notebooks.iclr.decoder_pilot import choice_runner, interaction_runner, pilot, subspace_runner
 
-MODULES = (pilot, subspace_runner)
+MODULES = (pilot, subspace_runner, interaction_runner, choice_runner)
 
 
 @pytest.mark.parametrize("module", MODULES, ids=lambda m: m.__name__.rsplit(".", 1)[-1])
@@ -35,10 +35,15 @@ def test_the_bound_pilot_train_is_the_admission_aware_one():
     assert "run_steps(" in source, "the live train() must actually reach the engine"
 
 
-def test_the_bound_subspace_train_is_admission_aware():
-    source = inspect.getsource(subspace_runner.train)
-    assert "subspace_plan.validate_admission" in source
-    assert "run_steps(" in source
+@pytest.mark.parametrize("module, admission", [
+    (subspace_runner, "subspace_plan.validate_admission"),
+    (interaction_runner, "ip.validate_admission"),
+    (choice_runner, "cp.validate_admission"),
+], ids=lambda x: getattr(x, "__name__", str(x)).rsplit(".", 1)[-1])
+def test_every_bound_train_runs_admission_and_reaches_the_engine(module, admission):
+    source = inspect.getsource(module.train)
+    assert admission in source, f"{module.__name__}.train must run admission before training"
+    assert "run_steps(" in source, f"{module.__name__}.train must reach the engine"
 
 
 def _bare_namespace(stage):

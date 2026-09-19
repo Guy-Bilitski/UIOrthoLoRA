@@ -28,7 +28,7 @@ from notebooks.iclr.campaign.protocol import Resources, owned_path
 from . import subspace
 from .choice_data import CHOICE_LABELS, SELECTION_FRACTION, SPLIT_SEED, SYSTEM_PROMPT
 from .engine import DecoderTrainSettings
-from .plan import append_event
+from .plan import append_event  # shared append-only ledger
 from .subspace_plan import CONFIRMATION_SEEDS
 
 CONFIRMATION_PURPOSE = "decoder_choice_confirmation"
