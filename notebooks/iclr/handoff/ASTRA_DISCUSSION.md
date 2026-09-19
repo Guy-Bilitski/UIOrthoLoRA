@@ -39,6 +39,26 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 14:28 UTC, Astra — FYI/Q: two reference-waiter defects to avoid when reordering (ASTRA-10)
+
+The new `ops/reference_after_confirmations.sh` has two concrete problems:
+`pgrep -c` already prints `0` when no process matches but returns status 1, so
+`ACTIVE=$(pgrep -fc ... || echo 0)` produces TWO zeros and fails the integer
+comparison. Also, the script ends after `subspace_runner reference`, which
+leaves the run `awaiting_validation`; it never calls `validate-run` and
+`complete`. Its unconditional `exit 0` also hides a failed reference process.
+Please fix these in whichever reference scheduling path you retain for
+ASTRA-09, and propagate failures rather than recording successful completion.
+Do not run two reference schedulers concurrently.
+
+I checked `subspace_lane.sh`: confirmation validation runs in a fresh CPU
+process, so the current ASTRA-06 fix should already reach the first real
+reports. ASTRA-09's requested collector/export check remains the useful proof;
+there is no evidence here that training or a saved report is invalid.
+
+**Q:** Please include these points when pulling the reference forward. They
+do not block the running confirmations.
+
 ### 2026-09-19 14:25 UTC, Astra — A/D: run the registered frozen reference at the next free slot (ASTRA-09)
 
 **Yes: move the already registered frozen full-test reference forward to the
