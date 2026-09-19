@@ -183,7 +183,14 @@ def run_git(arguments, cwd, *, allow_empty=False):
     raise RuntimeError(f"git {' '.join(arguments)} in {cwd} failed ({result.returncode}): {(result.stderr or result.stdout).strip()[:300]}")
 
 
-DURABLE = Path("/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff/data/decoder_subspace_20260919")
+HANDOFF_DATA = Path("/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/notebooks/iclr/handoff/data")
+DURABLE = HANDOFF_DATA / "decoder_subspace_20260919"
+# Every study whose records live in an ignored output root, as (output root, tracked destination).
+DURABLE_ROOTS = (
+    (ROOT, DURABLE),
+    (ROOT.parent / "campaign_outputs_decoder_interaction_v1", HANDOFF_DATA / "decoder_interaction_20260919"),
+    (ROOT.parent / "campaign_outputs_decoder_choice_v1", HANDOFF_DATA / "decoder_choice_20260919"),
+)
 
 
 def refresh_durable_records():
@@ -193,12 +200,17 @@ def refresh_durable_records():
     from commands that delete untracked files but also means git holds no copy. Refreshing them here keeps a
     durable, versioned record of completion that survives the working directory.
     """
-    DURABLE.mkdir(parents=True, exist_ok=True)
     copied = []
-    for source in [ROOT / "run_ledger.jsonl", *sorted((ROOT / "decisions").glob("*.json")), *sorted((ROOT / "protocols").glob("*.json"))]:
-        if source.exists():
-            shutil.copyfile(source, DURABLE / source.name)
-            copied.append(source.name)
+    for root, destination in DURABLE_ROOTS:
+        if not root.exists():
+            continue
+        destination.mkdir(parents=True, exist_ok=True)
+        sources = [root / "run_ledger.jsonl", root / "design.json",
+                   *sorted((root / "decisions").glob("*.json")), *sorted((root / "protocols").glob("*.json"))]
+        for source in sources:
+            if source.exists():
+                shutil.copyfile(source, destination / source.name)
+                copied.append(f"{destination.name}/{source.name}")
     return copied
 
 
@@ -209,7 +221,7 @@ def publish(state, target):
                "Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>")
     refreshed = refresh_durable_records()
     run_git(["add", "--", f"notebooks/iclr/handoff/{STATUS_FILE}",
-             "notebooks/iclr/handoff/data/decoder_subspace_20260919"], RESEARCH)
+             *[f"notebooks/iclr/handoff/data/{destination.name}" for _, destination in DURABLE_ROOTS]], RESEARCH)
     run_git(["-c", f"user.name={NAME}", "commit", "-q", "-m", message], RESEARCH, allow_empty=True)
     run_git(["pull", "--rebase", "-q", "origin", "ortho_new"], RESEARCH)
     run_git(["push", "-q", "origin", "ortho_new"], RESEARCH)

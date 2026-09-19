@@ -1,0 +1,13 @@
+{
+  "assigned_gpu_ids": [
+    2,
+    3
+  ],
+  "output_root": "/media/eimtest/data/guyb/UIOrthoLoRA/notebooks/iclr-campaign-20260914/campaign_outputs_decoder_interaction_v1",
+  "storage_allowance_gib": 80,
+  "gpu_hour_budget": 40,
+  "wall_clock_hours": null,
+  "downloads_permitted": false,
+  "completion_authorized": true,
+  "authorization_record": "Block 2 of the author-approved five-day plan, 2026-09-19T19:00Z: 'Run the decoder interaction study: UNREG / MIX / NORM, three paired seeds each, using the practical non-confined adapter.' Same two assigned GPUs (2 and 3); GPUs 0 and 1 remain another user's and are untouched. No downloads: this block reuses the already sealed Qwen checkpoint, GSM8K split and SVD reference cache of block 1 byte for byte. The 40 GPU-hour figure is this block's share of the 120-hour campaign ceiling and is provisional until the practical adapter's step time and peak memory are measured; a material overrun is reported before the commitment is expanded."
+}

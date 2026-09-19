@@ -1,0 +1,55 @@
+{
+  "accumulation_steps": 8,
+  "arms": [
+    "UNREG",
+    "MIX",
+    "NORM"
+  ],
+  "batch_size": 2,
+  "effective_batch": 16,
+  "generation": {
+    "batch_size": 16,
+    "decoding": "greedy",
+    "max_new_tokens": 640,
+    "precision": "bfloat16",
+    "system_prompt": "Solve the math word problem. Show your reasoning briefly, then give the final numeric answer on the last line as '#### <number>'."
+  },
+  "gradient_checkpointing": false,
+  "initial_coefficient": 0.01,
+  "initial_scaler": 0.01,
+  "initialization_note": "Scalers and coefficients start at 0.01, so the adapter has a small NONZERO update at insertion. This is NOT the zero-insertion instrument used by the strict-band study, and the inserted-but-untrained state is scored as its own reference.",
+  "leading_identity": true,
+  "learning_rate": 0.001,
+  "max_gradient_norm": 1.0,
+  "max_length": 640,
+  "mix_coefficient": 0.001,
+  "mix_coefficient_note": "Per side, summed over the declared modules exactly as the registered practical study defines it. A fixed design value, not an optimized dose.",
+  "nonzero_initialization": true,
+  "not_established": "A MIX minus NORM difference is a difference between two interventions at a matched pooled update norm. It does not isolate interaction suppression from the module allocation it induces, it does not establish a causal channel, and these arms are not a matched architecture ablation against the strict-band arms.",
+  "optimizer_steps": 842,
+  "outcome_policy": "Generated-answer exact match and held-out solution NLL are CO-PRIMARY; neither is secondary and neither substitutes for the other. The main penalty contrast is MIX minus NORM at a matched pooled update norm. UNREG and both initial references are reported alongside, with total and learned update norms, actual cross-block energy and module allocation. A difference between MIX and NORM is a difference between two interventions; it does not isolate interaction suppression from the module allocation that suppression induces, and it is not evidence about the strict-band arms.",
+  "precision": "bfloat16",
+  "primary_outcomes": [
+    "generated_answer_exact_match",
+    "held_out_solution_nll"
+  ],
+  "projections": [
+    "q_proj",
+    "o_proj"
+  ],
+  "provenance": "Block 2 of the author-approved five-day plan (2026-09-19). Design carried from the completed encoder practical study (mix dose, adapter form) and from the block 1 band study (recipe, budget, decode settings). No value here is a new tuned choice.",
+  "rotation_size": 0,
+  "schema_version": 1,
+  "selection_eval_steps": [
+    0,
+    211,
+    421,
+    632,
+    842
+  ],
+  "study": "decoder_interaction_control",
+  "tail_size": 512,
+  "use_scalers": true,
+  "warmup_steps": 0,
+  "weight_decay": 0.0
+}

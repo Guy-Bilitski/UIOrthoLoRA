@@ -719,3 +719,56 @@ def collect_runs(ledger_path, protocol_path, *, purpose):
                        validation_path=str(Path(event["validation_path"]).resolve()))
         rows.append(row)
     return rows
+
+
+# --------------------------------------------------------------------------- command line
+
+
+def main():
+    """Whole-run validation and completion for block 2, the same contract as the band study's CLI."""
+    parser = argparse.ArgumentParser(description="Registered decoder interaction-control operations")
+    sub = parser.add_subparsers(dest="command", required=True)
+    p = sub.add_parser("validate-run", help="write the whole-run validation report for one finished run")
+    p.add_argument("--resources", type=Path, required=True)
+    p.add_argument("--run-directory", type=Path, required=True)
+    p.add_argument("--protocol", type=Path, required=True)
+    p.add_argument("--output", type=Path, default=None)
+    p = sub.add_parser("complete", help="append the completed ledger event for a validated run")
+    p.add_argument("--resources", type=Path, required=True)
+    p.add_argument("--run-id", required=True)
+    p.add_argument("--validation-report", type=Path, required=True)
+    p = sub.add_parser("status", help="print the ledger rows of one registered protocol")
+    p.add_argument("--resources", type=Path, required=True)
+    p.add_argument("--protocol", type=Path, required=True)
+    p.add_argument("--purpose", choices=(CALIBRATION_PURPOSE, CONFIRMATION_PURPOSE), required=True)
+    args = parser.parse_args()
+
+    resources = Resources(**json.loads(Path(args.resources).read_text()))
+    resources.validate_training()
+    ledger = Path(resources.output_root) / "run_ledger.jsonl"
+    if args.command == "validate-run":
+        payload = validate_run(args.run_directory, args.protocol)
+        output = owned_path(resources.output_root, args.output or Path(args.run_directory) / "validation_report.json")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        write_json_new(output, payload)
+        summary = {k: payload[k] for k in VALIDATION_KEYS + ("run_id", "entry_id", "stage",
+                                                             "selection_token_mean_nll", "pooled_relative_frobenius")}
+        print(json.dumps(dict(command=args.command, output=str(output), sha256=sha256(output), **summary),
+                         indent=2, default=str))
+    elif args.command == "complete":
+        report = json.loads(args.validation_report.read_text())
+        if report.get("validation_scope") != "decoder_interaction_run":
+            raise ValueError("Completion requires a decoder interaction validation report")
+        if not all(report.get(k) is True for k in VALIDATION_KEYS):
+            raise ValueError("Refusing to complete a run that did not pass whole-run validation")
+        append_event(ledger, dict(run_id=args.run_id, status="completed",
+                                  validation_path=str(Path(args.validation_report).resolve()),
+                                  entry_id=report["entry_id"], stage=report["stage"]))
+        print(json.dumps(dict(command=args.command, run_id=args.run_id, ledger=str(ledger)), indent=2))
+    else:
+        rows = collect_runs(ledger, args.protocol, purpose=args.purpose)
+        print(json.dumps(dict(command=args.command, rows=rows), indent=2, default=str))
+
+
+if __name__ == "__main__":
+    main()

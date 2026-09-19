@@ -239,3 +239,51 @@ def test_a_tampered_job_is_refused_by_the_collector(tmp_path, prepared, record):
     (run_dir / "job.json").write_text(json.dumps(job, indent=2, sort_keys=True) + "\n")
     with pytest.raises(ValueError, match="changed after its ledger admission"):
         ip.collect_runs(ledger, protocol_path, purpose=ip.CONFIRMATION_PURPOSE)
+
+
+# --------------------------------------------------------------------------- the operator CLI
+
+
+def _completion_report(passing=True):
+    report = dict(validation_scope="decoder_interaction_run", entry_id="calibration/MIX/0.001", stage="calibration")
+    for key in ip.VALIDATION_KEYS:
+        report[key] = True
+    if not passing:
+        report["metrics_reproduced"] = False
+    return report
+
+
+def _run_cli(monkeypatch, tmp_path, argv):
+    resources = tmp_path / "resources.json"
+    write_json_new(resources, dict(assigned_gpu_ids=[2], output_root=str(tmp_path / "root"), storage_allowance_gib=8,
+                                   gpu_hour_budget=1, wall_clock_hours=None, downloads_permitted=False,
+                                   completion_authorized=True, authorization_record="test"))
+    (tmp_path / "root").mkdir(exist_ok=True)
+    monkeypatch.setattr("sys.argv", ["interaction_plan", *argv, "--resources", str(resources)])
+    ip.main()
+    return tmp_path / "root/run_ledger.jsonl"
+
+
+def test_completion_refuses_a_report_that_failed_whole_run_validation(tmp_path, monkeypatch):
+    """The lane calls complete straight after validate-run, so this guard is the last one standing."""
+    report = tmp_path / "validation_report.json"
+    write_json_new(report, _completion_report(passing=False))
+    with pytest.raises(ValueError, match="did not pass whole-run validation"):
+        _run_cli(monkeypatch, tmp_path, ["complete", "--run-id", "r1", "--validation-report", str(report)])
+
+
+def test_completion_refuses_a_report_from_another_study(tmp_path, monkeypatch):
+    report = tmp_path / "validation_report.json"
+    write_json_new(report, dict(_completion_report(), validation_scope="decoder_subspace_run"))
+    with pytest.raises(ValueError, match="decoder interaction validation report"):
+        _run_cli(monkeypatch, tmp_path, ["complete", "--run-id", "r1", "--validation-report", str(report)])
+
+
+def test_the_lane_command_names_are_the_ones_the_cli_accepts(tmp_path, monkeypatch, capsys):
+    """The lane shells out to these names; a rename here silently breaks every queue."""
+    lane = Path(__file__).resolve().parents[2] / "handoff/ops/interaction_lane.sh"
+    text = lane.read_text()
+    for command in ("validate-run", "complete"):
+        assert command in text, f"the lane no longer calls {command}"
+    with pytest.raises(SystemExit):
+        _run_cli(monkeypatch, tmp_path, ["validate"])  # the old, wrong spelling must not silently work

@@ -39,6 +39,84 @@ sweep, the frozen reference was scored early, and the misleading rotation
 
 ## 2. Log
 
+### 2026-09-19 20:30 UTC, coding agent — FYI/Q: block 1 at 16 of 18, both primary contrasts, and the frozen row
+
+Sixteen confirmations are complete and validated. The two still running are
+`MID_ROT128` seeds 42 and 123, so the rotation family's middle band is the only
+cell without all three seeds. Both bands of the primary contrast now have three
+paired seeds in both families.
+
+Leading minus tail, three paired seeds, nominal 95 per cent intervals:
+
+| family | outcome | mean | interval | reading |
+|---|---|---:|---|---|
+| DIAG | exact match | -0.0083 | [-0.0337, +0.0170] | spans zero |
+| DIAG | completion NLL | +0.0041 | [+0.0035, +0.0046] | tail lower |
+| ROT128 | exact match | -0.0033 | [-0.0179, +0.0113] | spans zero |
+| ROT128 | completion NLL | +0.0016 | [+0.0014, +0.0017] | tail lower |
+
+Per-arm means over the completed seeds, on the 1,319-example held-aside test
+split:
+
+| arm | n | exact match | completion NLL | pooled rel. Frobenius |
+|---|---:|---:|---:|---:|
+| LEAD_DIAG | 3 | 0.4956 | 0.4576 | 0.0429 |
+| MID_DIAG | 3 | 0.4857 | 0.4566 | 0.0410 |
+| TAIL_DIAG | 3 | 0.5039 | 0.4535 | 0.0337 |
+| LEAD_ROT128 | 3 | 0.4905 | 0.4450 | 0.0371 |
+| MID_ROT128 | 1 | 0.4973 | 0.4438 | 0.0350 |
+| TAIL_ROT128 | 3 | 0.4938 | 0.4434 | 0.0294 |
+| FROZEN reference | 1 | 0.5838 | 0.5934 | 0 |
+
+Off-band leakage over every completed run stays at 3.2e-12, so confinement held
+exactly.
+
+**The result I want a second opinion on is the frozen row.** The starting
+instruction-tuned checkpoint scores 0.5838 exact match. Every trained arm lands
+near 0.49. Training lowers reference-solution loss by about 0.14 nats and lowers
+end-task accuracy by about nine points at the same time.
+
+Before anyone reads that as "fine-tuning damages reasoning", the extraction
+composition says the two rows are not scored the same way in practice. The
+frozen model emits the `####` marker on 265 of 1,319 items and its answer is
+recovered by the last-number fallback on 1,054. Every trained arm emits the
+marker on 1,232 to 1,294 of 1,319. The frozen model also generates 215 tokens on
+average against about 125 for the trained arms. So the frozen row is a model
+that does not follow the dataset's answer format being scored through a
+heuristic, and the trained rows are models that learned the format.
+
+My reading, which I am not asserting in the manuscript yet:
+
+1. Among bands, the subspace barely matters. Loss ordering is tail below middle
+   below leading in both families, consistent and tight, but the whole spread is
+   0.4 per cent of the loss. Accuracy does not resolve at three seeds. This
+   matches the RoBERTa picture: adaptation uses whatever freedom it is given.
+2. The tail arms reach that fit with a visibly smaller update. TAIL_DIAG moves
+   0.0337 relative Frobenius against LEAD_DIAG's 0.0429, and the rotation family
+   repeats it. If there is a subspace story here, it is efficiency of the update,
+   not final quality.
+3. Rotation lowers loss in every band and does not buy accuracy. In the leading
+   band it costs accuracy, -0.0051 with an interval of [-0.0090, -0.0011].
+
+**Q4.** Is the frozen-versus-trained gap something to report as a headline
+negative, or to report only as a reference row with the extraction caveat
+attached? I lean to the second, because the accuracy comparison across a format
+boundary is not clean, and the clean statement is the within-band one.
+
+**Q5.** If we report it, do you want a format-controlled re-score of the frozen
+model, meaning marker-only extraction on both sides, so the two rows are scored
+by one rule? That is cheap, it reuses the stored generations and needs no GPU.
+I have not run it and will not without a decision, since it is a new scoring
+rule applied after the outcomes were seen.
+
+Block 2 is registered and frozen ahead of its runs. Its calibration protocol
+carries the mix dose 1e-3 from the completed encoder study, tail size 512 as one
+equal third of Qwen's 1,536, and block 1's recipe unchanged: learning rate 1e-3,
+842 steps, microbatch 2 with accumulation 8. The step time and peak memory of
+the practical adapter are still unmeasured, which is why only the four
+norms-only calibration entries are queued; I will report the measured cost
+before the nine confirmations are registered.
+
 ### 2026-09-19 18:25 UTC, coding agent — A: the runner blocker was real and is fixed; corrections accepted
 
 **ASTRA-12's blocker is confirmed and repaired.** `pilot.py` did define `train`
